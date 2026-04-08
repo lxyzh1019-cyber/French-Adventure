@@ -1,0 +1,1542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🇫🇷 French Adventure — Jenn & Jess</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBvasH4OqU76196ZmZSXX_e8-L2PYnvyaY",
+  authDomain: "chore-tracker-a461b.firebaseapp.com",
+  projectId: "chore-tracker-a461b",
+  storageBucket: "chore-tracker-a461b.firebasestorage.app",
+  messagingSenderId: "282740057913",
+  appId: "1:282740057913:web:72defcf2e53ae13237eae8"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// ── Real-time listeners (item #5) ──
+window.fbListeners = {};
+window.fbStartListener = (player, callback) => {
+  if (window.fbListeners[player]) window.fbListeners[player]();
+  const ref = doc(db, "french_game", player);
+  window.fbListeners[player] = onSnapshot(ref, snap => {
+    if (snap.exists()) callback(snap.data());
+  }, e => console.warn("FB listen err", e));
+};
+
+window.fbSave = async (player, data) => {
+  try {
+    const ref = doc(db, "french_game", player);
+    await setDoc(ref, data, { merge: true });
+  } catch(e) { console.warn("FB save err", e); }
+};
+</script>
+
+<style>
+:root {
+  --jenn: #e8445a; --jenn-dark: #c0293f;
+  --jess: #3b82f6; --jess-dark: #1d4ed8;
+  --gold: #f59e0b; --green: #10b981;
+  --french: #4f46e5; --purple: #7c3aed;
+  --bg: #0f172a; --surface: #1e293b; --surface2: #334155;
+  --text: #f8fafc; --text-muted: #94a3b8;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 50%,rgba(79,70,229,.15) 0%,transparent 50%),radial-gradient(ellipse at 80% 20%,rgba(232,68,90,.12) 0%,transparent 50%),radial-gradient(ellipse at 60% 80%,rgba(59,130,246,.12) 0%,transparent 50%);pointer-events:none;z-index:0;}
+.container{position:relative;z-index:1;max-width:960px;margin:0 auto;padding:16px;}
+
+/* HEADER */
+.game-header{text-align:center;padding:20px 0 12px;}
+.game-title{font-family:'Fredoka One',cursive;font-size:clamp(2rem,6vw,3.5rem);background:linear-gradient(135deg,#e8445a,#f59e0b,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.game-subtitle{color:var(--text-muted);font-size:.85rem;margin-top:4px;font-weight:600;}
+
+/* SESSION CLOCK (item #9) */
+.session-clock{display:flex;justify-content:center;gap:24px;padding:8px 20px;background:var(--surface);border-radius:14px;margin-bottom:12px;font-size:.8rem;color:var(--text-muted);font-weight:700;}
+.clock-item span{color:var(--text);}
+
+/* LEADERBOARD */
+.leaderboard{background:var(--surface);border-radius:20px;padding:20px;margin-bottom:16px;border:1px solid var(--surface2);}
+.lb-title{font-family:'Fredoka One',cursive;font-size:1.1rem;text-align:center;margin-bottom:12px;color:var(--gold);}
+.lb-row{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;margin-bottom:8px;flex-wrap:wrap;}
+.lb-row.jenn-row{background:rgba(232,68,90,.12);border:1px solid rgba(232,68,90,.3);}
+.lb-row.jess-row{background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.3);}
+.lb-rank{font-family:'Fredoka One',cursive;font-size:1.3rem;width:28px;}
+.lb-name{font-weight:800;font-size:.95rem;width:52px;}
+.lb-row.jenn-row .lb-name{color:var(--jenn);}
+.lb-row.jess-row .lb-name{color:var(--jess);}
+.lb-dots{display:flex;gap:4px;flex:1;}
+.lb-dot{width:12px;height:12px;border-radius:50%;background:var(--surface2);transition:background .3s;}
+.lb-dot.active-jenn{background:var(--jenn);}
+.lb-dot.active-jess{background:var(--jess);}
+.lb-dot-label{font-size:.55rem;color:var(--text-muted);text-align:center;margin-top:1px;}
+.lb-stats{display:flex;gap:12px;margin-left:auto;}
+.lb-stat{text-align:center;}
+.lb-stat-val{font-family:'Fredoka One',cursive;font-size:1.1rem;display:block;}
+.lb-stat-lbl{font-size:.6rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;}
+.week-reset{text-align:center;font-size:.7rem;color:var(--text-muted);margin-top:6px;}
+
+/* PLAYER SELECT */
+#screen-select{display:block;}
+.player-cards{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;padding:16px 0;}
+.player-card{width:190px;background:var(--surface);border-radius:24px;padding:28px 16px;text-align:center;cursor:pointer;border:3px solid transparent;transition:all .25s cubic-bezier(.34,1.56,.64,1);}
+.player-card.jenn:hover{border-color:var(--jenn);box-shadow:0 20px 60px rgba(232,68,90,.3);transform:translateY(-8px) scale(1.03);}
+.player-card.jess:hover{border-color:var(--jess);box-shadow:0 20px 60px rgba(59,130,246,.3);transform:translateY(-8px) scale(1.03);}
+.player-avatar{font-size:3.5rem;display:block;margin-bottom:10px;animation:float 3s ease-in-out infinite;}
+.player-card.jess .player-avatar{animation-delay:-1.5s;}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.player-name{font-family:'Fredoka One',cursive;font-size:1.5rem;margin-bottom:4px;}
+.player-card.jenn .player-name{color:var(--jenn);}
+.player-card.jess .player-name{color:var(--jess);}
+.player-stars{color:var(--gold);font-size:.8rem;font-weight:700;}
+.player-streak{color:var(--text-muted);font-size:.75rem;margin-top:2px;}
+
+/* HUB */
+#screen-hub{display:none;}
+.hub-header{display:flex;align-items:center;gap:12px;margin-bottom:14px;padding:14px 18px;border-radius:18px;}
+.hub-header.jenn{background:rgba(232,68,90,.15);border:2px solid rgba(232,68,90,.4);}
+.hub-header.jess{background:rgba(59,130,246,.15);border:2px solid rgba(59,130,246,.4);}
+.hub-avatar{font-size:2.2rem;}
+.hub-info{flex:1;}
+.hub-name{font-family:'Fredoka One',cursive;font-size:1.3rem;}
+.hub-header.jenn .hub-name{color:var(--jenn);}
+.hub-header.jess .hub-name{color:var(--jess);}
+.hub-stats{display:flex;gap:14px;margin-top:3px;flex-wrap:wrap;}
+.hub-stat{font-size:.75rem;color:var(--text-muted);font-weight:700;}
+.hub-stat span{color:var(--text);}
+.hub-moons{font-size:.8rem;color:var(--gold);font-weight:700;margin-top:3px;}
+
+/* GRADE TABS */
+.grade-tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;}
+.grade-tab{padding:7px 12px;border-radius:12px;border:2px solid var(--surface2);background:var(--surface);color:var(--text-muted);font-family:'Fredoka One',cursive;font-size:.85rem;cursor:pointer;transition:all .2s;}
+.grade-tab.active{border-color:var(--french);color:var(--text);background:rgba(79,70,229,.2);}
+.grade-tab.action-tab{border-color:var(--french);color:var(--french);}
+.grade-tab.summary-tab{border-color:var(--gold);color:var(--gold);}
+.grade-tab.study-tab{border-color:var(--green);color:var(--green);}
+.grade-tab.train-tab{border-color:var(--purple);color:var(--purple);}
+
+/* STAR MAP */
+.star-map{background:var(--surface);border-radius:18px;padding:16px;margin-bottom:14px;}
+.sm-title{font-family:'Fredoka One',cursive;font-size:1rem;margin-bottom:12px;text-align:center;}
+.sm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;}
+.sm-topic{background:var(--surface2);border-radius:12px;padding:10px 6px;text-align:center;border:2px solid transparent;transition:border-color .2s;}
+.sm-topic.mastered{border-color:var(--gold);background:rgba(245,158,11,.1);}
+.sm-topic-icon{font-size:1.4rem;display:block;margin-bottom:3px;}
+.sm-topic-name{font-size:.65rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;}
+.sm-stars{color:var(--gold);font-size:.8rem;margin-top:3px;}
+
+/* MINI GAMES GRID */
+.mini-games-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:14px;}
+.mini-game-btn{background:var(--surface);border:2px solid var(--surface2);border-radius:18px;padding:16px 10px;text-align:center;cursor:pointer;transition:all .25s cubic-bezier(.34,1.56,.64,1);color:var(--text);}
+.mini-game-btn:hover{transform:translateY(-4px) scale(1.02);border-color:var(--french);box-shadow:0 12px 40px rgba(79,70,229,.25);}
+.mini-game-btn .game-icon{font-size:2rem;display:block;margin-bottom:6px;}
+.mini-game-btn .game-name{font-family:'Fredoka One',cursive;font-size:.95rem;display:block;margin-bottom:3px;}
+.mini-game-btn .game-desc{font-size:.65rem;color:var(--text-muted);}
+.round-badge{font-size:.65rem;margin-top:4px;display:block;color:var(--text-muted);}
+.boss-btn{border-color:var(--gold)!important;background:rgba(245,158,11,.08)!important;}
+
+/* BACK BTN */
+.back-btn{background:none;border:2px solid var(--surface2);border-radius:10px;padding:7px 14px;color:var(--text-muted);font-family:'Nunito',sans-serif;font-weight:700;font-size:.8rem;cursor:pointer;transition:all .2s;margin-bottom:14px;}
+.back-btn:hover{border-color:var(--text-muted);color:var(--text);}
+
+/* GAME SCREEN */
+#screen-game{display:none;}
+.game-topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:10px 14px;background:var(--surface);border-radius:14px;gap:8px;}
+.game-topbar-title{font-family:'Fredoka One',cursive;font-size:1rem;}
+.game-score-pill{background:var(--surface2);border-radius:18px;padding:3px 12px;font-weight:800;font-size:.85rem;color:var(--gold);}
+.game-lives{font-size:.9rem;letter-spacing:2px;}
+.progress-bar-wrap{background:var(--surface2);border-radius:20px;height:6px;overflow:hidden;margin-bottom:12px;}
+.progress-bar-fill{height:100%;border-radius:20px;background:linear-gradient(90deg,var(--french),var(--purple));transition:width .4s ease;}
+.game-area{background:var(--surface);border-radius:22px;padding:24px 18px;min-height:320px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;margin-bottom:12px;border:2px solid var(--surface2);}
+.question-label{font-size:.7rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;text-align:center;}
+.question-main{font-family:'Fredoka One',cursive;font-size:clamp(1.5rem,4vw,2.2rem);text-align:center;line-height:1.2;}
+.question-hint{font-size:.82rem;color:var(--text-muted);text-align:center;font-style:italic;}
+
+/* ANSWER DISPLAY (item #1) */
+.correct-answer-display{background:rgba(16,185,129,.15);border:2px solid var(--green);border-radius:14px;padding:14px 20px;text-align:center;width:100%;max-width:400px;}
+.correct-answer-label{font-size:.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--green);margin-bottom:4px;}
+.correct-answer-word{font-family:'Fredoka One',cursive;font-size:2rem;color:var(--green);}
+.correct-answer-sub{font-size:.85rem;color:var(--text-muted);margin-top:4px;}
+.wrong-part-highlight{background:rgba(232,68,90,.2);border:1px solid var(--jenn);border-radius:8px;padding:2px 8px;color:var(--jenn);font-weight:800;}
+
+/* CHOICES */
+.choices-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;max-width:480px;}
+.choice-btn{background:var(--surface2);border:2px solid transparent;border-radius:14px;padding:12px 8px;font-family:'Nunito',sans-serif;font-weight:700;font-size:.9rem;color:var(--text);cursor:pointer;transition:all .18s;text-align:center;}
+.choice-btn:hover:not(:disabled){border-color:var(--french);transform:scale(1.02);}
+.choice-btn.correct{border-color:var(--green);background:rgba(16,185,129,.15);color:var(--green);}
+.choice-btn.wrong{border-color:var(--jenn);background:rgba(232,68,90,.15);color:var(--jenn);}
+
+/* SCRAMBLE */
+.scramble-letters,.answer-slots{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:380px;}
+.answer-slots{min-height:48px;background:rgba(0,0,0,.2);border-radius:14px;padding:6px 12px;width:100%;}
+.letter-tile{width:40px;height:40px;background:var(--surface2);border:2px solid var(--surface2);border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Fredoka One',cursive;font-size:1.2rem;cursor:pointer;transition:all .15s;user-select:none;}
+.letter-tile:hover{border-color:var(--french);transform:translateY(-2px);}
+.answer-slot{width:40px;height:40px;background:rgba(79,70,229,.2);border:2px dashed rgba(79,70,229,.5);border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Fredoka One',cursive;font-size:1.2rem;cursor:pointer;transition:all .15s;}
+.answer-slot.filled{background:rgba(79,70,229,.3);border-style:solid;border-color:var(--french);}
+
+/* BUILDER */
+.sentence-target{font-size:.9rem;color:var(--text-muted);text-align:center;padding:10px 16px;background:rgba(0,0,0,.2);border-radius:12px;width:100%;max-width:480px;}
+.word-bank{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:480px;}
+.word-chip{padding:7px 12px;background:var(--surface2);border:2px solid transparent;border-radius:18px;font-weight:700;font-size:.85rem;cursor:pointer;transition:all .15s;color:var(--text);}
+.word-chip:hover:not(.used){border-color:var(--french);transform:translateY(-2px);}
+.word-chip.used{opacity:.3;cursor:default;}
+.built-sentence{min-height:44px;background:rgba(0,0,0,.2);border-radius:12px;padding:8px 14px;display:flex;flex-wrap:wrap;gap:5px;align-items:center;width:100%;max-width:480px;}
+.built-word{padding:5px 10px;background:rgba(79,70,229,.25);border:2px solid rgba(79,70,229,.5);border-radius:14px;font-weight:700;font-size:.85rem;cursor:pointer;}
+
+/* MATCH */
+.match-grid{display:flex;gap:14px;width:100%;max-width:480px;}
+.match-col{flex:1;display:flex;flex-direction:column;gap:6px;}
+
+/* ACTIONS */
+.action-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
+.btn-primary{background:var(--french);border:none;border-radius:14px;padding:10px 24px;font-family:'Fredoka One',cursive;font-size:.95rem;color:white;cursor:pointer;transition:all .2s;}
+.btn-primary:hover{background:#4338ca;transform:translateY(-2px);}
+.btn-secondary{background:var(--surface2);border:none;border-radius:14px;padding:10px 18px;font-family:'Nunito',sans-serif;font-weight:700;font-size:.85rem;color:var(--text-muted);cursor:pointer;transition:all .2s;}
+.btn-secondary:hover{color:var(--text);}
+.btn-green{background:var(--green);border:none;border-radius:14px;padding:10px 20px;font-family:'Fredoka One',cursive;font-size:.9rem;color:white;cursor:pointer;}
+.btn-speak{background:var(--surface2);border:2px solid var(--purple);border-radius:12px;padding:8px 14px;font-size:.85rem;cursor:pointer;color:var(--text);font-weight:700;transition:all .2s;}
+.btn-speak:hover{background:rgba(124,58,237,.2);}
+.btn-speak.listening{border-color:var(--jenn);color:var(--jenn);animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* HINT */
+.hint-panel{background:rgba(79,70,229,.1);border:1px solid rgba(79,70,229,.3);border-radius:14px;padding:12px 18px;width:100%;max-width:480px;text-align:center;display:none;}
+.hint-panel.show{display:block;}
+.hint-lang{font-size:.65rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:3px;}
+.hint-text{font-weight:700;}
+
+/* ROUND COMPLETE */
+.round-complete{text-align:center;width:100%;}
+.rc-stars{font-size:2.2rem;letter-spacing:4px;margin-bottom:10px;}
+.rc-title{font-family:'Fredoka One',cursive;font-size:1.8rem;margin-bottom:6px;}
+.rc-score{color:var(--gold);font-family:'Fredoka One',cursive;font-size:1.2rem;margin-bottom:14px;}
+.rc-breakdown{display:flex;gap:12px;justify-content:center;margin-bottom:14px;flex-wrap:wrap;}
+.rc-stat{background:var(--surface2);border-radius:12px;padding:8px 14px;text-align:center;}
+.rc-stat-val{font-family:'Fredoka One',cursive;font-size:1.3rem;display:block;}
+.rc-stat-lbl{font-size:.65rem;color:var(--text-muted);text-transform:uppercase;}
+
+/* OVERLAYS */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:150;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px);opacity:0;pointer-events:none;transition:opacity .2s;}
+.overlay.show{opacity:1;pointer-events:all;}
+.overlay-card{background:var(--surface);border-radius:26px;padding:24px 20px;max-width:480px;width:92%;max-height:85vh;overflow-y:auto;border:2px solid var(--surface2);transform:scale(.9);transition:transform .3s cubic-bezier(.34,1.56,.64,1);}
+.overlay.show .overlay-card{transform:scale(1);}
+.overlay-title{font-family:'Fredoka One',cursive;font-size:1.4rem;text-align:center;margin-bottom:4px;}
+.overlay-subtitle{font-size:.75rem;color:var(--text-muted);text-align:center;margin-bottom:14px;}
+
+/* FEEDBACK */
+.feedback-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .2s;}
+.feedback-overlay.show{opacity:1;pointer-events:all;}
+.feedback-card{background:var(--surface);border-radius:26px;padding:32px 28px;text-align:center;max-width:380px;width:90%;border:3px solid var(--surface2);transform:scale(.85);transition:transform .3s cubic-bezier(.34,1.56,.64,1);}
+.feedback-overlay.show .feedback-card{transform:scale(1);}
+.feedback-emoji{font-size:3.5rem;display:block;margin-bottom:10px;}
+.feedback-title{font-family:'Fredoka One',cursive;font-size:1.6rem;margin-bottom:6px;}
+.feedback-msg{color:var(--text-muted);font-size:.85rem;margin-bottom:12px;}
+.feedback-points{font-family:'Fredoka One',cursive;font-size:1.1rem;color:var(--gold);margin-bottom:14px;}
+
+/* CONQUER */
+.conquer-word{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface2);border-radius:12px;margin-bottom:6px;}
+.conquer-fr{font-family:'Fredoka One',cursive;font-size:1.1rem;color:var(--french);width:80px;}
+.conquer-right{flex:1;}
+.conquer-en{font-size:.82rem;font-weight:700;}
+.conquer-zh{font-size:.75rem;color:var(--text-muted);}
+.conquer-prog{width:48px;height:5px;background:var(--surface);border-radius:3px;overflow:hidden;}
+.conquer-prog-fill{height:100%;background:var(--french);border-radius:3px;}
+
+/* PARENT SUMMARY (item #7) */
+.parent-side-by-side{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+.parent-player-card{background:var(--surface2);border-radius:14px;padding:14px;}
+.parent-player-title{font-family:'Fredoka One',cursive;font-size:1rem;margin-bottom:10px;}
+.parent-stat-row{display:flex;justify-content:space-between;font-size:.78rem;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05);}
+.parent-stat-row:last-child{border-bottom:none;}
+.parent-stat-label{color:var(--text-muted);}
+.parent-stat-val{font-weight:800;}
+.parent-wrong-section{margin-top:14px;}
+.parent-wrong-title{font-size:.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-weight:800;margin-bottom:8px;}
+.parent-row{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface2);border-radius:10px;margin-bottom:5px;font-size:.8rem;}
+.parent-fr{font-weight:800;color:var(--french);width:70px;}
+.parent-en{flex:1;}
+.parent-zh{color:var(--text-muted);font-size:.75rem;}
+.parent-fails{background:rgba(232,68,90,.2);color:var(--jenn);border-radius:6px;padding:1px 7px;font-size:.7rem;font-weight:800;white-space:nowrap;}
+.empty-state{text-align:center;color:var(--text-muted);padding:20px;font-size:.85rem;}
+
+/* STUDY (item #10) */
+.study-sets{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.study-set-tab{flex:1;min-width:80px;padding:8px;border-radius:12px;border:2px solid var(--surface2);background:var(--surface);color:var(--text-muted);font-family:'Fredoka One',cursive;font-size:.85rem;cursor:pointer;text-align:center;transition:all .2s;}
+.study-set-tab.active{border-color:var(--green);color:var(--green);background:rgba(16,185,129,.1);}
+.study-card{background:var(--surface2);border-radius:16px;padding:20px;text-align:center;margin-bottom:10px;}
+.study-card-fr{font-family:'Fredoka One',cursive;font-size:2rem;color:var(--french);margin-bottom:6px;}
+.study-card-en{font-size:1rem;font-weight:700;margin-bottom:4px;}
+.study-card-zh{font-size:.9rem;color:var(--text-muted);}
+.study-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;}
+.study-mini{background:var(--surface2);border-radius:12px;padding:12px 8px;text-align:center;}
+.study-mini-fr{font-family:'Fredoka One',cursive;font-size:1.2rem;color:var(--french);}
+.study-mini-en{font-size:.75rem;color:var(--text-muted);margin-top:2px;}
+.study-mini-zh{font-size:.75rem;color:var(--text-muted);}
+
+/* TRAINING ZONE (item #8) */
+.train-card{background:var(--surface2);border-radius:16px;padding:20px;text-align:center;margin-bottom:12px;}
+.train-blank{display:inline-block;border-bottom:3px solid var(--french);min-width:80px;margin:0 6px;}
+.train-input{background:var(--surface);border:2px solid var(--surface2);border-radius:12px;padding:10px 16px;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:700;color:var(--text);width:100%;max-width:300px;text-align:center;outline:none;margin-top:10px;}
+.train-input:focus{border-color:var(--french);}
+
+/* MOON */
+.moon-banner{background:rgba(245,158,11,.15);border:2px solid var(--gold);border-radius:14px;padding:12px 18px;text-align:center;margin-top:12px;}
+.moon-emoji{font-size:2.2rem;}
+.moon-label{font-family:'Fredoka One',cursive;font-size:1.1rem;color:var(--gold);}
+.moon-msg{font-size:.75rem;color:var(--text-muted);margin-top:3px;}
+
+/* TOAST */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);background:var(--surface);border:2px solid var(--green);border-radius:18px;padding:10px 22px;font-weight:700;color:var(--green);z-index:200;transition:transform .4s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+
+/* CONFETTI */
+.confetti-piece{position:fixed;width:9px;height:9px;border-radius:2px;animation:confettiFall linear forwards;pointer-events:none;z-index:999;}
+@keyframes confettiFall{0%{transform:translateY(-100px) rotate(0deg);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+
+/* RESPONSIVE */
+@media(max-width:520px){
+  .choices-grid{grid-template-columns:1fr;}
+  .mini-games-grid{grid-template-columns:1fr 1fr;}
+  .parent-side-by-side{grid-template-columns:1fr;}
+  .player-card{width:155px;}
+  .grade-tabs{gap:4px;}
+  .grade-tab{padding:5px 8px;font-size:.75rem;}
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="game-header">
+    <div class="game-title">🇫🇷 French Adventure</div>
+    <div class="game-subtitle">Alberta Curriculum • Grade 4–10 • Jenn & Jess Edition</div>
+  </div>
+
+  <!-- WALL CLOCK — select screen only, always visible -->
+  <div id="wall-clock-display" style="text-align:center;margin-bottom:12px;">
+    <div style="font-family:'Fredoka One',cursive;font-size:clamp(2.5rem,8vw,4.5rem);color:var(--text);letter-spacing:2px;" id="wall-clock-time">00:00</div>
+    <div style="font-size:.8rem;color:var(--text-muted);font-weight:700;" id="wall-clock-date"></div>
+  </div>
+
+  <!-- ── SELECT SCREEN ── -->
+  <div id="screen-select">
+    <div class="leaderboard">
+      <div class="lb-title">🏆 Weekly Champion Board</div>
+      <div class="lb-row jenn-row">
+        <div class="lb-name">Jenn</div>
+        <div class="lb-dots" id="lb-dots-jenn"></div>
+        <div class="lb-stats">
+          <div class="lb-stat"><span class="lb-stat-val" id="lb-stars-jenn">0</span><span class="lb-stat-lbl">⭐ Stars</span></div>
+          <div class="lb-stat"><span class="lb-stat-val" id="lb-streak-jenn">0</span><span class="lb-stat-lbl">🔥 Streak</span></div>
+          <div class="lb-stat"><span class="lb-stat-val" id="lb-week-jenn">0</span><span class="lb-stat-lbl">📅 Week</span></div>
+        </div>
+      </div>
+      <div class="lb-row jess-row">
+        <div class="lb-name">Jess</div>
+        <div class="lb-dots" id="lb-dots-jess"></div>
+        <div class="lb-stats">
+          <div class="lb-stat"><span class="lb-stat-val" id="lb-stars-jess">0</span><span class="lb-stat-lbl">⭐ Stars</span></div>
+          <div class="lb-stat"><span class="lb-stat-val" id="lb-streak-jess">0</span><span class="lb-stat-lbl">🔥 Streak</span></div>
+          <div class="lb-stat"><span class="lb-stat-val" id="lb-week-jess">0</span><span class="lb-stat-lbl">📅 Week</span></div>
+        </div>
+      </div>
+      <div class="week-reset" id="week-reset-msg"></div>
+    </div>
+    <!-- Parent summary on select screen -->
+    <div style="text-align:center;margin-bottom:8px;">
+      <button class="grade-tab summary-tab" onclick="showParentSummary()" style="margin:0 auto;padding:8px 20px;">📋 Parent Summary</button>
+    </div>
+    <div class="player-cards">
+      <div class="player-card jenn" onclick="selectPlayer('jenn')">
+        <span class="player-avatar">🐥</span>
+        <div class="player-name">Jenn</div>
+        <div class="player-stars" id="sel-stars-jenn">⭐ 0 stars</div>
+        <div class="player-streak" id="sel-streak-jenn">🔥 0 day streak</div>
+      </div>
+      <div class="player-card jess" onclick="selectPlayer('jess')">
+        <span class="player-avatar">🦊</span>
+        <div class="player-name">Jess</div>
+        <div class="player-stars" id="sel-stars-jess">⭐ 0 stars</div>
+        <div class="player-streak" id="sel-streak-jess">🔥 0 day streak</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── HUB SCREEN ── -->
+  <div id="screen-hub">
+    <button class="back-btn" onclick="goBack()">← Back</button>
+    <!-- Session clock — only visible after player select -->
+    <div class="session-clock" id="session-clock" style="display:none;margin-bottom:12px;">
+      <div class="clock-item">🕐 <span id="clock-session">0:00</span></div>
+      <div class="clock-item">📅 Today: <span id="clock-today">0:00</span></div>
+    </div>
+    <div class="hub-header" id="hub-header">
+      <div class="hub-avatar" id="hub-avatar">🐥</div>
+      <div class="hub-info">
+        <div class="hub-name" id="hub-name">Jenn</div>
+        <div class="hub-stats">
+          <div class="hub-stat">⭐ <span id="hub-stars">0</span></div>
+          <div class="hub-stat">🔥 <span id="hub-streak">0</span> days</div>
+          <div class="hub-stat">📅 Week: <span id="hub-week">0</span></div>
+        </div>
+        <div class="hub-moons" id="hub-moons"></div>
+      </div>
+    </div>
+
+    <div class="grade-tabs" id="grade-tabs">
+      <button class="grade-tab active" id="tab-g4" onclick="setGrade(4)">G4</button>
+      <button class="grade-tab" id="tab-g5" onclick="setGrade(5)">G5</button>
+      <button class="grade-tab" id="tab-g6" onclick="setGrade(6)">G6</button>
+      <button class="grade-tab" id="tab-g7" onclick="setGrade(7)">G7</button>
+      <button class="grade-tab" id="tab-g8" onclick="setGrade(8)">G8</button>
+      <button class="grade-tab" id="tab-g9" onclick="setGrade(9)">G9</button>
+      <button class="grade-tab" id="tab-g10" onclick="setGrade(10)">G10</button>
+      <button class="grade-tab action-tab" onclick="showConquer()">💪</button>
+      <button class="grade-tab study-tab" onclick="showStudy()">📖 Study</button>
+      <button class="grade-tab train-tab" onclick="showTraining()">🏋️</button>
+    </div>
+
+    <div class="star-map" id="star-map-section">
+      <div class="sm-title">⭐ Topic Stars</div>
+      <div class="sm-grid" id="sm-grid"></div>
+    </div>
+
+    <div class="mini-games-grid">
+      <div class="mini-game-btn" id="btn-quiz" onclick="startGame('quiz')">
+        <span class="game-icon">🧠</span><span class="game-name">Quick Quiz</span>
+        <span class="game-desc">Multiple choice</span>
+        <span class="round-badge">2 left today</span>
+      </div>
+      <div class="mini-game-btn" id="btn-match" onclick="startGame('match')">
+        <span class="game-icon">🎯</span><span class="game-name">Word Match</span>
+        <span class="game-desc">Pair French to English</span>
+        <span class="round-badge">2 left today</span>
+      </div>
+      <div class="mini-game-btn" id="btn-scramble" onclick="startGame('scramble')">
+        <span class="game-icon">🔤</span><span class="game-name">Scramble</span>
+        <span class="game-desc">Unscramble the word</span>
+        <span class="round-badge">2 left today</span>
+      </div>
+      <div class="mini-game-btn" id="btn-builder" onclick="startGame('builder')">
+        <span class="game-icon">💬</span><span class="game-name">Sentence Builder</span>
+        <span class="game-desc">Build French sentences</span>
+        <span class="round-badge">2 left today</span>
+      </div>
+      <div class="mini-game-btn boss-btn" id="btn-boss" onclick="startGame('boss')">
+        <span class="game-icon">⚡</span><span class="game-name">Boss Round</span>
+        <span class="game-desc">Mixed • All topics</span>
+        <span class="round-badge">2 left today</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── GAME SCREEN ── -->
+  <div id="screen-game">
+    <button class="back-btn" onclick="exitGame()">← Hub</button>
+    <div class="game-topbar">
+      <div class="game-topbar-title" id="game-title-bar">Quiz</div>
+      <div class="game-lives" id="game-lives">❤️❤️❤️</div>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <button class="btn-speak" id="btn-tts" onclick="speakCurrent()" title="Listen">🔊</button>
+        <button class="btn-speak" id="btn-stt" onclick="startSpeech()" title="Speak" style="display:none;">🎤</button>
+        <div class="game-score-pill">⭐ <span id="game-score">0</span></div>
+      </div>
+    </div>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progress-bar" style="width:0%"></div></div>
+    <div class="game-area" id="game-area"></div>
+    <div class="action-row" id="action-row"></div>
+    <div class="hint-panel" id="hint-panel">
+      <div class="hint-lang">Hint — 提示 — Indice</div>
+      <div class="hint-text" id="hint-text"></div>
+    </div>
+  </div>
+</div>
+
+<!-- FEEDBACK -->
+<div class="feedback-overlay" id="feedback-overlay">
+  <div class="feedback-card">
+    <span class="feedback-emoji" id="fb-emoji">🎉</span>
+    <div class="feedback-title" id="fb-title">Correct!</div>
+    <div class="feedback-msg" id="fb-msg"></div>
+    <div id="fb-correct-display"></div>
+    <div class="feedback-points" id="fb-points"></div>
+    <button class="btn-primary" onclick="nextQuestion()">Next →</button>
+  </div>
+</div>
+
+<!-- CONQUER -->
+<div class="overlay" id="conquer-overlay">
+  <div class="overlay-card">
+    <div class="overlay-title">💪 Words to Conquer</div>
+    <div class="overlay-subtitle">Practice these — you're getting stronger every day!</div>
+    <div id="conquer-list"></div>
+    <div style="text-align:center;margin-top:14px;">
+      <button class="btn-primary" onclick="closeOverlay('conquer-overlay')">Let's Go! →</button>
+    </div>
+  </div>
+</div>
+
+<!-- STUDY -->
+<div class="overlay" id="study-overlay">
+  <div class="overlay-card">
+    <div class="overlay-title">📖 Daily Study</div>
+    <div class="overlay-subtitle">Today's 3 sets — refresh your memory before playing!</div>
+    <div class="study-sets">
+      <button class="study-set-tab active" onclick="showStudySet(1)">Set 1 — Vocab</button>
+      <button class="study-set-tab" onclick="showStudySet(2)">Set 2 — Sentences</button>
+      <button class="study-set-tab" onclick="showStudySet(3)">Set 3 — My Words</button>
+    </div>
+    <div id="study-content"></div>
+    <div style="text-align:center;margin-top:14px;">
+      <button class="btn-primary" onclick="closeOverlay('study-overlay')">I'm Ready! →</button>
+    </div>
+  </div>
+</div>
+
+<!-- TRAINING ZONE -->
+<div class="overlay" id="train-overlay">
+  <div class="overlay-card">
+    <div class="overlay-title">🏋️ Training Zone</div>
+    <div class="overlay-subtitle">Drill your tricky words — no limits, no pressure!</div>
+    <div id="train-content"></div>
+    <div class="action-row" id="train-actions" style="margin-top:12px;"></div>
+  </div>
+</div>
+
+<!-- PARENT SUMMARY -->
+<div class="overlay" id="parent-overlay">
+  <div class="overlay-card">
+    <div class="overlay-title" style="color:var(--gold);">📋 Daily Summary</div>
+    <div class="overlay-subtitle">Today's performance overview</div>
+    <div class="parent-side-by-side" id="parent-stats-grid"></div>
+    <div class="parent-wrong-section">
+      <div class="parent-wrong-title">Practice Targets</div>
+      <div id="parent-wrong-list"></div>
+    </div>
+    <div style="text-align:center;margin-top:12px;">
+      <button class="btn-secondary" onclick="closeOverlay('parent-overlay')">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════════════════════════════
+// CURRICULUM DATA — Grade 4–10
+// ════════════════════════════════════════════════
+const CURRICULUM = {
+  4: {
+    colours:{name:"Colours",icon:"🎨",vocab:[
+      {fr:"rouge",en:"red",zh:"红色"},{fr:"bleu",en:"blue",zh:"蓝色"},{fr:"vert",en:"green",zh:"绿色"},
+      {fr:"jaune",en:"yellow",zh:"黄色"},{fr:"orange",en:"orange",zh:"橙色"},{fr:"violet",en:"purple",zh:"紫色"},
+      {fr:"blanc",en:"white",zh:"白色"},{fr:"noir",en:"black",zh:"黑色"},{fr:"rose",en:"pink",zh:"粉红色"},{fr:"brun",en:"brown",zh:"棕色"}]},
+    numbers:{name:"Numbers",icon:"🔢",vocab:[
+      {fr:"un",en:"one",zh:"一"},{fr:"deux",en:"two",zh:"二"},{fr:"trois",en:"three",zh:"三"},
+      {fr:"quatre",en:"four",zh:"四"},{fr:"cinq",en:"five",zh:"五"},{fr:"six",en:"six",zh:"六"},
+      {fr:"sept",en:"seven",zh:"七"},{fr:"huit",en:"eight",zh:"八"},{fr:"neuf",en:"nine",zh:"九"},
+      {fr:"dix",en:"ten",zh:"十"},{fr:"vingt",en:"twenty",zh:"二十"},{fr:"cent",en:"hundred",zh:"百"}]},
+    family:{name:"Family",icon:"👨‍👩‍👧",vocab:[
+      {fr:"mère",en:"mother",zh:"妈妈"},{fr:"père",en:"father",zh:"爸爸"},{fr:"sœur",en:"sister",zh:"姐妹"},
+      {fr:"frère",en:"brother",zh:"兄弟"},{fr:"grand-mère",en:"grandmother",zh:"奶奶"},{fr:"grand-père",en:"grandfather",zh:"爷爷"},
+      {fr:"tante",en:"aunt",zh:"阿姨"},{fr:"oncle",en:"uncle",zh:"叔叔"},{fr:"bébé",en:"baby",zh:"婴儿"}]},
+    classroom:{name:"Classroom",icon:"📚",vocab:[
+      {fr:"crayon",en:"pencil",zh:"铅笔"},{fr:"livre",en:"book",zh:"书"},{fr:"cahier",en:"notebook",zh:"笔记本"},
+      {fr:"chaise",en:"chair",zh:"椅子"},{fr:"table",en:"table",zh:"桌子"},{fr:"règle",en:"ruler",zh:"尺子"},
+      {fr:"gomme",en:"eraser",zh:"橡皮"},{fr:"stylo",en:"pen",zh:"钢笔"},{fr:"sac",en:"bag",zh:"书包"}]},
+    animals:{name:"Animals",icon:"🐾",vocab:[
+      {fr:"chien",en:"dog",zh:"狗"},{fr:"chat",en:"cat",zh:"猫"},{fr:"oiseau",en:"bird",zh:"鸟"},
+      {fr:"poisson",en:"fish",zh:"鱼"},{fr:"lapin",en:"rabbit",zh:"兔子"},{fr:"cheval",en:"horse",zh:"马"},
+      {fr:"vache",en:"cow",zh:"牛"},{fr:"cochon",en:"pig",zh:"猪"},{fr:"canard",en:"duck",zh:"鸭子"},{fr:"ours",en:"bear",zh:"熊"}]},
+    food:{name:"Food",icon:"🍎",vocab:[
+      {fr:"pomme",en:"apple",zh:"苹果"},{fr:"pain",en:"bread",zh:"面包"},{fr:"lait",en:"milk",zh:"牛奶"},
+      {fr:"eau",en:"water",zh:"水"},{fr:"fromage",en:"cheese",zh:"奶酪"},{fr:"banane",en:"banana",zh:"香蕉"},
+      {fr:"carotte",en:"carrot",zh:"胡萝卜"},{fr:"biscuit",en:"cookie",zh:"饼干"},{fr:"jus",en:"juice",zh:"果汁"}]}
+  },
+  5: {
+    body:{name:"Body Parts",icon:"🫀",vocab:[
+      {fr:"tête",en:"head",zh:"头"},{fr:"bras",en:"arm",zh:"手臂"},{fr:"jambe",en:"leg",zh:"腿"},
+      {fr:"main",en:"hand",zh:"手"},{fr:"pied",en:"foot",zh:"脚"},{fr:"nez",en:"nose",zh:"鼻子"},
+      {fr:"bouche",en:"mouth",zh:"嘴巴"},{fr:"œil",en:"eye",zh:"眼睛"},{fr:"oreille",en:"ear",zh:"耳朵"}]},
+    weather:{name:"Weather",icon:"🌤",vocab:[
+      {fr:"soleil",en:"sun",zh:"太阳"},{fr:"pluie",en:"rain",zh:"雨"},{fr:"neige",en:"snow",zh:"雪"},
+      {fr:"vent",en:"wind",zh:"风"},{fr:"nuage",en:"cloud",zh:"云"},{fr:"froid",en:"cold",zh:"冷"},
+      {fr:"chaud",en:"hot",zh:"热"},{fr:"orage",en:"storm",zh:"暴风雨"},{fr:"arc-en-ciel",en:"rainbow",zh:"彩虹"}]},
+    seasons:{name:"Seasons",icon:"🍂",vocab:[
+      {fr:"printemps",en:"spring",zh:"春天"},{fr:"été",en:"summer",zh:"夏天"},
+      {fr:"automne",en:"autumn",zh:"秋天"},{fr:"hiver",en:"winter",zh:"冬天"},
+      {fr:"janvier",en:"January",zh:"一月"},{fr:"juillet",en:"July",zh:"七月"},{fr:"décembre",en:"December",zh:"十二月"}]},
+    community:{name:"Community",icon:"🏘",vocab:[
+      {fr:"école",en:"school",zh:"学校"},{fr:"hôpital",en:"hospital",zh:"医院"},{fr:"parc",en:"park",zh:"公园"},
+      {fr:"magasin",en:"store",zh:"商店"},{fr:"bibliothèque",en:"library",zh:"图书馆"},{fr:"maison",en:"house",zh:"房子"},
+      {fr:"rue",en:"street",zh:"街道"},{fr:"bus",en:"bus",zh:"公共汽车"}]},
+    time:{name:"Time",icon:"⏰",vocab:[
+      {fr:"aujourd'hui",en:"today",zh:"今天"},{fr:"demain",en:"tomorrow",zh:"明天"},{fr:"hier",en:"yesterday",zh:"昨天"},
+      {fr:"matin",en:"morning",zh:"早晨"},{fr:"soir",en:"evening",zh:"晚上"},{fr:"semaine",en:"week",zh:"星期"},
+      {fr:"mois",en:"month",zh:"月"},{fr:"année",en:"year",zh:"年"}]}
+  },
+  6: {
+    verbs:{name:"Past Tense",icon:"⏮",vocab:[
+      {fr:"j'ai mangé",en:"I ate",zh:"我吃了"},{fr:"j'ai parlé",en:"I spoke",zh:"我说了"},
+      {fr:"j'ai fini",en:"I finished",zh:"我完成了"},{fr:"j'ai vu",en:"I saw",zh:"我看见了"},
+      {fr:"j'ai fait",en:"I did/made",zh:"我做了"},{fr:"j'ai eu",en:"I had",zh:"我有了"},
+      {fr:"j'ai été",en:"I was",zh:"我曾是"},{fr:"j'ai pris",en:"I took",zh:"我拿了"}]},
+    adjectives:{name:"Adjectives",icon:"✨",vocab:[
+      {fr:"grand",en:"big/tall",zh:"大/高"},{fr:"petit",en:"small",zh:"小"},{fr:"beau",en:"beautiful",zh:"漂亮"},
+      {fr:"nouveau",en:"new",zh:"新"},{fr:"vieux",en:"old",zh:"旧/老"},{fr:"bon",en:"good",zh:"好"},
+      {fr:"mauvais",en:"bad",zh:"坏"},{fr:"heureux",en:"happy",zh:"快乐"},{fr:"triste",en:"sad",zh:"悲伤"}]},
+    places:{name:"Places",icon:"🗺",vocab:[
+      {fr:"ville",en:"city",zh:"城市"},{fr:"campagne",en:"countryside",zh:"乡村"},{fr:"plage",en:"beach",zh:"海滩"},
+      {fr:"montagne",en:"mountain",zh:"山"},{fr:"forêt",en:"forest",zh:"森林"},{fr:"rivière",en:"river",zh:"河流"},
+      {fr:"lac",en:"lake",zh:"湖"},{fr:"île",en:"island",zh:"岛屿"}]}
+  },
+  7: {
+    questions:{name:"Questions",icon:"❓",vocab:[
+      {fr:"qui",en:"who",zh:"谁"},{fr:"quoi",en:"what",zh:"什么"},{fr:"où",en:"where",zh:"哪里"},
+      {fr:"quand",en:"when",zh:"什么时候"},{fr:"pourquoi",en:"why",zh:"为什么"},{fr:"comment",en:"how",zh:"怎么"},
+      {fr:"combien",en:"how many",zh:"多少"},{fr:"quel",en:"which",zh:"哪个"}]},
+    negation:{name:"Negation",icon:"🚫",vocab:[
+      {fr:"ne...pas",en:"not",zh:"不"},{fr:"ne...jamais",en:"never",zh:"从不"},{fr:"ne...rien",en:"nothing",zh:"什么都没有"},
+      {fr:"ne...plus",en:"no more",zh:"不再"},{fr:"ne...personne",en:"nobody",zh:"没有人"},
+      {fr:"ne...que",en:"only",zh:"只有"}]},
+    expressions:{name:"Expressions",icon:"💬",vocab:[
+      {fr:"bien sûr",en:"of course",zh:"当然"},{fr:"peut-être",en:"maybe",zh:"也许"},{fr:"d'accord",en:"okay/agreed",zh:"好的"},
+      {fr:"pas du tout",en:"not at all",zh:"一点也不"},{fr:"tout à fait",en:"absolutely",zh:"完全正确"},
+      {fr:"c'est-à-dire",en:"that is to say",zh:"也就是说"}]}
+  },
+  8: {
+    irregular:{name:"Irregular Verbs",icon:"⚡",vocab:[
+      {fr:"être",en:"to be",zh:"是"},{fr:"avoir",en:"to have",zh:"有"},{fr:"aller",en:"to go",zh:"去"},
+      {fr:"faire",en:"to do/make",zh:"做"},{fr:"venir",en:"to come",zh:"来"},{fr:"prendre",en:"to take",zh:"拿"},
+      {fr:"pouvoir",en:"to be able",zh:"能够"},{fr:"vouloir",en:"to want",zh:"想要"},{fr:"savoir",en:"to know",zh:"知道"}]},
+    formal:{name:"Formal vs Informal",icon:"🎩",vocab:[
+      {fr:"tu",en:"you (informal)",zh:"你（非正式）"},{fr:"vous",en:"you (formal/plural)",zh:"您/你们（正式）"},
+      {fr:"bonjour",en:"hello (formal)",zh:"您好（正式）"},{fr:"salut",en:"hi (informal)",zh:"嗨（非正式）"},
+      {fr:"au revoir",en:"goodbye (formal)",zh:"再见（正式）"},{fr:"ciao",en:"bye (informal)",zh:"拜（非正式）"}]},
+    dialogue:{name:"Dialogues",icon:"🗣",vocab:[
+      {fr:"enchanté",en:"pleased to meet you",zh:"很高兴认识你"},{fr:"je vous en prie",en:"you're welcome (formal)",zh:"不客气（正式）"},
+      {fr:"je t'en prie",en:"you're welcome (informal)",zh:"不客气（非正式）"},{fr:"excusez-moi",en:"excuse me",zh:"打扰一下"},
+      {fr:"je suis désolé",en:"I am sorry",zh:"我很抱歉"},{fr:"avec plaisir",en:"with pleasure",zh:"很乐意"}]}
+  },
+  9: {
+    opinion:{name:"Opinions",icon:"💭",vocab:[
+      {fr:"je pense que",en:"I think that",zh:"我认为"},{fr:"à mon avis",en:"in my opinion",zh:"在我看来"},
+      {fr:"je crois que",en:"I believe that",zh:"我相信"},{fr:"selon moi",en:"according to me",zh:"据我看"},
+      {fr:"il me semble que",en:"it seems to me that",zh:"在我看来"},{fr:"je suis convaincu que",en:"I am convinced that",zh:"我确信"}]},
+    complex:{name:"Complex Sentences",icon:"📝",vocab:[
+      {fr:"bien que",en:"although",zh:"尽管"},{fr:"parce que",en:"because",zh:"因为"},{fr:"donc",en:"therefore",zh:"因此"},
+      {fr:"cependant",en:"however",zh:"然而"},{fr:"néanmoins",en:"nevertheless",zh:"尽管如此"},
+      {fr:"en effet",en:"indeed",zh:"确实"},{fr:"par conséquent",en:"consequently",zh:"因此"}]},
+    reading:{name:"Reading",icon:"📖",vocab:[
+      {fr:"le personnage",en:"the character",zh:"人物"},{fr:"l'intrigue",en:"the plot",zh:"情节"},
+      {fr:"le thème",en:"the theme",zh:"主题"},{fr:"le chapitre",en:"the chapter",zh:"章节"},
+      {fr:"l'auteur",en:"the author",zh:"作者"},{fr:"le narrateur",en:"the narrator",zh:"叙述者"}]}
+  },
+  10: {
+    essay:{name:"Essay Writing",icon:"✍️",vocab:[
+      {fr:"l'introduction",en:"introduction",zh:"引言"},{fr:"la conclusion",en:"conclusion",zh:"结论"},
+      {fr:"l'argument",en:"argument",zh:"论点"},{fr:"la thèse",en:"thesis",zh:"论文/论点"},
+      {fr:"l'exemple",en:"example",zh:"例子"},{fr:"la preuve",en:"proof/evidence",zh:"证据"},
+      {fr:"en premier lieu",en:"firstly",zh:"首先"},{fr:"en conclusion",en:"in conclusion",zh:"总之"}]},
+    advanced:{name:"Advanced Grammar",icon:"🔬",vocab:[
+      {fr:"le subjonctif",en:"subjunctive mood",zh:"虚拟式"},{fr:"le conditionnel",en:"conditional tense",zh:"条件式"},
+      {fr:"le plus-que-parfait",en:"pluperfect tense",zh:"过去完成时"},{fr:"le passif",en:"passive voice",zh:"被动语态"},
+      {fr:"le participe présent",en:"present participle",zh:"现在分词"},{fr:"l'infinitif",en:"infinitive",zh:"不定式"}]},
+    idioms:{name:"Idioms",icon:"🌟",vocab:[
+      {fr:"avoir le cafard",en:"to feel down/blue",zh:"心情低落"},{fr:"coûter les yeux de la tête",en:"to cost an arm and a leg",zh:"价格昂贵"},
+      {fr:"avoir du pain sur la planche",en:"to have a lot on one's plate",zh:"任务繁重"},
+      {fr:"il pleut des cordes",en:"it's raining cats and dogs",zh:"倾盆大雨"},
+      {fr:"c'est la vie",en:"that's life",zh:"这就是生活"},{fr:"mieux vaut tard que jamais",en:"better late than never",zh:"迟做总比不做好"}]}
+  }
+};
+
+const SENTENCES = {
+  4:[
+    {parts:["Je","m'appelle","Marie","."],target:"My name is Marie.",zh:"我叫玛丽。"},
+    {parts:["J'ai","dix","ans","."],target:"I am ten years old.",zh:"我十岁。"},
+    {parts:["Je","suis","content","."],target:"I am happy.",zh:"我很高兴。"},
+    {parts:["C'est","un","chien","."],target:"It is a dog.",zh:"这是一只狗。"},
+    {parts:["Il","y","a","un","chat","."],target:"There is a cat.",zh:"有一只猫。"},
+    {parts:["J'ai","une","sœur","."],target:"I have a sister.",zh:"我有一个姐妹。"},
+    {parts:["Le","crayon","est","rouge","."],target:"The pencil is red.",zh:"铅笔是红色的。"}
+  ],
+  5:[
+    {parts:["J'aime","le","chocolat","."],target:"I like chocolate.",zh:"我喜欢巧克力。"},
+    {parts:["Je","voudrais","de","l'eau","."],target:"I would like some water.",zh:"我想要水。"},
+    {parts:["Où","est","la","bibliothèque","?"],target:"Where is the library?",zh:"图书馆在哪里？"},
+    {parts:["Il","fait","froid","aujourd'hui","."],target:"It is cold today.",zh:"今天很冷。"},
+    {parts:["J'ai","mal","à","la","tête","."],target:"I have a headache.",zh:"我头疼。"}
+  ],
+  6:[
+    {parts:["Hier","j'ai","mangé","une","pomme","."],target:"Yesterday I ate an apple.",zh:"昨天我吃了一个苹果。"},
+    {parts:["La","maison","est","grande","et","belle","."],target:"The house is big and beautiful.",zh:"房子又大又漂亮。"},
+    {parts:["Nous","avons","visité","la","ville","."],target:"We visited the city.",zh:"我们参观了这座城市。"}
+  ],
+  7:[
+    {parts:["Pourquoi","est-ce","que","tu","pleures","?"],target:"Why are you crying?",zh:"你为什么哭？"},
+    {parts:["Je","ne","mange","jamais","de","viande","."],target:"I never eat meat.",zh:"我从不吃肉。"},
+    {parts:["Bien","sûr","je","suis","d'accord","."],target:"Of course I agree.",zh:"当然我同意。"}
+  ],
+  8:[
+    {parts:["Je","voudrais","savoir","comment","faire","."],target:"I would like to know how to do it.",zh:"我想知道怎么做。"},
+    {parts:["Pourriez-vous","m'aider","s'il","vous","plaît","?"],target:"Could you help me please?",zh:"请问您能帮我吗？"},
+    {parts:["Il","faut","que","tu","viennes","demain","."],target:"You must come tomorrow.",zh:"你明天必须来。"}
+  ],
+  9:[
+    {parts:["À","mon","avis","c'est","très","important","."],target:"In my opinion it is very important.",zh:"在我看来这非常重要。"},
+    {parts:["Bien","que","je","sois","fatigué","je","travaille","."],target:"Although I am tired I work.",zh:"尽管我很累我还是工作。"}
+  ],
+  10:[
+    {parts:["En","premier","lieu","il","faut","analyser","le","texte","."],target:"Firstly one must analyze the text.",zh:"首先必须分析文本。"},
+    {parts:["En","conclusion","on","peut","dire","que","."],target:"In conclusion one can say that.",zh:"总之可以说。"}
+  ]
+};
+
+// ════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════
+const DEFAULT_STATE = () => ({
+  totalStars:0, weekStars:0, streak:0, lastPlayed:null,
+  weekStart:getWeekStart(), topicStars:{}, dailyRounds:{},
+  moons:{grade4:false,grade5:false,super:false},
+  failedWords:{}, playedDays:{}, todayStats:{}
+});
+
+let state = {jenn:DEFAULT_STATE(), jess:DEFAULT_STATE()};
+let currentPlayer = null;
+let currentGrade = 4;
+let currentGameType = null;
+
+// Round state
+let questions=[], qIndex=0, roundScore=0, lives=3, currentQ=null;
+let builtWords=[], scrambleAnswer=[], scrambleSource=[];
+let matchSelected=null, matchPairs=[], matchMatched=[];
+let questionStartTime=0;
+const SPEED_BONUS_WINDOW=8000, SPEED_BONUS_MAX=10, DAILY_ROUND_LIMIT=2;
+
+// Session clock
+let sessionStart=null, sessionInterval=null;
+let todayTotalMs=0;
+
+// Speech
+let speechSynth=window.speechSynthesis;
+let recognition=null;
+if('SpeechRecognition' in window||'webkitSpeechRecognition' in window){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  recognition=new SR();
+  recognition.lang='fr-FR';
+  recognition.continuous=false;
+  recognition.interimResults=false;
+}
+
+// ════════════════════════════════════════════════
+// UTILS
+// ════════════════════════════════════════════════
+function getWeekStart(){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-d.getDay());return d.toISOString();}
+function isSameWeek(ts){if(!ts)return false;return new Date(ts)>=new Date(getWeekStart());}
+function todayKey(){return new Date().toISOString().slice(0,10);}
+function shuffle(arr){return [...arr].sort(()=>Math.random()-.5);}
+function rand(arr){return arr[Math.floor(Math.random()*arr.length)];}
+function getTopics(grade){return Object.entries(CURRICULUM[grade]||{});}
+function getAllVocab(grade){return getTopics(grade).flatMap(([k,v])=>v.vocab.map(w=>({...w,topic:k})));}
+function getSentences(grade){return SENTENCES[grade]||SENTENCES[4];}
+
+function showToast(msg,color=null){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.style.borderColor=color||'var(--green)';t.style.color=color||'var(--green)';
+  t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);
+}
+function confetti(){
+  const colors=['#e8445a','#3b82f6','#f59e0b','#10b981','#a78bfa','#f472b6'];
+  for(let i=0;i<55;i++){
+    const el=document.createElement('div');el.className='confetti-piece';
+    el.style.left=Math.random()*100+'vw';el.style.background=colors[Math.floor(Math.random()*colors.length)];
+    el.style.animationDuration=(1.5+Math.random()*2)+'s';el.style.animationDelay=(Math.random()*.8)+'s';
+    document.body.appendChild(el);setTimeout(()=>el.remove(),3500);
+  }
+}
+function closeOverlay(id){document.getElementById(id).classList.remove('show');}
+
+// ════════════════════════════════════════════════
+// SESSION CLOCK (item #9)
+// ════════════════════════════════════════════════
+function startSessionClock(){
+  sessionStart=Date.now();
+  document.getElementById('session-clock').style.display='flex';
+  sessionInterval=setInterval(()=>{
+    const elapsed=Date.now()-sessionStart;
+    const total=todayTotalMs+elapsed;
+    document.getElementById('clock-session').textContent=fmtTime(elapsed);
+    document.getElementById('clock-today').textContent=fmtTime(total);
+  },1000);
+}
+function fmtTime(ms){const s=Math.floor(ms/1000);return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;}
+
+// ════════════════════════════════════════════════
+// FIREBASE REAL-TIME (item #5)
+// ════════════════════════════════════════════════
+function initListeners(){
+  ['jenn','jess'].forEach(p=>{
+    if(window.fbStartListener){
+      window.fbStartListener(p,data=>{
+        if(!data)return;
+        // Merge incoming data without overwriting local mid-round state
+        if(!isSameWeek(data.weekStart)){data.weekStars=0;data.weekStart=getWeekStart();}
+        if(data.lastPlayed){
+          const diff=Math.floor((new Date()-new Date(data.lastPlayed))/(1000*60*60*24));
+          if(diff>1)data.streak=0;
+        }
+        state[p]={...DEFAULT_STATE(),...data};
+        if(!state[p].failedWords)state[p].failedWords={};
+        if(!state[p].playedDays)state[p].playedDays={};
+        if(!state[p].todayStats)state[p].todayStats={};
+        updateLeaderboard();
+        if(currentPlayer===p)updateHub();
+      });
+    }
+  });
+}
+
+async function saveState(player){
+  if(window.fbSave)await window.fbSave(player,state[player]);
+}
+
+// Partial flush on visibility change (item #6)
+function flushOnExit(){
+  if(!currentPlayer||!currentGameType)return;
+  // Save failed words logged so far, don't save round score
+  saveState(currentPlayer);
+}
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden)flushOnExit();
+});
+
+// ════════════════════════════════════════════════
+// DAILY ROUNDS
+// ════════════════════════════════════════════════
+function roundsPlayedToday(player,gameType){
+  const s=state[player];
+  return(s.dailyRounds&&s.dailyRounds[`${todayKey()}_${gameType}`])||0;
+}
+function incrementRoundsToday(player,gameType){
+  const s=state[player];
+  if(!s.dailyRounds)s.dailyRounds={};
+  const key=`${todayKey()}_${gameType}`;
+  s.dailyRounds[key]=(s.dailyRounds[key]||0)+1;
+}
+
+// ════════════════════════════════════════════════
+// SPACED REPETITION (items #2, #3, #6)
+// ════════════════════════════════════════════════
+function logFailure(word){
+  if(!word||!word.fr)return;
+  const s=state[currentPlayer];
+  if(!s.failedWords)s.failedWords={};
+  const key=`fr:${word.fr}`;
+  const ex=s.failedWords[key]||{fr:word.fr,en:word.en,zh:word.zh||'',topic:word.topic||'',grade:currentGrade,failCount:0,successCount:0,lastFailed:null};
+  ex.failCount++;ex.successCount=0;ex.lastFailed=todayKey();
+  s.failedWords[key]=ex;
+  // Update today stats
+  updateTodayStat('wrong');
+  saveState(currentPlayer); // immediate flush (item #6)
+}
+function logSuccess(word){
+  if(!word||!word.fr)return;
+  const s=state[currentPlayer];
+  if(!s.failedWords)return;
+  const key=`fr:${word.fr}`;
+  if(s.failedWords[key]){
+    s.failedWords[key].successCount++;
+    if(s.failedWords[key].successCount>=2)delete s.failedWords[key];
+  }
+  updateTodayStat('correct');
+}
+function updateTodayStat(type){
+  const s=state[currentPlayer];
+  if(!s.todayStats)s.todayStats={};
+  const k=todayKey();
+  if(!s.todayStats[k])s.todayStats[k]={correct:0,wrong:0,rounds:0,stars:0};
+  s.todayStats[k][type]=(s.todayStats[k][type]||0)+1;
+}
+function getRequeueWords(){
+  const s=state[currentPlayer];
+  if(!s.failedWords)return[];
+  return Object.values(s.failedWords).sort((a,b)=>b.failCount-a.failCount);
+}
+function injectRequeue(pool,grade){
+  const requeue=getRequeueWords().filter(w=>w.grade===grade).slice(0,4);
+  const injected=[];
+  requeue.forEach(w=>{
+    const found=getAllVocab(grade).find(v=>v.fr===w.fr);
+    if(found){injected.push(found);injected.push(found);}
+  });
+  return[...injected,...pool];
+}
+
+// ════════════════════════════════════════════════
+// MOON CHECK
+// ════════════════════════════════════════════════
+function checkMoons(s){
+  const newMoons=[];
+  const allThree=(grade)=>getTopics(grade).every(([k])=>(s.topicStars[`${grade}_${k}`]||0)>=3);
+  if(!s.moons.grade4&&allThree(4)){s.moons.grade4=true;newMoons.push({emoji:'🌙',label:'Grade 4 Moon',msg:'All Grade 4 topics mastered!'});}
+  if(!s.moons.grade5&&allThree(5)){s.moons.grade5=true;newMoons.push({emoji:'🌙',label:'Grade 5 Moon',msg:'All Grade 5 topics mastered!'});}
+  if(!s.moons.super&&s.moons.grade4&&s.moons.grade5){s.moons.super=true;newMoons.push({emoji:'🌟',label:'Super Moon!',msg:'Both grades fully mastered!'});}
+  return newMoons;
+}
+
+// ════════════════════════════════════════════════
+// WEEKLY DOTS (item #11)
+// ════════════════════════════════════════════════
+function renderWeekDots(player){
+  const s=state[player];
+  const container=document.getElementById(`lb-dots-${player}`);
+  if(!container)return;
+  const days=['M','T','W','T','F','S','S'];
+  const now=new Date();
+  const weekStart=new Date();weekStart.setHours(0,0,0,0);weekStart.setDate(now.getDate()-now.getDay()+1);
+  container.innerHTML='';
+  days.forEach((d,i)=>{
+    const dayDate=new Date(weekStart);dayDate.setDate(weekStart.getDate()+i);
+    const key=dayDate.toISOString().slice(0,10);
+    const played=s.playedDays&&s.playedDays[key];
+    const col=document.createElement('div');col.style.textAlign='center';
+    const dot=document.createElement('div');dot.className=`lb-dot${played?` active-${player}`:''}`;
+    const lbl=document.createElement('div');lbl.className='lb-dot-label';lbl.textContent=d;
+    col.appendChild(dot);col.appendChild(lbl);container.appendChild(col);
+  });
+}
+
+// ════════════════════════════════════════════════
+// LEADERBOARD
+// ════════════════════════════════════════════════
+function updateLeaderboard(){
+  ['jenn','jess'].forEach(p=>{
+    const s=state[p];
+    document.getElementById('lb-stars-'+p).textContent=s.totalStars;
+    document.getElementById('lb-streak-'+p).textContent=s.streak;
+    document.getElementById('lb-week-'+p).textContent=s.weekStars;
+    document.getElementById('sel-stars-'+p).textContent='⭐ '+s.totalStars+' stars';
+    document.getElementById('sel-streak-'+p).textContent='🔥 '+s.streak+' day streak';
+    renderWeekDots(p);
+  });
+  const next=new Date();next.setDate(next.getDate()+(7-next.getDay()));
+  document.getElementById('week-reset-msg').textContent='Weekly scores reset every Monday — next reset in '+Math.ceil((next-new Date())/(1000*60*60*24))+' days';
+}
+
+// ════════════════════════════════════════════════
+// NAVIGATION
+// ════════════════════════════════════════════════
+function selectPlayer(p){
+  currentPlayer=p;currentGrade=4;
+  document.getElementById('wall-clock-display').style.display='none';
+  showScreen('hub');updateHub();
+  startSessionClock();
+}
+function goBack(){
+  document.getElementById('wall-clock-display').style.display='block';
+  showScreen('select');updateLeaderboard();
+}
+function exitGame(){showScreen('hub');document.getElementById('hint-panel').classList.remove('show');}
+function showScreen(name){
+  ['select','hub','game'].forEach(n=>document.getElementById(`screen-${n}`).style.display=n===name?'block':'none');
+}
+function setGrade(g){
+  currentGrade=g;
+  [4,5,6,7,8,9,10].forEach(n=>{
+    const el=document.getElementById(`tab-g${n}`);
+    if(el)el.classList.toggle('active',n===g);
+  });
+  updateStarMap();
+}
+
+function updateHub(){
+  const s=state[currentPlayer];
+  const isJenn=currentPlayer==='jenn';
+  document.getElementById('hub-header').className=`hub-header ${currentPlayer}`;
+  document.getElementById('hub-avatar').textContent=isJenn?'🐥':'🦊';
+  document.getElementById('hub-name').textContent=isJenn?'Jenn':'Jess';
+  document.getElementById('hub-stars').textContent=s.totalStars;
+  document.getElementById('hub-streak').textContent=s.streak;
+  document.getElementById('hub-week').textContent=s.weekStars;
+  const moonLine=[s.moons?.grade4?'🌙 G4':'',s.moons?.grade5?'🌙 G5':'',s.moons?.super?'🌟 Super':''].filter(Boolean).join('  ');
+  document.getElementById('hub-moons').textContent=moonLine;
+  // Round badges
+  ['quiz','match','scramble','builder','boss'].forEach(type=>{
+    const btn=document.getElementById(`btn-${type}`);if(!btn)return;
+    const left=DAILY_ROUND_LIMIT-roundsPlayedToday(currentPlayer,type);
+    const badge=btn.querySelector('.round-badge');
+    if(badge){badge.textContent=left>0?`${left} left today`:'✅ Done today';badge.style.color=left>0?'var(--text-muted)':'var(--green)';}
+    btn.style.opacity=left>0?'1':'0.6';
+  });
+  updateStarMap();
+}
+
+function updateStarMap(){
+  const s=state[currentPlayer];
+  const grid=document.getElementById('sm-grid');grid.innerHTML='';
+  getTopics(currentGrade).forEach(([key,topic])=>{
+    const stars=s.topicStars[`${currentGrade}_${key}`]||0;
+    const div=document.createElement('div');
+    div.className=`sm-topic${stars>=3?' mastered':''}`;
+    div.innerHTML=`<span class="sm-topic-icon">${topic.icon}</span><div class="sm-topic-name">${topic.name}</div><div class="sm-stars">${'⭐'.repeat(Math.min(stars,3))}${'☆'.repeat(Math.max(0,3-stars))}</div>`;
+    grid.appendChild(div);
+  });
+}
+
+// ════════════════════════════════════════════════
+// SPEECH (item #4)
+// ════════════════════════════════════════════════
+function speakFrench(text){
+  if(!speechSynth)return;
+  speechSynth.cancel();
+  const utt=new SpeechSynthesisUtterance(text);
+  utt.lang='fr-FR';utt.rate=0.85;
+  speechSynth.speak(utt);
+}
+function speakCurrent(){
+  if(!currentQ)return;
+  const text=currentQ.word?.fr||currentQ.parts?.join(' ')||'';
+  if(text)speakFrench(text);
+}
+function startSpeech(){
+  if(!recognition)return;
+  const btn=document.getElementById('btn-stt');
+  btn.classList.add('listening');btn.textContent='🎤...';
+  recognition.start();
+  recognition.onresult=e=>{
+    const said=e.results[0][0].transcript.toLowerCase().trim();
+    const target=(currentQ?.word?.fr||'').toLowerCase().trim();
+    btn.classList.remove('listening');btn.textContent='🎤';
+    const normalize=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+    if(normalize(said)===normalize(target)){
+      showToast('🎤 Parfait! Great pronunciation!');
+    } else {
+      showToast(`🎤 You said: "${said}" — try again!`,'var(--gold)');
+    }
+  };
+  recognition.onerror=()=>{btn.classList.remove('listening');btn.textContent='🎤';};
+}
+
+// ════════════════════════════════════════════════
+// GAME ENGINE
+// ════════════════════════════════════════════════
+function startGame(type){
+  const played=roundsPlayedToday(currentPlayer,type);
+  if(played>=DAILY_ROUND_LIMIT){showToast(`Come back tomorrow! ${DAILY_ROUND_LIMIT} rounds done today 🌙`,'var(--gold)');return;}
+  currentGameType=type;lives=3;roundScore=0;qIndex=0;
+  questions=buildQuestions(type);
+  showScreen('game');
+  document.getElementById('game-title-bar').textContent={quiz:'🧠 Quick Quiz',match:'🎯 Word Match',scramble:'🔤 Scramble',builder:'💬 Sentence Builder',boss:'⚡ Boss Round'}[type];
+  // Show/hide speech buttons
+  document.getElementById('btn-tts').style.display='inline-block';
+  document.getElementById('btn-stt').style.display=recognition?'inline-block':'none';
+  renderLives();renderScore();
+  document.getElementById('progress-bar').style.width='0%';
+  document.getElementById('hint-panel').classList.remove('show');
+  renderQuestion();
+}
+
+function buildQuestions(type){
+  const base=type==='boss'?[...getAllVocab(4),...getAllVocab(5),...getAllVocab(currentGrade)]:getAllVocab(currentGrade);
+  const vocab=type==='boss'?injectRequeue(base,4).concat(injectRequeue(base,5)):injectRequeue(base,currentGrade);
+  const sents=type==='boss'?[...getSentences(4),...getSentences(5)]:getSentences(currentGrade);
+  const qs=[];
+  if(type==='quiz'||type==='boss'){
+    shuffle(vocab).slice(0,8).forEach(word=>{
+      const distractors=shuffle(vocab.filter(w=>w.en!==word.en)).slice(0,3).map(w=>w.en);
+      qs.push({type:'quiz',prompt:`What does "${word.fr}" mean?`,choices:shuffle([word.en,...distractors]),correct:word.en,hint:word.zh,word});
+    });
+  }
+  if(type==='match'){
+    const pool=shuffle(vocab).slice(0,6);
+    qs.push({type:'match',pairs:pool.map(w=>({fr:w.fr,en:w.en,zh:w.zh,topic:w.topic}))});
+  }
+  if(type==='scramble'){
+    shuffle(vocab).slice(0,6).forEach(word=>{
+      const letters=shuffle(word.fr.replace(/[^a-zàâäéèêëîïôùûüç]/gi,'').split(''));
+      qs.push({type:'scramble',word,letters,hint:`${word.en} — ${word.zh}`});
+    });
+  }
+  if(type==='builder'){
+    shuffle(sents).slice(0,5).forEach(s=>qs.push({type:'builder',...s,shuffled:shuffle(s.parts)}));
+  }
+  if(type==='boss'){
+    shuffle(vocab).slice(0,4).forEach(word=>{
+      const letters=shuffle(word.fr.replace(/[^a-zàâäéèêëîïôùûüç]/gi,'').split(''));
+      qs.push({type:'scramble',word,letters,hint:`${word.en} — ${word.zh}`});
+    });
+    shuffle(sents).slice(0,3).forEach(s=>qs.push({type:'builder',...s,shuffled:shuffle(s.parts)}));
+  }
+  return shuffle(qs);
+}
+
+function renderQuestion(){
+  if(qIndex>=questions.length){endRound();return;}
+  const q=questions[qIndex];currentQ=q;questionStartTime=Date.now();
+  const area=document.getElementById('game-area'),actions=document.getElementById('action-row');
+  area.innerHTML='';actions.innerHTML='';
+  document.getElementById('hint-panel').classList.remove('show');
+  document.getElementById('progress-bar').style.width=(qIndex/questions.length*100)+'%';
+  if(q.type==='quiz')renderQuiz(q,area,actions);
+  else if(q.type==='match')renderMatch(q,area,actions);
+  else if(q.type==='scramble')renderScramble(q,area,actions);
+  else if(q.type==='builder')renderBuilder(q,area,actions);
+}
+
+// ── QUIZ ──
+function renderQuiz(q,area,actions){
+  area.innerHTML=`<div class="question-label">Translate to English</div><div class="question-main">${q.prompt}</div><div class="choices-grid" id="choices-grid"></div>`;
+  const grid=document.getElementById('choices-grid');
+  q.choices.forEach(c=>{
+    const btn=document.createElement('button');btn.className='choice-btn';btn.textContent=c;
+    btn.onclick=()=>handleQuizAnswer(c,q,btn);grid.appendChild(btn);
+  });
+  actions.innerHTML=`<button class="btn-secondary" onclick="showHint()">💡 Hint</button>`;
+  document.getElementById('hint-text').textContent=`🇨🇳 ${q.hint}`;
+  if(q.word?.fr)speakFrench(q.word.fr);
+}
+function handleQuizAnswer(choice,q,btn){
+  document.querySelectorAll('.choice-btn').forEach(b=>b.disabled=true);
+  const correct=choice===q.correct;
+  btn.classList.add(correct?'correct':'wrong');
+  document.querySelectorAll('.choice-btn').forEach(b=>{if(b.textContent===q.correct)b.classList.add('correct');});
+  if(correct){logSuccess(q.word);showFeedback(true,q.word);}
+  else{logFailure(q.word);lives--;renderLives();showFeedback(false,q.word);if(lives<=0){setTimeout(endRound,1500);return;}}
+}
+
+// ── MATCH ──
+function renderMatch(q,area,actions){
+  matchPairs=shuffle(q.pairs);matchMatched=[];matchSelected=null;
+  const frWords=shuffle(matchPairs.map(p=>p.fr));const enWords=shuffle(matchPairs.map(p=>p.en));
+  area.innerHTML=`<div class="question-label">Match French → English</div><div class="match-grid"><div class="match-col" id="fr-col"></div><div class="match-col" id="en-col"></div></div>`;
+  frWords.forEach(w=>{
+    const btn=document.createElement('button');btn.className='word-chip';btn.textContent=w;btn.dataset.side='fr';
+    btn.onclick=()=>handleMatchClick(btn,'fr',w);document.getElementById('fr-col').appendChild(btn);
+  });
+  enWords.forEach(w=>{
+    const btn=document.createElement('button');btn.className='word-chip';btn.textContent=w;btn.dataset.side='en';
+    btn.onclick=()=>handleMatchClick(btn,'en',w);document.getElementById('en-col').appendChild(btn);
+  });
+}
+function handleMatchClick(btn,side,word){
+  if(btn.classList.contains('used'))return;
+  if(!matchSelected){matchSelected={btn,side,word};btn.style.borderColor='var(--french)';return;}
+  if(matchSelected.side===side){matchSelected.btn.style.borderColor='';matchSelected={btn,side,word};btn.style.borderColor='var(--french)';return;}
+  const frW=side==='fr'?word:matchSelected.word,enW=side==='en'?word:matchSelected.word;
+  const pair=matchPairs.find(p=>p.fr===frW&&p.en===enW);
+  if(pair){
+    [btn,matchSelected.btn].forEach(b=>{b.classList.add('used');b.style.borderColor='var(--green)';b.style.color='var(--green)';});
+    matchMatched.push(pair);roundScore+=5;renderScore();
+    showToast(`✅ ${pair.fr} = ${pair.en}!`);
+    if(matchMatched.length===matchPairs.length)setTimeout(()=>showFeedback(true,null,`All ${matchPairs.length} pairs matched! 🎉`),400);
+  } else {
+    [btn,matchSelected.btn].forEach(b=>b.style.borderColor='var(--jenn)');
+    setTimeout(()=>{[btn,matchSelected.btn].forEach(b=>b.style.borderColor='');},600);
+    const failFr=side==='fr'?word:matchSelected.word;
+    const failWord=matchPairs.find(p=>p.fr===failFr);
+    if(failWord)logFailure(failWord);
+    lives--;renderLives();if(lives<=0)setTimeout(endRound,1000);
+  }
+  matchSelected=null;
+}
+
+// ── SCRAMBLE ──
+function renderScramble(q,area,actions){
+  scrambleAnswer=[];scrambleSource=[...q.letters];currentQ=q;
+  area.innerHTML=`<div class="question-label">Unscramble the French word</div><div class="question-hint">Hint: ${q.hint}</div><div class="answer-slots" id="answer-slots"></div><div class="scramble-letters" id="scramble-letters"></div>`;
+  renderScrambleState(q);
+  actions.innerHTML=`<button class="btn-secondary" onclick="clearScramble()">Clear</button><button class="btn-primary" onclick="checkScramble('${q.word.fr}')">Check ✓</button>`;
+  speakFrench(q.word.fr);
+}
+function renderScrambleState(q){
+  const slots=document.getElementById('answer-slots'),pool=document.getElementById('scramble-letters');
+  if(!slots||!pool)return;
+  slots.innerHTML='';pool.innerHTML='';
+  scrambleAnswer.forEach((l,i)=>{
+    const s=document.createElement('div');s.className='answer-slot filled';s.textContent=l;
+    s.onclick=()=>{scrambleSource.push(l);scrambleAnswer.splice(i,1);renderScrambleState(currentQ);};
+    slots.appendChild(s);
+  });
+  scrambleSource.forEach((l,i)=>{
+    const tile=document.createElement('div');tile.className='letter-tile';tile.textContent=l;
+    tile.onclick=()=>{scrambleAnswer.push(l);scrambleSource.splice(i,1);renderScrambleState(currentQ);};
+    pool.appendChild(tile);
+  });
+}
+function clearScramble(){scrambleSource=[...currentQ.letters];scrambleAnswer=[];renderScrambleState(currentQ);}
+function checkScramble(target){
+  const normalize=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  if(normalize(scrambleAnswer.join(''))===normalize(target)){logSuccess(currentQ.word);showFeedback(true,currentQ.word);}
+  else{logFailure(currentQ.word);lives--;renderLives();showFeedback(false,currentQ.word,null,target);if(lives<=0)setTimeout(endRound,1500);}
+}
+
+// ── BUILDER ──
+function renderBuilder(q,area,actions){
+  builtWords=[];currentQ=q;
+  area.innerHTML=`<div class="question-label">Build this sentence in French</div><div class="sentence-target">🇬🇧 ${q.target}<br>🇨🇳 ${q.zh}</div><div class="built-sentence" id="built-sentence"></div><div class="word-bank" id="word-bank"></div>`;
+  renderBuilderState(q);
+  actions.innerHTML=`<button class="btn-secondary" onclick="clearBuilder()">Clear</button><button class="btn-primary" onclick="checkBuilder()">Check ✓</button>`;
+}
+function renderBuilderState(q){
+  const built=document.getElementById('built-sentence'),bank=document.getElementById('word-bank');
+  if(!built||!bank)return;
+  built.innerHTML=builtWords.length?builtWords.map((w,i)=>`<div class="built-word" onclick="removeBuilt(${i})">${w}</div>`).join(''):'<span style="color:var(--text-muted);font-size:.82rem;">Tap words below</span>';
+  bank.innerHTML='';
+  const usedCount={};builtWords.forEach(w=>{usedCount[w]=(usedCount[w]||0)+1;});
+  const seen={};
+  q.shuffled.forEach(w=>{
+    if(seen[w])return;seen[w]=true;
+    const chip=document.createElement('div');
+    const exhausted=(usedCount[w]||0)>=(q.shuffled.filter(x=>x===w).length);
+    chip.className='word-chip'+(exhausted?' used':'');chip.textContent=w;
+    chip.onclick=()=>{if((builtWords.filter(b=>b===w).length)<(q.shuffled.filter(s=>s===w).length)){builtWords.push(w);renderBuilderState(q);}};
+    bank.appendChild(chip);
+  });
+}
+function removeBuilt(i){builtWords.splice(i,1);renderBuilderState(currentQ);}
+function clearBuilder(){builtWords=[];renderBuilderState(currentQ);}
+function checkBuilder(){
+  const answer=builtWords.join(' '),correct=currentQ.parts.join(' ');
+  if(answer===correct){
+    currentQ.parts.forEach(p=>{const f=getAllVocab(currentGrade).find(v=>v.fr===p);if(f)logSuccess(f);});
+    showFeedback(true,null,currentQ.target);
+    speakFrench(correct);
+  } else {
+    // Highlight wrong parts (item #1)
+    const wrongParts=builtWords.filter((w,i)=>w!==currentQ.parts[i]);
+    currentQ.parts.forEach(p=>{const f=getAllVocab(currentGrade).find(v=>v.fr===p);if(f)logFailure(f);});
+    lives--;renderLives();
+    showFeedback(false,null,currentQ.target,correct,wrongParts);
+    if(lives<=0)setTimeout(endRound,1500);
+  }
+}
+
+// ════════════════════════════════════════════════
+// FEEDBACK (item #1)
+// ════════════════════════════════════════════════
+function showHint(){document.getElementById('hint-panel').classList.add('show');}
+
+function showFeedback(correct,word=null,extra='',correctAnswer=null,wrongParts=null){
+  const overlay=document.getElementById('feedback-overlay');
+  const base=correct?(lives===3?15:lives===2?10:5):0;
+  const elapsed=Date.now()-questionStartTime;
+  const speedBonus=(correct&&currentGameType!=='match'&&elapsed<SPEED_BONUS_WINDOW)?Math.round(SPEED_BONUS_MAX*(1-elapsed/SPEED_BONUS_WINDOW)):0;
+  const total=base+speedBonus;
+
+  document.getElementById('fb-emoji').textContent=correct?rand(['🎉','🌟','🥳','✨','🏆','💫']):rand(['😅','💪','🤔','📚']);
+  document.getElementById('fb-title').textContent=correct?rand(['Super!','Excellent!','Parfait!','Bravo!','Fantastique!']):'Almost!';
+  document.getElementById('fb-msg').textContent=word?`${word.fr} = ${word.en} (${word.zh})`:extra||'';
+  document.getElementById('fb-points').textContent=correct?('+'+base+' ⭐'+(speedBonus>0?' + ⚡'+speedBonus+' speed!':'')):'Keep trying!';
+
+  // Correct answer display — bigger font (item #1)
+  const correctDisplay=document.getElementById('fb-correct-display');
+  if(!correct&&(word||correctAnswer)){
+    const displayWord=word?word.fr:correctAnswer;
+    const displaySub=word?`${word.en} · ${word.zh}`:'';
+    let wrongHTML='';
+    if(wrongParts&&wrongParts.length>0){
+      wrongHTML=`<div style="font-size:.75rem;color:var(--text-muted);margin-top:6px;">Wrong parts: ${wrongParts.map(p=>`<span class="wrong-part-highlight">${p}</span>`).join(' ')}</div>`;
+    }
+    correctDisplay.innerHTML=`<div class="correct-answer-display"><div class="correct-answer-label">✓ Correct Answer</div><div class="correct-answer-word">${displayWord}</div>${displaySub?`<div class="correct-answer-sub">${displaySub}</div>`:''}${wrongHTML}</div>`;
+  } else {correctDisplay.innerHTML='';}
+
+  if(correct){roundScore+=total;renderScore();if(speedBonus>=7||base>=15)confetti();}
+  overlay.classList.add('show');
+}
+
+function nextQuestion(){document.getElementById('feedback-overlay').classList.remove('show');qIndex++;renderQuestion();}
+
+// ════════════════════════════════════════════════
+// ROUND END
+// ════════════════════════════════════════════════
+async function endRound(){
+  document.getElementById('feedback-overlay').classList.remove('show');
+  const stars=roundScore>=80?3:roundScore>=40?2:roundScore>=15?1:0;
+  const area=document.getElementById('game-area'),actions=document.getElementById('action-row');
+  if(stars>0)confetti();
+
+  const s=state[currentPlayer];
+  s.totalStars+=roundScore;s.weekStars+=roundScore;
+  incrementRoundsToday(currentPlayer,currentGameType);
+  const roundsLeft=DAILY_ROUND_LIMIT-roundsPlayedToday(currentPlayer,currentGameType);
+
+  // Topic stars — tied to VOCAB TOPIC not game type (item #2)
+  // Award stars to all topics encountered in this round
+  questions.forEach(q=>{
+    if(q.word&&q.word.topic){
+      const tk=`${q.word.grade||currentGrade}_${q.word.topic}`;
+      if(stars>0)s.topicStars[tk]=Math.max(s.topicStars[tk]||0,stars);
+    }
+  });
+
+  // Streak + played days
+  const today=new Date().toDateString();
+  if(s.lastPlayed!==today){s.streak++;s.lastPlayed=today;}
+  if(!s.playedDays)s.playedDays={};s.playedDays[todayKey()]=true;
+
+  // Today stats
+  if(!s.todayStats)s.todayStats={};
+  const tk=todayKey();
+  if(!s.todayStats[tk])s.todayStats[tk]={correct:0,wrong:0,rounds:0,stars:0};
+  s.todayStats[tk].rounds++;s.todayStats[tk].stars+=roundScore;
+
+  // Week reset
+  if(!isSameWeek(s.weekStart)){s.weekStars=roundScore;s.weekStart=getWeekStart();}
+
+  const newMoons=checkMoons(s);
+  let moonHTML='';
+  if(newMoons.length>0){
+    moonHTML=newMoons.map(m=>`<div class="moon-banner"><div class="moon-emoji">${m.emoji}</div><div class="moon-label">${m.label}</div><div class="moon-msg">${m.msg}</div></div>`).join('');
+    confetti();confetti();
+  }
+  const moonTrophies=[s.moons?.grade4?'🌙G4':'',s.moons?.grade5?'🌙G5':'',s.moons?.super?'🌟Super':''].filter(Boolean).join(' ');
+
+  area.innerHTML=`<div class="round-complete">
+    <div class="rc-stars">${'⭐'.repeat(stars)}${'☆'.repeat(3-stars)}</div>
+    <div class="rc-title">${stars===3?'🏆 Perfect!':stars===2?'🎉 Great!':stars===1?'👍 Good Try!':'Keep Going!'}</div>
+    <div class="rc-score">+${roundScore} stars</div>
+    <div class="rc-breakdown">
+      <div class="rc-stat"><span class="rc-stat-val">${roundScore}</span><span class="rc-stat-lbl">Stars</span></div>
+      <div class="rc-stat"><span class="rc-stat-val">${lives}</span><span class="rc-stat-lbl">Lives Left</span></div>
+      <div class="rc-stat"><span class="rc-stat-val">${roundsLeft}</span><span class="rc-stat-lbl">Rounds Left</span></div>
+    </div>
+    ${moonTrophies?`<div style="color:var(--gold);font-size:.85rem;margin-top:6px;">${moonTrophies}</div>`:''}
+    ${moonHTML}
+  </div>`;
+
+  actions.innerHTML=`${roundsLeft>0?`<button class="btn-primary" onclick="startGame('${currentGameType}')">Play Again (${roundsLeft})</button>`:`<button class="btn-primary" style="opacity:.5;cursor:not-allowed;" disabled>Done today! 🌙</button>`}<button class="btn-secondary" onclick="exitGame()">Hub</button>`;
+
+  await saveState(currentPlayer);
+  updateLeaderboard();updateHub();
+}
+
+function renderLives(){document.getElementById('game-lives').textContent='❤️'.repeat(Math.max(0,lives))+'🖤'.repeat(Math.max(0,3-lives));}
+function renderScore(){document.getElementById('game-score').textContent=roundScore;}
+
+// ════════════════════════════════════════════════
+// CONQUER (item #3 — all grades)
+// ════════════════════════════════════════════════
+function showConquer(){
+  const queue=getRequeueWords();
+  const list=document.getElementById('conquer-list');
+  if(queue.length===0){
+    list.innerHTML=`<div class="empty-state">🌟 No words in your queue — you're crushing it!</div>`;
+  } else {
+    list.innerHTML=queue.slice(0,12).map(w=>{
+      const prog=Math.min(w.successCount/2,1);
+      return `<div class="conquer-word">
+        <div class="conquer-fr">${w.fr}</div>
+        <div class="conquer-right"><div class="conquer-en">${w.en}</div><div class="conquer-zh">${w.zh}</div></div>
+        <div><div class="conquer-prog"><div class="conquer-prog-fill" style="width:${Math.round(prog*100)}%"></div></div></div>
+        <button onclick="speakFrench('${w.fr}')" style="background:none;border:none;cursor:pointer;font-size:1rem;">🔊</button>
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('conquer-overlay').classList.add('show');
+}
+
+// ════════════════════════════════════════════════
+// DAILY STUDY (item #10)
+// ════════════════════════════════════════════════
+let currentStudySet=1;
+function showStudy(){
+  currentStudySet=1;
+  document.querySelectorAll('.study-set-tab').forEach((t,i)=>t.classList.toggle('active',i===0));
+  renderStudySet(1);
+  document.getElementById('study-overlay').classList.add('show');
+}
+function showStudySet(n){
+  currentStudySet=n;
+  document.querySelectorAll('.study-set-tab').forEach((t,i)=>t.classList.toggle('active',i===n-1));
+  renderStudySet(n);
+}
+function renderStudySet(n){
+  const content=document.getElementById('study-content');
+  // Seed daily sets from date so they're consistent all day
+  const seed=parseInt(todayKey().replace(/-/g,''));
+  const seededShuffle=(arr,s)=>{let a=[...arr];for(let i=a.length-1;i>0;i--){const j=(s+i)%a.length;[a[i],a[j]]=[a[j],a[i]];}return a;};
+
+  if(n===1){
+    // Set 1 — shared vocab cards
+    const vocab=seededShuffle(getAllVocab(currentGrade),seed).slice(0,9);
+    content.innerHTML=`<div class="study-grid">${vocab.map(w=>`
+      <div class="study-mini">
+        <div class="study-mini-fr">${w.fr}</div>
+        <div class="study-mini-en">${w.en}</div>
+        <div class="study-mini-zh">${w.zh}</div>
+        <button onclick="speakFrench('${w.fr}')" style="background:none;border:none;cursor:pointer;margin-top:4px;">🔊</button>
+      </div>`).join('')}</div>`;
+  } else if(n===2){
+    // Set 2 — shared sentence patterns
+    const sents=seededShuffle(getSentences(currentGrade),seed+1).slice(0,4);
+    content.innerHTML=sents.map(s=>`
+      <div class="study-card">
+        <div class="study-card-fr">${s.parts.join(' ')}</div>
+        <div class="study-card-en">${s.target}</div>
+        <div class="study-card-zh">${s.zh}</div>
+        <button onclick="speakFrench('${s.parts.join(' ')}')" style="background:none;border:none;cursor:pointer;margin-top:8px;font-size:1.2rem;">🔊</button>
+      </div>`).join('');
+  } else {
+    // Set 3 — personalized: failed words first
+    const queue=getRequeueWords().slice(0,8);
+    if(queue.length===0){
+      const vocab=seededShuffle(getAllVocab(currentGrade),seed+2).slice(0,6);
+      content.innerHTML=`<div style="text-align:center;color:var(--green);font-size:.85rem;margin-bottom:10px;">✅ No words in your practice queue — great work!</div><div class="study-grid">${vocab.map(w=>`<div class="study-mini"><div class="study-mini-fr">${w.fr}</div><div class="study-mini-en">${w.en}</div><div class="study-mini-zh">${w.zh}</div></div>`).join('')}</div>`;
+    } else {
+      content.innerHTML=`<div style="text-align:center;color:var(--purple);font-size:.82rem;margin-bottom:10px;">💪 Your personal practice words — let's review them!</div>`+
+        queue.map(w=>`<div class="study-card" style="padding:14px;">
+          <div class="study-card-fr">${w.fr}</div>
+          <div class="study-card-en">${w.en}</div>
+          <div class="study-card-zh">${w.zh}</div>
+          <button onclick="speakFrench('${w.fr}')" style="background:none;border:none;cursor:pointer;margin-top:6px;">🔊</button>
+        </div>`).join('');
+    }
+  }
+}
+
+// ════════════════════════════════════════════════
+// TRAINING ZONE (item #8)
+// ════════════════════════════════════════════════
+let trainIndex=0, trainWords=[], trainInput='';
+function showTraining(){
+  trainWords=getRequeueWords();
+  trainIndex=0;
+  if(trainWords.length===0){
+    document.getElementById('train-content').innerHTML=`<div class="empty-state">🌟 No words to train on yet! Play some games first.</div>`;
+    document.getElementById('train-actions').innerHTML=`<button class="btn-secondary" onclick="closeOverlay('train-overlay')">Close</button>`;
+  } else {
+    renderTrainCard();
+  }
+  document.getElementById('train-overlay').classList.add('show');
+}
+function renderTrainCard(){
+  if(trainIndex>=trainWords.length){
+    document.getElementById('train-content').innerHTML=`<div class="empty-state">🎉 You trained all your words! Amazing work!</div>`;
+    document.getElementById('train-actions').innerHTML=`<button class="btn-primary" onclick="closeOverlay('train-overlay')">Done!</button>`;
+    return;
+  }
+  const w=trainWords[trainIndex];
+  // Build a fill-in-the-blank sentence using the word
+  const vocabItem=getAllVocab(w.grade||currentGrade).find(v=>v.fr===w.fr)||w;
+  const sents=getSentences(w.grade||currentGrade);
+  const matchSent=sents.find(s=>s.parts.includes(w.fr));
+  let drillHTML='';
+  if(matchSent){
+    const blanked=matchSent.parts.map(p=>p===w.fr?'______':p).join(' ');
+    drillHTML=`<div style="font-size:.82rem;color:var(--text-muted);margin-bottom:8px;">🇬🇧 ${matchSent.target}</div><div style="font-family:'Fredoka One',cursive;font-size:1.1rem;margin-bottom:12px;">${blanked}</div>`;
+  } else {
+    drillHTML=`<div style="font-size:.82rem;color:var(--text-muted);margin-bottom:8px;">Translate this word:</div><div style="font-family:'Fredoka One',cursive;font-size:1.4rem;margin-bottom:12px;color:var(--french);">${w.en}</div>`;
+  }
+  document.getElementById('train-content').innerHTML=`
+    <div class="train-card">
+      ${drillHTML}
+      <input class="train-input" id="train-input" placeholder="Type in French..." oninput="trainInput=this.value">
+      <div style="font-size:.7rem;color:var(--text-muted);margin-top:8px;">${trainIndex+1} / ${trainWords.length}</div>
+    </div>`;
+  document.getElementById('train-actions').innerHTML=`
+    <button class="btn-secondary" onclick="revealTrain()">Reveal</button>
+    <button class="btn-primary" onclick="checkTrain('${w.fr}')">Check ✓</button>
+    <button onclick="speakFrench('${w.fr}')" class="btn-speak">🔊</button>`;
+  setTimeout(()=>document.getElementById('train-input')?.focus(),100);
+}
+function checkTrain(target){
+  const answer=(document.getElementById('train-input')?.value||'').trim();
+  const normalize=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  const correct=normalize(answer)===normalize(target);
+  if(correct){showToast('✅ Correct! Moving on...');trainIndex++;setTimeout(renderTrainCard,800);}
+  else{showToast(`❌ Answer: ${target}`,'var(--jenn)');setTimeout(()=>{trainIndex++;renderTrainCard();},1500);}
+}
+function revealTrain(){
+  const w=trainWords[trainIndex];
+  showToast(`💡 Answer: ${w.fr}`,'var(--gold)');
+  setTimeout(()=>{trainIndex++;renderTrainCard();},1800);
+}
+
+// ════════════════════════════════════════════════
+// PARENT SUMMARY (item #7 — side by side)
+// ════════════════════════════════════════════════
+function showParentSummary(){
+  const grid=document.getElementById('parent-stats-grid');
+  const wrongList=document.getElementById('parent-wrong-list');
+  grid.innerHTML='';wrongList.innerHTML='';
+  const today=todayKey();
+
+  ['jenn','jess'].forEach(p=>{
+    const s=state[p];
+    const ts=s.todayStats?.[today]||{correct:0,wrong:0,rounds:0,stars:0};
+    const total=ts.correct+ts.wrong;
+    const acc=total>0?Math.round(ts.correct/total*100):0;
+    const queue=Object.values(s.failedWords||{}).length;
+    const color=p==='jenn'?'var(--jenn)':'var(--jess)';
+    const avatar=p==='jenn'?'🐥':'🦊';
+    grid.innerHTML+=`<div class="parent-player-card">
+      <div class="parent-player-title" style="color:${color};">${avatar} ${p.charAt(0).toUpperCase()+p.slice(1)}</div>
+      <div class="parent-stat-row"><span class="parent-stat-label">✅ Correct</span><span class="parent-stat-val" style="color:var(--green);">${ts.correct} / ${total}</span></div>
+      <div class="parent-stat-row"><span class="parent-stat-label">📊 Accuracy</span><span class="parent-stat-val">${acc}%</span></div>
+      <div class="parent-stat-row"><span class="parent-stat-label">🎮 Rounds</span><span class="parent-stat-val">${ts.rounds}</span></div>
+      <div class="parent-stat-row"><span class="parent-stat-label">⭐ Stars Today</span><span class="parent-stat-val" style="color:var(--gold);">${ts.stars}</span></div>
+      <div class="parent-stat-row"><span class="parent-stat-label">🔥 Streak</span><span class="parent-stat-val">${s.streak} days</span></div>
+      <div class="parent-stat-row"><span class="parent-stat-label">💪 In Queue</span><span class="parent-stat-val">${queue} words</span></div>
+    </div>`;
+  });
+
+  // Wrong words combined
+  ['jenn','jess'].forEach(p=>{
+    const s=state[p];
+    const todayWrong=Object.values(s.failedWords||{}).filter(w=>w.lastFailed===today).sort((a,b)=>b.failCount-a.failCount);
+    const color=p==='jenn'?'var(--jenn)':'var(--jess)';
+    const avatar=p==='jenn'?'🐥':'🦊';
+    if(todayWrong.length>0){
+      wrongList.innerHTML+=`<div class="parent-wrong-title" style="color:${color};">${avatar} ${p.charAt(0).toUpperCase()+p.slice(1)} — missed today</div>`;
+      wrongList.innerHTML+=todayWrong.map(w=>`<div class="parent-row"><div class="parent-fr">${w.fr}</div><div class="parent-en">${w.en}</div><div class="parent-zh">${w.zh}</div><div class="parent-fails">✗${w.failCount}</div></div>`).join('');
+    } else {
+      wrongList.innerHTML+=`<div class="parent-wrong-title" style="color:${color};">${avatar} ${p.charAt(0).toUpperCase()+p.slice(1)}</div><div class="empty-state" style="padding:8px;">✅ No misses today!</div>`;
+    }
+  });
+
+  document.getElementById('parent-overlay').classList.add('show');
+}
+
+// ════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════
+
+// Wall clock — always running on select screen
+function startWallClock(){
+  const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function tick(){
+    const now=new Date();
+    let h=now.getHours(),m=now.getMinutes();
+    const ampm=h>=12?'PM':'AM';
+    h=h%12||12;
+    document.getElementById('wall-clock-time').textContent=h+':'+(m<10?'0':'')+m+' '+ampm;
+    document.getElementById('wall-clock-date').textContent=days[now.getDay()]+', '+months[now.getMonth()]+' '+now.getDate();
+  }
+  tick();
+  setInterval(tick,1000);
+}
+
+showScreen('select');
+initListeners();
+startWallClock();
+
+Object.assign(window, {
+  selectPlayer, goBack, exitGame, setGrade, showConquer, showStudy, showStudySet,
+  showTraining, showParentSummary, startGame, nextQuestion, showHint, speakCurrent,
+  startSpeech, speakFrench, closeOverlay, clearScramble, checkScramble,
+  clearBuilder, checkBuilder, removeBuilt, handleQuizAnswer, handleMatchClick,
+  checkTrain, revealTrain, renderTrainCard
+});
+</script>
+</body>
+</html>
