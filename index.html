@@ -67,8 +67,11 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .game-title{font-family:'Fredoka One',cursive;font-size:clamp(2rem,6vw,3.5rem);background:linear-gradient(135deg,#e8445a,#f59e0b,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
 .game-subtitle{color:var(--text-muted);font-size:.85rem;margin-top:4px;font-weight:600;}
 
-/* SESSION CLOCK — unified display in hub */
-.session-clock{display:flex;justify-content:center;align-items:center;gap:12px;padding:10px 16px;background:var(--surface);border-radius:14px;margin-bottom:12px;flex-wrap:wrap;}
+/* SESSION CLOCK — unified display in hub (Back + clock + play time + countdown) */
+.session-clock{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;background:var(--surface);border-radius:14px;margin-bottom:12px;flex-wrap:wrap;}
+.session-clock .session-clock-back{flex-shrink:0;}
+.session-clock .session-clock-center{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px 12px;flex:1;min-width:0;}
+.session-clock .back-btn{margin-bottom:0;padding:6px 12px;font-size:.78rem;}
 .clock-wall-hub{font-family:'Fredoka One',cursive;font-size:1.15rem;color:var(--text);letter-spacing:1px;}
 .session-game-time{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 12px;background:rgba(79,70,229,.12);border:1px solid rgba(79,70,229,.35);border-radius:12px;min-width:100px;}
 .session-game-time .sgt-label{font-size:.58rem;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;}
@@ -154,7 +157,9 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .unlock-banner{background:linear-gradient(90deg,rgba(245,158,11,.25),rgba(79,70,229,.2));border:2px solid var(--gold);border-radius:16px;padding:12px 16px;text-align:center;margin-bottom:10px;font-family:'Fredoka One',cursive;font-size:1.05rem;color:var(--gold);}
 .hub-profile-card{background:var(--surface);border-radius:18px;padding:12px 14px;border:1px solid var(--surface2);width:100%;max-width:none;align-self:stretch;}
 .hub-profile-card .hub-p-title{font-family:'Fredoka One',cursive;font-size:.95rem;color:var(--gold);margin-bottom:10px;text-align:left;}
-.hub-profile-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:.82rem;}
+.hub-today-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 18px;padding-top:2px;border-top:1px solid rgba(255,255,255,.08);}
+.hub-today-grid .hub-profile-row{border-bottom:none;padding:4px 0;}
+.hub-profile-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:.82rem;}
 .hub-profile-row:last-child{border-bottom:none;}
 .hub-p-label{color:var(--text-muted);font-weight:700;}
 .hub-p-val{font-weight:800;color:var(--text);}
@@ -551,17 +556,21 @@ button,input{touch-action:manipulation;}
 
   <!-- ── HUB SCREEN ── -->
   <div id="screen-hub">
-    <button class="back-btn" onclick="goBack()">← Back</button>
-    <!-- Countdown + wall clock — visible after player select -->
+    <!-- Back + countdown + wall clock — visible after player select -->
     <div class="session-clock" id="session-clock" style="display:none;margin-bottom:12px;">
-      <div class="clock-wall-hub" id="clock-wall">12:00 PM</div>
-      <div class="clock-divider">|</div>
-      <div class="session-game-time" id="session-game-time-box" title="Time in this app today (French Adventure)">
-        <span class="sgt-label">French_game</span>
-        <span class="sgt-val" id="hub-playtime-val">0:00</span>
+      <div class="session-clock-back">
+        <button type="button" class="back-btn" onclick="goBack()">← Back</button>
       </div>
-      <div class="clock-divider">|</div>
-      <div class="countdown-display" id="countdown-display">⏳ 20:00</div>
+      <div class="session-clock-center">
+        <div class="clock-wall-hub" id="clock-wall">12:00 PM</div>
+        <div class="clock-divider">|</div>
+        <div class="session-game-time" id="session-game-time-box" title="Time in this app today (French Adventure)">
+          <span class="sgt-label">French_game</span>
+          <span class="sgt-val" id="hub-playtime-val">0:00</span>
+        </div>
+        <div class="clock-divider">|</div>
+        <div class="countdown-display" id="countdown-display">⏳ 20:00</div>
+      </div>
     </div>
     <div class="hub-header" id="hub-header">
       <div class="hub-top-band">
@@ -586,11 +595,12 @@ button,input{touch-action:manipulation;}
       <div class="hub-today-panel" id="hub-today-panel">
         <div class="hub-profile-card" id="hub-profile-card">
           <div class="hub-p-title">📋 Today</div>
-          <div class="hub-profile-row"><span class="hub-p-label">⭐ Stars (today)</span><span class="hub-p-val" id="hub-day-stars-val">0</span></div>
-          <div class="hub-profile-row"><span class="hub-p-label">🎮 Rounds (mini-games)</span><span class="hub-p-val" id="hub-rounds-today-val">0</span></div>
-          <div class="hub-profile-row"><span class="hub-p-label">📊 Accuracy (today)</span><span class="hub-p-val" id="hub-acc-today-val">—</span></div>
-          <div class="hub-profile-row"><span class="hub-p-label">🏋️ Drill</span><span class="hub-p-val" id="hub-drill-val">—</span></div>
-          <div class="hub-profile-row hub-profile-time"><span class="hub-p-label">⏱ Time today</span><span class="hub-p-val" id="hub-time-today-val">0:00</span></div>
+          <div class="hub-today-grid">
+            <div class="hub-profile-row"><span class="hub-p-label">⭐ Stars (today)</span><span class="hub-p-val" id="hub-day-stars-val">0</span></div>
+            <div class="hub-profile-row"><span class="hub-p-label">🎮 Rounds</span><span class="hub-p-val" id="hub-rounds-today-val">0</span></div>
+            <div class="hub-profile-row"><span class="hub-p-label">📊 Accuracy</span><span class="hub-p-val" id="hub-acc-today-val">—</span></div>
+            <div class="hub-profile-row"><span class="hub-p-label">🏋️ Drill</span><span class="hub-p-val" id="hub-drill-val">—</span></div>
+          </div>
         </div>
         <button type="button" class="hub-daily-summary-btn" id="hub-daily-summary-btn" onclick="toggleHubDailySummary()" aria-expanded="false">
           <span>More: grade accuracy &amp; rules</span><span class="chev" id="hub-daily-chev">▼</span>
@@ -1958,8 +1968,6 @@ function updateHub(){
   if(ds) ds.textContent=String(dayStars);
   const dr=document.getElementById('hub-drill-val');
   if(dr) dr.textContent=drillDone?'✅ Done':'—';
-  const tt=document.getElementById('hub-time-today-val');
-  if(tt) tt.textContent=formatPlayTime(rawMs,true);
   const rt=document.getElementById('hub-rounds-today-val');
   if(rt) rt.textContent=String(ts?(ts.rounds||0):0);
   const correctPeek=ts?(ts.correct||0):0;
