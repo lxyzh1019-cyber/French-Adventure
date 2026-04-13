@@ -129,7 +129,11 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .hub-stat{font-size:.78rem;color:var(--text-muted);font-weight:700;}
 .hub-stat span{color:var(--text);}
 .hub-moons{font-size:.82rem;color:var(--gold);font-weight:700;}
-.hub-slogan{font-size:clamp(1.05rem,3vw,1.3rem);color:var(--gold);font-style:italic;margin-top:4px;padding:12px 14px;line-height:1.45;font-weight:700;background:rgba(245,158,11,.12);border:2px solid rgba(245,158,11,.35);border-radius:16px;width:100%;}
+.hub-slogan-wrap{width:100%;display:flex;flex-direction:column;gap:8px;margin-top:4px;}
+.hub-slogan{font-size:clamp(1.05rem,3vw,1.3rem);color:var(--gold);font-style:italic;padding:12px 14px;line-height:1.45;font-weight:700;background:rgba(245,158,11,.12);border:2px solid rgba(245,158,11,.35);border-radius:16px;width:100%;}
+.hub-slogan-actions{display:flex;justify-content:flex-end;gap:8px;}
+.hub-slogan-btn{background:rgba(79,70,229,.18);border:2px solid rgba(79,70,229,.45);border-radius:10px;padding:6px 10px;font-family:'Nunito',sans-serif;font-size:.75rem;font-weight:800;color:var(--text);cursor:pointer;}
+.hub-slogan-btn:hover{background:rgba(79,70,229,.28);}
 .hub-name-row{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:10px;width:100%;}
 .hub-rules-mini{font-size:.62rem;color:var(--text-muted);text-align:left;flex:0 0 auto;max-width:min(300px,42vw);padding:8px 10px;background:rgba(0,0,0,.2);border-radius:12px;line-height:1.35;border:1px solid var(--surface2);}
 .hub-rules-mini b{color:var(--gold);font-size:.65rem;display:block;margin-bottom:4px;}
@@ -577,7 +581,12 @@ button,input{touch-action:manipulation;}
           <div class="hub-moons" id="hub-moons"></div>
         </div>
       </div>
-      <div class="hub-slogan" id="hub-slogan"></div>
+      <div class="hub-slogan-wrap">
+        <div class="hub-slogan" id="hub-slogan"></div>
+        <div class="hub-slogan-actions" id="hub-slogan-actions" style="display:none;">
+          <button type="button" class="hub-slogan-btn" id="hub-slogan-translate-btn" onclick="toggleSloganEnglish()">Translate to English</button>
+        </div>
+      </div>
       <div class="hub-profile-card" id="hub-profile-card">
         <div class="hub-p-title">📋 Today</div>
         <div class="hub-profile-row"><span class="hub-p-label">⭐ Star points (today)</span><span class="hub-p-val" id="hub-day-stars-val">0</span></div>
@@ -1818,10 +1827,38 @@ const DAILY_SLOGANS = [
   "You are a French superstar in training! ⭐",
   "Courage! Tu peux le faire! 💥"
 ];
+const DAILY_SLOGAN_EN = [
+  "Little by little, the bird builds its nest! 🐦",
+  "Every word you learn is a superpower! 💪",
+  "The more you practice, the stronger you get! 🌟",
+  "Champions train every day — that's you! 🏆",
+  "A new day, a new chance! ✨",
+  "Learning French is fun — keep going! 🎉",
+  "Progress, not perfection — you've got this! 🚀",
+  "Each day is a new adventure! 🌈",
+  "Learn bravely and improve every day! Bravo! 🥳",
+  "The more you practice, the luckier you get! 🍀",
+  "Excellent day to learn! 📚",
+  "Today's effort is tomorrow's success! 💫",
+  "You are a French superstar in training! ⭐",
+  "Courage! You can do it! 💥"
+];
+let sloganShowEnglish = false;
 
 function getDailySlogan(){
   const dayNum = parseInt(todayKey().replace(/-/g,''));
   return DAILY_SLOGANS[dayNum % DAILY_SLOGANS.length];
+}
+function getDailySloganEnglish(){
+  const dayNum = parseInt(todayKey().replace(/-/g,''));
+  return DAILY_SLOGAN_EN[dayNum % DAILY_SLOGAN_EN.length];
+}
+function isEnglishLikeText(text){
+  return /^[A-Za-z0-9\s.,!?'"():;+\-—/&%🌟✨💥💫🍀📚🚀🏆💪🐦🎉🥳⭐]+$/.test(text||'');
+}
+function toggleSloganTranslation(){
+  sloganShowEnglish=!sloganShowEnglish;
+  if(currentPlayer) updateHub();
 }
 
 function renderHubDailySummaryInner(s, tk){
@@ -1895,7 +1932,18 @@ function updateHub(){
   document.getElementById('hub-week').textContent=s.weekStars;
   const moonLine=[4,5].map(g=>s.moons&&s.moons['grade'+g]?'🌙G'+g:'').filter(Boolean).join('  ')+(s.moons&&s.moons.super?'  🌟Super':'');
   document.getElementById('hub-moons').textContent=moonLine;
-  document.getElementById('hub-slogan').textContent=getDailySlogan();
+  const sloganText=getDailySlogan();
+  const sloganEl=document.getElementById('hub-slogan');
+  if(sloganEl){
+    const isEnglish=isEnglishLikeText(sloganText);
+    const shown=sloganShowEnglish&&!isEnglish?getDailySloganEnglish():sloganText;
+    let html=shown;
+    if(!isEnglish){
+      const btnLabel=sloganShowEnglish?'Show original':'Translate to English';
+      html += '<div style="margin-top:8px;"><button type="button" class="btn-secondary" onclick="toggleSloganTranslation()" style="padding:6px 10px;font-size:.72rem;">'+btnLabel+'</button></div>';
+    }
+    sloganEl.innerHTML=html;
+  }
   // Round badges
   ['quiz','match','scramble','builder','boss','listen'].forEach(type=>{
     const btn=document.getElementById('btn-'+type);if(!btn)return;
