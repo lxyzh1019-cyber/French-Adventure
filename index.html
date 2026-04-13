@@ -590,10 +590,10 @@ button,input{touch-action:manipulation;}
         <div class="hds-title">📆 Daily summary</div>
         <div id="hub-daily-summary-inner"></div>
       </div>
-      <p class="hub-gate-note" id="hub-gate-note"><strong>Mini-games:</strong> you can finish up to <strong>2 rounds per game type</strong> each day — that is separate from unlocking grades.<br><strong>Unlock the next grade:</strong> earn the 🌙 Moon on the grade below, then show <strong>≥95% accuracy</strong> on that same grade on <strong>two days in a row</strong> (we use your answers from those days). <strong>G6–G10</strong> are shown locked until new levels are added.</p>
+      <p class="hub-gate-note" id="hub-gate-note"><strong>Mini-games:</strong> you can finish up to <strong>2 rounds per game type</strong> each day — that is separate from unlocking grades.<br><strong>Unlock the next grade:</strong> earn the 🌙 Moon on the grade below, then show <strong>≥95% accuracy</strong> on that same grade on <strong>two days in a row</strong> (we use your answers from those days).</p>
     </div>
 
-    <p class="hub-grade-bar-note" id="hub-grade-bar-note">Play: <strong>G4–G5</strong>. Higher grades: same rule — master the grade before (🌙 + 2 days ≥95%) — coming when unlocked in the app.</p>
+    <p class="hub-grade-bar-note" id="hub-grade-bar-note">Play: <strong>G4–G10</strong>. Higher grades unlock with the same rule — master the grade before (🌙 + 2 days ≥95%).</p>
     <div class="grade-tabs" id="grade-tabs">
       <button type="button" class="grade-tab active" id="tab-g4" onclick="setGrade(4)">G4</button>
       <button type="button" class="grade-tab" id="tab-g5" onclick="setGrade(5)">G5</button>
@@ -732,6 +732,13 @@ button,input{touch-action:manipulation;}
         <button class="btn-clear-prev" onclick="clearProgress('prev')">🗂 Old Days</button>
         <button onclick="clearProgress('all')" style="background:rgba(232,68,90,.15);border:2px solid var(--jenn);border-radius:12px;padding:9px 14px;font-family:'Nunito',sans-serif;font-weight:800;font-size:.8rem;color:var(--jenn);cursor:pointer;touch-action:manipulation;">🔄 Reset All</button>
       </div>
+      <div class="parent-pwd-row" style="justify-content:center;">
+        <button type="button" class="btn-secondary" onclick="toggleRecoveryFreeze()" style="padding:8px 12px;font-size:.74rem;">🛡 Freeze cloud writes</button>
+        <button type="button" class="btn-secondary" onclick="exportRecoveryBackup()" style="padding:8px 12px;font-size:.74rem;">💾 Export backup JSON</button>
+        <button type="button" class="btn-secondary" onclick="promptRecoveryImport()" style="padding:8px 12px;font-size:.74rem;">♻️ Import recovery JSON</button>
+      </div>
+      <div id="recovery-msg" style="font-size:.72rem;color:var(--text-muted);text-align:center;min-height:20px;"></div>
+      <input id="recovery-import-file" type="file" accept="application/json" style="display:none;" onchange="handleRecoveryImport(event)">
       <div class="pwd-msg" id="pwd-msg"></div>
       <div style="font-size:.7rem;color:var(--text-muted);margin-top:4px;">
         <b>Today:</b> clears today's stats, rounds, topic stars, missed words<br>
@@ -1071,7 +1078,8 @@ const DEFAULT_STATE = () => ({
   parentSettings:defaultParentSettings(),
   gradeUnlocked:defaultGradeUnlocked(), gradeStats:{},
   tier1Conquered:false, tier2Conquered:false, tier3Conquered:false,
-  tier1ParentOpen:false, tier2ParentOpen:false, tier3ParentOpen:false
+  tier1ParentOpen:false, tier2ParentOpen:false, tier3ParentOpen:false,
+  lastUpdatedAt:0
 });
 
 let state = {jenn:DEFAULT_STATE(), jess:DEFAULT_STATE()};
@@ -1087,14 +1095,16 @@ let matchSelected=null, matchPairs=[], matchMatched=[];
 let questionStartTime=0;
 const SPEED_BONUS_WINDOW=8000, SPEED_BONUS_MAX=10, DAILY_ROUND_LIMIT=2;
 const DAILY_PLAY_CAP_MS = 30 * 60 * 1000; // child-facing cap; full time with parent unlock
-/** Only G4–G5 playable; higher grades reserved for future curriculum drops */
-const MAX_PLAYABLE_GRADE = 5;
+/** Grades unlock progressively from G4 up to G10. */
+const MAX_PLAYABLE_GRADE = 10;
 
 let summaryMode = 'weekly';
 let dailySummaryOffset = 0;
 let pendingPlayer = null;
 let sessionWeekdayBypass = false;
 let sessionFullTimeReveal = false;
+let recoveryWriteFreeze = false;
+let listenersInitialized = false;
 let playTimeInterval = null;
 let lastPlayTimeMark = 0;
 
@@ -1249,6 +1259,13 @@ function consecutiveQualifyingDays(s, grade){
 }
 function gateProgressLabel(s, grade){
   return Math.min(consecutiveQualifyingDays(s, grade), 2) + '/2';
+}
+function latestGateGrade(s){
+  if(!s || !s.gradeUnlocked) return 4;
+  for(let g = 4; g < 10; g++){
+    if(!s.gradeUnlocked[g + 1]) return g;
+  }
+  return 10;
 }
 function isGradePlayable(s, grade){
   if(grade > MAX_PLAYABLE_GRADE) return false;
@@ -1462,6 +1479,12 @@ function flushPlayTimeTick(doSave){
 function applyPlayerData(p, data){
   if(!data) return;
   if(currentPlayer===p && currentGameType) return; // guard mid-round
+  const incomingUpdatedAt = Number(data.lastUpdatedAt || 0);
+  const localUpdatedAt = Number(state[p]?.lastUpdatedAt || 0);
+  if(incomingUpdatedAt && localUpdatedAt && incomingUpdatedAt < localUpdatedAt){
+    console.warn('Skipping stale snapshot for', p, incomingUpdatedAt, localUpdatedAt);
+    return;
+  }
   // Week reset check
   if(!isSameWeek(data.weekStart)){
     if(!data.weeklyHistory) data.weeklyHistory=[];
@@ -1499,6 +1522,7 @@ function applyPlayerData(p, data){
   if(!state[p].playedDays) state[p].playedDays={};
   if(!state[p].todayStats) state[p].todayStats={};
   if(!state[p].weeklyHistory) state[p].weeklyHistory=[];
+  if(!state[p].lastUpdatedAt) state[p].lastUpdatedAt=0;
   if(!state[p].dailyRounds) state[p].dailyRounds={};
   if(!state[p].dailyTimeMs) state[p].dailyTimeMs={};
   if(!state[p].gradeUnlocked) state[p].gradeUnlocked=defaultGradeUnlocked();
@@ -1526,15 +1550,26 @@ function applyPlayerData(p, data){
 }
 
 function initListeners(){
+  if(listenersInitialized)return;
+  if(!window.fbInit)return;
+  listenersInitialized = true;
   ['jenn','jess'].forEach(p=>{
     window.fbInit(p, data => applyPlayerData(p, data));
   });
 }
 
-window.addEventListener('fbReady', initListeners);
+window.addEventListener('fbReady', initListeners, { once:true });
+if(window.fbInit) initListeners();
 
 async function saveState(player){
-  if(window.fbSave)await window.fbSave(player,state[player]);
+  if(recoveryWriteFreeze){
+    console.warn('Recovery freeze enabled, skipping save for', player);
+    return;
+  }
+  if(window.fbSave){
+    state[player].lastUpdatedAt = Date.now();
+    await window.fbSave(player,state[player]);
+  }
 }
 
 // Partial flush on visibility change (item #6)
@@ -1728,7 +1763,7 @@ function showScreen(name){
 }
 function setGrade(g){
   if(g > MAX_PLAYABLE_GRADE){
-    showToast('🔒 G'+g+' — unlock the grade before: 🌙 Moon on G'+(g-1)+' + 2 days in a row at ≥95% on G'+(g-1)+'. This grade opens when it is added to the app.','var(--gold)');
+    showToast('🔒 G'+g+' — unlock the grade before: 🌙 Moon on G'+(g-1)+' + 2 days in a row at ≥95% on G'+(g-1)+'.','var(--gold)');
     return;
   }
   const s=state[currentPlayer];
@@ -1750,10 +1785,10 @@ function setGrade(g){
 function refreshGradeTabs(){
   const s=state[currentPlayer];
   if(!s)return;
-  [4,5].forEach(n=>{
+  [4,5,6,7,8,9,10].forEach(n=>{
     const el=document.getElementById('tab-g'+n);
     if(!el)return;
-    el.classList.remove('grade-tab-future');
+    el.classList.toggle('grade-tab-future', n>=6);
     const unlocked=s.gradeUnlocked&&s.gradeUnlocked[n];
     const play=isGradePlayable(s,n);
     el.classList.toggle('grade-locked',!play);
@@ -1764,14 +1799,6 @@ function refreshGradeTabs(){
     } else {
       el.textContent='G'+n;
     }
-  });
-  [6,7,8,9,10].forEach(n=>{
-    const el=document.getElementById('tab-g'+n);
-    if(!el)return;
-    el.innerHTML='<span class="grade-lock-top" aria-hidden="true">🔒</span><span class="grade-num">G'+n+'</span>';
-    el.classList.add('grade-tab-future');
-    el.classList.add('grade-locked');
-    el.title='Locked — master G'+(n-1)+' (🌙 all topics at 3⭐ + 2 days ≥95%). Opens when this grade is released.';
   });
 }
 
@@ -1806,17 +1833,24 @@ function renderHubDailySummaryInner(s, tk){
   const rounds=ts?(ts.rounds||0):0;
   const total=correct+wrong;
   const accAll=total>=5?Math.round(correct/total*100)+'%':'— (need 5+ tries)';
+  const gateGrade=latestGateGrade(s);
   const g4=gradeDayAccuracy(s, tk, 4);
   const g5=gradeDayAccuracy(s, tk, 5);
   const g4lab=g4!==null?Math.round(g4*100)+'%':'—';
   const g5lab=g5!==null?Math.round(g5*100)+'%':'—';
+  const gateAcc=gradeDayAccuracy(s, tk, gateGrade);
+  const gateAccLabel=gateAcc!==null?Math.round(gateAcc*100)+'%':'—';
+  const gateLine = gateGrade>=10
+    ? '<div class="hds-row"><span>🔓 Gate to next grade</span><span>All grades unlocked</span></div>'
+    : '<div class="hds-row"><span>🔓 Gate to next grade</span><span>'+gateProgressLabel(s, gateGrade)+' @ ≥95% on G'+gateGrade+'</span></div>';
   el.innerHTML='<p style="font-size:.68rem;color:var(--text-muted);margin:0 0 8px;line-height:1.35;">Separate ideas: <strong>2 rounds</strong> per game type = daily play limit. <strong>95%</strong> uses only <strong>this day’s</strong> answers on each grade.</p>'
     +'<div class="hds-row"><span>✅ / ❌ (today)</span><span>'+correct+' / '+wrong+'</span></div>'
     +'<div class="hds-row"><span>🎮 Rounds (mini-games)</span><span>'+rounds+'</span></div>'
     +'<div class="hds-row"><span>📊 Accuracy (all tries today)</span><span>'+accAll+'</span></div>'
     +'<div class="hds-row"><span>G4 accuracy (today)</span><span>'+g4lab+'</span></div>'
     +'<div class="hds-row"><span>G5 accuracy (today)</span><span>'+g5lab+'</span></div>'
-    +'<div class="hds-row"><span>🔓 Gate to next grade</span><span>'+gateProgressLabel(s, 4)+' @ ≥95% on G4</span></div>';
+    +'<div class="hds-row"><span>Gate grade today</span><span>G'+gateGrade+' · '+gateAccLabel+'</span></div>'
+    + gateLine;
 }
 
 let hubDailySummaryOpen = false;
@@ -2724,7 +2758,8 @@ function renderParentSummary(){
   }
 
   const isThisWeek = summaryWeekOffset === 0;
-  const weekLabel = isThisWeek ? 'This Week' : summaryWeekOffset === -1 ? 'Last Week' : Math.abs(summaryWeekOffset) + ' Weeks Ago';
+  const selectedWeekStart = weekStartForOffset(summaryWeekOffset);
+  const weekLabel = isThisWeek ? 'This Week' : formatWeekRange(selectedWeekStart);
 
   if(nav){
     nav.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">'
@@ -2736,34 +2771,35 @@ function renderParentSummary(){
 
   ['jenn', 'jess'].forEach(p => {
     const s = state[p];
-    let wkStars = 0, correct = 0, wrong = 0, rounds = 0;
+    let wkStars = 0, correct = 0, wrong = 0, rounds = 0, weekTimeMs = 0, weekDaysPlayed = 0, weekDrills = 0;
 
     if(isThisWeek){
-      if(s.todayStats){
-        Object.entries(s.todayStats).forEach(([dateKey, ts]) => {
-          if(dateKey >= weekStart){
-            correct += ts.correct || 0;
-            wrong += ts.wrong || 0;
-            rounds += ts.rounds || 0;
-          }
-        });
-      }
-      wkStars = s.weekStars;
+      const roll = aggregateWeekFromDaily(s, selectedWeekStart);
+      correct = roll.correct;
+      wrong = roll.wrong;
+      rounds = roll.rounds;
+      weekTimeMs = roll.timeMs;
+      weekDaysPlayed = roll.daysPlayed;
+      weekDrills = roll.drillRounds;
+      wkStars = Math.max(s.weekStars || 0, roll.stars || 0);
     } else {
       const hist = (s.weeklyHistory || []);
-      const entry = hist[hist.length + summaryWeekOffset];
-      if(entry){
-        wkStars = entry.stars || 0;
-        correct = entry.correct != null ? entry.correct : 0;
-        wrong = entry.wrong != null ? entry.wrong : 0;
-        rounds = entry.rounds != null ? entry.rounds : 0;
-      }
+      const entry = hist.find(h => h && h.weekStart === selectedWeekStart);
+      const roll = aggregateWeekFromDaily(s, selectedWeekStart);
+      wkStars = Math.max(
+        Number((entry && entry.stars) || 0),
+        Number((entry && entry.snapshotStars) || 0),
+        Number(roll.stars || 0)
+      );
+      correct = entry && entry.correct != null ? Number(entry.correct) : roll.correct;
+      wrong = entry && entry.wrong != null ? Number(entry.wrong) : roll.wrong;
+      rounds = entry && entry.rounds != null ? Number(entry.rounds) : roll.rounds;
+      weekTimeMs = roll.timeMs;
+      weekDaysPlayed = roll.daysPlayed;
+      weekDrills = roll.drillRounds;
     }
 
-    const tStars = (s.todayStats && s.todayStats[today] && s.todayStats[today].stars) ? s.todayStats[today].stars : 0;
-    const drillToday = s.todayStats && s.todayStats[today] && s.todayStats[today].drillDone;
-    const rawMsToday = (s.dailyTimeMs && s.dailyTimeMs[today]) || 0;
-    const timeToday = formatPlayTime(rawMsToday, true) + (sessionFullTimeReveal ? '' : ' (cap 30m)');
+    const weekTime = formatPlayTime(weekTimeMs, true) + (sessionFullTimeReveal ? '' : ' (cap 30m/day)');
 
     const total = correct + wrong;
     const acc = total > 0 ? Math.round(correct / total * 100) : null;
@@ -2792,18 +2828,21 @@ function renderParentSummary(){
       + '<div class="parent-player-title" style="color:' + color + ';">' + avatar + ' ' + name + '</div>'
       + '<div class="parent-stat-row"><span class="parent-stat-label">⭐ All-time star pts</span><span class="parent-stat-val">' + s.totalStars + '</span></div>'
       + '<div class="parent-stat-row"><span class="parent-stat-label">📅 Weekly star pts (' + weekLabel + ')</span><span class="parent-stat-val" style="color:var(--gold);">' + wkStars + '</span></div>'
-      + '<div class="parent-stat-row"><span class="parent-stat-label">☀️ Today\'s star pts</span><span class="parent-stat-val" style="color:var(--green);">' + tStars + '</span></div>'
       + (isThisWeek
         ? '<div class="parent-stat-row"><span class="parent-stat-label">✅ Correct (week)</span><span class="parent-stat-val" style="color:var(--green);">' + (total > 0 ? correct + ' / ' + total : '—') + '</span></div>'
           + '<div class="parent-stat-row"><span class="parent-stat-label">📊 Accuracy (week)</span><span class="parent-stat-val">' + (acc !== null ? acc + '%' : '—') + '</span></div>'
           + '<div class="parent-stat-row"><span class="parent-stat-label">🎮 Rounds (week)</span><span class="parent-stat-val">' + rounds + '</span></div>'
-          + '<div class="parent-stat-row"><span class="parent-stat-label">🏋️ Drill today</span><span class="parent-stat-val">' + (drillToday ? '✅ Done' : '—') + '</span></div>'
-          + '<div class="parent-stat-row"><span class="parent-stat-label">⏱ Time today</span><span class="parent-stat-val">' + timeToday + '</span></div>'
+          + '<div class="parent-stat-row"><span class="parent-stat-label">🏋️ Drill rounds (week)</span><span class="parent-stat-val">' + weekDrills + '</span></div>'
+          + '<div class="parent-stat-row"><span class="parent-stat-label">⏱ Time this week</span><span class="parent-stat-val">' + weekTime + '</span></div>'
+          + '<div class="parent-stat-row"><span class="parent-stat-label">📆 Days played (week)</span><span class="parent-stat-val">' + weekDaysPlayed + ' / 7</span></div>'
           + '<div class="parent-stat-row"><span class="parent-stat-label">🔥 Streak</span><span class="parent-stat-val">' + s.streak + ' days</span></div>'
           + '<div class="parent-stat-row"><span class="parent-stat-label">💪 Queue</span><span class="parent-stat-val">' + queue + ' words</span></div>'
         : '<div class="parent-stat-row"><span class="parent-stat-label">✅ Correct (saved week)</span><span class="parent-stat-val">' + (total > 0 ? correct + ' / ' + total : '—') + '</span></div>'
           + '<div class="parent-stat-row"><span class="parent-stat-label">📊 Accuracy</span><span class="parent-stat-val">' + (acc !== null ? acc + '%' : '—') + '</span></div>'
-          + '<div class="parent-stat-row"><span class="parent-stat-label">🎮 Rounds</span><span class="parent-stat-val">' + rounds + '</span></div>')
+          + '<div class="parent-stat-row"><span class="parent-stat-label">🎮 Rounds</span><span class="parent-stat-val">' + rounds + '</span></div>'
+          + '<div class="parent-stat-row"><span class="parent-stat-label">🏋️ Drill rounds</span><span class="parent-stat-val">' + weekDrills + '</span></div>'
+          + '<div class="parent-stat-row"><span class="parent-stat-label">⏱ Time played</span><span class="parent-stat-val">' + weekTime + '</span></div>'
+          + '<div class="parent-stat-row"><span class="parent-stat-label">📆 Days played</span><span class="parent-stat-val">' + weekDaysPlayed + ' / 7</span></div>')
       + practiceBlock
       + '</div>';
   });
@@ -2875,6 +2914,196 @@ function cancelWeekdayLock(){
   if(i) i.value = '';
 }
 
+function setRecoveryMsg(text, ok){
+  const el=document.getElementById('recovery-msg');
+  if(!el)return;
+  el.textContent=text||'';
+  el.style.color=ok?'var(--green)':'var(--text-muted)';
+}
+function ensureParentPassword(){
+  const entered=(document.getElementById('parent-pwd')?.value||'').trim();
+  return entered===PARENT_PASSWORD;
+}
+function toggleRecoveryFreeze(){
+  if(!ensureParentPassword()){
+    setRecoveryMsg('❌ Enter parent password first');
+    return;
+  }
+  recoveryWriteFreeze=!recoveryWriteFreeze;
+  setRecoveryMsg(recoveryWriteFreeze?'✅ Recovery mode ON — cloud writes paused':'✅ Recovery mode OFF — cloud writes resumed', true);
+}
+function exportRecoveryBackup(){
+  if(!ensureParentPassword()){
+    setRecoveryMsg('❌ Enter parent password first');
+    return;
+  }
+  const payload={
+    exportedAt:new Date().toISOString(),
+    weekStart:getWeekStart(),
+    recoveryWriteFreeze,
+    players:{
+      jenn:JSON.parse(JSON.stringify(state.jenn)),
+      jess:JSON.parse(JSON.stringify(state.jess))
+    }
+  };
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const stamp=new Date().toISOString().replace(/[:.]/g,'-');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='french-adventure-backup-'+stamp+'.json';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  setRecoveryMsg('✅ Backup exported', true);
+}
+function promptRecoveryImport(){
+  if(!ensureParentPassword()){
+    setRecoveryMsg('❌ Enter parent password first');
+    return;
+  }
+  document.getElementById('recovery-import-file')?.click();
+}
+function getIsoDateRange(startKey,endKey){
+  if(!startKey||!endKey)return [];
+  const out=[];
+  const s=new Date(startKey+'T00:00:00');
+  const e=new Date(endKey+'T00:00:00');
+  for(let d=new Date(s);d<=e;d.setDate(d.getDate()+1)){
+    out.push(d.toISOString().slice(0,10));
+  }
+  return out;
+}
+function previousWeekStartKey(baseWeekStart){
+  const d=new Date((baseWeekStart||getWeekStart())+'T00:00:00');
+  d.setDate(d.getDate()-7);
+  return d.toISOString().slice(0,10);
+}
+function weekStartForOffset(offset){
+  const d=new Date(getWeekStart()+'T00:00:00');
+  d.setDate(d.getDate()+offset*7);
+  return d.toISOString().slice(0,10);
+}
+function weekEndFromStart(startKey){
+  const d=new Date(startKey+'T00:00:00');
+  d.setDate(d.getDate()+6);
+  return d.toISOString().slice(0,10);
+}
+function formatWeekRange(startKey){
+  const s=new Date(startKey+'T00:00:00');
+  const e=new Date(weekEndFromStart(startKey)+'T00:00:00');
+  const mon=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return mon[s.getMonth()]+' '+s.getDate()+' - '+mon[e.getMonth()]+' '+e.getDate();
+}
+function aggregateWeekFromDaily(s, weekStart){
+  const end=weekEndFromStart(weekStart);
+  const keys=getIsoDateRange(weekStart,end);
+  let stars=0,correct=0,wrong=0,rounds=0,timeMs=0,daysPlayed=0,drillRounds=0;
+  keys.forEach(k=>{
+    const ts=s.todayStats&&s.todayStats[k];
+    if(ts){
+      stars+=Number(ts.stars||0);
+      correct+=Number(ts.correct||0);
+      wrong+=Number(ts.wrong||0);
+      rounds+=Number(ts.rounds||0);
+      drillRounds+=ts.drillDone?1:0;
+      if((Number(ts.correct||0)+Number(ts.wrong||0))>0) daysPlayed++;
+    }else if(s.playedDays&&s.playedDays[k]){
+      daysPlayed++;
+    }
+    timeMs+=Number((s.dailyTimeMs&&s.dailyTimeMs[k])||0);
+  });
+  return {stars,correct,wrong,rounds,timeMs,daysPlayed,drillRounds};
+}
+function buildWeekRollupFromDaily(s, weekStart){
+  const start=new Date(weekStart+'T00:00:00');
+  const end=new Date(start);
+  end.setDate(end.getDate()+6);
+  const keys=getIsoDateRange(weekStart,end.toISOString().slice(0,10));
+  let stars=0,correct=0,wrong=0,rounds=0;
+  keys.forEach(k=>{
+    const t=s.todayStats&&s.todayStats[k];
+    if(!t)return;
+    stars+=Number(t.stars||0);
+    correct+=Number(t.correct||0);
+    wrong+=Number(t.wrong||0);
+    rounds+=Number(t.rounds||0);
+  });
+  return {stars,correct,wrong,rounds};
+}
+function reconcileJennFromBackup(data){
+  if(!data||!data.players||!data.players.jenn)return null;
+  const incoming=data.players.jenn;
+  const merged=JSON.parse(JSON.stringify(state.jenn));
+  const jToday=Object.assign({}, merged.todayStats||{}, incoming.todayStats||{});
+  const jPlayed=Object.assign({}, merged.playedDays||{}, incoming.playedDays||{});
+  merged.todayStats=jToday;
+  merged.playedDays=jPlayed;
+  merged.dailyTimeMs=Object.assign({}, merged.dailyTimeMs||{}, incoming.dailyTimeMs||{});
+  merged.dailyRounds=Object.assign({}, merged.dailyRounds||{}, incoming.dailyRounds||{});
+  merged.gradeStats=Object.assign({}, merged.gradeStats||{}, incoming.gradeStats||{});
+  merged.totalStars=Math.max(Number(merged.totalStars||0), Number(incoming.totalStars||0));
+  merged.weekStars=Math.max(Number(merged.weekStars||0), Number(incoming.weekStars||0));
+  merged.streak=Math.max(Number(merged.streak||0), Number(incoming.streak||0));
+  if(incoming.weeklyHistory&&incoming.weeklyHistory.length){
+    const byWeek={};
+    [...(merged.weeklyHistory||[]), ...incoming.weeklyHistory].forEach(w=>{
+      if(w&&w.weekStart)byWeek[w.weekStart]=w;
+    });
+    merged.weeklyHistory=Object.values(byWeek).sort((a,b)=>String(a.weekStart).localeCompare(String(b.weekStart))).slice(-8);
+  }
+  merged.weekStart = merged.weekStart || getWeekStart();
+  const prevStart=previousWeekStartKey(getWeekStart());
+  const already=(merged.weeklyHistory||[]).some(w=>w.weekStart===prevStart);
+  if(!already){
+    const rollup=buildWeekRollupFromDaily(merged,prevStart);
+    if(rollup.stars>0||rollup.correct>0||rollup.wrong>0||rollup.rounds>0){
+      merged.weeklyHistory=(merged.weeklyHistory||[]).concat([{
+        weekStart:prevStart,
+        stars:rollup.stars,
+        correct:rollup.correct,
+        wrong:rollup.wrong,
+        rounds:rollup.rounds,
+        snapshotStars:rollup.stars,
+        savedAt:todayKey()
+      }]).slice(-8);
+    }
+  }
+  merged.lastUpdatedAt=Date.now();
+  return merged;
+}
+async function handleRecoveryImport(evt){
+  try{
+    if(!ensureParentPassword()){
+      setRecoveryMsg('❌ Enter parent password first');
+      return;
+    }
+    const file=evt?.target?.files?.[0];
+    if(!file){
+      setRecoveryMsg('No file selected');
+      return;
+    }
+    const text=await file.text();
+    const data=JSON.parse(text);
+    const reconciled=reconcileJennFromBackup(data);
+    if(!reconciled){
+      setRecoveryMsg('❌ Invalid backup JSON');
+      return;
+    }
+    state.jenn=reconciled;
+    renderParentSummary();
+    updateLeaderboard();
+    if(currentPlayer==='jenn') updateHub();
+    await saveState('jenn');
+    setRecoveryMsg('✅ Jenn recovery merged and saved', true);
+  }catch(e){
+    console.warn('Recovery import failed', e);
+    setRecoveryMsg('❌ Recovery import failed');
+  }finally{
+    if(evt?.target)evt.target.value='';
+  }
+}
+
 async function clearProgress(mode){
   const input = document.getElementById('parent-pwd');
   const msg = document.getElementById('pwd-msg');
@@ -2914,6 +3143,8 @@ async function clearProgress(mode){
     msg.style.color = 'var(--green)';
 
   } else if(mode === 'prev'){
+    const confirmPrev = window.confirm('Clear old days and reset week stars/streak for both players?');
+    if(!confirmPrev){ msg.textContent=''; return; }
     // Clear previous days' data + week stars + streak
     ['jenn','jess'].forEach(p=>{
       const s = state[p];
