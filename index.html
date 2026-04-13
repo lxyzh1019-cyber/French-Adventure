@@ -131,10 +131,10 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .hub-moons{font-size:.78rem;color:var(--gold);font-weight:700;line-height:1.3;}
 .hub-rules-mini{font-size:.6rem;color:var(--text-muted);text-align:left;width:100%;padding:7px 10px;background:rgba(0,0,0,.18);border-radius:10px;line-height:1.35;border:1px solid var(--surface2);}
 .hub-rules-mini b{color:var(--gold);font-size:.63rem;display:inline;margin-right:4px;}
-.hub-slogan-wrap{width:100%;display:flex;flex-direction:column;gap:6px;}
-.hub-slogan{font-size:clamp(.88rem,2.4vw,1.05rem);color:var(--gold);font-style:italic;padding:9px 12px;line-height:1.4;font-weight:700;background:rgba(245,158,11,.12);border:2px solid rgba(245,158,11,.35);border-radius:14px;width:100%;}
-.hub-slogan-actions{display:flex;justify-content:flex-end;gap:8px;}
-.hub-slogan-btn{background:rgba(79,70,229,.18);border:2px solid rgba(79,70,229,.45);border-radius:10px;padding:5px 9px;font-family:'Nunito',sans-serif;font-size:.72rem;font-weight:800;color:var(--text);cursor:pointer;}
+.hub-slogan-wrap{width:100%;display:flex;flex-direction:row;align-items:center;gap:0;background:rgba(245,158,11,.12);border:2px solid rgba(245,158,11,.35);border-radius:14px;padding:9px 12px;}
+.hub-slogan{flex:1;min-width:0;font-size:clamp(.88rem,2.4vw,1.05rem);color:var(--gold);font-style:italic;line-height:1.4;font-weight:700;background:none;border:none;padding:0;}
+.hub-slogan-actions{display:none;flex-shrink:0;margin-left:10px;align-items:center;}
+.hub-slogan-btn{background:rgba(79,70,229,.18);border:2px solid rgba(79,70,229,.45);border-radius:10px;padding:5px 9px;font-family:'Nunito',sans-serif;font-size:.72rem;font-weight:800;color:var(--text);cursor:pointer;white-space:nowrap;}
 .hub-slogan-btn:hover{background:rgba(79,70,229,.28);}
 /* bottom row: today card + daily summary — side-by-side on ≥600px */
 .hub-bottom-row{display:flex;flex-direction:column;gap:7px;width:100%;}
@@ -143,7 +143,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .hub-daily-summary-btn .chev{font-size:.88rem;opacity:.85;}
 @media(min-width:600px){
   .hub-bottom-row{flex-direction:row;align-items:flex-start;}
-  .hub-profile-card{flex:0 0 auto;min-width:190px;max-width:230px !important;}
+  .hub-profile-card{flex:1;min-width:0;max-width:none !important;}
   .hub-summary-col{flex:1;min-width:0;}
 }
 .grade-tab.grade-locked{opacity:.55;position:relative;}
@@ -194,9 +194,9 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .sm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;}
 .sm-topic{background:var(--surface2);border-radius:12px;padding:10px 6px;text-align:center;border:2px solid transparent;transition:border-color .2s;}
 .sm-topic.mastered{border-color:var(--gold);background:rgba(245,158,11,.1);}
-.sm-topic-icon{font-size:1.4rem;display:block;margin-bottom:3px;}
-.sm-topic-name{font-size:.65rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;}
-.sm-stars{color:var(--gold);font-size:.8rem;margin-top:3px;}
+.sm-topic-icon{font-size:1.6rem;display:block;margin-bottom:3px;}
+.sm-topic-name{font-size:.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;}
+.sm-stars{color:var(--gold);font-size:.9rem;margin-top:3px;}
 
 /* MINI GAMES GRID */
 .mini-games-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:14px;}
@@ -586,8 +586,8 @@ button,input{touch-action:manipulation;}
       <div class="hub-rules-mini" id="hub-rules-mini"><b>⭐ Topic stars</b> 45–64% = 1⭐ · 65–84% = 2⭐ · ≥85% = 3⭐ · best of 2 rounds per topic &nbsp;|&nbsp; <b>🌙 Moon</b> All topics in a grade at 3⭐ &nbsp;|&nbsp; <b>🌟 Superstar</b> Moons on the two highest unlocked grades</div>
       <div class="hub-slogan-wrap">
         <div class="hub-slogan" id="hub-slogan"></div>
-        <div class="hub-slogan-actions" id="hub-slogan-actions" style="display:none;">
-          <button type="button" class="hub-slogan-btn" id="hub-slogan-translate-btn" onclick="toggleSloganEnglish()">Translate to English</button>
+        <div class="hub-slogan-actions" id="hub-slogan-actions">
+          <button type="button" class="hub-slogan-btn" id="hub-slogan-translate-btn" onclick="toggleSloganTranslation()">Translate to English</button>
         </div>
       </div>
       <div class="hub-bottom-row">
@@ -595,6 +595,7 @@ button,input{touch-action:manipulation;}
           <div class="hub-p-title">📋 Today</div>
           <div class="hub-profile-row"><span class="hub-p-label">⭐ Stars (today)</span><span class="hub-p-val" id="hub-day-stars-val">0</span></div>
           <div class="hub-profile-row"><span class="hub-p-label">🏋️ Drill</span><span class="hub-p-val" id="hub-drill-val">—</span></div>
+          <div class="hub-profile-row hub-profile-time"><span class="hub-p-label">⏱ Time today</span><span class="hub-p-val" id="hub-time-today-val">0:00</span></div>
         </div>
         <div class="hub-summary-col">
           <button type="button" class="hub-daily-summary-btn" id="hub-daily-summary-btn" onclick="toggleHubDailySummary()" aria-expanded="false">
@@ -1947,15 +1948,14 @@ function updateHub(){
   document.getElementById('hub-moons').textContent=moonLine;
   const sloganText=getDailySlogan();
   const sloganEl=document.getElementById('hub-slogan');
+  const sloganAct=document.getElementById('hub-slogan-actions');
+  const sloganBtn=document.getElementById('hub-slogan-translate-btn');
   if(sloganEl){
     const isEnglish=isEnglishLikeText(sloganText);
     const shown=sloganShowEnglish&&!isEnglish?getDailySloganEnglish():sloganText;
-    let html=shown;
-    if(!isEnglish){
-      const btnLabel=sloganShowEnglish?'Show original':'Translate to English';
-      html += '<div style="margin-top:8px;"><button type="button" class="btn-secondary" onclick="toggleSloganTranslation()" style="padding:6px 10px;font-size:.72rem;">'+btnLabel+'</button></div>';
-    }
-    sloganEl.innerHTML=html;
+    sloganEl.textContent=shown;
+    if(sloganAct)sloganAct.style.display=!isEnglish?'flex':'none';
+    if(sloganBtn&&!isEnglish)sloganBtn.textContent=sloganShowEnglish?'Show original':'Translate to English';
   }
   // Round badges
   ['quiz','match','scramble','builder','boss','listen'].forEach(type=>{
@@ -1975,6 +1975,8 @@ function updateHub(){
   if(ds) ds.textContent=String(dayStars);
   const dr=document.getElementById('hub-drill-val');
   if(dr) dr.textContent=drillDone?'✅ Done':'—';
+  const tt=document.getElementById('hub-time-today-val');
+  if(tt) tt.textContent=formatPlayTime(rawMs,true);
   if(hubDailySummaryOpen) renderHubDailySummaryInner(s, tk);
   refreshGradeTabs();
   updateStarMap();
