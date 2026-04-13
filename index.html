@@ -119,33 +119,27 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .hub-header{display:flex;flex-direction:column;align-items:stretch;text-align:left;gap:7px;margin-bottom:14px;padding:14px 14px 12px;border-radius:18px;}
 .hub-header.jenn{background:rgba(232,68,90,.15);border:2px solid rgba(232,68,90,.4);}
 .hub-header.jess{background:rgba(59,130,246,.15);border:2px solid rgba(59,130,246,.4);}
-.hub-top-band{display:flex;flex-direction:row;align-items:center;gap:10px;width:100%;}
-.hub-avatar{font-size:2.2rem;flex-shrink:0;line-height:1;}
+.hub-top-band{display:flex;flex-direction:row;align-items:center;gap:12px;width:100%;}
+.hub-avatar{font-size:2.8rem;flex-shrink:0;line-height:1;}
 .hub-info-col{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
 .hub-name{font-family:'Fredoka One',cursive;font-size:1.3rem;line-height:1.15;}
 .hub-header.jenn .hub-name{color:var(--jenn);}
 .hub-header.jess .hub-name{color:var(--jess);}
-.hub-stats{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-start;margin-top:1px;}
-.hub-stat{font-size:.75rem;color:var(--text-muted);font-weight:700;}
+.hub-stats{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;justify-content:flex-start;margin-top:2px;}
+.hub-stat{font-size:.88rem;color:var(--text-muted);font-weight:700;}
 .hub-stat span{color:var(--text);}
-.hub-moons{font-size:.78rem;color:var(--gold);font-weight:700;line-height:1.3;}
-.hub-rules-mini{font-size:.6rem;color:var(--text-muted);text-align:left;width:100%;padding:7px 10px;background:rgba(0,0,0,.18);border-radius:10px;line-height:1.35;border:1px solid var(--surface2);}
-.hub-rules-mini b{color:var(--gold);font-size:.63rem;display:inline;margin-right:4px;}
+.hub-moons{font-size:.88rem;color:var(--gold);font-weight:700;line-height:1.25;white-space:normal;}
+.hub-rules-mini{font-size:.72rem;color:var(--text-muted);text-align:left;width:100%;padding:8px 11px;background:rgba(0,0,0,.18);border-radius:10px;line-height:1.4;border:1px solid var(--surface2);}
+.hub-rules-mini b{color:var(--gold);font-size:.76rem;display:inline;margin-right:4px;}
 .hub-slogan-wrap{width:100%;display:flex;flex-direction:row;align-items:center;gap:0;background:rgba(245,158,11,.12);border:2px solid rgba(245,158,11,.35);border-radius:14px;padding:9px 12px;}
 .hub-slogan{flex:1;min-width:0;font-size:clamp(.88rem,2.4vw,1.05rem);color:var(--gold);font-style:italic;line-height:1.4;font-weight:700;background:none;border:none;padding:0;}
 .hub-slogan-actions{display:none;flex-shrink:0;margin-left:10px;align-items:center;}
 .hub-slogan-btn{background:rgba(79,70,229,.18);border:2px solid rgba(79,70,229,.45);border-radius:10px;padding:5px 9px;font-family:'Nunito',sans-serif;font-size:.72rem;font-weight:800;color:var(--text);cursor:pointer;white-space:nowrap;}
 .hub-slogan-btn:hover{background:rgba(79,70,229,.28);}
-/* bottom row: today card + daily summary — side-by-side on ≥600px */
-.hub-bottom-row{display:flex;flex-direction:column;gap:7px;width:100%;}
-.hub-summary-col{display:flex;flex-direction:column;gap:6px;}
-.hub-daily-summary-btn{width:100%;padding:9px 14px;border-radius:14px;border:2px solid rgba(79,70,229,.45);background:rgba(79,70,229,.15);color:#c7d2fe;font-family:'Fredoka One',cursive;font-size:.85rem;cursor:pointer;text-align:left;display:flex;justify-content:space-between;align-items:center;margin-top:0;}
+.hub-today-panel{width:100%;max-width:none;margin-top:4px;}
+.hub-daily-summary-btn{width:100%;padding:9px 14px;border-radius:14px;border:2px solid rgba(79,70,229,.45);background:rgba(79,70,229,.15);color:#c7d2fe;font-family:'Fredoka One',cursive;font-size:.85rem;cursor:pointer;text-align:left;display:flex;justify-content:space-between;align-items:center;margin-top:8px;}
+.hub-today-panel .hub-daily-summary-block{margin-top:8px;}
 .hub-daily-summary-btn .chev{font-size:.88rem;opacity:.85;}
-@media(min-width:600px){
-  .hub-bottom-row{flex-direction:row;align-items:flex-start;}
-  .hub-profile-card{flex:1;min-width:0;max-width:none !important;}
-  .hub-summary-col{flex:1;min-width:0;}
-}
 .grade-tab.grade-locked{opacity:.55;position:relative;}
 .grade-tab .grade-lock-badge{font-size:.55rem;display:block;margin-top:2px;}
 .grade-tab.grade-tab-future{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:8px 10px;min-width:52px;line-height:1.05;}
@@ -158,7 +152,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .grade-tab.hub-cta-study{background:rgba(16,185,129,.18)!important;border-color:var(--green)!important;color:#a7f3d0!important;}
 .word-chip.punct{font-size:1.15rem;font-weight:900;padding:10px 14px;border-color:rgba(245,158,11,.5);background:rgba(245,158,11,.12);}
 .unlock-banner{background:linear-gradient(90deg,rgba(245,158,11,.25),rgba(79,70,229,.2));border:2px solid var(--gold);border-radius:16px;padding:12px 16px;text-align:center;margin-bottom:10px;font-family:'Fredoka One',cursive;font-size:1.05rem;color:var(--gold);}
-.hub-profile-card{background:var(--surface);border-radius:18px;padding:12px 14px;border:1px solid var(--surface2);width:100%;max-width:540px;align-self:flex-start;}
+.hub-profile-card{background:var(--surface);border-radius:18px;padding:12px 14px;border:1px solid var(--surface2);width:100%;max-width:none;align-self:stretch;}
 .hub-profile-card .hub-p-title{font-family:'Fredoka One',cursive;font-size:.95rem;color:var(--gold);margin-bottom:10px;text-align:left;}
 .hub-profile-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:.82rem;}
 .hub-profile-row:last-child{border-bottom:none;}
@@ -169,7 +163,6 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .hub-daily-summary-block .hds-title{font-family:'Fredoka One',cursive;font-size:.88rem;color:var(--french);margin-bottom:8px;}
 .hub-daily-summary-block .hds-row{font-size:.78rem;color:var(--text-muted);padding:3px 0;display:flex;justify-content:space-between;gap:8px;}
 .hub-daily-summary-block .hds-row span:last-child{color:var(--text);font-weight:700;}
-.hub-gate-note{font-size:.72rem;color:var(--text-muted);margin-top:8px;text-align:left;max-width:720px;line-height:1.4;}
 @media screen and (min-width:768px) and (orientation:landscape){
   .container{max-width:min(1100px,96vw);}
   #screen-hub .hub-header{padding:16px 20px;}
@@ -579,8 +572,8 @@ button,input{touch-action:manipulation;}
             <div class="hub-stat">⭐ <span id="hub-stars">0</span> star pts</div>
             <div class="hub-stat">🔥 <span id="hub-streak">0</span> days</div>
             <div class="hub-stat">📅 Week: <span id="hub-week">0</span> star pts</div>
+            <span class="hub-moons" id="hub-moons"></span>
           </div>
-          <div class="hub-moons" id="hub-moons"></div>
         </div>
       </div>
       <div class="hub-rules-mini" id="hub-rules-mini"><b>⭐ Topic stars</b> 45–64% = 1⭐ · 65–84% = 2⭐ · ≥85% = 3⭐ · best of 2 rounds per topic &nbsp;|&nbsp; <b>🌙 Moon</b> All topics in a grade at 3⭐ &nbsp;|&nbsp; <b>🌟 Superstar</b> Moons on the two highest unlocked grades</div>
@@ -590,24 +583,23 @@ button,input{touch-action:manipulation;}
           <button type="button" class="hub-slogan-btn" id="hub-slogan-translate-btn" onclick="toggleSloganTranslation()">Translate to English</button>
         </div>
       </div>
-      <div class="hub-bottom-row">
+      <div class="hub-today-panel" id="hub-today-panel">
         <div class="hub-profile-card" id="hub-profile-card">
           <div class="hub-p-title">📋 Today</div>
           <div class="hub-profile-row"><span class="hub-p-label">⭐ Stars (today)</span><span class="hub-p-val" id="hub-day-stars-val">0</span></div>
+          <div class="hub-profile-row"><span class="hub-p-label">🎮 Rounds (mini-games)</span><span class="hub-p-val" id="hub-rounds-today-val">0</span></div>
+          <div class="hub-profile-row"><span class="hub-p-label">📊 Accuracy (today)</span><span class="hub-p-val" id="hub-acc-today-val">—</span></div>
           <div class="hub-profile-row"><span class="hub-p-label">🏋️ Drill</span><span class="hub-p-val" id="hub-drill-val">—</span></div>
           <div class="hub-profile-row hub-profile-time"><span class="hub-p-label">⏱ Time today</span><span class="hub-p-val" id="hub-time-today-val">0:00</span></div>
         </div>
-        <div class="hub-summary-col">
-          <button type="button" class="hub-daily-summary-btn" id="hub-daily-summary-btn" onclick="toggleHubDailySummary()" aria-expanded="false">
-            <span>📆 Daily summary</span><span class="chev" id="hub-daily-chev">▼</span>
-          </button>
-          <div class="hub-daily-summary-block" id="hub-daily-summary-block" style="display:none;">
-            <div class="hds-title">📆 Daily summary (accuracy &amp; gate)</div>
-            <div id="hub-daily-summary-inner"></div>
-          </div>
+        <button type="button" class="hub-daily-summary-btn" id="hub-daily-summary-btn" onclick="toggleHubDailySummary()" aria-expanded="false">
+          <span>More: grade accuracy &amp; rules</span><span class="chev" id="hub-daily-chev">▼</span>
+        </button>
+        <div class="hub-daily-summary-block" id="hub-daily-summary-block" style="display:none;">
+          <div class="hds-title">Details</div>
+          <div id="hub-daily-summary-inner"></div>
         </div>
       </div>
-      <p class="hub-gate-note" id="hub-gate-note"><strong>Mini-games:</strong> up to <strong>2 rounds per game type</strong> daily — separate from grade unlocking.<br><strong>Unlock next grade:</strong> earn the 🌙 Moon on the grade below, then ≥95% accuracy on that grade for <strong>2 days in a row</strong>.</p>
     </div>
 
     <p class="hub-grade-bar-note" id="hub-grade-bar-note">Play: <strong>G4–G10</strong>. Higher grades unlock with the same rule — master the grade before (🌙 + 2 days ≥95%).</p>
@@ -1878,12 +1870,6 @@ function toggleSloganTranslation(){
 function renderHubDailySummaryInner(s, tk){
   const el=document.getElementById('hub-daily-summary-inner');
   if(!el) return;
-  const ts=s.todayStats&&s.todayStats[tk];
-  const correct=ts?(ts.correct||0):0;
-  const wrong=ts?(ts.wrong||0):0;
-  const rounds=ts?(ts.rounds||0):0;
-  const total=correct+wrong;
-  const accAll=total>=5?Math.round(correct/total*100)+'%':'— (need 5+ tries)';
   const gateGrade=latestGateGrade(s);
   const g4=gradeDayAccuracy(s, tk, 4);
   const g5=gradeDayAccuracy(s, tk, 5);
@@ -1894,10 +1880,7 @@ function renderHubDailySummaryInner(s, tk){
   const gateLine = gateGrade>=10
     ? '<div class="hds-row"><span>🔓 Gate to next grade</span><span>All grades unlocked</span></div>'
     : '<div class="hds-row"><span>🔓 Gate to next grade</span><span>'+gateProgressLabel(s, gateGrade)+' @ ≥95% on G'+gateGrade+'</span></div>';
-  el.innerHTML='<p style="font-size:.68rem;color:var(--text-muted);margin:0 0 8px;line-height:1.35;">Separate ideas: <strong>2 rounds</strong> per game type = daily play limit. <strong>95%</strong> uses only <strong>this day’s</strong> answers on each grade.</p>'
-    +'<div class="hds-row"><span>✅ / ❌ (today)</span><span>'+correct+' / '+wrong+'</span></div>'
-    +'<div class="hds-row"><span>🎮 Rounds (mini-games)</span><span>'+rounds+'</span></div>'
-    +'<div class="hds-row"><span>📊 Accuracy (all tries today)</span><span>'+accAll+'</span></div>'
+  el.innerHTML='<p class="hds-rules" style="font-size:.72rem;color:var(--text-muted);margin:0 0 10px;line-height:1.45;"><strong>Mini-games:</strong> up to <strong>2 rounds per game type</strong> each day — separate from grade unlocking.<br><strong>Unlock next grade:</strong> earn the 🌙 Moon on the grade below, then <strong>≥95% accuracy</strong> on that grade for <strong>2 days in a row</strong> (this day’s answers per grade).</p>'
     +'<div class="hds-row"><span>G4 accuracy (today)</span><span>'+g4lab+'</span></div>'
     +'<div class="hds-row"><span>G5 accuracy (today)</span><span>'+g5lab+'</span></div>'
     +'<div class="hds-row"><span>Gate grade today</span><span>G'+gateGrade+' · '+gateAccLabel+'</span></div>'
@@ -1977,6 +1960,13 @@ function updateHub(){
   if(dr) dr.textContent=drillDone?'✅ Done':'—';
   const tt=document.getElementById('hub-time-today-val');
   if(tt) tt.textContent=formatPlayTime(rawMs,true);
+  const rt=document.getElementById('hub-rounds-today-val');
+  if(rt) rt.textContent=String(ts?(ts.rounds||0):0);
+  const correctPeek=ts?(ts.correct||0):0;
+  const wrongPeek=ts?(ts.wrong||0):0;
+  const totPeek=correctPeek+wrongPeek;
+  const accPeekEl=document.getElementById('hub-acc-today-val');
+  if(accPeekEl) accPeekEl.textContent=totPeek>=5?Math.round(correctPeek/totPeek*100)+'%':'— (need 5+ tries)';
   if(hubDailySummaryOpen) renderHubDailySummaryInner(s, tk);
   refreshGradeTabs();
   updateStarMap();
