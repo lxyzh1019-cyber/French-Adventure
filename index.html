@@ -42,7 +42,8 @@ window.fbSave = async (player, data) => {
   try {
     const ref = doc(db, "french_game", player);
     await setDoc(ref, data, { merge: true });
-  } catch(e) { console.warn("FB save err", e); }
+    return true;
+  } catch(e) { console.warn("FB save err", e); return false; }
 };
 
 window.dispatchEvent(new Event('fbReady'));
@@ -79,6 +80,14 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .countdown-display{font-family:'Fredoka One',cursive;font-size:1.3rem;color:var(--gold);background:rgba(245,158,11,.1);border:2px solid rgba(245,158,11,.3);border-radius:12px;padding:4px 16px;}
 .countdown-display.warning{color:var(--jenn);border-color:rgba(232,68,90,.5);background:rgba(232,68,90,.1);animation:pulse 1s infinite;}
 .clock-divider{color:var(--surface2);font-size:1.2rem;}
+.conn-status-bar{width:100%;flex:0 0 100%;display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:8px 12px;margin-top:4px;background:rgba(15,23,42,.65);border:1px solid var(--surface2);border-radius:12px;font-size:.68rem;font-weight:700;color:var(--text-muted);line-height:1.35;}
+.conn-status-bar .cs-dot{width:8px;height:8px;border-radius:50%;background:var(--surface2);flex-shrink:0;}
+.conn-status-bar .cs-dot.cs-online{background:var(--green);box-shadow:0 0 8px rgba(16,185,129,.5);}
+.conn-status-bar .cs-dot.cs-offline{background:var(--jenn);}
+.conn-status-bar .cs-line{display:flex;align-items:center;gap:6px;min-width:0;}
+.conn-status-bar .cs-label{color:var(--text-muted);font-weight:800;text-transform:uppercase;letter-spacing:.4px;font-size:.58rem;}
+.conn-status-bar .cs-val{color:var(--text);font-weight:800;font-size:.72rem;}
+#screen-game .conn-status-bar{margin-bottom:10px;padding:8px 10px;}
 
 /* LEADERBOARD */
 .leaderboard{background:var(--surface);border-radius:20px;padding:20px;margin-bottom:16px;border:1px solid var(--surface2);}
@@ -384,50 +393,6 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .listen-prompt{font-family:'Fredoka One',cursive;font-size:1.2rem;color:var(--text-muted);margin-bottom:12px;}
 .listen-revealed{font-family:'Fredoka One',cursive;font-size:2rem;color:var(--french);margin-bottom:8px;}
 
-/* MY WORDS (#18) */
-.mywords-tabs{display:flex;gap:8px;margin-bottom:14px;}
-.mywords-tab{flex:1;padding:9px;border-radius:12px;border:2px solid var(--surface2);background:var(--surface);color:var(--text-muted);font-family:'Fredoka One',cursive;font-size:.9rem;cursor:pointer;text-align:center;transition:all .2s;touch-action:manipulation;}
-.mywords-tab.active{border-color:var(--purple);color:var(--purple);background:rgba(124,58,237,.1);}
-
-/* iPAD OPTIMIZATION (#19) */
-@media (pointer: coarse){
-  .choice-btn{padding:18px 12px;font-size:1rem;min-height:54px;}
-  .word-chip{padding:12px 18px;font-size:.95rem;}
-  .letter-tile{width:48px;height:48px;font-size:1.3rem;}
-  .answer-slot{width:48px;height:48px;font-size:1.3rem;}
-  .mini-game-btn{padding:20px 12px;}
-  .grade-tab{padding:10px 14px;font-size:.9rem;}
-  .btn-primary,.btn-secondary{padding:14px 28px;font-size:1rem;}
-  .btn-speak{padding:12px 18px;font-size:1rem;}
-  .train-input{font-size:1.1rem;padding:14px 20px;}
-  .player-card{padding:32px 20px;}
-  .back-btn{padding:10px 18px;font-size:.9rem;}
-  .study-set-tab{padding:12px;}
-  button{touch-action:manipulation;}
-}
-@media (max-width:768px) and (orientation:landscape){
-  .game-area{min-height:260px;padding:16px;}
-  .overlay-card{max-height:92vh;}
-}
-@media(max-width:520px){
-  .choices-grid{grid-template-columns:1fr;}
-  .mini-games-grid{grid-template-columns:1fr 1fr;}
-  .parent-side-by-side{grid-template-columns:1fr;}
-  .player-card{width:155px;}
-  .grade-tabs{gap:4px;}
-  .grade-tab{padding:5px 8px;font-size:.75rem;}
-}
-
-/* OVERLAY CLOSE BTN (#17) */
-.overlay-close{position:absolute;top:14px;right:14px;background:var(--surface2);border:none;border-radius:50%;width:38px;height:38px;font-size:1.1rem;cursor:pointer;color:var(--text-muted);display:flex;align-items:center;justify-content:center;transition:all .2s;touch-action:manipulation;z-index:10;}
-.overlay-close:hover{background:rgba(232,68,90,.3);color:white;}
-.overlay-card{position:relative;}
-
-/* BIGGER QUESTION TEXT (#15) */
-.question-main{font-family:'Fredoka One',cursive;font-size:clamp(1.8rem,5vw,2.8rem);text-align:center;line-height:1.2;}
-.question-hint-big{font-size:1rem;color:var(--text-muted);text-align:center;background:rgba(79,70,229,.1);border-radius:10px;padding:8px 16px;width:100%;max-width:460px;font-weight:700;}
-.question-speak-inline{background:rgba(79,70,229,.15);border:2px solid rgba(79,70,229,.35);border-radius:14px;padding:10px 18px;font-size:1rem;cursor:pointer;color:var(--text);font-weight:700;touch-action:manipulation;display:inline-flex;align-items:center;gap:6px;}
-
 /* LISTEN & SPEAK GAME (#16) */
 .ls-prompt{font-family:'Fredoka One',cursive;font-size:clamp(1.6rem,4vw,2.4rem);text-align:center;color:var(--text-muted);letter-spacing:6px;}
 .ls-revealed{font-family:'Fredoka One',cursive;font-size:clamp(2rem,5vw,3rem);color:var(--french);text-align:center;}
@@ -437,11 +402,6 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .ls-speak-btn.active{background:rgba(232,68,90,.3);animation:pulse 1s infinite;}
 .ls-type-input{background:var(--surface2);border:2px solid var(--surface2);border-radius:16px;padding:14px 20px;font-family:'Nunito',sans-serif;font-size:1.1rem;font-weight:700;color:var(--text);width:100%;max-width:360px;text-align:center;outline:none;touch-action:manipulation;}
 .ls-type-input:focus{border-color:var(--french);}
-
-/* MY WORDS (#18) */
-.mywords-tabs{display:flex;gap:8px;margin-bottom:14px;}
-.mywords-tab{flex:1;padding:9px;border-radius:12px;border:2px solid var(--surface2);background:var(--surface);color:var(--text-muted);font-family:'Fredoka One',cursive;font-size:.9rem;cursor:pointer;text-align:center;transition:all .2s;touch-action:manipulation;}
-.mywords-tab.active{border-color:var(--purple);color:var(--purple);background:rgba(124,58,237,.1);}
 
 /* iPad optimization (#19) */
 @media(pointer:coarse){
@@ -571,6 +531,11 @@ button,input{touch-action:manipulation;}
         <div class="clock-divider">|</div>
         <div class="countdown-display" id="countdown-display">⏳ 20:00</div>
       </div>
+      <div class="conn-status-bar" id="conn-status-hub" aria-live="polite">
+        <span class="cs-dot cs-online" id="conn-dot-hub"></span>
+        <div class="cs-line"><span class="cs-label">Internet</span><span class="cs-val" id="conn-net-hub">—</span></div>
+        <div class="cs-line"><span class="cs-label">Save</span><span class="cs-val" id="conn-sync-hub">—</span></div>
+      </div>
     </div>
     <div class="hub-header" id="hub-header">
       <div class="hub-top-band">
@@ -667,6 +632,11 @@ button,input{touch-action:manipulation;}
   <!-- ── GAME SCREEN ── -->
   <div id="screen-game">
     <button class="back-btn" onclick="exitGame()">← Hub</button>
+    <div class="conn-status-bar" id="conn-status-game" aria-live="polite">
+      <span class="cs-dot cs-online" id="conn-dot-game"></span>
+      <div class="cs-line"><span class="cs-label">Internet</span><span class="cs-val" id="conn-net-game">—</span></div>
+      <div class="cs-line"><span class="cs-label">Save</span><span class="cs-val" id="conn-sync-game">—</span></div>
+    </div>
     <div class="game-topbar">
       <div class="game-topbar-title" id="game-title-bar">Quiz</div>
       <div class="game-lives" id="game-lives">❤️❤️❤️</div>
@@ -1110,7 +1080,8 @@ let currentGameType = null;
 let questions=[], qIndex=0, roundScore=0, roundBasePoints=0, roundSpeedPoints=0, lives=3, currentQ=null;
 let roundTopicTally={};
 let builtWords=[], scrambleAnswer=[], scrambleSource=[];
-let matchSelected=null, matchPairs=[], matchMatched=[];
+let matchSelected=null, matchPairs=[], matchMatched=[], matchFrOrder=[], matchEnOrder=[];
+let __roundDraftSnap=null;
 let questionStartTime=0;
 const SPEED_BONUS_WINDOW=8000, SPEED_BONUS_MAX=10, DAILY_ROUND_LIMIT=2;
 const DAILY_PLAY_CAP_MS = 30 * 60 * 1000; // child-facing cap; full time with parent unlock
@@ -1126,6 +1097,195 @@ let recoveryWriteFreeze = false;
 let listenersInitialized = false;
 let playTimeInterval = null;
 let lastPlayTimeMark = 0;
+
+const LOCAL_STATE_PREFIX = 'french_game_local_';
+const ROUND_DRAFT_PREFIX = 'french_round_draft_';
+const syncMeta = {
+  jenn: { pendingCloud: false, lastLocalSave: 0, lastCloudOk: 0 },
+  jess: { pendingCloud: false, lastLocalSave: 0, lastCloudOk: 0 }
+};
+let roundDraftTimer = null;
+
+function persistLocalStateMirror(player){
+  try{
+    const raw = JSON.stringify(state[player]);
+    localStorage.setItem(LOCAL_STATE_PREFIX + player, raw);
+    syncMeta[player].lastLocalSave = Date.now();
+  }catch(e){ console.warn('local mirror err', e); }
+}
+function loadLocalStateMirror(player){
+  try{
+    const raw = localStorage.getItem(LOCAL_STATE_PREFIX + player);
+    if(!raw) return null;
+    return JSON.parse(raw);
+  }catch(e){ return null; }
+}
+function hydrateStateFromLocalMirror(){
+  ['jenn','jess'].forEach(function(pl){
+    const loc = loadLocalStateMirror(pl);
+    if(!loc) return;
+    const lr = Number(loc.lastUpdatedAt||0);
+    const cr = Number(state[pl].lastUpdatedAt||0);
+    if(lr > cr){
+      state[pl] = Object.assign({}, DEFAULT_STATE(), loc);
+      syncMeta[pl].pendingCloud = true;
+    }
+  });
+}
+function clearAllRoundDraftsForPlayer(player){
+  try{
+    const prefix = ROUND_DRAFT_PREFIX + player + '_';
+    const rm = [];
+    for(let i=0;i<localStorage.length;i++){
+      const k = localStorage.key(i);
+      if(k && k.startsWith(prefix)) rm.push(k);
+    }
+    rm.forEach(k=>localStorage.removeItem(k));
+  }catch(e){ console.warn('clear drafts err', e); }
+}
+function roundDraftStorageKey(player, dayKey, gameType, grade){
+  return ROUND_DRAFT_PREFIX + player + '_' + dayKey + '_' + gameType + '_g' + grade;
+}
+function serializeMatchSelected(){
+  if(!matchSelected) return null;
+  return { side: matchSelected.side, word: matchSelected.word };
+}
+function collectRoundDraft(){
+  if(!currentPlayer || !currentGameType) return null;
+  const tk = todayKey();
+  const feedbackOpen = document.getElementById('feedback-overlay') && document.getElementById('feedback-overlay').classList.contains('show');
+  let listenInput = '';
+  try{
+    const inp = document.getElementById('listen-input');
+    if(inp) listenInput = inp.value || '';
+  }catch(_){}
+  return {
+    v: 1,
+    savedAt: Date.now(),
+    tk, player: currentPlayer, grade: currentGrade, type: currentGameType,
+    qIndex, questions, lives, roundScore, roundBasePoints, roundSpeedPoints, roundTopicTally,
+    currentQ, questionStartTime, feedbackOpen,
+    matchPairs, matchMatched, matchFrOrder, matchEnOrder,
+    matchSelected: serializeMatchSelected(),
+    scrambleAnswer, scrambleSource: scrambleSource ? [...scrambleSource] : [],
+    builtWords: builtWords ? [...builtWords] : [],
+    listenInput
+  };
+}
+function persistRoundDraftNow(){
+  if(!currentPlayer || !currentGameType || recoveryWriteFreeze) return;
+  try{
+    const d = collectRoundDraft();
+    if(!d || !d.questions || !d.questions.length) return;
+    const key = roundDraftStorageKey(d.player, d.tk, d.type, d.grade);
+    localStorage.setItem(key, JSON.stringify(d));
+  }catch(e){ console.warn('round draft save err', e); }
+}
+function scheduleRoundDraftPersist(){
+  if(roundDraftTimer) clearTimeout(roundDraftTimer);
+  roundDraftTimer = setTimeout(function(){
+    roundDraftTimer = null;
+    persistRoundDraftNow();
+  }, 400);
+}
+function clearCurrentRoundDraft(){
+  if(!currentPlayer || !currentGameType) return;
+  try{
+    localStorage.removeItem(roundDraftStorageKey(currentPlayer, todayKey(), currentGameType, currentGrade));
+  }catch(_){}
+}
+function loadRoundDraftForStart(type){
+  if(!currentPlayer) return null;
+  try{
+    const key = roundDraftStorageKey(currentPlayer, todayKey(), type, currentGrade);
+    const raw = localStorage.getItem(key);
+    if(!raw) return null;
+    return JSON.parse(raw);
+  }catch(e){ return null; }
+}
+function restoreRoundDraft(d){
+  questions = d.questions || [];
+  qIndex = Math.min(Math.max(0, d.qIndex|0), Math.max(0, questions.length - 1));
+  lives = d.lives != null ? d.lives : 3;
+  roundScore = d.roundScore|0;
+  roundBasePoints = d.roundBasePoints|0;
+  roundSpeedPoints = d.roundSpeedPoints|0;
+  roundTopicTally = d.roundTopicTally && typeof d.roundTopicTally === 'object' ? d.roundTopicTally : {};
+  currentQ = questions[qIndex] || null;
+  questionStartTime = d.questionStartTime || Date.now();
+  matchPairs = d.matchPairs || [];
+  matchMatched = d.matchMatched || [];
+  matchFrOrder = d.matchFrOrder || [];
+  matchEnOrder = d.matchEnOrder || [];
+  if(d.matchSelected && d.matchSelected.side && d.matchSelected.word){
+    matchSelected = { btn: null, side: d.matchSelected.side, word: d.matchSelected.word };
+  }else{
+    matchSelected = null;
+  }
+  scrambleAnswer = d.scrambleAnswer || [];
+  scrambleSource = d.scrambleSource ? [...d.scrambleSource] : [];
+  builtWords = d.builtWords ? [...d.builtWords] : [];
+  if(d.feedbackOpen){
+    try{ document.getElementById('feedback-overlay').classList.remove('show'); }catch(_){}
+  }
+  renderLives();
+  renderScore();
+  document.getElementById('progress-bar').style.width = (questions.length ? (qIndex / questions.length * 100) : 0) + '%';
+  __roundDraftSnap = d;
+  renderQuestion();
+  __roundDraftSnap = null;
+  if(currentQ && currentQ.type === 'listen' && d.listenInput){
+    setTimeout(function(){
+      const inp = document.getElementById('listen-input');
+      if(inp) inp.value = d.listenInput;
+    }, 0);
+  }
+}
+function updateConnectionStatusUI(){
+  const online = typeof navigator !== 'undefined' && navigator.onLine;
+  const netTxt = online ? 'Online' : 'Offline';
+  const hubs = [['conn-net-hub','conn-sync-hub','conn-dot-hub'], ['conn-net-game','conn-sync-game','conn-dot-game']];
+  const p = currentPlayer;
+  let syncTxt = '—';
+  if(p && syncMeta[p]){
+    const m = syncMeta[p];
+    if(!online){
+      syncTxt = m.lastLocalSave ? 'Saved on this iPad · cloud when online' : 'Not saved yet';
+    }else if(m.pendingCloud){
+      syncTxt = 'Waiting to sync to cloud…';
+    }else{
+      syncTxt = m.lastCloudOk ? 'Synced to cloud' : 'Ready';
+    }
+  }else{
+    syncTxt = online ? 'Pick a player' : 'Offline';
+  }
+  hubs.forEach(function(row){
+    const netEl = document.getElementById(row[0]);
+    const syEl = document.getElementById(row[1]);
+    const dot = document.getElementById(row[2]);
+    if(netEl) netEl.textContent = netTxt;
+    if(syEl) syEl.textContent = syncTxt;
+    if(dot){
+      dot.classList.toggle('cs-online', online);
+      dot.classList.toggle('cs-offline', !online);
+    }
+  });
+}
+async function flushPendingCloudSaves(){
+  for(const pl of ['jenn','jess']){
+    if(syncMeta[pl] && syncMeta[pl].pendingCloud){
+      await saveState(pl);
+    }
+  }
+}
+function initConnectivityAndSyncUI(){
+  updateConnectionStatusUI();
+  window.addEventListener('online', function(){
+    updateConnectionStatusUI();
+    flushPendingCloudSaves();
+  });
+  window.addEventListener('offline', updateConnectionStatusUI);
+}
 
 // Session clock
 // countdown vars declared in session clock section below
@@ -1496,7 +1656,17 @@ function flushPlayTimeTick(doSave){
 // FIREBASE — baseline load + real-time sync
 // ════════════════════════════════════════════════
 function applyPlayerData(p, data){
-  if(!data) return;
+  const localSnap = loadLocalStateMirror(p);
+  const remoteLast = data ? Number(data.lastUpdatedAt || 0) : 0;
+  let localNewer = false;
+  if(!data){
+    if(!localSnap) return;
+    data = localSnap;
+    localNewer = true;
+  }else if(localSnap && Number(localSnap.lastUpdatedAt||0) > remoteLast){
+    localNewer = true;
+    data = localSnap;
+  }
   if(currentPlayer===p && currentGameType) return; // guard mid-round
   const incomingUpdatedAt = Number(data.lastUpdatedAt || 0);
   const localUpdatedAt = Number(state[p]?.lastUpdatedAt || 0);
@@ -1564,6 +1734,12 @@ function applyPlayerData(p, data){
     state.jenn.parentSettings=merged; state.jess.parentSettings=merged;
   }
   tryUnlockGradesAndTiers(state[p]);
+  syncMeta[p].lastCloudOk = Date.now();
+  if(localNewer || Number(state[p].lastUpdatedAt||0) > remoteLast){
+    syncMeta[p].pendingCloud = true;
+  }else{
+    syncMeta[p].pendingCloud = false;
+  }
   updateLeaderboard();
   if(currentPlayer===p) updateHub();
 }
@@ -1585,10 +1761,19 @@ async function saveState(player){
     console.warn('Recovery freeze enabled, skipping save for', player);
     return;
   }
+  state[player].lastUpdatedAt = Date.now();
+  persistLocalStateMirror(player);
+  updateConnectionStatusUI();
   if(window.fbSave){
-    state[player].lastUpdatedAt = Date.now();
-    await window.fbSave(player,state[player]);
+    const ok = await window.fbSave(player, state[player]);
+    if(ok){
+      syncMeta[player].pendingCloud = false;
+      syncMeta[player].lastCloudOk = Date.now();
+    }else{
+      syncMeta[player].pendingCloud = true;
+    }
   }
+  updateConnectionStatusUI();
 }
 
 // Partial flush on visibility change (item #6)
@@ -1774,6 +1959,7 @@ function selectPlayer(p){
   showScreen('hub');updateHub();
   startSessionClock();
   startPlayTimeTracker();
+  updateConnectionStatusUI();
 }
 function goBack(){
   stopPlayTimeTracker();
@@ -1782,7 +1968,7 @@ function goBack(){
   document.getElementById('session-clock').style.display='none';
   showScreen('select');updateLeaderboard();
 }
-function exitGame(){showScreen('hub');document.getElementById('hint-panel').classList.remove('show');}
+function exitGame(){if(currentPlayer&&currentGameType){persistRoundDraftNow();saveState(currentPlayer);}currentGameType=null;questions=[];showScreen('hub');document.getElementById('hint-panel').classList.remove('show');updateConnectionStatusUI();}
 function showScreen(name){
   ['select','hub','game'].forEach(n=>document.getElementById(`screen-${n}`).style.display=n===name?'block':'none');
 }
@@ -1978,6 +2164,7 @@ function updateHub(){
   if(hubDailySummaryOpen) renderHubDailySummaryInner(s, tk);
   refreshGradeTabs();
   updateStarMap();
+  updateConnectionStatusUI();
 }
 
 function updateStarMap(){
@@ -2032,21 +2219,32 @@ function startSpeech(){
 function startGame(type){
   const played=roundsPlayedToday(currentPlayer,type);
   if(played>=DAILY_ROUND_LIMIT){showToast(`Come back tomorrow! ${DAILY_ROUND_LIMIT} rounds done today 🌙`,'var(--gold)');return;}
-  currentGameType=type;lives=3;roundScore=0;roundBasePoints=0;roundSpeedPoints=0;qIndex=0;roundTopicTally={};
-  questions=buildQuestions(type);
+  currentGameType=type;
+  const draft = loadRoundDraftForStart(type);
+  const canResume = draft && draft.tk===todayKey() && draft.player===currentPlayer && draft.grade===currentGrade
+    && draft.type===type && draft.questions && draft.questions.length && (draft.qIndex|0)<draft.questions.length;
+  if(canResume){
+    restoreRoundDraft(draft);
+  }else{
+    clearCurrentRoundDraft();
+    lives=3;roundScore=0;roundBasePoints=0;roundSpeedPoints=0;qIndex=0;roundTopicTally={};
+    questions=buildQuestions(type);
+    renderLives();renderScore();
+    document.getElementById('progress-bar').style.width='0%';
+    document.getElementById('hint-panel').classList.remove('show');
+    renderQuestion();
+    scheduleRoundDraftPersist();
+  }
   showScreen('game');
   document.getElementById('game-title-bar').textContent={
     quiz:'🧠 Quick Quiz',match:'🎯 Word Match',
     scramble:'🔤 Scramble',builder:'💬 Sentence Builder',
     listen:'🎧 Listen & Speak',boss:'⚡ Boss Round'
   }[type];
-  // Show/hide speech buttons
   document.getElementById('btn-tts').style.display='inline-block';
   document.getElementById('btn-stt').style.display=recognition?'inline-block':'none';
-  renderLives();renderScore();
-  document.getElementById('progress-bar').style.width='0%';
-  document.getElementById('hint-panel').classList.remove('show');
-  renderQuestion();
+  updateConnectionStatusUI();
+  scheduleRoundDraftPersist();
 }
 
 function buildQuestions(type){
@@ -2150,13 +2348,29 @@ function handleQuizAnswer(choice,q,btn){
   recordGradeAttempt(q.word.grade||currentGrade, correct);
   if(correct){logSuccess(q.word);showFeedback(true,q.word);}
   else{logFailure(q.word);lives--;renderLives();showFeedback(false,q.word);if(lives<=0){setTimeout(endRound,1500);return;}}
+  scheduleRoundDraftPersist();
 }
 
 // ── MATCH ──
 function renderMatch(q,area,actions){
-  matchPairs=shuffleSeeded(q.pairs,dailyShuffleSeed()+888);matchMatched=[];matchSelected=null;
-  const frWords=shuffleSeeded(matchPairs.map(p=>p.fr),dailyShuffleSeed()+889);
-  const enWords=shuffleSeeded(matchPairs.map(p=>p.en),dailyShuffleSeed()+890);
+  const snap = __roundDraftSnap;
+  if(snap && currentQ && currentQ.type==='match' && snap.qIndex===qIndex && snap.matchPairs && snap.matchPairs.length){
+    matchPairs = snap.matchPairs;
+    matchMatched = snap.matchMatched || [];
+    const frWords = (snap.matchFrOrder && snap.matchFrOrder.length) ? snap.matchFrOrder : shuffleSeeded(matchPairs.map(p=>p.fr),dailyShuffleSeed()+889);
+    const enWords = (snap.matchEnOrder && snap.matchEnOrder.length) ? snap.matchEnOrder : shuffleSeeded(matchPairs.map(p=>p.en),dailyShuffleSeed()+890);
+    if(snap.matchSelected && snap.matchSelected.side && snap.matchSelected.word){
+      matchSelected = { btn: null, side: snap.matchSelected.side, word: snap.matchSelected.word };
+    }else{
+      matchSelected = null;
+    }
+  }else{
+    matchPairs=shuffleSeeded(q.pairs,dailyShuffleSeed()+888);matchMatched=[];matchSelected=null;matchFrOrder=[];matchEnOrder=[];
+    var frWords=shuffleSeeded(matchPairs.map(p=>p.fr),dailyShuffleSeed()+889);
+    var enWords=shuffleSeeded(matchPairs.map(p=>p.en),dailyShuffleSeed()+890);
+    matchFrOrder = frWords.slice();
+    matchEnOrder = enWords.slice();
+  }
   area.innerHTML=`<div class="question-label">Match French → English</div><div class="match-grid"><div class="match-col" id="fr-col"></div><div class="match-col" id="en-col"></div></div>`;
   frWords.forEach(w=>{
     const btn=document.createElement('button');btn.className='word-chip';btn.textContent=w;btn.dataset.side='fr';
@@ -2166,6 +2380,20 @@ function renderMatch(q,area,actions){
     const btn=document.createElement('button');btn.className='word-chip';btn.textContent=w;btn.dataset.side='en';
     btn.onclick=()=>handleMatchClick(btn,'en',w);document.getElementById('en-col').appendChild(btn);
   });
+  document.querySelectorAll('#fr-col .word-chip, #en-col .word-chip').forEach(function(b){
+    const wtxt=b.textContent;
+    const side=b.dataset.side;
+    const matched=matchMatched.some(function(p){return (side==='fr'&&p.fr===wtxt)||(side==='en'&&p.en===wtxt);});
+    if(matched){b.classList.add('used');b.style.borderColor='var(--green)';b.style.color='var(--green)';}
+  });
+  if(matchSelected && matchSelected.word){
+    document.querySelectorAll('#fr-col .word-chip, #en-col .word-chip').forEach(function(b){
+      if(!b.classList.contains('used') && b.textContent===matchSelected.word && b.dataset.side===matchSelected.side){
+        b.style.borderColor='var(--french)';
+        matchSelected.btn=b;
+      }
+    });
+  }
 }
 function handleMatchClick(btn,side,word){
   if(btn.classList.contains('used'))return;
@@ -2199,6 +2427,7 @@ function handleMatchClick(btn,side,word){
     lives--;renderLives();if(lives<=0)setTimeout(endRound,1000);
   }
   matchSelected=null;
+  scheduleRoundDraftPersist();
 }
 
 // ── SCRAMBLE ──
@@ -2228,8 +2457,9 @@ function renderScrambleState(q){
     tile.onclick=()=>{scrambleAnswer.push(l);scrambleSource.splice(i,1);renderScrambleState(currentQ);};
     pool.appendChild(tile);
   });
+  scheduleRoundDraftPersist();
 }
-function clearScramble(){scrambleSource=[...currentQ.letters];scrambleAnswer=[];renderScrambleState(currentQ);}
+function clearScramble(){scrambleSource=[...currentQ.letters];scrambleAnswer=[];renderScrambleState(currentQ);scheduleRoundDraftPersist();}
 function checkScramble(target){
   const normalize=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
   const ok = normalize(scrambleAnswer.join(''))===normalize(target);
@@ -2237,6 +2467,7 @@ function checkScramble(target){
   recordGradeAttempt(currentQ.word.grade||currentGrade, ok);
   if(ok){logSuccess(currentQ.word);showFeedback(true,currentQ.word);}
   else{logFailure(currentQ.word);lives--;renderLives();showFeedback(false,currentQ.word,null,target);if(lives<=0)setTimeout(endRound,1500);}
+  scheduleRoundDraftPersist();
 }
 
 // ── BUILDER ──
@@ -2267,9 +2498,10 @@ function renderBuilderState(q){
     chip.onclick=()=>{if((builtWords.filter(b=>b===w).length)<(q.shuffled.filter(s=>s===w).length)){builtWords.push(w);renderBuilderState(q);}};
     bank.appendChild(chip);
   });
+  scheduleRoundDraftPersist();
 }
-function removeBuilt(i){builtWords.splice(i,1);renderBuilderState(currentQ);}
-function clearBuilder(){builtWords=[];renderBuilderState(currentQ);}
+function removeBuilt(i){builtWords.splice(i,1);renderBuilderState(currentQ);scheduleRoundDraftPersist();}
+function clearBuilder(){builtWords=[];renderBuilderState(currentQ);scheduleRoundDraftPersist();}
 function checkBuilder(){
   const answer=builtWords.join(' '),correct=currentQ.parts.join(' ');
   if(answer===correct){
@@ -2291,6 +2523,7 @@ function checkBuilder(){
     showFeedback(false,null,currentQ.target,correct,wrongParts);
     if(lives<=0)setTimeout(endRound,1500);
   }
+  scheduleRoundDraftPersist();
 }
 
 // ════════════════════════════════════════════════
@@ -2337,14 +2570,16 @@ function showFeedback(correct,word=null,extra='',correctAnswer=null,wrongParts=n
     confetti();
   }
   overlay.classList.add('show');
+  scheduleRoundDraftPersist();
 }
 
-function nextQuestion(){document.getElementById('feedback-overlay').classList.remove('show');qIndex++;renderQuestion();}
+function nextQuestion(){document.getElementById('feedback-overlay').classList.remove('show');qIndex++;renderQuestion();scheduleRoundDraftPersist();}
 
 // ════════════════════════════════════════════════
 // ROUND END
 // ════════════════════════════════════════════════
 async function endRound(){
+  clearCurrentRoundDraft();
   document.getElementById('feedback-overlay').classList.remove('show');
   const lpStars=roundScore>=80?3:roundScore>=40?2:roundScore>=15?1:0;
   const area=document.getElementById('game-area'),actions=document.getElementById('action-row');
@@ -2676,6 +2911,7 @@ function checkListenAnswer(){
     showFeedback(false, currentQ.word);
     if(lives<=0) setTimeout(endRound,1500);
   }
+  scheduleRoundDraftPersist();
 }
 
 function startListenSpeech(){
@@ -3249,6 +3485,7 @@ async function clearProgress(mode){
     msg.style.color = 'var(--green)';
   }
 
+  ['jenn','jess'].forEach(function(pl){ clearAllRoundDraftsForPlayer(pl); });
   // Save both players
   await saveState('jenn');
   await saveState('jess');
@@ -3278,6 +3515,8 @@ function startWallClock(){
   setInterval(tick,1000);
 }
 
+hydrateStateFromLocalMirror();
+initConnectivityAndSyncUI();
 showScreen('select');
 startWallClock();
 
