@@ -145,7 +145,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .hub-rules-mini b{color:var(--gold);font-size:.76rem;display:inline;margin-right:4px;}
 .hub-slogan-wrap{width:100%;display:flex;flex-direction:row;align-items:center;gap:0;background:rgba(245,158,11,.12);border:2px solid rgba(245,158,11,.35);border-radius:14px;padding:9px 12px;}
 .hub-slogan{flex:1;min-width:0;font-size:clamp(.88rem,2.4vw,1.05rem);color:var(--gold);font-style:italic;line-height:1.4;font-weight:700;background:none;border:none;padding:0;}
-.hub-slogan-actions{display:none;flex-shrink:0;margin-left:10px;align-items:center;}
+.hub-slogan-actions{display:flex;flex-shrink:0;margin-left:10px;align-items:center;}
 .hub-slogan-btn{background:rgba(79,70,229,.18);border:2px solid rgba(79,70,229,.45);border-radius:10px;padding:5px 9px;font-family:'Nunito',sans-serif;font-size:.72rem;font-weight:800;color:var(--text);cursor:pointer;white-space:nowrap;}
 .hub-slogan-btn:hover{background:rgba(79,70,229,.28);}
 .hub-today-panel{width:100%;max-width:none;margin-top:4px;}
@@ -550,7 +550,7 @@ button,input{touch-action:manipulation;}
           </div>
         </div>
       </div>
-      <div class="hub-rules-mini" id="hub-rules-mini"><b>⭐ Topic stars</b> 45–64% = 1⭐ · 65–84% = 2⭐ · ≥85% = 3⭐ · best of 2 rounds per topic &nbsp;|&nbsp; <b>🌙 Moon</b> All topics in a grade at 3⭐ &nbsp;|&nbsp; <b>🌟 Superstar</b> Moons on the two highest unlocked grades</div>
+      <div class="hub-rules-mini" id="hub-rules-mini"><b>⭐ Topic stars</b> 60–79% = 1⭐ · 80–94% = 2⭐ · ≥95% = 3⭐ · topic seen in ≥3 games today &nbsp;|&nbsp; <b>🌙 Moon</b> All topics in a grade at 3⭐ &nbsp;|&nbsp; <b>🌟 Superstar</b> Moons on the two highest unlocked grades</div>
       <div class="hub-slogan-wrap">
         <div class="hub-slogan" id="hub-slogan"></div>
         <div class="hub-slogan-actions" id="hub-slogan-actions">
@@ -737,10 +737,8 @@ button,input{touch-action:manipulation;}
       <div class="parent-pwd-title" style="margin-top:14px;">📆 Screen time — allowed days</div>
       <div class="weekday-hint">Green = kids may open the app · Red = blocked (parent password to play that day)</div>
       <div class="weekday-grid" id="weekday-grid"></div>
-      <div class="parent-pwd-title" style="margin-top:10px;">🔓 Reopen conquered tier</div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:8px;">
-        <button type="button" class="btn-secondary" onclick="reopenTierForParent(1)" style="padding:6px 10px;font-size:.7rem;">Foundation G4–G5</button>
-      </div>
+      <div class="parent-pwd-title" style="margin-top:10px;">🔓 Reopen closed grades</div>
+      <div id="parent-grade-reopen-controls" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:8px;"></div>
       <div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:8px;">
         <button type="button" class="btn-secondary" onclick="revealFullPlayTime()" style="padding:8px 14px;font-size:.72rem;">Show full French times (uses password above)</button>
         <div style="font-size:.62rem;color:var(--text-muted);text-align:center;max-width:420px;">Default view caps at 30 minutes on the child hub. This button reveals the real tracked time in stats and on the hub for this browser session.</div>
@@ -1065,7 +1063,8 @@ const DEFAULT_STATE = () => ({
   failedWords:{}, playedDays:{}, todayStats:{},
   dailyTimeMs:{}, lastDrillComplete:null,
   parentSettings:defaultParentSettings(),
-  gradeUnlocked:defaultGradeUnlocked(), gradeStats:{},
+  gradeUnlocked:defaultGradeUnlocked(), gradeStats:{}, gradeGameRounds:{}, dailyTopicStats:{},
+  gradeParentOpen:{4:true,5:false,6:false,7:false,8:false,9:false,10:false},
   tier1Conquered:false, tier2Conquered:false, tier3Conquered:false,
   tier1ParentOpen:false, tier2ParentOpen:false, tier3ParentOpen:false,
   lastUpdatedAt:0
@@ -1087,6 +1086,7 @@ const SPEED_BONUS_WINDOW=8000, SPEED_BONUS_MAX=10, DAILY_ROUND_LIMIT=2;
 const DAILY_PLAY_CAP_MS = 30 * 60 * 1000; // child-facing cap; full time with parent unlock
 /** Grades unlock progressively from G4 up to G10. */
 const MAX_PLAYABLE_GRADE = 10;
+const ALL_GAME_TYPES = ['quiz','match','scramble','builder','listen','boss'];
 
 let summaryMode = 'weekly';
 let dailySummaryOffset = 0;
@@ -1394,9 +1394,9 @@ function mergeCarryoverVocab(grade, pool, seed){
   return [...extra, ...pool];
 }
 function accuracyToTopicStars(acc){
-  if(acc >= 0.85) return 3;
-  if(acc >= 0.65) return 2;
-  if(acc >= 0.45) return 1;
+  if(acc >= 0.95) return 3;
+  if(acc >= 0.80) return 2;
+  if(acc >= 0.60) return 1;
   return 0;
 }
 function gradeTier(grade){
@@ -1410,9 +1410,38 @@ function defaultGradeUnlocked(){
   for(let g = 4; g <= 10; g++) o[g] = (g === 4);
   return o;
 }
+function defaultGradeParentOpen(){
+  const o = {};
+  for(let g = 4; g <= 10; g++) o[g] = false;
+  o[4] = true;
+  return o;
+}
 function clampGradeUnlocks(o){
   if(!o) return;
   for(let g = MAX_PLAYABLE_GRADE + 1; g <= 10; g++) o[g] = false;
+}
+function highestUnlockedGrade(s){
+  if(!s || !s.gradeUnlocked) return 4;
+  let top = 4;
+  for(let g = 4; g <= MAX_PLAYABLE_GRADE; g++){
+    if(s.gradeUnlocked[g]) top = g;
+  }
+  return top;
+}
+function isAutoOpenGrade(s, grade){
+  return grade >= (highestUnlockedGrade(s) - 1);
+}
+function ensureGradeParentOpenState(s){
+  if(!s.gradeParentOpen) s.gradeParentOpen = defaultGradeParentOpen();
+  for(let g = 4; g <= 10; g++){
+    if(s.gradeParentOpen[g] === undefined) s.gradeParentOpen[g] = false;
+  }
+}
+function closeGradesBelowWindow(s, topGrade){
+  ensureGradeParentOpenState(s);
+  for(let g = 4; g <= 10; g++){
+    if(g <= topGrade - 2) s.gradeParentOpen[g] = false;
+  }
 }
 function hasFullMoonForGrade(s, grade){
   const topics = getTopics(grade);
@@ -1426,12 +1455,46 @@ function gradeDayAccuracy(s, dateKey, grade){
   if(t < 5) return null;
   return (gs.correct || 0) / t;
 }
+function markGradeRoundComplete(s, dateKey, grade, gameType){
+  if(!s.gradeGameRounds) s.gradeGameRounds = {};
+  if(!s.gradeGameRounds[dateKey]) s.gradeGameRounds[dateKey] = {};
+  if(!s.gradeGameRounds[dateKey][grade]) s.gradeGameRounds[dateKey][grade] = {};
+  s.gradeGameRounds[dateKey][grade][gameType] = (s.gradeGameRounds[dateKey][grade][gameType] || 0) + 1;
+}
+function mergeRoundTopicIntoDaily(s, dateKey, topicKey, gameType, c, w){
+  if(!s.dailyTopicStats) s.dailyTopicStats = {};
+  if(!s.dailyTopicStats[dateKey]) s.dailyTopicStats[dateKey] = {};
+  if(!s.dailyTopicStats[dateKey][topicKey]) s.dailyTopicStats[dateKey][topicKey] = {};
+  if(!s.dailyTopicStats[dateKey][topicKey][gameType]) s.dailyTopicStats[dateKey][topicKey][gameType] = { c:0, w:0 };
+  s.dailyTopicStats[dateKey][topicKey][gameType].c += c || 0;
+  s.dailyTopicStats[dateKey][topicKey][gameType].w += w || 0;
+}
+function computeTopicStarFromDaily(s, dateKey, topicKey){
+  const byType = s.dailyTopicStats && s.dailyTopicStats[dateKey] && s.dailyTopicStats[dateKey][topicKey];
+  if(!byType) return 0;
+  let c = 0, w = 0, gameTypeCount = 0;
+  Object.values(byType).forEach(o=>{
+    const t = (o.c||0) + (o.w||0);
+    if(t > 0) gameTypeCount++;
+    c += o.c || 0;
+    w += o.w || 0;
+  });
+  const total = c + w;
+  if(gameTypeCount < 3 || total < 6) return 0;
+  return accuracyToTopicStars(c / total);
+}
+function dayQualifiesForGate(s, dateKey, grade){
+  const rounds = s.gradeGameRounds && s.gradeGameRounds[dateKey] && s.gradeGameRounds[dateKey][grade];
+  if(!rounds) return false;
+  if(!ALL_GAME_TYPES.every(type => (rounds[type] || 0) >= 1)) return false;
+  const acc = gradeDayAccuracy(s, dateKey, grade);
+  return acc !== null && acc >= 0.95;
+}
 function consecutiveQualifyingDays(s, grade){
   let streak = 0;
   for(let d = 0; d < 14; d++){
     const dk = dateKeyAddDays(-d);
-    const acc = gradeDayAccuracy(s, dk, grade);
-    if(acc !== null && acc >= 0.95) streak++;
+    if(dayQualifiesForGate(s, dk, grade)) streak++;
     else break;
   }
   return streak;
@@ -1449,14 +1512,13 @@ function latestGateGrade(s){
 function isGradePlayable(s, grade){
   if(grade > MAX_PLAYABLE_GRADE) return false;
   if(!s.gradeUnlocked || !s.gradeUnlocked[grade]) return false;
-  if(grade <= 5 && s.tier1Conquered && !s.tier1ParentOpen) return false;
-  if(grade >= 6 && grade <= 7 && s.tier2Conquered && !s.tier2ParentOpen) return false;
-  if(grade >= 8 && grade <= 9 && s.tier3Conquered && !s.tier3ParentOpen) return false;
-  return true;
+  ensureGradeParentOpenState(s);
+  return isAutoOpenGrade(s, grade) || !!s.gradeParentOpen[grade];
 }
 function tryUnlockGradesAndTiers(s){
   const unlocked = [];
   clampGradeUnlocks(s.gradeUnlocked);
+  ensureGradeParentOpenState(s);
   for(let g = 5; g <= MAX_PLAYABLE_GRADE; g++){
     if(s.gradeUnlocked[g]) continue;
     const prev = g - 1;
@@ -1464,12 +1526,8 @@ function tryUnlockGradesAndTiers(s){
     if(!hasFullMoonForGrade(s, prev)) continue;
     if(consecutiveQualifyingDays(s, prev) < 2) continue;
     s.gradeUnlocked[g] = true;
+    closeGradesBelowWindow(s, g);
     unlocked.push(g);
-  }
-  const eligibleForNextAfterG5 = s.gradeUnlocked[5] && hasFullMoonForGrade(s, 5) && consecutiveQualifyingDays(s, 5) >= 2;
-  if(eligibleForNextAfterG5 && !s.tier1Conquered){
-    s.tier1Conquered = true;
-    unlocked.push('tier1Conq');
   }
   return unlocked;
 }
@@ -1717,6 +1775,15 @@ function applyPlayerData(p, data){
   if(!state[p].gradeUnlocked) state[p].gradeUnlocked=defaultGradeUnlocked();
   clampGradeUnlocks(state[p].gradeUnlocked);
   if(!state[p].gradeStats) state[p].gradeStats={};
+  if(!state[p].gradeGameRounds) state[p].gradeGameRounds={};
+  if(!state[p].dailyTopicStats) state[p].dailyTopicStats={};
+  ensureGradeParentOpenState(state[p]);
+  const legacyTierClosed = !!(state[p].tier1Conquered && !state[p].tier1ParentOpen);
+  if(legacyTierClosed){
+    state[p].gradeParentOpen[4] = false;
+    state[p].gradeParentOpen[5] = false;
+  }
+  closeGradesBelowWindow(state[p], highestUnlockedGrade(state[p]));
   if(state[p].tier1Conquered===undefined) state[p].tier1Conquered=false;
   if(state[p].tier2Conquered===undefined) state[p].tier2Conquered=false;
   if(state[p].tier3Conquered===undefined) state[p].tier3Conquered=false;
@@ -2055,9 +2122,6 @@ function getDailySloganEnglish(){
   const dayNum = parseInt(todayKey().replace(/-/g,''));
   return DAILY_SLOGAN_EN[dayNum % DAILY_SLOGAN_EN.length];
 }
-function isEnglishLikeText(text){
-  return /^[A-Za-z0-9\s.,!?'"():;+\-—/&%🌟✨💥💫🍀📚🚀🏆💪🐦🎉🥳⭐]+$/.test(text||'');
-}
 function toggleSloganTranslation(){
   sloganShowEnglish=!sloganShowEnglish;
   if(currentPlayer) updateHub();
@@ -2067,18 +2131,20 @@ function renderHubDailySummaryInner(s, tk){
   const el=document.getElementById('hub-daily-summary-inner');
   if(!el) return;
   const gateGrade=latestGateGrade(s);
-  const g4=gradeDayAccuracy(s, tk, 4);
-  const g5=gradeDayAccuracy(s, tk, 5);
-  const g4lab=g4!==null?Math.round(g4*100)+'%':'—';
-  const g5lab=g5!==null?Math.round(g5*100)+'%':'—';
+  const unlockedGrades=[4,5,6,7,8,9,10].filter(g=>s.gradeUnlocked&&s.gradeUnlocked[g]);
+  const topTwo=unlockedGrades.slice(-2);
+  const dynamicRows=topTwo.map(g=>{
+    const acc=gradeDayAccuracy(s, tk, g);
+    const lab=acc!==null?Math.round(acc*100)+'%':'—';
+    return '<div class="hds-row"><span>G'+g+' accuracy (today)</span><span>'+lab+'</span></div>';
+  }).join('');
   const gateAcc=gradeDayAccuracy(s, tk, gateGrade);
   const gateAccLabel=gateAcc!==null?Math.round(gateAcc*100)+'%':'—';
   const gateLine = gateGrade>=10
     ? '<div class="hds-row"><span>🔓 Gate to next grade</span><span>All grades unlocked</span></div>'
-    : '<div class="hds-row"><span>🔓 Gate to next grade</span><span>'+gateProgressLabel(s, gateGrade)+' @ ≥95% on G'+gateGrade+'</span></div>';
-  el.innerHTML='<p class="hds-rules" style="font-size:.72rem;color:var(--text-muted);margin:0 0 10px;line-height:1.45;"><strong>Mini-games:</strong> up to <strong>2 rounds per game type</strong> each day — separate from grade unlocking.<br><strong>Unlock next grade:</strong> earn the 🌙 Moon on the grade below, then <strong>≥95% accuracy</strong> on that grade for <strong>2 days in a row</strong> (this day’s answers per grade).</p>'
-    +'<div class="hds-row"><span>G4 accuracy (today)</span><span>'+g4lab+'</span></div>'
-    +'<div class="hds-row"><span>G5 accuracy (today)</span><span>'+g5lab+'</span></div>'
+    : '<div class="hds-row"><span>🔓 Gate to next grade</span><span>'+gateProgressLabel(s, gateGrade)+' @ ≥95% + all 6 games on G'+gateGrade+'</span></div>';
+  el.innerHTML='<p class="hds-rules" style="font-size:.72rem;color:var(--text-muted);margin:0 0 10px;line-height:1.45;"><strong>Mini-games:</strong> up to <strong>2 rounds per game type</strong> each day — separate from grade unlocking.<br><strong>Unlock next grade:</strong> earn the 🌙 Moon on the grade below, then <strong>≥95% accuracy</strong> on that grade and <strong>one complete round of every mini-game</strong> on that grade for <strong>2 days in a row</strong>.</p>'
+    + dynamicRows
     +'<div class="hds-row"><span>Gate grade today</span><span>G'+gateGrade+' · '+gateAccLabel+'</span></div>'
     + gateLine;
 }
@@ -2130,11 +2196,11 @@ function updateHub(){
   const sloganAct=document.getElementById('hub-slogan-actions');
   const sloganBtn=document.getElementById('hub-slogan-translate-btn');
   if(sloganEl){
-    const isEnglish=isEnglishLikeText(sloganText);
-    const shown=sloganShowEnglish&&!isEnglish?getDailySloganEnglish():sloganText;
+    const isSameAsEnglish=sloganText===getDailySloganEnglish();
+    const shown=sloganShowEnglish&&!isSameAsEnglish?getDailySloganEnglish():sloganText;
     sloganEl.textContent=shown;
-    if(sloganAct)sloganAct.style.display=!isEnglish?'flex':'none';
-    if(sloganBtn&&!isEnglish)sloganBtn.textContent=sloganShowEnglish?'Show original':'Translate to English';
+    if(sloganAct)sloganAct.style.display=isSameAsEnglish?'none':'flex';
+    if(sloganBtn&&!isSameAsEnglish)sloganBtn.textContent=sloganShowEnglish?'Show original':'Translate to English';
   }
   // Round badges
   ['quiz','match','scramble','builder','boss','listen'].forEach(type=>{
@@ -2612,13 +2678,18 @@ async function endRound(){
   s.totalStars+=roundScore;
   s.weekStars+=roundScore;
   incrementRoundsToday(currentPlayer,currentGameType);
+  markGradeRoundComplete(s, todayKey(), currentGrade, currentGameType);
   const roundsLeft=DAILY_ROUND_LIMIT-roundsPlayedToday(currentPlayer,currentGameType);
 
+  const touchedTopicKeys = [];
   Object.entries(roundTopicTally).forEach(([tk, o])=>{
     const tot=o.c+o.w;
     if(tot===0)return;
-    const acc=o.c/tot;
-    const st=accuracyToTopicStars(acc);
+    mergeRoundTopicIntoDaily(s, todayKey(), tk, currentGameType, o.c, o.w);
+    touchedTopicKeys.push(tk);
+  });
+  touchedTopicKeys.forEach((tk)=>{
+    const st = computeTopicStarFromDaily(s, todayKey(), tk);
     if(st>0)s.topicStars[tk]=Math.max(s.topicStars[tk]||0, st);
   });
 
@@ -2627,18 +2698,13 @@ async function endRound(){
   if(unl.length){
     unlockLine='<div class="unlock-banner">'+unl.map(u=>{
       if(typeof u==='number')return '🔓 Grade '+u+' unlocked!';
-      if(u==='tier1Conq')return '🏅 Foundation tier done — G4–G5 locked until parent reopens';
-      if(u==='tier2Conq')return '🏅 Explorer tier done — G6–G7 locked until parent reopens';
-      if(u==='tier3Conq')return '🏅 Scholar tier done — G8–G9 locked until parent reopens';
       return '';
     }).filter(Boolean).join(' · ')+'</div>';
   }
 
   let maxTopicTier=0;
-  Object.values(roundTopicTally).forEach(o=>{
-    const t=o.c+o.w;
-    if(!t)return;
-    const st=accuracyToTopicStars(o.c/t);
+  touchedTopicKeys.forEach((tk)=>{
+    const st=computeTopicStarFromDaily(s, todayKey(), tk);
     if(st>maxTopicTier)maxTopicTier=st;
   });
 
@@ -2956,6 +3022,7 @@ function showParentSummary(){
   if(bw) bw.classList.add('active');
   if(bd) bd.classList.remove('active');
   renderWeekdayGrid();
+  renderParentGradeReopenControls();
   renderParentSummary();
   document.getElementById('parent-overlay').classList.add('show');
 }
@@ -2982,6 +3049,27 @@ function renderWeekdayGrid(){
   g.innerHTML = labels.map((lbl, i) =>
     '<button type="button" class="weekday-chip ' + (ps.weekdayOpen[i] ? 'on' : 'off') + '" onclick="toggleWeekday(' + i + ')">' + lbl + '</button>'
   ).join('');
+}
+
+function renderParentGradeReopenControls(){
+  const wrap = document.getElementById('parent-grade-reopen-controls');
+  if(!wrap) return;
+  const sourcePlayer = currentPlayer || 'jenn';
+  const s = state[sourcePlayer];
+  if(!s || !s.gradeUnlocked){
+    wrap.innerHTML = '<div style="font-size:.68rem;color:var(--text-muted);">No closed grades to reopen right now.</div>';
+    return;
+  }
+  ensureGradeParentOpenState(s);
+  const top = highestUnlockedGrade(s);
+  const rows = [];
+  for(let g = 4; g <= 10; g++){
+    if(!s.gradeUnlocked[g]) continue;
+    if(g >= top - 1) continue;
+    if(s.gradeParentOpen[g]) continue;
+    rows.push('<button type="button" class="btn-secondary" onclick="reopenGradeForParent('+g+')" style="padding:6px 10px;font-size:.7rem;">Reopen G'+g+'</button>');
+  }
+  wrap.innerHTML = rows.length ? rows.join('') : '<div style="font-size:.68rem;color:var(--text-muted);">No closed grades to reopen right now.</div>';
 }
 
 async function toggleWeekday(i){
@@ -3164,7 +3252,7 @@ function revealFullPlayTime(){
   if(currentPlayer) updateHub();
 }
 
-async function reopenTierForParent(tier){
+async function reopenGradeForParent(grade){
   const input = document.getElementById('parent-pwd');
   const msg = document.getElementById('pwd-msg');
   if((input?.value||'').trim() !== PARENT_PASSWORD){
@@ -3172,15 +3260,17 @@ async function reopenTierForParent(tier){
     return;
   }
   ['jenn','jess'].forEach(p=>{
-    if(tier===1) state[p].tier1ParentOpen = true;
-    if(tier===2) state[p].tier2ParentOpen = true;
-    if(tier===3) state[p].tier3ParentOpen = true;
+    if(!state[p].gradeParentOpen) state[p].gradeParentOpen = defaultGradeParentOpen();
+    state[p].gradeParentOpen[grade] = true;
   });
   await saveState('jenn');
   await saveState('jess');
-  if(msg){ msg.textContent = '✅ Tier reopened'; msg.style.color = 'var(--green)'; }
-  renderParentSummary();
-  if(currentPlayer) refreshGradeTabs();
+  if(msg){ msg.textContent = '✅ G'+grade+' reopened'; msg.style.color = 'var(--green)'; }
+  renderParentGradeReopenControls();
+  if(currentPlayer){
+    refreshGradeTabs();
+    updateHub();
+  }
 }
 
 function unlockWeekdaySession(){
@@ -3435,6 +3525,9 @@ async function clearProgress(mode){
       if(s.playedDays) delete s.playedDays[today];
       // Clear topic stars — per-day use
       s.topicStars = {};
+      if(s.gradeStats && s.gradeStats[today]) delete s.gradeStats[today];
+      if(s.gradeGameRounds && s.gradeGameRounds[today]) delete s.gradeGameRounds[today];
+      if(s.dailyTopicStats && s.dailyTopicStats[today]) delete s.dailyTopicStats[today];
     });
     msg.textContent = '✅ Today cleared for both players';
     msg.style.color = 'var(--green)';
@@ -3457,6 +3550,16 @@ async function clearProgress(mode){
       if(s.todayStats){
         Object.keys(s.todayStats).forEach(k=>{
           if(k !== today) delete s.todayStats[k];
+        });
+      }
+      if(s.gradeGameRounds){
+        Object.keys(s.gradeGameRounds).forEach(k=>{
+          if(k !== today) delete s.gradeGameRounds[k];
+        });
+      }
+      if(s.dailyTopicStats){
+        Object.keys(s.dailyTopicStats).forEach(k=>{
+          if(k !== today) delete s.dailyTopicStats[k];
         });
       }
       // Clear old played days (keep today)
@@ -3525,7 +3628,7 @@ Object.assign(window, {
   showMyWords, showMyWordsTab, showStudy, showStudySet,
   showParentSummary, navSummaryWeek, navDailySummary, setSummaryMode,
   toggleHubDailySummary,
-  toggleWeekday, revealFullPlayTime, reopenTierForParent, unlockWeekdaySession, cancelWeekdayLock,
+  toggleWeekday, revealFullPlayTime, reopenGradeForParent, unlockWeekdaySession, cancelWeekdayLock,
   refreshGradeTabs,
   startGame, nextQuestion, showHint,
   speakCurrent, startSpeech, speakFrench, closeOverlay,
