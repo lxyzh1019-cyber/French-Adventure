@@ -204,6 +204,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .sm-topic-icon{font-size:1.6rem;display:block;margin-bottom:3px;}
 .sm-topic-name{font-size:.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;}
 .sm-stars{color:var(--gold);font-size:.9rem;margin-top:3px;}
+.sm-star-progress{font-size:.62rem;color:var(--text-muted);margin-top:4px;line-height:1.3;font-weight:700;}
 
 /* MINI GAMES GRID */
 .mini-games-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:14px;}
@@ -841,7 +842,22 @@ const CURRICULUM = {
     places:{name:"Places",icon:"🗺",vocab:[
       {fr:"ville",en:"city",zh:"城市"},{fr:"campagne",en:"countryside",zh:"乡村"},{fr:"plage",en:"beach",zh:"海滩"},
       {fr:"montagne",en:"mountain",zh:"山"},{fr:"forêt",en:"forest",zh:"森林"},{fr:"rivière",en:"river",zh:"河流"},
-      {fr:"lac",en:"lake",zh:"湖"},{fr:"île",en:"island",zh:"岛屿"}]}
+      {fr:"lac",en:"lake",zh:"湖"},{fr:"île",en:"island",zh:"岛屿"}]},
+    school:{name:"School",icon:"🏫",vocab:[
+      {fr:"la salle de classe",en:"the classroom",zh:"教室"},{fr:"le professeur",en:"the teacher",zh:"老师"},{fr:"l'élève",en:"the student",zh:"学生"},
+      {fr:"le cours",en:"the lesson",zh:"课"},{fr:"les devoirs",en:"homework",zh:"作业"},{fr:"l'examen",en:"the exam",zh:"考试"},
+      {fr:"la note",en:"the grade",zh:"分数"},{fr:"réussir",en:"to pass/succeed",zh:"通过"},{fr:"échouer",en:"to fail",zh:"不及格"},
+      {fr:"étudier",en:"to study",zh:"学习"}]},
+    hobbies:{name:"Hobbies",icon:"🎨",vocab:[
+      {fr:"dessiner",en:"to draw",zh:"画画"},{fr:"chanter",en:"to sing",zh:"唱歌"},{fr:"danser",en:"to dance",zh:"跳舞"},
+      {fr:"jouer",en:"to play",zh:"玩"},{fr:"lire",en:"to read",zh:"阅读"},{fr:"écrire",en:"to write",zh:"写作"},
+      {fr:"nager",en:"to swim",zh:"游泳"},{fr:"courir",en:"to run",zh:"跑步"},{fr:"le sport",en:"sport",zh:"运动"},
+      {fr:"la musique",en:"music",zh:"音乐"},{fr:"le film",en:"movie",zh:"电影"}]},
+    health:{name:"Health",icon:"🩺",vocab:[
+      {fr:"le médecin",en:"the doctor",zh:"医生"},{fr:"l'infirmier",en:"the nurse",zh:"护士"},{fr:"le médicament",en:"medicine",zh:"药"},
+      {fr:"malade",en:"sick",zh:"生病"},{fr:"le mal de tête",en:"headache",zh:"头痛"},{fr:"la fièvre",en:"fever",zh:"发烧"},
+      {fr:"le rhume",en:"cold (illness)",zh:"感冒"},{fr:"se reposer",en:"to rest",zh:"休息"},{fr:"mieux",en:"better",zh:"好些"},
+      {fr:"la santé",en:"health",zh:"健康"}]}
   },
   7: {
     questions:{name:"Questions",icon:"❓",vocab:[
@@ -855,7 +871,22 @@ const CURRICULUM = {
     expressions:{name:"Expressions",icon:"💬",vocab:[
       {fr:"bien sûr",en:"of course",zh:"当然"},{fr:"peut-être",en:"maybe",zh:"也许"},{fr:"d'accord",en:"okay/agreed",zh:"好的"},
       {fr:"pas du tout",en:"not at all",zh:"一点也不"},{fr:"tout à fait",en:"absolutely",zh:"完全正确"},
-      {fr:"c'est-à-dire",en:"that is to say",zh:"也就是说"}]}
+      {fr:"c'est-à-dire",en:"that is to say",zh:"也就是说"}]},
+    food_meals:{name:"Food & meals",icon:"🍽",vocab:[
+      {fr:"le petit-déjeuner",en:"breakfast",zh:"早餐"},{fr:"le déjeuner",en:"lunch",zh:"午餐"},{fr:"le dîner",en:"dinner",zh:"晚餐"},
+      {fr:"le goûter",en:"afternoon snack",zh:"点心"},{fr:"avoir faim",en:"to be hungry",zh:"饿"},{fr:"avoir soif",en:"to be thirsty",zh:"渴"},
+      {fr:"le restaurant",en:"restaurant",zh:"餐厅"},{fr:"la recette",en:"recipe",zh:"食谱"},{fr:"cuisiner",en:"to cook",zh:"做饭"},
+      {fr:"délicieux",en:"delicious",zh:"美味"}]},
+    home:{name:"Home",icon:"🏠",vocab:[
+      {fr:"la chambre",en:"bedroom",zh:"卧室"},{fr:"la cuisine",en:"kitchen",zh:"厨房"},{fr:"le salon",en:"living room",zh:"客厅"},
+      {fr:"la salle de bain",en:"bathroom",zh:"浴室"},{fr:"le jardin",en:"garden",zh:"花园"},{fr:"le garage",en:"garage",zh:"车库"},
+      {fr:"la porte",en:"door",zh:"门"},{fr:"la fenêtre",en:"window",zh:"窗户"},{fr:"le lit",en:"bed",zh:"床"},
+      {fr:"nettoyer",en:"to clean",zh:"打扫"}]},
+    travel:{name:"Travel",icon:"✈️",vocab:[
+      {fr:"le voyage",en:"trip",zh:"旅行"},{fr:"le billet",en:"ticket",zh:"票"},{fr:"l'aéroport",en:"airport",zh:"机场"},
+      {fr:"le train",en:"train",zh:"火车"},{fr:"l'autobus",en:"bus",zh:"公共汽车"},{fr:"le taxi",en:"taxi",zh:"出租车"},
+      {fr:"la gare",en:"train station",zh:"火车站"},{fr:"l'hôtel",en:"hotel",zh:"酒店"},{fr:"la valise",en:"suitcase",zh:"行李箱"},
+      {fr:"partir",en:"to leave",zh:"出发"}]}
   },
   8: {
     irregular:{name:"Irregular Verbs",icon:"⚡",vocab:[
@@ -1067,6 +1098,7 @@ const DEFAULT_STATE = () => ({
   gradeParentOpen:{4:true,5:false,6:false,7:false,8:false,9:false,10:false},
   tier1Conquered:false, tier2Conquered:false, tier3Conquered:false,
   tier1ParentOpen:false, tier2ParentOpen:false, tier3ParentOpen:false,
+  seedProfilePatches:{},
   lastUpdatedAt:0
 });
 
@@ -1130,6 +1162,11 @@ function hydrateStateFromLocalMirror(){
       state[pl] = Object.assign({}, DEFAULT_STATE(), loc);
       syncMeta[pl].pendingCloud = true;
     }
+  });
+  ['jenn','jess'].forEach(function(pl){
+    applySeedProfilePatchesIfNeeded(pl, 'beforeUnlock');
+    tryUnlockGradesAndTiers(state[pl]);
+    applySeedProfilePatchesIfNeeded(pl, 'afterUnlock');
   });
 }
 function clearAllRoundDraftsForPlayer(player){
@@ -1483,6 +1520,69 @@ function computeTopicStarFromDaily(s, dateKey, topicKey){
   if(gameTypeCount < 3 || total < 6) return 0;
   return accuracyToTopicStars(c / total);
 }
+function topicStarProgressParts(s, dateKey, topicKey){
+  const byType = s.dailyTopicStats && s.dailyTopicStats[dateKey] && s.dailyTopicStats[dateKey][topicKey];
+  let c = 0, w = 0, gameTypeCount = 0;
+  if(byType){
+    Object.values(byType).forEach(o=>{
+      const t = (o.c||0) + (o.w||0);
+      if(t > 0) gameTypeCount++;
+      c += o.c || 0;
+      w += o.w || 0;
+    });
+  }
+  const total = c + w;
+  const acc = total > 0 ? c / total : 0;
+  const gamesLine = gameTypeCount + '/3 games';
+  const triesLine = total + '/6 tries';
+  let accLine = '—';
+  if(total >= 6){
+    accLine = Math.round(acc * 100) + '%';
+    if(acc < 0.6) accLine += ' (need 60%)';
+    else if(acc < 0.8) accLine += ' (need 80%)';
+    else if(acc < 0.95) accLine += ' (need 95%)';
+  }
+  return { gamesLine, triesLine, accLine };
+}
+function topicStarProgressHTML(s, dateKey, topicKey, earnedStars){
+  if(earnedStars >= 3) return '';
+  const p = topicStarProgressParts(s, dateKey, topicKey);
+  return `<div class="sm-star-progress">${p.gamesLine} · ${p.triesLine}<br>${p.accLine}</div>`;
+}
+function applySeedProfilePatchesIfNeeded(p, phase){
+  const s = state[p];
+  if(!s) return;
+  if(!s.seedProfilePatches) s.seedProfilePatches = {};
+  const tk = todayKey();
+  if(phase === 'afterUnlock' && p === 'jenn' && !s.seedProfilePatches.jennG7CloseG5Open){
+    s.gradeUnlocked[7] = false;
+    ensureGradeParentOpenState(s);
+    s.gradeParentOpen[5] = true;
+    s.gradeParentOpen[6] = true;
+    s.gradeParentOpen[7] = false;
+    closeGradesBelowWindow(s, highestUnlockedGrade(s));
+    Object.keys(s.topicStars || {}).forEach(k=>{
+      if(k.startsWith('5_') || k.startsWith('6_')) delete s.topicStars[k];
+    });
+    if(s.dailyTopicStats && s.dailyTopicStats[tk]){
+      Object.keys(s.dailyTopicStats[tk]).forEach(k=>{
+        if(k.startsWith('5_') || k.startsWith('6_')) delete s.dailyTopicStats[tk][k];
+      });
+    }
+    s.seedProfilePatches.jennG7CloseG5Open = true;
+  }
+  if(phase === 'beforeUnlock' && p === 'jess' && !s.seedProfilePatches.jessClearG5G6Stars){
+    Object.keys(s.topicStars || {}).forEach(k=>{
+      if(k.startsWith('5_') || k.startsWith('6_')) delete s.topicStars[k];
+    });
+    if(s.dailyTopicStats && s.dailyTopicStats[tk]){
+      Object.keys(s.dailyTopicStats[tk]).forEach(k=>{
+        if(k.startsWith('5_') || k.startsWith('6_')) delete s.dailyTopicStats[tk][k];
+      });
+    }
+    s.seedProfilePatches.jessClearG5G6Stars = true;
+  }
+}
 function dayQualifiesForGate(s, dateKey, grade){
   const rounds = s.gradeGameRounds && s.gradeGameRounds[dateKey] && s.gradeGameRounds[dateKey][grade];
   if(!rounds) return false;
@@ -1800,7 +1900,9 @@ function applyPlayerData(p, data){
     const merged=Object.assign(defaultParentSettings(), data.parentSettings);
     state.jenn.parentSettings=merged; state.jess.parentSettings=merged;
   }
+  applySeedProfilePatchesIfNeeded(p, 'beforeUnlock');
   tryUnlockGradesAndTiers(state[p]);
+  applySeedProfilePatchesIfNeeded(p, 'afterUnlock');
   syncMeta[p].lastCloudOk = Date.now();
   if(localNewer || Number(state[p].lastUpdatedAt||0) > remoteLast){
     syncMeta[p].pendingCloud = true;
@@ -2236,11 +2338,13 @@ function updateHub(){
 function updateStarMap(){
   const s=state[currentPlayer];
   const grid=document.getElementById('sm-grid');grid.innerHTML='';
+  const tk=todayKey();
   getTopics(currentGrade).forEach(([key,topic])=>{
     const stars=s.topicStars[`${currentGrade}_${key}`]||0;
     const div=document.createElement('div');
     div.className=`sm-topic${stars>=3?' mastered':''}`;
-    div.innerHTML=`<span class="sm-topic-icon">${topic.icon}</span><div class="sm-topic-name">${topic.name}</div><div class="sm-stars">${'⭐'.repeat(Math.min(stars,3))}${'☆'.repeat(Math.max(0,3-stars))}</div>`;
+    const progressHtml=topicStarProgressHTML(s, tk, `${currentGrade}_${key}`, stars);
+    div.innerHTML=`<span class="sm-topic-icon">${topic.icon}</span><div class="sm-topic-name">${topic.name}</div><div class="sm-stars">${'⭐'.repeat(Math.min(stars,3))}${'☆'.repeat(Math.max(0,3-stars))}</div>${progressHtml}`;
     grid.appendChild(div);
   });
 }
