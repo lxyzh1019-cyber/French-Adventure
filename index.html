@@ -41,7 +41,7 @@ window.fbInit = async (player, onData) => {
 window.fbSave = async (player, data) => {
   try {
     const ref = doc(db, "french_game", player);
-    await setDoc(ref, data, { merge: true });
+    await setDoc(ref, data);
     return true;
   } catch(e) { console.warn("FB save err", e); return false; }
 };
