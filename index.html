@@ -41,7 +41,7 @@ window.fbInit = async (player, onData) => {
 window.fbSave = async (player, data) => {
   try {
     const ref = doc(db, "french_game", player);
-    await setDoc(ref, data, { merge: true });
+    await setDoc(ref, data);
     return true;
   } catch(e) { console.warn("FB save err", e); return false; }
 };
@@ -1429,6 +1429,19 @@ function mergeCarryoverVocab(grade, pool, seed){
   const extra = shuffleSeeded(prev, seed + 777).slice(0, take);
   return [...extra, ...pool];
 }
+function gradeFocusedVocabPool(grade, target, seed){
+  const gVocab = getAllVocab(grade);
+  if(!gVocab.length) return expandVocabToTarget(getAllVocabCumulative(grade), target, seed);
+  const gradeShare = Math.max(6, Math.floor(target * 0.7));
+  const fromGrade = expandVocabToTarget(gVocab, gradeShare, seed + 17);
+  let fromPrev = [];
+  if(grade > 4){
+    const prev = getAllVocabCumulative(grade - 1);
+    const need = Math.max(0, target - fromGrade.length);
+    if(prev.length && need > 0) fromPrev = expandVocabToTarget(prev, need, seed + 29);
+  }
+  return shuffleSeeded([...fromGrade, ...fromPrev], seed + 41);
+}
 function accuracyToTopicStars(acc){
   if(acc >= 0.95) return 3;
   if(acc >= 0.80) return 2;
@@ -2434,9 +2447,7 @@ function buildQuestions(type){
   if(type==='listen') return buildListenQuestions();
   const seed = dailyShuffleSeed() + currentGrade * 7919 + type.charCodeAt(0);
   const targetN = cumulativeVocabTarget(currentGrade);
-  let baseVocab = expandVocabToTarget(getAllVocabCumulative(currentGrade), targetN, seed + 11);
-  baseVocab = mergeCarryoverVocab(currentGrade, baseVocab, seed + 22);
-  const allVocab = baseVocab;
+  const allVocab = gradeFocusedVocabPool(currentGrade, targetN, seed + 11);
   const allSents = getSentencesExpanded(currentGrade, type.charCodeAt(0));
   const requeueFr = new Set(getRequeueWords().filter(w=>w.grade===currentGrade).map(w=>w.fr));
   const requeueVocab = allVocab.filter(w=>requeueFr.has(w.fr));
