@@ -1164,9 +1164,8 @@ function hydrateStateFromLocalMirror(){
     }
   });
   ['jenn','jess'].forEach(function(pl){
-    applySeedProfilePatchesIfNeeded(pl, 'beforeUnlock');
     tryUnlockGradesAndTiers(state[pl]);
-    applySeedProfilePatchesIfNeeded(pl, 'afterUnlock');
+    if(applySeedProfilePatchesIfNeeded(pl, 'afterUnlock')) void saveState(pl);
   });
 }
 function clearAllRoundDraftsForPlayer(player){
@@ -1551,37 +1550,34 @@ function topicStarProgressHTML(s, dateKey, topicKey, earnedStars){
 }
 function applySeedProfilePatchesIfNeeded(p, phase){
   const s = state[p];
-  if(!s) return;
+  if(!s || phase !== 'afterUnlock') return false;
   if(!s.seedProfilePatches) s.seedProfilePatches = {};
   const tk = todayKey();
-  if(phase === 'afterUnlock' && p === 'jenn' && !s.seedProfilePatches.jennG7CloseG5Open){
+  let changed = false;
+  if(!s.seedProfilePatches.clearG56TopicStarsV2){
+    Object.keys(s.topicStars || {}).forEach(k=>{
+      if(k.startsWith('5_') || k.startsWith('6_')) delete s.topicStars[k];
+    });
+    if(s.dailyTopicStats && s.dailyTopicStats[tk]){
+      Object.keys(s.dailyTopicStats[tk]).forEach(k=>{
+        if(k.startsWith('5_') || k.startsWith('6_')) delete s.dailyTopicStats[tk][k];
+      });
+    }
+    syncMoonsToTopicStars(s);
+    s.seedProfilePatches.clearG56TopicStarsV2 = true;
+    changed = true;
+  }
+  if(p === 'jenn' && !s.seedProfilePatches.jennG7CloseG5Open){
     s.gradeUnlocked[7] = false;
     ensureGradeParentOpenState(s);
     s.gradeParentOpen[5] = true;
     s.gradeParentOpen[6] = true;
     s.gradeParentOpen[7] = false;
     closeGradesBelowWindow(s, highestUnlockedGrade(s));
-    Object.keys(s.topicStars || {}).forEach(k=>{
-      if(k.startsWith('5_') || k.startsWith('6_')) delete s.topicStars[k];
-    });
-    if(s.dailyTopicStats && s.dailyTopicStats[tk]){
-      Object.keys(s.dailyTopicStats[tk]).forEach(k=>{
-        if(k.startsWith('5_') || k.startsWith('6_')) delete s.dailyTopicStats[tk][k];
-      });
-    }
     s.seedProfilePatches.jennG7CloseG5Open = true;
+    changed = true;
   }
-  if(phase === 'beforeUnlock' && p === 'jess' && !s.seedProfilePatches.jessClearG5G6Stars){
-    Object.keys(s.topicStars || {}).forEach(k=>{
-      if(k.startsWith('5_') || k.startsWith('6_')) delete s.topicStars[k];
-    });
-    if(s.dailyTopicStats && s.dailyTopicStats[tk]){
-      Object.keys(s.dailyTopicStats[tk]).forEach(k=>{
-        if(k.startsWith('5_') || k.startsWith('6_')) delete s.dailyTopicStats[tk][k];
-      });
-    }
-    s.seedProfilePatches.jessClearG5G6Stars = true;
-  }
+  return changed;
 }
 function dayQualifiesForGate(s, dateKey, grade){
   const rounds = s.gradeGameRounds && s.gradeGameRounds[dateKey] && s.gradeGameRounds[dateKey][grade];
@@ -1813,7 +1809,7 @@ function flushPlayTimeTick(doSave){
 // ════════════════════════════════════════════════
 // FIREBASE — baseline load + real-time sync
 // ════════════════════════════════════════════════
-function applyPlayerData(p, data){
+async function applyPlayerData(p, data){
   const localSnap = loadLocalStateMirror(p);
   const remoteLast = data ? Number(data.lastUpdatedAt || 0) : 0;
   let localNewer = false;
@@ -1900,10 +1896,10 @@ function applyPlayerData(p, data){
     const merged=Object.assign(defaultParentSettings(), data.parentSettings);
     state.jenn.parentSettings=merged; state.jess.parentSettings=merged;
   }
-  applySeedProfilePatchesIfNeeded(p, 'beforeUnlock');
   tryUnlockGradesAndTiers(state[p]);
-  applySeedProfilePatchesIfNeeded(p, 'afterUnlock');
+  const patched = applySeedProfilePatchesIfNeeded(p, 'afterUnlock');
   syncMeta[p].lastCloudOk = Date.now();
+  if(patched) await saveState(p);
   if(localNewer || Number(state[p].lastUpdatedAt||0) > remoteLast){
     syncMeta[p].pendingCloud = true;
   }else{
@@ -1918,7 +1914,7 @@ function initListeners(){
   if(!window.fbInit)return;
   listenersInitialized = true;
   ['jenn','jess'].forEach(p=>{
-    window.fbInit(p, data => applyPlayerData(p, data));
+    window.fbInit(p, data => { void applyPlayerData(p, data); });
   });
 }
 
@@ -2023,6 +2019,23 @@ function injectRequeue(pool,grade){
 // ════════════════════════════════════════════════
 // MOON CHECK
 // ════════════════════════════════════════════════
+function syncMoonsToTopicStars(s){
+  if(!s.moons) s.moons={grade4:false,grade5:false,grade6:false,grade7:false,grade8:false,grade9:false,grade10:false,super:false};
+  [4,5,6,7,8,9,10].forEach(g=>{
+    const key='grade'+g;
+    const topics=getTopics(g);
+    if(!topics.length){ s.moons[key]=false; return; }
+    s.moons[key]=topics.every(([k])=>(s.topicStars[`${g}_${k}`]||0)>=3);
+  });
+  const unlockedGrades=[4,5,6,7,8,9,10].filter(g=>s.gradeUnlocked&&s.gradeUnlocked[g]);
+  if(unlockedGrades.length>=2){
+    const top2=unlockedGrades.slice(-2);
+    s.moons.super=top2.every(g=>s.moons['grade'+g]);
+  }else{
+    s.moons.super=false;
+  }
+}
+
 function checkMoons(s){
   const newMoons=[];
   if(!s.moons) s.moons={grade4:false,grade5:false,grade6:false,grade7:false,grade8:false,grade9:false,grade10:false,super:false};
