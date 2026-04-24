@@ -206,7 +206,13 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .sm-topic-icon{font-size:1.6rem;display:block;margin-bottom:3px;}
 .sm-topic-name{font-size:.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;}
 .sm-stars{color:var(--gold);font-size:.9rem;margin-top:3px;}
-.sm-star-progress{font-size:.62rem;color:var(--text-muted);margin-top:4px;line-height:1.3;font-weight:700;}
+.sm-star-progress{font-size:.62rem;color:var(--text-muted);margin-top:4px;line-height:1.3;font-weight:700;text-align:left;padding:6px 7px;background:rgba(0,0,0,.16);border-radius:9px;border:1px solid rgba(148,163,184,.25);}
+.sm-star-progress-row{display:flex;justify-content:space-between;gap:8px;margin-bottom:2px;}
+.sm-star-progress-row b{color:var(--text);}
+.sm-star-progress-next{margin-top:3px;color:#c7d2fe;}
+.sm-star-meter{height:5px;background:rgba(148,163,184,.22);border-radius:999px;overflow:hidden;margin-top:4px;}
+.sm-star-meter-fill{height:100%;background:linear-gradient(90deg,var(--french),var(--gold));border-radius:999px;transition:width .25s ease;}
+.sm-star-meter-label{font-size:.58rem;margin-top:2px;color:var(--text-muted);}
 
 /* MINI GAMES GRID */
 .mini-games-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:14px;}
@@ -1560,21 +1566,56 @@ function topicStarProgressParts(s, dateKey, topicKey){
   }
   const total = c + w;
   const acc = total > 0 ? c / total : 0;
-  const gamesLine = gameTypeCount + '/3 games';
-  const triesLine = total + '/6 tries';
-  let accLine = '—';
-  if(total >= 6){
-    accLine = Math.round(acc * 100) + '%';
-    if(acc < 0.6) accLine += ' (need 60%)';
-    else if(acc < 0.8) accLine += ' (need 80%)';
-    else if(acc < 0.95) accLine += ' (need 95%)';
+  const gamesNeed = Math.max(0, 3 - gameTypeCount);
+  const triesNeed = Math.max(0, 6 - total);
+  const gateReady = gameTypeCount >= 3 && total >= 6;
+  const accPct = Math.round(acc * 100);
+  const currentTier = gateReady ? accuracyToTopicStars(acc) : 0;
+  let nextThreshold = null;
+  if(gateReady){
+    if(acc < 0.6) nextThreshold = 60;
+    else if(acc < 0.8) nextThreshold = 80;
+    else if(acc < 0.95) nextThreshold = 95;
   }
-  return { gamesLine, triesLine, accLine };
+  let nextTargetLine = 'Keep going!';
+  if(gamesNeed > 0){
+    nextTargetLine = `Play ${gamesNeed} more game type${gamesNeed===1?'':'s'}`;
+  }else if(triesNeed > 0){
+    nextTargetLine = `Do ${triesNeed} more trie${triesNeed===1?'':'s'}`;
+  }else if(nextThreshold !== null){
+    nextTargetLine = `Reach ${nextThreshold}% for next star`;
+  }else if(gateReady){
+    nextTargetLine = 'Top star reached for today';
+  }
+  let tierProgress = 0;
+  if(gateReady){
+    if(acc < 0.6){
+      tierProgress = Math.max(0, Math.min(1, acc / 0.6));
+    }else if(acc < 0.8){
+      tierProgress = Math.max(0, Math.min(1, (acc - 0.6) / 0.2));
+    }else if(acc < 0.95){
+      tierProgress = Math.max(0, Math.min(1, (acc - 0.8) / 0.15));
+    }else{
+      tierProgress = 1;
+    }
+  }
+  return {
+    gameTypeCount, total, acc, accPct, currentTier, gateReady,
+    gamesNeed, triesNeed, nextThreshold, nextTargetLine, tierProgress
+  };
 }
 function topicStarProgressHTML(s, dateKey, topicKey, earnedStars){
   if(earnedStars >= 3) return '';
   const p = topicStarProgressParts(s, dateKey, topicKey);
-  return `<div class="sm-star-progress">${p.gamesLine} · ${p.triesLine}<br>${p.accLine}</div>`;
+  const meterPct = Math.round((p.tierProgress || 0) * 100);
+  const showMeter = p.gateReady && p.nextThreshold !== null;
+  const gamesLine = `${p.gameTypeCount}/3`;
+  const triesLine = `${p.total}/6`;
+  const accLine = p.total >= 6 ? `${p.accPct}%` : 'Starts after 6 tries';
+  const meter = showMeter
+    ? `<div class="sm-star-meter"><div class="sm-star-meter-fill" style="width:${meterPct}%"></div></div><div class="sm-star-meter-label">Toward next star: ${meterPct}%</div>`
+    : '';
+  return `<div class="sm-star-progress"><div>Games: ${gamesLine}</div><div>Tries: ${triesLine}</div><div>Accuracy: ${accLine}</div><div>Next: ${p.nextTargetLine}</div>${meter}</div>`;
 }
 function applySeedProfilePatchesIfNeeded(p, phase){
   const s = state[p];
