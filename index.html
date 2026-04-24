@@ -1139,6 +1139,7 @@ const syncMeta = {
   jess: { pendingCloud: false, lastLocalSave: 0, lastCloudOk: 0 }
 };
 let roundDraftTimer = null;
+let lastWrongPenaltyAt = 0;
 
 function persistLocalStateMirror(player){
   try{
@@ -1278,6 +1279,18 @@ function restoreRoundDraft(d){
       if(inp) inp.value = d.listenInput;
     }, 0);
   }
+}
+function applyWrongAttemptPenalty(koDelayMs){
+  const now = Date.now();
+  if(now - lastWrongPenaltyAt < 250) return lives <= 0;
+  lastWrongPenaltyAt = now;
+  lives = Math.max(0, (lives|0) - 1);
+  renderLives();
+  const knockedOut = lives <= 0;
+  if(knockedOut){
+    setTimeout(endRound, koDelayMs||1500);
+  }
+  return knockedOut;
 }
 function updateConnectionStatusUI(){
   const online = typeof navigator !== 'undefined' && navigator.onLine;
@@ -2551,7 +2564,7 @@ function handleQuizAnswer(choice,q,btn){
   tallyTopicFromWord(q.word, correct);
   recordGradeAttempt(q.word.grade||currentGrade, correct);
   if(correct){logSuccess(q.word);showFeedback(true,q.word);}
-  else{logFailure(q.word);lives--;renderLives();showFeedback(false,q.word);if(lives<=0){setTimeout(endRound,1500);return;}}
+  else{logFailure(q.word);showFeedback(false,q.word);if(applyWrongAttemptPenalty(1500))return;}
   scheduleRoundDraftPersist();
 }
 
@@ -2628,7 +2641,7 @@ function handleMatchClick(btn,side,word){
       recordGradeAttempt(fullW.grade||currentGrade, false);
       logFailure(fullW);
     }
-    lives--;renderLives();if(lives<=0)setTimeout(endRound,1000);
+    applyWrongAttemptPenalty(1000);
   }
   matchSelected=null;
   scheduleRoundDraftPersist();
@@ -2670,7 +2683,7 @@ function checkScramble(target){
   tallyTopicFromWord(currentQ.word, ok);
   recordGradeAttempt(currentQ.word.grade||currentGrade, ok);
   if(ok){logSuccess(currentQ.word);showFeedback(true,currentQ.word);}
-  else{logFailure(currentQ.word);lives--;renderLives();showFeedback(false,currentQ.word,null,target);if(lives<=0)setTimeout(endRound,1500);}
+  else{logFailure(currentQ.word);showFeedback(false,currentQ.word,null,target);applyWrongAttemptPenalty(1500);}
   scheduleRoundDraftPersist();
 }
 
@@ -2723,9 +2736,8 @@ function checkBuilder(){
       if(f){ logFailure(f); tallyTopicFromWord(f, false); }
     });
     recordGradeAttempt(currentGrade, false);
-    lives--;renderLives();
     showFeedback(false,null,currentQ.target,correct,wrongParts);
-    if(lives<=0)setTimeout(endRound,1500);
+    applyWrongAttemptPenalty(1500);
   }
   scheduleRoundDraftPersist();
 }
@@ -3111,9 +3123,8 @@ function checkListenAnswer(){
     showFeedback(true, currentQ.word);
   } else {
     logFailure(currentQ.word);
-    lives--; renderLives();
     showFeedback(false, currentQ.word);
-    if(lives<=0) setTimeout(endRound,1500);
+    applyWrongAttemptPenalty(1500);
   }
   scheduleRoundDraftPersist();
 }
