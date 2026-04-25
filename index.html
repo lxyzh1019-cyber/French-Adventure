@@ -2481,8 +2481,16 @@ function startGame(type){
   if(played>=DAILY_ROUND_LIMIT){showToast(`Come back tomorrow! ${DAILY_ROUND_LIMIT} rounds done today 🌙`,'var(--gold)');return;}
   currentGameType=type;
   const draft = loadRoundDraftForStart(type);
+  const draftQuestion = draft && draft.questions && draft.questions.length ? draft.questions[draft.qIndex|0] : null;
+  const isCompletedMatchDraft = !!(
+    draftQuestion &&
+    draftQuestion.type==='match' &&
+    draft.matchPairs && draft.matchPairs.length &&
+    draft.matchMatched && draft.matchMatched.length>=draft.matchPairs.length
+  );
   const canResume = draft && draft.tk===todayKey() && draft.player===currentPlayer && draft.grade===currentGrade
-    && draft.type===type && draft.questions && draft.questions.length && (draft.qIndex|0)<draft.questions.length;
+    && draft.type===type && draft.questions && draft.questions.length && (draft.qIndex|0)<draft.questions.length
+    && !isCompletedMatchDraft;
   if(canResume){
     restoreRoundDraft(draft);
   }else{
