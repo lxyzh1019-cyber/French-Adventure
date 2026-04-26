@@ -1881,6 +1881,19 @@ function flushPlayTimeTick(doSave){
 async function applyPlayerData(p, data){
   const localSnap = loadLocalStateMirror(p);
   const remoteLast = data ? Number(data.lastUpdatedAt || 0) : 0;
+  const scoreProgressRichness = function(s){
+    if(!s) return 0;
+    const todayCount = Object.keys(s.todayStats || {}).length;
+    const playedCount = Object.keys(s.playedDays || {}).length;
+    const weeklyCount = (s.weeklyHistory || []).length;
+    const topicCount = Object.keys(s.topicStars || {}).length;
+    return Number(s.totalStars || 0)
+      + Number(s.weekStars || 0)
+      + (todayCount * 5)
+      + (playedCount * 2)
+      + (weeklyCount * 10)
+      + topicCount;
+  };
   let localNewer = false;
   if(!data){
     if(!localSnap) return;
@@ -1889,6 +1902,16 @@ async function applyPlayerData(p, data){
   }else if(localSnap && Number(localSnap.lastUpdatedAt||0) > remoteLast){
     localNewer = true;
     data = localSnap;
+  }else if(localSnap){
+    // Guard against remote regressions: if cloud data is newer but clearly less complete,
+    // keep richer local progress and mark it for re-sync.
+    const localScore = scoreProgressRichness(localSnap);
+    const remoteScore = scoreProgressRichness(data);
+    if(localScore > remoteScore + 40){
+      console.warn('Using richer local snapshot for', p, { localScore, remoteScore });
+      localNewer = true;
+      data = localSnap;
+    }
   }
   if(currentPlayer===p && currentGameType) return; // guard mid-round
   const incomingUpdatedAt = Number(data.lastUpdatedAt || 0);
