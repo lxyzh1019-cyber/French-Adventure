@@ -3606,9 +3606,33 @@ function aggregateWeekFromDaily(s, weekStart){
   });
   return {stars,correct,wrong,rounds,timeMs,daysPlayed,drillRounds};
 }
+function pickPlayerBackup(data, player){
+  if(!data) return null;
+  const pools = [];
+  if(data.players && typeof data.players === 'object') pools.push(data.players);
+  pools.push(data);
+  const aliases = player === 'jenn'
+    ? ['jenn','jen','jennifer','player1']
+    : ['jess','jes','jessie','jessica','player2'];
+  for(const pool of pools){
+    if(!pool || typeof pool !== 'object') continue;
+    for(const key of aliases){
+      if(pool[key]) return pool[key];
+    }
+    const keyMap = {};
+    Object.keys(pool).forEach(function(k){
+      keyMap[String(k).toLowerCase()] = k;
+    });
+    for(const key of aliases){
+      const found = keyMap[key];
+      if(found && pool[found]) return pool[found];
+    }
+  }
+  return null;
+}
 function reconcilePlayerFromBackup(player, data){
-  if(!data||!data.players||!data.players[player])return null;
-  const incoming=data.players[player];
+  const incoming=pickPlayerBackup(data, player);
+  if(!incoming || typeof incoming!=='object')return null;
   const merged=JSON.parse(JSON.stringify(state[player]));
   const jToday=Object.assign({}, merged.todayStats||{}, incoming.todayStats||{});
   const jPlayed=Object.assign({}, merged.playedDays||{}, incoming.playedDays||{});
@@ -3676,9 +3700,9 @@ async function handleRecoveryImport(evt){
     if(reconciledJenn && reconciledJess){
       setRecoveryMsg('✅ Jenn + Jess recovery merged and saved', true);
     }else if(reconciledJenn){
-      setRecoveryMsg('✅ Jenn recovery merged and saved', true);
+      setRecoveryMsg('✅ Jenn recovery merged and saved (Jess not found in backup)', true);
     }else{
-      setRecoveryMsg('✅ Jess recovery merged and saved', true);
+      setRecoveryMsg('✅ Jess recovery merged and saved (Jenn not found in backup)', true);
     }
   }catch(e){
     console.warn('Recovery import failed', e);
