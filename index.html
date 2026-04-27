@@ -2010,7 +2010,7 @@ function initListeners(){
 window.addEventListener('fbReady', initListeners, { once:true });
 if(window.fbInit) initListeners();
 
-async function saveState(player){
+async function saveState(player, opts){
   if(recoveryWriteFreeze){
     console.warn('Recovery freeze enabled, skipping save for', player);
     return;
@@ -2023,8 +2023,12 @@ async function saveState(player){
     if(ok){
       syncMeta[player].pendingCloud = false;
       syncMeta[player].lastCloudOk = Date.now();
-      // Suppress our own echo snapshot for 6 seconds
-      syncMeta[player].suppressSnapshotUntil = Date.now() + 6000;
+      // Only suppress the echo when we know Firebase listeners are already live.
+      // During startup patch saves, listeners aren't up yet so the first real
+      // snapshot is NOT an echo — suppressing it would blank the profile.
+      if(opts && opts.suppressEcho){
+        syncMeta[player].suppressSnapshotUntil = Date.now() + 6000;
+      }
     }else{
       syncMeta[player].pendingCloud = true;
     }
@@ -2942,7 +2946,7 @@ async function endRound(){
 
   actions.innerHTML=`${roundsLeft>0?`<button class="btn-primary" onclick="startGame('${currentGameType}')">Play Again (${roundsLeft})</button>`:`<button class="btn-primary" style="opacity:.5;cursor:not-allowed;" disabled>Done today! 🌙</button>`}<button class="btn-secondary" onclick="exitGame()">Hub</button>`;
 
-  await saveState(currentPlayer);
+  await saveState(currentPlayer, {suppressEcho: true});
   updateLeaderboard();updateHub();
 }
 
@@ -3782,9 +3786,9 @@ async function clearProgress(mode){
   }
 
   ['jenn','jess'].forEach(function(pl){ clearAllRoundDraftsForPlayer(pl); });
-  // Save both players
-  await saveState('jenn');
-  await saveState('jess');
+  // Save both players — suppress echo so the cleared state sticks in UI
+  await saveState('jenn', {suppressEcho: true});
+  await saveState('jess', {suppressEcho: true});
 
   if(input) input.value = '';
   setTimeout(()=>{ msg.textContent=''; }, 3000);
