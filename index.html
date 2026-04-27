@@ -1881,6 +1881,19 @@ function flushPlayTimeTick(doSave){
 async function applyPlayerData(p, data){
   const localSnap = loadLocalStateMirror(p);
   const remoteLast = data ? Number(data.lastUpdatedAt || 0) : 0;
+  const scoreProgressRichness = function(s){
+    if(!s) return 0;
+    const todayCount = Object.keys(s.todayStats || {}).length;
+    const playedCount = Object.keys(s.playedDays || {}).length;
+    const weeklyCount = (s.weeklyHistory || []).length;
+    const topicCount = Object.keys(s.topicStars || {}).length;
+    return Number(s.totalStars || 0)
+      + Number(s.weekStars || 0)
+      + (todayCount * 5)
+      + (playedCount * 2)
+      + (weeklyCount * 10)
+      + topicCount;
+  };
   let localNewer = false;
   if(!data){
     if(!localSnap) return;
@@ -1889,6 +1902,16 @@ async function applyPlayerData(p, data){
   }else if(localSnap && Number(localSnap.lastUpdatedAt||0) > remoteLast){
     localNewer = true;
     data = localSnap;
+  }else if(localSnap){
+    // Guard against remote regressions: if cloud data is newer but clearly less complete,
+    // keep richer local progress and mark it for re-sync.
+    const localScore = scoreProgressRichness(localSnap);
+    const remoteScore = scoreProgressRichness(data);
+    if(localScore > remoteScore + 40){
+      console.warn('Using richer local snapshot for', p, { localScore, remoteScore });
+      localNewer = true;
+      data = localSnap;
+    }
   }
   if(currentPlayer===p && currentGameType) return; // guard mid-round
   const incomingUpdatedAt = Number(data.lastUpdatedAt || 0);
@@ -3616,10 +3639,10 @@ function buildWeekRollupFromDaily(s, weekStart){
   });
   return {stars,correct,wrong,rounds};
 }
-function reconcileJennFromBackup(data){
-  if(!data||!data.players||!data.players.jenn)return null;
-  const incoming=data.players.jenn;
-  const merged=JSON.parse(JSON.stringify(state.jenn));
+function reconcilePlayerFromBackup(player, data){
+  if(!data||!data.players||!data.players[player])return null;
+  const incoming=data.players[player];
+  const merged=JSON.parse(JSON.stringify(state[player]));
   const jToday=Object.assign({}, merged.todayStats||{}, incoming.todayStats||{});
   const jPlayed=Object.assign({}, merged.playedDays||{}, incoming.playedDays||{});
   merged.todayStats=jToday;
@@ -3670,17 +3693,26 @@ async function handleRecoveryImport(evt){
     }
     const text=await file.text();
     const data=JSON.parse(text);
-    const reconciled=reconcileJennFromBackup(data);
-    if(!reconciled){
+    const reconciledJenn=reconcilePlayerFromBackup('jenn', data);
+    const reconciledJess=reconcilePlayerFromBackup('jess', data);
+    if(!reconciledJenn && !reconciledJess){
       setRecoveryMsg('❌ Invalid backup JSON');
       return;
     }
-    state.jenn=reconciled;
+    if(reconciledJenn) state.jenn=reconciledJenn;
+    if(reconciledJess) state.jess=reconciledJess;
     renderParentSummary();
     updateLeaderboard();
-    if(currentPlayer==='jenn') updateHub();
-    await saveState('jenn');
-    setRecoveryMsg('✅ Jenn recovery merged and saved', true);
+    if(currentPlayer==='jenn' || currentPlayer==='jess') updateHub();
+    if(reconciledJenn) await saveState('jenn');
+    if(reconciledJess) await saveState('jess');
+    if(reconciledJenn && reconciledJess){
+      setRecoveryMsg('✅ Jenn + Jess recovery merged and saved', true);
+    }else if(reconciledJenn){
+      setRecoveryMsg('✅ Jenn recovery merged and saved', true);
+    }else{
+      setRecoveryMsg('✅ Jess recovery merged and saved', true);
+    }
   }catch(e){
     console.warn('Recovery import failed', e);
     setRecoveryMsg('❌ Recovery import failed');
