@@ -3639,10 +3639,10 @@ function buildWeekRollupFromDaily(s, weekStart){
   });
   return {stars,correct,wrong,rounds};
 }
-function reconcileJennFromBackup(data){
-  if(!data||!data.players||!data.players.jenn)return null;
-  const incoming=data.players.jenn;
-  const merged=JSON.parse(JSON.stringify(state.jenn));
+function reconcilePlayerFromBackup(player, data){
+  if(!data||!data.players||!data.players[player])return null;
+  const incoming=data.players[player];
+  const merged=JSON.parse(JSON.stringify(state[player]));
   const jToday=Object.assign({}, merged.todayStats||{}, incoming.todayStats||{});
   const jPlayed=Object.assign({}, merged.playedDays||{}, incoming.playedDays||{});
   merged.todayStats=jToday;
@@ -3693,17 +3693,26 @@ async function handleRecoveryImport(evt){
     }
     const text=await file.text();
     const data=JSON.parse(text);
-    const reconciled=reconcileJennFromBackup(data);
-    if(!reconciled){
+    const reconciledJenn=reconcilePlayerFromBackup('jenn', data);
+    const reconciledJess=reconcilePlayerFromBackup('jess', data);
+    if(!reconciledJenn && !reconciledJess){
       setRecoveryMsg('❌ Invalid backup JSON');
       return;
     }
-    state.jenn=reconciled;
+    if(reconciledJenn) state.jenn=reconciledJenn;
+    if(reconciledJess) state.jess=reconciledJess;
     renderParentSummary();
     updateLeaderboard();
-    if(currentPlayer==='jenn') updateHub();
-    await saveState('jenn');
-    setRecoveryMsg('✅ Jenn recovery merged and saved', true);
+    if(currentPlayer==='jenn' || currentPlayer==='jess') updateHub();
+    if(reconciledJenn) await saveState('jenn');
+    if(reconciledJess) await saveState('jess');
+    if(reconciledJenn && reconciledJess){
+      setRecoveryMsg('✅ Jenn + Jess recovery merged and saved', true);
+    }else if(reconciledJenn){
+      setRecoveryMsg('✅ Jenn recovery merged and saved', true);
+    }else{
+      setRecoveryMsg('✅ Jess recovery merged and saved', true);
+    }
   }catch(e){
     console.warn('Recovery import failed', e);
     setRecoveryMsg('❌ Recovery import failed');
