@@ -8,7 +8,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, doc, getDoc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, doc, getDoc, getDocs, onSnapshot, setDoc, collection, query, where, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBvasH4OqU76196ZmZSXX_e8-L2PYnvyaY",
@@ -44,6 +44,34 @@ window.fbSave = async (player, data) => {
     await setDoc(ref, data);
     return true;
   } catch(e) { console.warn("FB save err", e); return false; }
+};
+
+// Daily backup — writes to french_game_backup/{player}_{date} once per day.
+// Only writes if totalStars > 0 (never snapshots a blank/corrupted state).
+// Never overwrites an existing day's backup (getDoc check first).
+window.fbBackupSave = async (player, data) => {
+  try {
+    const dateKey = new Date().toISOString().slice(0, 10);
+    const ref = doc(db, "french_game_backup", player + "_" + dateKey);
+    const existing = await getDoc(ref);
+    if (existing.exists()) return; // already backed up today
+    if (!data || !Number(data.totalStars)) return; // never write a blank
+    await setDoc(ref, { ...data, backedUpAt: dateKey, player });
+  } catch(e) { console.warn("FB backup err", e); }
+};
+
+// Returns up to 7 most recent backup docs for a player.
+window.fbBackupList = async (player) => {
+  try {
+    const q = query(
+      collection(db, "french_game_backup"),
+      where("player", "==", player),
+      orderBy("backedUpAt", "desc"),
+      limit(7)
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch(e) { console.warn("FB backup list err", e); return []; }
 };
 
 window.dispatchEvent(new Event('fbReady'));
@@ -721,6 +749,10 @@ button,input{touch-action:manipulation;}
         <button type="button" class="btn-secondary" onclick="exportRecoveryBackup()" style="padding:8px 12px;font-size:.74rem;">💾 Export backup JSON</button>
         <button type="button" class="btn-secondary" onclick="promptRecoveryImport()" style="padding:8px 12px;font-size:.74rem;">♻️ Import recovery JSON</button>
       </div>
+      <div style="text-align:center;margin-top:6px;">
+        <button type="button" class="btn-secondary" onclick="renderBackupRestoreUI()" style="padding:8px 14px;font-size:.74rem;border-color:var(--green);color:var(--green);">📅 Show daily cloud backups</button>
+      </div>
+      <div id="backup-restore-panel" style="margin-top:8px;padding:10px 12px;background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.25);border-radius:12px;display:none;"></div>
       <div id="recovery-msg" style="font-size:.72rem;color:var(--text-muted);text-align:center;min-height:20px;"></div>
       <input id="recovery-import-file" type="file" accept="application/json" style="display:none;" onchange="handleRecoveryImport(event)">
       <div class="pwd-msg" id="pwd-msg"></div>
@@ -2951,6 +2983,7 @@ async function endRound(){
   actions.innerHTML=`${roundsLeft>0?`<button class="btn-primary" onclick="startGame('${currentGameType}')">Play Again (${roundsLeft})</button>`:`<button class="btn-primary" style="opacity:.5;cursor:not-allowed;" disabled>Done today! 🌙</button>`}<button class="btn-secondary" onclick="exitGame()">Hub</button>`;
 
   await saveState(currentPlayer, {suppressEcho: true});
+  triggerDailyBackup(currentPlayer);
   updateLeaderboard();updateHub();
 }
 
@@ -3515,6 +3548,84 @@ function setRecoveryMsg(text, ok){
   el.textContent=text||'';
   el.style.color=ok?'var(--green)':'var(--text-muted)';
 }
+
+// ════════════════════════════════════════════════
+// DAILY AUTO-BACKUP
+// ════════════════════════════════════════════════
+const BACKUP_DONE_KEY = 'french_backup_done_';
+
+function triggerDailyBackup(player){
+  // Only once per player per day, only if we have real progress
+  if(!window.fbBackupSave) return;
+  const dateKey = todayKey();
+  const doneKey = BACKUP_DONE_KEY + player + '_' + dateKey;
+  if(localStorage.getItem(doneKey)) return;
+  const s = state[player];
+  if(!s || !s.totalStars) return;
+  window.fbBackupSave(player, JSON.parse(JSON.stringify(s)));
+  localStorage.setItem(doneKey, '1');
+}
+
+async function renderBackupRestoreUI(){
+  if(!ensureParentPassword()){
+    setRecoveryMsg('❌ Enter parent password first');
+    return;
+  }
+  const el = document.getElementById('backup-restore-panel');
+  if(!el) return;
+  el.style.display = 'block';
+  el.innerHTML = '<div style="font-size:.72rem;color:var(--text-muted);text-align:center;">Loading backups…</div>';
+  if(!window.fbBackupList){
+    el.innerHTML = '<div style="font-size:.72rem;color:var(--jenn);">Backup not available offline.</div>';
+    return;
+  }
+  const [jennBackups, jessBackups] = await Promise.all([
+    window.fbBackupList('jenn'),
+    window.fbBackupList('jess')
+  ]);
+  function makeRows(player, backups, color){
+    if(!backups.length) return `<div style="font-size:.72rem;color:var(--text-muted);margin-bottom:8px;">${player}: no backups yet</div>`;
+    return backups.map(b =>
+      `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
+        <span style="font-size:.72rem;color:${color};font-weight:800;width:72px;">${b.backedUpAt}</span>
+        <span style="font-size:.68rem;color:var(--text-muted);flex:1;">⭐${b.totalStars||0} · 🔥${b.streak||0} · played ${Object.keys(b.playedDays||{}).length}d</span>
+        <button onclick="restoreFromBackup('${player}','${b.id}')" style="background:rgba(16,185,129,.15);border:2px solid var(--green);border-radius:8px;padding:3px 9px;font-size:.65rem;font-weight:800;color:var(--green);cursor:pointer;touch-action:manipulation;">Restore</button>
+      </div>`
+    ).join('');
+  }
+  el.innerHTML =
+    `<div style="font-size:.72rem;font-weight:800;color:var(--jenn);margin-bottom:4px;">🐥 Jenn</div>`
+    + makeRows('jenn', jennBackups, 'var(--jenn)')
+    + `<div style="font-size:.72rem;font-weight:800;color:var(--jess);margin:8px 0 4px;">🦊 Jess</div>`
+    + makeRows('jess', jessBackups, 'var(--jess)');
+}
+
+async function restoreFromBackup(player, docId){
+  if(!ensureParentPassword()){
+    setRecoveryMsg('❌ Enter parent password first');
+    return;
+  }
+  if(!window.confirm(`Restore ${player}'s profile from backup ${docId}?\nThis will overwrite their current data.`)) return;
+  setRecoveryMsg('Restoring…');
+  try{
+    const backups = await window.fbBackupList(player);
+    const entry = backups.find(b => b.id === docId);
+    if(!entry){ setRecoveryMsg('❌ Backup not found'); return; }
+    // Strip backup metadata fields before restoring
+    const { id, backedUpAt, ...restoredData } = entry;
+    restoredData.lastUpdatedAt = Date.now();
+    state[player] = Object.assign({}, DEFAULT_STATE(), restoredData);
+    await saveState(player, {suppressEcho: true});
+    updateLeaderboard();
+    if(currentPlayer === player) updateHub();
+    renderParentSummary();
+    setRecoveryMsg(`✅ ${player} restored from ${backedUpAt}`, true);
+    renderBackupRestoreUI();
+  }catch(e){
+    console.warn('restore err', e);
+    setRecoveryMsg('❌ Restore failed');
+  }
+}
 function ensureParentPassword(){
   const entered=(document.getElementById('parent-pwd')?.value||'').trim();
   return entered===PARENT_PASSWORD;
@@ -3837,7 +3948,8 @@ Object.assign(window, {
   removeBuilt, handleQuizAnswer, handleMatchClick,
   checkDrill, revealDrill, renderDrillCard,
   checkListenAnswer, startListenSpeech,
-  speakAndReveal, clearProgress, unlockApp, lockApp
+  speakAndReveal, clearProgress, unlockApp, lockApp,
+  renderBackupRestoreUI, restoreFromBackup
 });
 </script>
 </body>
