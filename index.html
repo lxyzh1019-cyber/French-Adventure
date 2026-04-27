@@ -77,8 +77,6 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .session-game-time{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 12px;background:rgba(79,70,229,.12);border:1px solid rgba(79,70,229,.35);border-radius:12px;min-width:100px;}
 .session-game-time .sgt-label{font-size:.58rem;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;}
 .session-game-time .sgt-val{font-family:'Fredoka One',cursive;font-size:1.05rem;color:var(--french);}
-.countdown-display{font-family:'Fredoka One',cursive;font-size:1.3rem;color:var(--gold);background:rgba(245,158,11,.1);border:2px solid rgba(245,158,11,.3);border-radius:12px;padding:4px 16px;}
-.countdown-display.warning{color:var(--jenn);border-color:rgba(232,68,90,.5);background:rgba(232,68,90,.1);animation:pulse 1s infinite;}
 .clock-divider{color:var(--surface2);font-size:1.2rem;}
 .conn-status-bar{width:100%;flex:0 0 100%;display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:8px 12px;margin-top:4px;background:rgba(15,23,42,.65);border:1px solid var(--surface2);border-radius:12px;font-size:.68rem;font-weight:700;color:var(--text-muted);line-height:1.35;}
 .conn-status-bar .cs-dot{width:8px;height:8px;border-radius:50%;background:var(--surface2);flex-shrink:0;}
@@ -339,10 +337,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .parent-stat-row:last-child{border-bottom:none;}
 .parent-stat-label{color:var(--text-muted);}
 .parent-stat-val{font-weight:800;}
-.parent-wrong-section{margin-top:14px;}
 .parent-practice-sub{margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.08);}
 .parent-practice-head{font-size:.68rem;text-transform:uppercase;letter-spacing:.8px;color:var(--text-muted);font-weight:800;margin-bottom:6px;}
-.parent-wrong-title{font-size:.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-weight:800;margin-bottom:8px;}
 .parent-row{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface2);border-radius:10px;margin-bottom:5px;font-size:.8rem;}
 .parent-fr{font-weight:800;color:var(--french);width:70px;}
 .parent-en{flex:1;}
@@ -402,16 +398,6 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .listen-prompt{font-family:'Fredoka One',cursive;font-size:1.2rem;color:var(--text-muted);margin-bottom:12px;}
 .listen-revealed{font-family:'Fredoka One',cursive;font-size:2rem;color:var(--french);margin-bottom:8px;}
 
-/* LISTEN & SPEAK GAME (#16) */
-.ls-prompt{font-family:'Fredoka One',cursive;font-size:clamp(1.6rem,4vw,2.4rem);text-align:center;color:var(--text-muted);letter-spacing:6px;}
-.ls-revealed{font-family:'Fredoka One',cursive;font-size:clamp(2rem,5vw,3rem);color:var(--french);text-align:center;}
-.ls-play-btn{background:rgba(79,70,229,.2);border:3px solid var(--french);border-radius:20px;padding:18px 36px;font-family:'Fredoka One',cursive;font-size:1.3rem;cursor:pointer;color:var(--french);touch-action:manipulation;transition:all .2s;}
-.ls-play-btn:hover{background:rgba(79,70,229,.35);}
-.ls-speak-btn{background:rgba(232,68,90,.15);border:3px solid var(--jenn);border-radius:20px;padding:16px 32px;font-family:'Fredoka One',cursive;font-size:1.2rem;cursor:pointer;color:var(--jenn);touch-action:manipulation;transition:all .2s;}
-.ls-speak-btn.active{background:rgba(232,68,90,.3);animation:pulse 1s infinite;}
-.ls-type-input{background:var(--surface2);border:2px solid var(--surface2);border-radius:16px;padding:14px 20px;font-family:'Nunito',sans-serif;font-size:1.1rem;font-weight:700;color:var(--text);width:100%;max-width:360px;text-align:center;outline:none;touch-action:manipulation;}
-.ls-type-input:focus{border-color:var(--french);}
-
 /* iPad optimization (#19) */
 @media(pointer:coarse){
   .choice-btn{min-height:56px;font-size:1rem;padding:14px 10px;}
@@ -420,7 +406,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   .btn-primary,.btn-secondary,.btn-speak{min-height:50px;font-size:1rem;}
   .mini-game-btn{padding:20px 12px;}
   .back-btn,.grade-tab{min-height:44px;}
-  .train-input,.ls-type-input{font-size:1.1rem;min-height:54px;}
+  .train-input{font-size:1.1rem;min-height:54px;}
   .question-main{font-size:clamp(2rem,5.5vw,3rem);}
   .question-hint-big{font-size:1.05rem;}
 }
@@ -1141,8 +1127,8 @@ let lastPlayTimeMark = 0;
 const LOCAL_STATE_PREFIX = 'french_game_local_';
 const ROUND_DRAFT_PREFIX = 'french_round_draft_';
 const syncMeta = {
-  jenn: { pendingCloud: false, lastLocalSave: 0, lastCloudOk: 0 },
-  jess: { pendingCloud: false, lastLocalSave: 0, lastCloudOk: 0 }
+  jenn: { pendingCloud: false, lastLocalSave: 0, lastCloudOk: 0, suppressSnapshotUntil: 0 },
+  jess: { pendingCloud: false, lastLocalSave: 0, lastCloudOk: 0, suppressSnapshotUntil: 0 }
 };
 let roundDraftTimer = null;
 let lastWrongPenaltyAt = 0;
@@ -1370,7 +1356,34 @@ function getWeekStart(){
   // Return local date string to avoid UTC shift
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
-function isSameWeek(ts){if(!ts)return false;return ts>=getWeekStart();}
+function isSameWeek(ts){
+  if(!ts) return true; // null/missing = treat as current week, never auto-wipe
+  return ts >= getWeekStart();
+}
+// Single shared week-rollover — called by both applyPlayerData and endRound
+// to prevent double-archiving if both run at the exact week boundary.
+function applyWeekRolloverIfNeeded(s){
+  if(isSameWeek(s.weekStart)) return;
+  if(!s.weeklyHistory) s.weeklyHistory=[];
+  const newWs=getWeekStart();
+  if(s.weekStart){
+    const rollup=rollupWeekStatsForRange(s,s.weekStart,newWs);
+    if(s.weekStars>0||rollup.rounds>0||rollup.stars>0||rollup.correct>0||rollup.wrong>0){
+      s.weeklyHistory.push({
+        weekStart:s.weekStart,
+        stars:s.weekStars,
+        correct:rollup.correct,
+        wrong:rollup.wrong,
+        rounds:rollup.rounds,
+        snapshotStars:rollup.stars,
+        savedAt:todayKey()
+      });
+      if(s.weeklyHistory.length>4)s.weeklyHistory.shift();
+    }
+  }
+  s.weekStars=0;
+  s.weekStart=newWs;
+}
 function todayKey(){
   const d=new Date();
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
@@ -1879,6 +1892,10 @@ function flushPlayTimeTick(doSave){
 // FIREBASE — baseline load + real-time sync
 // ════════════════════════════════════════════════
 async function applyPlayerData(p, data){
+  // Suppress our own echo: if we just saved, skip the next snapshot for 6s
+  if(syncMeta[p] && Date.now() < syncMeta[p].suppressSnapshotUntil){
+    return;
+  }
   const localSnap = loadLocalStateMirror(p);
   const remoteLast = data ? Number(data.lastUpdatedAt || 0) : 0;
   const scoreProgressRichness = function(s){
@@ -1920,28 +1937,8 @@ async function applyPlayerData(p, data){
     console.warn('Skipping stale snapshot for', p, incomingUpdatedAt, localUpdatedAt);
     return;
   }
-  // Week reset check
-  if(!isSameWeek(data.weekStart)){
-    if(!data.weeklyHistory) data.weeklyHistory=[];
-    const newWs=getWeekStart();
-    if(data.weekStart){
-      const rollup=rollupWeekStatsForRange(data,data.weekStart,newWs);
-      if(data.weekStars>0||rollup.rounds>0||rollup.stars>0||rollup.correct>0||rollup.wrong>0){
-        data.weeklyHistory.push({
-          weekStart:data.weekStart,
-          stars:data.weekStars,
-          correct:rollup.correct,
-          wrong:rollup.wrong,
-          rounds:rollup.rounds,
-          snapshotStars:rollup.stars,
-          savedAt:todayKey()
-        });
-        if(data.weeklyHistory.length>4)data.weeklyHistory.shift();
-      }
-    }
-    data.weekStars=0;
-    data.weekStart=newWs;
-  }
+  // Week reset check (shared with endRound to prevent double-archive)
+  applyWeekRolloverIfNeeded(data);
   // Streak reset if missed more than 1 day
   if(data.lastPlayed){
     const last=new Date(data.lastPlayed);
@@ -2026,6 +2023,8 @@ async function saveState(player){
     if(ok){
       syncMeta[player].pendingCloud = false;
       syncMeta[player].lastCloudOk = Date.now();
+      // Suppress our own echo snapshot for 6 seconds
+      syncMeta[player].suppressSnapshotUntil = Date.now() + 6000;
     }else{
       syncMeta[player].pendingCloud = true;
     }
@@ -2875,27 +2874,7 @@ async function endRound(){
 
   const s=state[currentPlayer];
 
-  if(!isSameWeek(s.weekStart)){
-    if(!s.weeklyHistory) s.weeklyHistory=[];
-    const newWs=getWeekStart();
-    if(s.weekStart){
-      const rollup=rollupWeekStatsForRange(s,s.weekStart,newWs);
-      if(s.weekStars>0||rollup.rounds>0||rollup.stars>0||rollup.correct>0||rollup.wrong>0){
-        s.weeklyHistory.push({
-          weekStart:s.weekStart,
-          stars:s.weekStars,
-          correct:rollup.correct,
-          wrong:rollup.wrong,
-          rounds:rollup.rounds,
-          snapshotStars:rollup.stars,
-          savedAt:todayKey()
-        });
-        if(s.weeklyHistory.length>4) s.weeklyHistory.shift();
-      }
-    }
-    s.weekStars=0;
-    s.weekStart=newWs;
-  }
+  applyWeekRolloverIfNeeded(s);
 
   s.totalStars+=roundScore;
   s.weekStars+=roundScore;
@@ -3623,22 +3602,6 @@ function aggregateWeekFromDaily(s, weekStart){
   });
   return {stars,correct,wrong,rounds,timeMs,daysPlayed,drillRounds};
 }
-function buildWeekRollupFromDaily(s, weekStart){
-  const start=new Date(weekStart+'T00:00:00');
-  const end=new Date(start);
-  end.setDate(end.getDate()+6);
-  const keys=getIsoDateRange(weekStart,end.toISOString().slice(0,10));
-  let stars=0,correct=0,wrong=0,rounds=0;
-  keys.forEach(k=>{
-    const t=s.todayStats&&s.todayStats[k];
-    if(!t)return;
-    stars+=Number(t.stars||0);
-    correct+=Number(t.correct||0);
-    wrong+=Number(t.wrong||0);
-    rounds+=Number(t.rounds||0);
-  });
-  return {stars,correct,wrong,rounds};
-}
 function reconcilePlayerFromBackup(player, data){
   if(!data||!data.players||!data.players[player])return null;
   const incoming=data.players[player];
@@ -3664,7 +3627,7 @@ function reconcilePlayerFromBackup(player, data){
   const prevStart=previousWeekStartKey(getWeekStart());
   const already=(merged.weeklyHistory||[]).some(w=>w.weekStart===prevStart);
   if(!already){
-    const rollup=buildWeekRollupFromDaily(merged,prevStart);
+    const rollup=aggregateWeekFromDaily(merged,prevStart);
     if(rollup.stars>0||rollup.correct>0||rollup.wrong>0||rollup.rounds>0){
       merged.weeklyHistory=(merged.weeklyHistory||[]).concat([{
         weekStart:prevStart,
@@ -3826,7 +3789,7 @@ async function clearProgress(mode){
   if(input) input.value = '';
   setTimeout(()=>{ msg.textContent=''; }, 3000);
 
-  // Refresh all UI
+  // Refresh all UI — after saves resolve so echo suppression is armed
   renderParentSummary();
   updateLeaderboard();
   if(currentPlayer) updateHub();
@@ -3857,7 +3820,7 @@ Object.assign(window, {
   selectPlayer, goBack, exitGame, setGrade,
   showMyWords, showMyWordsTab, showStudy, showStudySet,
   showParentSummary, navSummaryWeek, navDailySummary, setSummaryMode,
-  toggleHubDailySummary,
+  toggleHubDailySummary, toggleSloganTranslation,
   toggleWeekday, revealFullPlayTime, reopenGradeForParent, unlockWeekdaySession, cancelWeekdayLock,
   refreshGradeTabs,
   startGame, nextQuestion, showHint,
