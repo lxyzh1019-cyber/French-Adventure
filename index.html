@@ -2682,11 +2682,20 @@ function handleQuizAnswer(choice,q,btn){
 // ── MATCH ──
 function renderMatch(q,area,actions){
   const snap = __roundDraftSnap;
+  // Declared once for the whole function: the resume branch used to declare these
+  // with `const` inside the if-block while the fresh branch used `var`, so on the
+  // resume path the render loops below read the hoisted (undefined) `var` binding
+  // and threw. Both branches now assign the same function-scoped bindings.
+  let frWords, enWords;
   if(snap && currentQ && currentQ.type==='match' && snap.qIndex===qIndex && snap.matchPairs && snap.matchPairs.length){
     matchPairs = snap.matchPairs;
     matchMatched = snap.matchMatched || [];
-    const frWords = (snap.matchFrOrder && snap.matchFrOrder.length) ? snap.matchFrOrder : shuffleSeeded(matchPairs.map(p=>p.fr),dailyShuffleSeed()+889);
-    const enWords = (snap.matchEnOrder && snap.matchEnOrder.length) ? snap.matchEnOrder : shuffleSeeded(matchPairs.map(p=>p.en),dailyShuffleSeed()+890);
+    frWords = (snap.matchFrOrder && snap.matchFrOrder.length) ? snap.matchFrOrder : shuffleSeeded(matchPairs.map(p=>p.fr),dailyShuffleSeed()+889);
+    enWords = (snap.matchEnOrder && snap.matchEnOrder.length) ? snap.matchEnOrder : shuffleSeeded(matchPairs.map(p=>p.en),dailyShuffleSeed()+890);
+    // Restore the saved tile order too, otherwise the next draft save writes empty
+    // orders and a second resume reshuffles the board under the child.
+    matchFrOrder = frWords.slice();
+    matchEnOrder = enWords.slice();
     if(snap.matchSelected && snap.matchSelected.side && snap.matchSelected.word){
       matchSelected = { btn: null, side: snap.matchSelected.side, word: snap.matchSelected.word };
     }else{
@@ -2694,8 +2703,8 @@ function renderMatch(q,area,actions){
     }
   }else{
     matchPairs=shuffleSeeded(q.pairs,dailyShuffleSeed()+888);matchMatched=[];matchSelected=null;matchFrOrder=[];matchEnOrder=[];
-    var frWords=shuffleSeeded(matchPairs.map(p=>p.fr),dailyShuffleSeed()+889);
-    var enWords=shuffleSeeded(matchPairs.map(p=>p.en),dailyShuffleSeed()+890);
+    frWords=shuffleSeeded(matchPairs.map(p=>p.fr),dailyShuffleSeed()+889);
+    enWords=shuffleSeeded(matchPairs.map(p=>p.en),dailyShuffleSeed()+890);
     matchFrOrder = frWords.slice();
     matchEnOrder = enWords.slice();
   }
