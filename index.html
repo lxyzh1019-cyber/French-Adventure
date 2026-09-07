@@ -7,7 +7,7 @@
      styles ......... src/styles.css
      game logic ..... src/**/*.js
 
-   Built from 0d89d16
+   Built from b3d1e94
   ============================================================
 -->
 <!DOCTYPE html>
@@ -885,6 +885,29 @@ const SENTENCES = {
     return { parts: frTokenize(s.fr), target: s.en, zh: s.zh };
   })
 };
+const PREFERRED_LOCALE = "fr-CA";
+const FALLBACK_LOCALE = "fr-FR";
+function langTag(voice) {
+  const raw = String(voice?.lang || "").replace("_", "-");
+  const [lang, region] = raw.split("-");
+  return region ? `${lang.toLowerCase()}-${region.toUpperCase()}` : lang.toLowerCase();
+}
+function pickFrenchVoice(voices) {
+  const french = (voices || []).filter((v) => langTag(v).startsWith("fr"));
+  if (!french.length) return null;
+  return french.find((v) => langTag(v) === PREFERRED_LOCALE) ?? french.find((v) => langTag(v) === FALLBACK_LOCALE) ?? french[0];
+}
+function describeVoice(voice, requested = PREFERRED_LOCALE) {
+  if (!voice) return { requested, resolved: null, name: null, isPreferred: false, isFrench: false };
+  const resolved = langTag(voice);
+  return {
+    requested,
+    resolved,
+    name: voice.name || null,
+    isPreferred: resolved === PREFERRED_LOCALE,
+    isFrench: resolved.startsWith("fr")
+  };
+}
 function defaultParentSettings() {
   return { weekdayOpen: [true, true, true, true, true, true, true] };
 }
@@ -1179,7 +1202,7 @@ let recognition = null;
 if ("SpeechRecognition" in window || "webkitSpeechRecognition" in window) {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   recognition = new SR();
-  recognition.lang = "fr-FR";
+  recognition.lang = PREFERRED_LOCALE;
   recognition.continuous = false;
   recognition.interimResults = false;
 }
@@ -2257,11 +2280,32 @@ function updateStarMap() {
     grid.appendChild(div);
   });
 }
+let frenchVoice = null, frenchVoiceInfo = null;
+function resolveFrenchVoice() {
+  if (!speechSynth) return null;
+  const voices = speechSynth.getVoices();
+  if (!voices || !voices.length) return null;
+  frenchVoice = pickFrenchVoice(voices);
+  frenchVoiceInfo = describeVoice(frenchVoice);
+  if (!frenchVoiceInfo.isPreferred) {
+    console.info("French voice in use:", frenchVoiceInfo);
+  }
+  return frenchVoice;
+}
+if (speechSynth && typeof speechSynth.addEventListener === "function") {
+  speechSynth.addEventListener("voiceschanged", resolveFrenchVoice);
+}
+function currentVoiceInfo() {
+  if (!frenchVoiceInfo) resolveFrenchVoice();
+  return frenchVoiceInfo;
+}
 function speakFrench(text) {
   if (!speechSynth) return;
   speechSynth.cancel();
   const utt = new SpeechSynthesisUtterance(text);
-  utt.lang = "fr-FR";
+  const voice = frenchVoice || resolveFrenchVoice();
+  if (voice) utt.voice = voice;
+  utt.lang = voice ? voice.lang : PREFERRED_LOCALE;
   utt.rate = 0.85;
   speechSynth.speak(utt);
 }
@@ -3710,6 +3754,7 @@ Object.assign(window, {
   lockApp,
   renderBackupRestoreUI,
   restoreFromBackup,
+  currentVoiceInfo,
   exportRecoveryBackup,
   promptRecoveryImport,
   handleRecoveryImport,

@@ -1,5 +1,6 @@
 import { firebaseReady } from './state/firebase-bootstrap.js';
 import { CURRICULUM, SENTENCES } from './content/curriculum-map.js';
+import { pickFrenchVoice, describeVoice, PREFERRED_LOCALE } from './speech/playback.js';
 import { normalizeForRecognition, compareFrench, scrambleTypeFor,
          buildScrambleTiles, joinScrambleTiles, isScrambleSolvable,
          SCRAMBLE_TYPES } from './util/fr-text.js';
@@ -276,7 +277,9 @@ let recognition=null;
 if('SpeechRecognition' in window||'webkitSpeechRecognition' in window){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   recognition=new SR();
-  recognition.lang='fr-FR';
+  // Canadian French, per the product decision. Recognition falls back to the
+  // platform default if the device has no fr-CA model.
+  recognition.lang=PREFERRED_LOCALE;
   recognition.continuous=false;
   recognition.interimResults=false;
 }
@@ -1386,11 +1389,38 @@ function updateStarMap(){
 // ════════════════════════════════════════════════
 // SPEECH (item #4)
 // ════════════════════════════════════════════════
+// Voices load asynchronously on some platforms, so resolve lazily and re-resolve
+// once the list arrives rather than caching an empty first answer.
+let frenchVoice=null, frenchVoiceInfo=null;
+function resolveFrenchVoice(){
+  if(!speechSynth) return null;
+  const voices = speechSynth.getVoices();
+  if(!voices || !voices.length) return null;
+  frenchVoice = pickFrenchVoice(voices);
+  frenchVoiceInfo = describeVoice(frenchVoice);
+  if(!frenchVoiceInfo.isPreferred){
+    // Not an error — most iPads ship fr-FR only. Worth recording because the
+    // pronunciation work in a later milestone needs to know what was heard.
+    console.info('French voice in use:', frenchVoiceInfo);
+  }
+  return frenchVoice;
+}
+if(speechSynth && typeof speechSynth.addEventListener==='function'){
+  speechSynth.addEventListener('voiceschanged', resolveFrenchVoice);
+}
+/** What the device actually plays, for diagnostics and later pronunciation work. */
+function currentVoiceInfo(){ if(!frenchVoiceInfo) resolveFrenchVoice(); return frenchVoiceInfo; }
+
 function speakFrench(text){
   if(!speechSynth)return;
   speechSynth.cancel();
   const utt=new SpeechSynthesisUtterance(text);
-  utt.lang='fr-FR';utt.rate=0.85;
+  const voice = frenchVoice || resolveFrenchVoice();
+  if(voice) utt.voice = voice;
+  // Set lang even when a voice is chosen: it is the hint the platform uses when
+  // no French voice is installed at all.
+  utt.lang=voice ? voice.lang : PREFERRED_LOCALE;
+  utt.rate=0.85;
   speechSynth.speak(utt);
 }
 // Build a 🔊 button that carries its French text as data rather than as
@@ -2908,7 +2938,7 @@ Object.assign(window, {
   checkDrill, revealDrill, renderDrillCard,
   checkListenAnswer, startListenSpeech,
   speakAndReveal, clearProgress, unlockApp, lockApp,
-  renderBackupRestoreUI, restoreFromBackup,
+  renderBackupRestoreUI, restoreFromBackup, currentVoiceInfo,
   exportRecoveryBackup, promptRecoveryImport, handleRecoveryImport, toggleRecoveryFreeze
 });
 
