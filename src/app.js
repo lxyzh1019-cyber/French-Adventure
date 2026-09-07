@@ -2,7 +2,8 @@ import { firebaseReady } from './state/firebase-bootstrap.js';
 import { CURRICULUM, SENTENCES } from './content/curriculum-map.js';
 import { getWeekStart, isSameWeek, todayKey, dateKeyAddDays, getIsoDateRange,
          previousWeekStartKey, weekStartForOffset, weekEndFromStart,
-         formatWeekRange } from './util/dates.js';
+         formatWeekRange, weekdayIndex, toDateKey,
+         daysBetweenKeys } from './util/dates.js';
 
 
 
@@ -768,7 +769,7 @@ function unlockApp(){
 function isWeekdayPlayAllowed(){
   if(sessionWeekdayBypass)return true;
   const ps=getParentSettings();
-  return ps.weekdayOpen[new Date().getDay()]!==false;
+  return ps.weekdayOpen[weekdayIndex()]!==false;
 }
 function startPlayTimeTracker(){
   stopPlayTimeTracker();
@@ -851,13 +852,8 @@ async function applyPlayerData(p, data){
   // Week reset check (shared with endRound to prevent double-archive)
   applyWeekRolloverIfNeeded(data);
   // Streak reset if missed more than 1 day
-  if(data.lastPlayed){
-    const last=new Date(data.lastPlayed);
-    const now=new Date();
-    last.setHours(0,0,0,0);now.setHours(0,0,0,0);
-    const diff=Math.round((now-last)/(1000*60*60*24));
-    if(diff>1) data.streak=0;
-  }
+  const lastPlayedKey=toDateKey(data.lastPlayed);
+  if(lastPlayedKey && daysBetweenKeys(lastPlayedKey, todayKey())>1) data.streak=0;
   // Safe field-by-field merge — never zero out existing counters
   const def=DEFAULT_STATE();
   state[p]=Object.assign({}, def, data);
@@ -1145,7 +1141,7 @@ function selectPlayer(p){
     pendingPlayer=p;
     const names=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
     const msgEl=document.getElementById('weekday-lock-msg');
-    if(msgEl)msgEl.textContent='Today ('+names[new Date().getDay()]+') is blocked for screen time. Enter parent password to play anyway.';
+    if(msgEl)msgEl.textContent='Today ('+names[weekdayIndex()]+') is blocked for screen time. Enter parent password to play anyway.';
     document.getElementById('weekday-lock-overlay').classList.add('show');
     return;
   }
@@ -1877,8 +1873,10 @@ async function endRound(){
     if(st>maxTopicTier)maxTopicTier=st;
   });
 
-  const today=new Date().toDateString();
-  if(s.lastPlayed!==today){s.streak++;s.lastPlayed=today;}
+  // Stored as an Edmonton date key. Older profiles hold a toDateString()
+  // value; toDateKey() normalises both so the comparison stays correct.
+  const today=todayKey();
+  if(toDateKey(s.lastPlayed)!==today){s.streak++;s.lastPlayed=today;}
   if(!s.playedDays)s.playedDays={};s.playedDays[todayKey()]=true;
 
   if(!s.todayStats)s.todayStats={};

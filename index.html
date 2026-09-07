@@ -7,7 +7,7 @@
      styles ......... src/styles.css
      game logic ..... src/**/*.js
 
-   Built from c1f8643
+   Built from cc9f601
   ============================================================
 -->
 <!DOCTYPE html>
@@ -55,6 +55,93 @@
     fetch(link.href, fetchOpts);
   }
 })();
+const FAMILY_TIME_ZONE = "America/Edmonton";
+const keyFormatter = new Intl.DateTimeFormat("en-CA", {
+  timeZone: FAMILY_TIME_ZONE,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit"
+});
+function dateKeyOf(date = /* @__PURE__ */ new Date()) {
+  return keyFormatter.format(date);
+}
+function todayKey() {
+  return dateKeyOf(/* @__PURE__ */ new Date());
+}
+function keyToUTC(key) {
+  const [y, m, d] = key.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d));
+}
+function utcToKey(date) {
+  return date.toISOString().slice(0, 10);
+}
+function addDaysToKey(key, delta) {
+  const d = keyToUTC(key);
+  d.setUTCDate(d.getUTCDate() + delta);
+  return utcToKey(d);
+}
+function dateKeyAddDays(delta) {
+  return addDaysToKey(todayKey(), delta);
+}
+function weekStartOf(key = todayKey()) {
+  const d = keyToUTC(key);
+  const day = d.getUTCDay();
+  d.setUTCDate(d.getUTCDate() - (day === 0 ? 6 : day - 1));
+  return utcToKey(d);
+}
+function getWeekStart() {
+  return weekStartOf(todayKey());
+}
+function isSameWeek(ts) {
+  if (!ts) return true;
+  return ts >= getWeekStart();
+}
+function getIsoDateRange(startKey, endKey) {
+  if (!startKey || !endKey) return [];
+  const out = [];
+  for (let k = startKey; k <= endKey; k = addDaysToKey(k, 1)) out.push(k);
+  return out;
+}
+function previousWeekStartKey(baseWeekStart) {
+  return addDaysToKey(baseWeekStart || getWeekStart(), -7);
+}
+function weekStartForOffset(offset) {
+  return addDaysToKey(getWeekStart(), offset * 7);
+}
+function weekEndFromStart(startKey) {
+  return addDaysToKey(startKey, 6);
+}
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+function formatWeekRange(startKey) {
+  const s = keyToUTC(startKey);
+  const e = keyToUTC(weekEndFromStart(startKey));
+  return MONTHS[s.getUTCMonth()] + " " + s.getUTCDate() + " - " + MONTHS[e.getUTCMonth()] + " " + e.getUTCDate();
+}
+const weekdayFormatter = new Intl.DateTimeFormat("en-CA", {
+  timeZone: FAMILY_TIME_ZONE,
+  weekday: "short"
+});
+const WEEKDAY_INDEX = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+function weekdayIndex(date = /* @__PURE__ */ new Date()) {
+  return WEEKDAY_INDEX[weekdayFormatter.format(date)];
+}
+function toDateKey(value) {
+  if (!value) return null;
+  const str = String(value).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+  const m = str.match(/^[A-Za-z]{3}\s+([A-Za-z]{3})\s+(\d{1,2})\s+(\d{4})$/);
+  if (m) {
+    const month = MONTHS.indexOf(m[1]);
+    if (month >= 0) {
+      return `${m[3]}-${String(month + 1).padStart(2, "0")}-${m[2].padStart(2, "0")}`;
+    }
+  }
+  const parsed = new Date(str);
+  return Number.isNaN(parsed.getTime()) ? null : dateKeyOf(parsed);
+}
+function daysBetweenKeys(from, to) {
+  return Math.round((keyToUTC(to) - keyToUTC(from)) / 864e5);
+}
 const FIREBASE_APP_URL = "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 const FIREBASE_FS_URL = "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 const firebaseConfig = {
@@ -120,7 +207,7 @@ const firebaseReady = (async () => {
   };
   window.fbBackupSave = async (player, data) => {
     try {
-      const dateKey = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+      const dateKey = todayKey();
       const ref = doc(db, "french_game_backup", player + "_" + dateKey);
       const existing = await getDoc(ref);
       if (existing.exists()) return;
@@ -744,58 +831,6 @@ const SENTENCES = {
     return { parts: frTokenize(s.fr), target: s.en, zh: s.zh };
   })
 };
-function getWeekStart() {
-  const d = /* @__PURE__ */ new Date();
-  d.setHours(0, 0, 0, 0);
-  const day = d.getDay();
-  d.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
-  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
-}
-function isSameWeek(ts) {
-  if (!ts) return true;
-  return ts >= getWeekStart();
-}
-function todayKey() {
-  const d = /* @__PURE__ */ new Date();
-  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
-}
-function dateKeyAddDays(delta) {
-  const d = /* @__PURE__ */ new Date();
-  d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() + delta);
-  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
-}
-function getIsoDateRange(startKey, endKey) {
-  if (!startKey || !endKey) return [];
-  const out = [];
-  const s = /* @__PURE__ */ new Date(startKey + "T00:00:00");
-  const e = /* @__PURE__ */ new Date(endKey + "T00:00:00");
-  for (let d = new Date(s); d <= e; d.setDate(d.getDate() + 1)) {
-    out.push(d.toISOString().slice(0, 10));
-  }
-  return out;
-}
-function previousWeekStartKey(baseWeekStart) {
-  const d = /* @__PURE__ */ new Date((baseWeekStart || getWeekStart()) + "T00:00:00");
-  d.setDate(d.getDate() - 7);
-  return d.toISOString().slice(0, 10);
-}
-function weekStartForOffset(offset) {
-  const d = /* @__PURE__ */ new Date(getWeekStart() + "T00:00:00");
-  d.setDate(d.getDate() + offset * 7);
-  return d.toISOString().slice(0, 10);
-}
-function weekEndFromStart(startKey) {
-  const d = /* @__PURE__ */ new Date(startKey + "T00:00:00");
-  d.setDate(d.getDate() + 6);
-  return d.toISOString().slice(0, 10);
-}
-function formatWeekRange(startKey) {
-  const s = /* @__PURE__ */ new Date(startKey + "T00:00:00");
-  const e = /* @__PURE__ */ new Date(weekEndFromStart(startKey) + "T00:00:00");
-  const mon = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  return mon[s.getMonth()] + " " + s.getDate() + " - " + mon[e.getMonth()] + " " + e.getDate();
-}
 function defaultParentSettings() {
   return { weekdayOpen: [true, true, true, true, true, true, true] };
 }
@@ -1593,7 +1628,7 @@ function unlockApp() {
 function isWeekdayPlayAllowed() {
   if (sessionWeekdayBypass) return true;
   const ps = getParentSettings();
-  return ps.weekdayOpen[(/* @__PURE__ */ new Date()).getDay()] !== false;
+  return ps.weekdayOpen[weekdayIndex()] !== false;
 }
 function startPlayTimeTracker() {
   stopPlayTimeTracker();
@@ -1666,14 +1701,8 @@ async function applyPlayerData(p, data) {
     return;
   }
   applyWeekRolloverIfNeeded(data);
-  if (data.lastPlayed) {
-    const last = new Date(data.lastPlayed);
-    const now = /* @__PURE__ */ new Date();
-    last.setHours(0, 0, 0, 0);
-    now.setHours(0, 0, 0, 0);
-    const diff = Math.round((now - last) / (1e3 * 60 * 60 * 24));
-    if (diff > 1) data.streak = 0;
-  }
+  const lastPlayedKey = toDateKey(data.lastPlayed);
+  if (lastPlayedKey && daysBetweenKeys(lastPlayedKey, todayKey()) > 1) data.streak = 0;
   const def = DEFAULT_STATE();
   state[p] = Object.assign({}, def, data);
   if (!state[p].failedWords) state[p].failedWords = {};
@@ -1932,7 +1961,7 @@ function selectPlayer(p) {
     pendingPlayer = p;
     const names = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     const msgEl = document.getElementById("weekday-lock-msg");
-    if (msgEl) msgEl.textContent = "Today (" + names[(/* @__PURE__ */ new Date()).getDay()] + ") is blocked for screen time. Enter parent password to play anyway.";
+    if (msgEl) msgEl.textContent = "Today (" + names[weekdayIndex()] + ") is blocked for screen time. Enter parent password to play anyway.";
     document.getElementById("weekday-lock-overlay").classList.add("show");
     return;
   }
@@ -2725,8 +2754,8 @@ async function endRound() {
     const st = computeTopicStarFromDaily(s, todayKey(), tk2);
     if (st > maxTopicTier) maxTopicTier = st;
   });
-  const today = (/* @__PURE__ */ new Date()).toDateString();
-  if (s.lastPlayed !== today) {
+  const today = todayKey();
+  if (toDateKey(s.lastPlayed) !== today) {
     s.streak++;
     s.lastPlayed = today;
   }

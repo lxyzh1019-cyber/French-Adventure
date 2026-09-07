@@ -6,6 +6,8 @@
 // NOTE: the apiKey below is a public Firebase client identifier, not a secret. It is
 // designed to ship in the browser; access is governed by Firestore security rules.
 // See docs/known-risks.md — this project currently has no authentication.
+import { todayKey } from '../util/dates.js';
+
 const FIREBASE_APP_URL = "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 const FIREBASE_FS_URL  = "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
@@ -65,7 +67,9 @@ window.fbSave = async (player, data) => {
 // Never overwrites an existing day's backup (getDoc check first).
 window.fbBackupSave = async (player, data) => {
   try {
-    const dateKey = new Date().toISOString().slice(0, 10);
+    // Must match the app's day key exactly: toISOString is UTC, which after
+    // ~17:00 Edmonton names tomorrow and files the backup under the wrong day.
+    const dateKey = todayKey();
     const ref = doc(db, "french_game_backup", player + "_" + dateKey);
     const existing = await getDoc(ref);
     if (existing.exists()) return; // already backed up today
