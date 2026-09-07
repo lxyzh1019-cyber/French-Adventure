@@ -7,7 +7,7 @@
      styles ......... src/styles.css
      game logic ..... src/**/*.js
 
-   Built from dee1020
+   Built from c1f8643
   ============================================================
 -->
 <!DOCTYPE html>
@@ -744,6 +744,58 @@ const SENTENCES = {
     return { parts: frTokenize(s.fr), target: s.en, zh: s.zh };
   })
 };
+function getWeekStart() {
+  const d = /* @__PURE__ */ new Date();
+  d.setHours(0, 0, 0, 0);
+  const day = d.getDay();
+  d.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+function isSameWeek(ts) {
+  if (!ts) return true;
+  return ts >= getWeekStart();
+}
+function todayKey() {
+  const d = /* @__PURE__ */ new Date();
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+function dateKeyAddDays(delta) {
+  const d = /* @__PURE__ */ new Date();
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + delta);
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+function getIsoDateRange(startKey, endKey) {
+  if (!startKey || !endKey) return [];
+  const out = [];
+  const s = /* @__PURE__ */ new Date(startKey + "T00:00:00");
+  const e = /* @__PURE__ */ new Date(endKey + "T00:00:00");
+  for (let d = new Date(s); d <= e; d.setDate(d.getDate() + 1)) {
+    out.push(d.toISOString().slice(0, 10));
+  }
+  return out;
+}
+function previousWeekStartKey(baseWeekStart) {
+  const d = /* @__PURE__ */ new Date((baseWeekStart || getWeekStart()) + "T00:00:00");
+  d.setDate(d.getDate() - 7);
+  return d.toISOString().slice(0, 10);
+}
+function weekStartForOffset(offset) {
+  const d = /* @__PURE__ */ new Date(getWeekStart() + "T00:00:00");
+  d.setDate(d.getDate() + offset * 7);
+  return d.toISOString().slice(0, 10);
+}
+function weekEndFromStart(startKey) {
+  const d = /* @__PURE__ */ new Date(startKey + "T00:00:00");
+  d.setDate(d.getDate() + 6);
+  return d.toISOString().slice(0, 10);
+}
+function formatWeekRange(startKey) {
+  const s = /* @__PURE__ */ new Date(startKey + "T00:00:00");
+  const e = /* @__PURE__ */ new Date(weekEndFromStart(startKey) + "T00:00:00");
+  const mon = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  return mon[s.getMonth()] + " " + s.getDate() + " - " + mon[e.getMonth()] + " " + e.getDate();
+}
 function defaultParentSettings() {
   return { weekdayOpen: [true, true, true, true, true, true, true] };
 }
@@ -1042,17 +1094,6 @@ if ("SpeechRecognition" in window || "webkitSpeechRecognition" in window) {
   recognition.continuous = false;
   recognition.interimResults = false;
 }
-function getWeekStart() {
-  const d = /* @__PURE__ */ new Date();
-  d.setHours(0, 0, 0, 0);
-  const day = d.getDay();
-  d.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
-  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
-}
-function isSameWeek(ts) {
-  if (!ts) return true;
-  return ts >= getWeekStart();
-}
 function applyWeekRolloverIfNeeded(s) {
   if (isSameWeek(s.weekStart)) return;
   if (!s.weeklyHistory) s.weeklyHistory = [];
@@ -1074,16 +1115,6 @@ function applyWeekRolloverIfNeeded(s) {
   }
   s.weekStars = 0;
   s.weekStart = newWs;
-}
-function todayKey() {
-  const d = /* @__PURE__ */ new Date();
-  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
-}
-function dateKeyAddDays(delta) {
-  const d = /* @__PURE__ */ new Date();
-  d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() + delta);
-  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
 }
 function getParentSettings() {
   const ps = state.jenn?.parentSettings || state.jess?.parentSettings;
@@ -3295,37 +3326,6 @@ function promptRecoveryImport() {
     return;
   }
   document.getElementById("recovery-import-file")?.click();
-}
-function getIsoDateRange(startKey, endKey) {
-  if (!startKey || !endKey) return [];
-  const out = [];
-  const s = /* @__PURE__ */ new Date(startKey + "T00:00:00");
-  const e = /* @__PURE__ */ new Date(endKey + "T00:00:00");
-  for (let d = new Date(s); d <= e; d.setDate(d.getDate() + 1)) {
-    out.push(d.toISOString().slice(0, 10));
-  }
-  return out;
-}
-function previousWeekStartKey(baseWeekStart) {
-  const d = /* @__PURE__ */ new Date((baseWeekStart || getWeekStart()) + "T00:00:00");
-  d.setDate(d.getDate() - 7);
-  return d.toISOString().slice(0, 10);
-}
-function weekStartForOffset(offset) {
-  const d = /* @__PURE__ */ new Date(getWeekStart() + "T00:00:00");
-  d.setDate(d.getDate() + offset * 7);
-  return d.toISOString().slice(0, 10);
-}
-function weekEndFromStart(startKey) {
-  const d = /* @__PURE__ */ new Date(startKey + "T00:00:00");
-  d.setDate(d.getDate() + 6);
-  return d.toISOString().slice(0, 10);
-}
-function formatWeekRange(startKey) {
-  const s = /* @__PURE__ */ new Date(startKey + "T00:00:00");
-  const e = /* @__PURE__ */ new Date(weekEndFromStart(startKey) + "T00:00:00");
-  const mon = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  return mon[s.getMonth()] + " " + s.getDate() + " - " + mon[e.getMonth()] + " " + e.getDate();
 }
 function aggregateWeekFromDaily(s, weekStart) {
   const end = weekEndFromStart(weekStart);
