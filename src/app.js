@@ -1,5 +1,8 @@
 import { firebaseReady } from './state/firebase-bootstrap.js';
 import { CURRICULUM, SENTENCES } from './content/curriculum-map.js';
+import { normalizeForRecognition, compareFrench, scrambleTypeFor,
+         buildScrambleTiles, joinScrambleTiles, isScrambleSolvable,
+         SCRAMBLE_TYPES } from './util/fr-text.js';
 import { getWeekStart, isSameWeek, todayKey, dateKeyAddDays, getIsoDateRange,
          previousWeekStartKey, weekStartForOffset, weekEndFromStart,
          formatWeekRange, weekdayIndex, toDateKey,
@@ -1423,6 +1426,7 @@ document.addEventListener('click', function(e){
     case 'reopen-grade':     void reopenGradeForParent(Number(el.getAttribute('data-grade'))); break;
     case 'restore-backup':   void restoreFromBackup(el.getAttribute('data-player'),
                                                     el.getAttribute('data-backup-id')); break;
+    case 'check-scramble':   if(currentQ) checkScramble(currentQ.word.fr); break;
   }
 });
 
@@ -1440,11 +1444,14 @@ function startSpeech(){
     const said=e.results[0][0].transcript.toLowerCase().trim();
     const target=(currentQ?.word?.fr||'').toLowerCase().trim();
     btn.classList.remove('listening');btn.textContent='🎤';
-    const normalize=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
-    if(normalize(said)===normalize(target)){
-      showToast('🎤 Parfait! Great pronunciation!');
+    // Speech-to-text rarely returns accents, so this is a recognition-level
+    // match, not a spelling one. It reports what the device heard and never
+    // claims the pronunciation was good: a transcript match is evidence that
+    // the recogniser understood a word, not that it was said well.
+    if(normalizeForRecognition(said)===normalizeForRecognition(target)){
+      showToast(`🎤 The device heard "${said}" — that's the word!`);
     } else {
-      showToast(`🎤 You said: "${said}" — try again!`,'var(--gold)');
+      showToast(`🎤 The device heard "${said}" — try again!`,'var(--gold)');
     }
   };
   recognition.onerror=()=>{btn.classList.remove('listening');btn.textContent='🎤';};
@@ -1524,8 +1531,8 @@ function buildQuestions(type){
   }
   if(type==='scramble'){
     vocabPool.slice(0,6).forEach((word, i)=>{
-      const letters = shuffleSeeded(word.fr.replace(/[^a-zàâäéèêëîïôùûüç]/gi,'').split(''), seed + 200 + i);
-      qs.push({type:'scramble',word,letters,hint:word.en});
+      const item = makeScrambleItem(word, seed + 200 + i);
+      if(item) qs.push(item);
     });
   }
   if(type==='builder'){
@@ -1541,8 +1548,8 @@ function buildQuestions(type){
       qs.push({type:'quiz',prompt:'What does "'+word.fr+'" mean?',choices:shuffleSeeded([word.en,...distractors], seed + 600 + i),correct:word.en,hint:word.zh,word});
     });
     bossVocab.slice(8,12).forEach((word, i)=>{
-      const letters = shuffleSeeded(word.fr.replace(/[^a-zàâäéèêëîïôùûüç]/gi,'').split(''), seed + 700 + i);
-      qs.push({type:'scramble',word,letters,hint:word.en});
+      const item = makeScrambleItem(word, seed + 700 + i);
+      if(item) qs.push(item);
     });
     shuffleSeeded(bossSents, seed + 800).slice(0,3).forEach((s, i)=>{
       qs.push({type:'builder',...s,shuffled:shuffleSeeded(s.parts, seed + 900 + i)});
@@ -1683,15 +1690,53 @@ function handleMatchClick(btn,side,word){
 }
 
 // ── SCRAMBLE ──
+/**
+ * Build a scramble item whose tiles can actually produce the answer.
+ *
+ * The item type comes from the shape of the word: a plain word scrambles into
+ * letters, a word carrying an apostrophe/hyphen/ellipsis becomes a spelling
+ * build with those marks as tiles, and a multi-word phrase becomes a word-order
+ * task. Every item is verified solvable before it is allowed into the round —
+ * previously tiles were built by deleting every character outside a narrow
+ * letter class, which made words like œil and arc-en-ciel impossible.
+ *
+ * Returns null if an item somehow fails verification, so a broken item is
+ * skipped rather than shown.
+ */
+function makeScrambleItem(word, seed){
+  const target = word.fr;
+  const scrambleType = scrambleTypeFor(target);
+  const tiles = buildScrambleTiles(target, scrambleType);
+  if(!isScrambleSolvable(tiles, target, scrambleType)){
+    console.warn('skipping unsolvable scramble item', target);
+    return null;
+  }
+  return { type:'scramble', word, scrambleType,
+           letters: shuffleSeeded(tiles, seed), hint: word.en };
+}
+
+const SCRAMBLE_PROMPTS = {
+  [SCRAMBLE_TYPES.WORD]:     'Unscramble the French word',
+  [SCRAMBLE_TYPES.SPELLING]: 'Build the word — keep every accent and mark',
+  [SCRAMBLE_TYPES.PHRASE]:   'Put the words in the right order',
+};
 function renderScramble(q,area,actions){
+  const scrambleType = q.scrambleType || scrambleTypeFor(q.word.fr);
+  // A round draft saved before the tile rules were fixed still holds tiles built
+  // by the old rule, which cannot spell the target. Rebuild those on resume so a
+  // mid-round upgrade never leaves a child with an impossible question.
+  if(!isScrambleSolvable(q.letters, q.word.fr, scrambleType)){
+    q.scrambleType = scrambleType;
+    q.letters = shuffleSeeded(buildScrambleTiles(q.word.fr, scrambleType), dailyShuffleSeed());
+  }
   scrambleAnswer=[];scrambleSource=[...q.letters];currentQ=q;
-  area.innerHTML='<div class="question-label">Unscramble the French word</div>'
+  area.innerHTML='<div class="question-label">'+escapeAttr(SCRAMBLE_PROMPTS[scrambleType])+'</div>'
     +'<div class="question-hint-big">🇬🇧 '+q.word.en+' &nbsp;·&nbsp; '+kidTopicCue(q.word)+'</div>'
     +'<div class="answer-slots" id="answer-slots"></div>'
     +'<div class="scramble-letters" id="scramble-letters"></div>';
   renderScrambleState(q);
   actions.innerHTML='<button class="btn-secondary" onclick="clearScramble()">Clear</button>'
-    +'<button class="btn-primary" onclick="checkScramble(\''+q.word.fr.replace(/'/g,"\\'")+'\')">Check ✓</button>'
+    +'<button class="btn-primary" data-action="check-scramble">Check ✓</button>'
     +speakButtonHTML(q.word.fr,'question-speak-inline');
   speakFrench(q.word.fr);
 }
@@ -1700,12 +1745,16 @@ function renderScrambleState(q){
   if(!slots||!pool)return;
   slots.innerHTML='';pool.innerHTML='';
   scrambleAnswer.forEach((l,i)=>{
-    const s=document.createElement('div');s.className='answer-slot filled';s.textContent=l;
+    const s=document.createElement('div');
+    s.className = l.length>1 ? 'answer-slot filled word-tile' : 'answer-slot filled';
+    s.textContent=l;
     s.onclick=()=>{scrambleSource.push(l);scrambleAnswer.splice(i,1);renderScrambleState(currentQ);};
     slots.appendChild(s);
   });
   scrambleSource.forEach((l,i)=>{
-    const tile=document.createElement('div');tile.className='letter-tile';tile.textContent=l;
+    const tile=document.createElement('div');
+    tile.className = l.length>1 ? 'letter-tile word-tile' : 'letter-tile';
+    tile.textContent=l;
     tile.onclick=()=>{scrambleAnswer.push(l);scrambleSource.splice(i,1);renderScrambleState(currentQ);};
     pool.appendChild(tile);
   });
@@ -1713,12 +1762,22 @@ function renderScrambleState(q){
 }
 function clearScramble(){scrambleSource=[...currentQ.letters];scrambleAnswer=[];renderScrambleState(currentQ);scheduleRoundDraftPersist();}
 function checkScramble(target){
-  const normalize=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
-  const ok = normalize(scrambleAnswer.join(''))===normalize(target);
+  const scrambleType = currentQ.scrambleType || scrambleTypeFor(target);
+  const answer = joinScrambleTiles(scrambleAnswer, scrambleType);
+  const cmp = compareFrench(answer, target);
+  // Spelling is the point of this exercise, so only a correct spelling counts.
+  // A meaning-correct answer with a missing accent gets a targeted nudge rather
+  // than a flat "wrong" — the child had the word, not the diacritic.
+  const ok = cmp.spelling;
   tallyTopicFromWord(currentQ.word, ok);
   recordGradeAttempt(currentQ.word.grade||currentGrade, ok);
   if(ok){logSuccess(currentQ.word);showFeedback(true,currentQ.word);}
-  else{logFailure(currentQ.word);showFeedback(false,currentQ.word,null,target);applyWrongAttemptPenalty(1500);}
+  else{
+    logFailure(currentQ.word);
+    const note = cmp.meaning ? 'So close — check the accents and marks!' : null;
+    showFeedback(false,currentQ.word,note,target);
+    applyWrongAttemptPenalty(1500);
+  }
   scheduleRoundDraftPersist();
 }
 
@@ -2014,8 +2073,8 @@ function renderDrillCard(){
 
 function checkDrill(target){
   const answer = (document.getElementById('train-input')?.value||'').trim();
-  const normalize = s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
-  if(normalize(answer)===normalize(target)){
+  const cmp = compareFrench(answer, target);
+  if(cmp.spelling){
     showToast('✅ Correct!');
     const w = trainWords[trainIndex];
     const vocabW = findVocabWord(w.fr, w.grade||currentGrade)||w;
@@ -2024,7 +2083,9 @@ function checkDrill(target){
     trainIndex++;
     setTimeout(renderDrillCard, 600);
   } else {
-    showToast('❌ Answer: '+target, 'var(--jenn)');
+    // Right word, missing accent reads differently to a child than a wrong word.
+    showToast(cmp.meaning ? '✏️ So close — check the accents: '+target
+                          : '❌ Answer: '+target, 'var(--jenn)');
     saveState(currentPlayer);
     setTimeout(()=>{trainIndex++;renderDrillCard();}, 1600);
   }
@@ -2132,8 +2193,11 @@ function speakAndReveal(){
 function checkListenAnswer(){
   const answer = (document.getElementById('listen-input')?.value||'').trim();
   const target = currentQ?.word?.fr||'';
-  const normalize = s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
-  const ok = normalize(answer)===normalize(target);
+  // Dictation is an encoding task, so accents count. A meaning-correct answer
+  // that misses one is still wrong here, but says something different to the
+  // child than a wrong word does.
+  const cmp = compareFrench(answer, target);
+  const ok = cmp.spelling;
   tallyTopicFromWord(currentQ.word, ok);
   recordGradeAttempt(currentQ.word.grade||currentGrade, ok);
   if(ok){

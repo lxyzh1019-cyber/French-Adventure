@@ -395,3 +395,10 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .lock-error{color:var(--jenn);font-size:.85rem;font-weight:700;min-height:20px;}
 
 button,input{touch-action:manipulation;}
+
+/* A phrase-order scramble puts a whole word on a tile, not a single letter,
+   so those tiles size to their content instead of the fixed letter square. */
+.letter-tile.word-tile,.answer-slot.word-tile{width:auto;min-width:48px;padding:0 12px;font-size:1rem;}
+@media (max-width:420px){
+  .letter-tile.word-tile,.answer-slot.word-tile{width:auto;font-size:1.05rem;}
+}
