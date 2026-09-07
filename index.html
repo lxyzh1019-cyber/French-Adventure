@@ -2511,6 +2511,25 @@ function speakFrench(text){
   utt.lang='fr-FR';utt.rate=0.85;
   speechSynth.speak(utt);
 }
+// Build a 🔊 button that carries its French text as data rather than as
+// interpolated JavaScript inside an onclick attribute. Apostrophes in words like
+// aujourd'hui / l'ecole / j'ai used to produce syntactically invalid inline JS,
+// leaving the button dead. Clicks are handled by one delegated listener below.
+function escapeAttr(text){
+  return String(text)
+    .replace(/&/g,'&amp;').replace(/"/g,'&quot;')
+    .replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function speakButtonHTML(text, cls, style){
+  return '<button type="button" class="'+escapeAttr(cls||'')+'"'
+    + (style ? ' style="'+escapeAttr(style)+'"' : '')
+    + ' data-speak="'+escapeAttr(text)+'">\uD83D\uDD0A</button>';
+}
+document.addEventListener('click', function(e){
+  const t = e.target && e.target.closest ? e.target.closest('[data-speak]') : null;
+  if(t) speakFrench(t.getAttribute('data-speak'));
+});
+
 function speakCurrent(){
   if(!currentQ)return;
   const text=currentQ.word?.fr||currentQ.parts?.join(' ')||'';
@@ -2655,7 +2674,7 @@ function renderQuiz(q,area,actions){
   area.innerHTML=''
     +'<div class="question-label">Translate to English</div>'
     +'<div class="question-main">'+q.prompt+'</div>'
-    +'<button class="question-speak-inline" onclick="speakFrench(\''+q.word.fr+'\')">🔊 Hear it</button>'
+    +'<button type="button" class="question-speak-inline" data-speak="'+escapeAttr(q.word.fr)+'">🔊 Hear it</button>'
     +'<div class="question-hint-big">💡 '+kidTopicCue(q.word)+' · 中文见家长页</div>'
     +'<div class="choices-grid" id="choices-grid"></div>';
   const grid=document.getElementById('choices-grid');
@@ -2777,7 +2796,7 @@ function renderScramble(q,area,actions){
   renderScrambleState(q);
   actions.innerHTML='<button class="btn-secondary" onclick="clearScramble()">Clear</button>'
     +'<button class="btn-primary" onclick="checkScramble(\''+q.word.fr.replace(/'/g,"\\'")+'\')">Check ✓</button>'
-    +'<button class="question-speak-inline" onclick="speakFrench(\''+q.word.fr.replace(/'/g,"\\'")+'\')">🔊</button>';
+    +speakButtonHTML(q.word.fr,'question-speak-inline');
   speakFrench(q.word.fr);
 }
 function renderScrambleState(q){
@@ -2817,7 +2836,7 @@ function renderBuilder(q,area,actions){
   renderBuilderState(q);
   actions.innerHTML='<button class="btn-secondary" onclick="clearBuilder()">Clear</button>'
     +'<button class="btn-primary" onclick="checkBuilder()">Check ✓</button>'
-    +'<button class="question-speak-inline" onclick="speakFrench(\''+q.parts.join(' ').replace(/'/g,"\\'")+'\')">🔊</button>';
+    +speakButtonHTML(q.parts.join(' '),'question-speak-inline');
 }
 function renderBuilderState(q){
   const built=document.getElementById('built-sentence'),bank=document.getElementById('word-bank');
@@ -3034,7 +3053,7 @@ function renderMyWordsList(){
       +'<div class="conquer-fr">'+w.fr+'</div>'
       +'<div class="conquer-right"><div class="conquer-en">'+w.en+'</div><div class="conquer-zh">'+w.zh+'</div></div>'
       +'<div><div class="conquer-prog"><div class="conquer-prog-fill" style="width:'+Math.round(prog*100)+'%"></div></div></div>'
-      +'<button onclick="speakFrench(\''+w.fr+'\')" style="background:none;border:none;cursor:pointer;font-size:1.2rem;padding:4px;touch-action:manipulation;">🔊</button>'
+      +speakButtonHTML(w.fr,'','background:none;border:none;cursor:pointer;font-size:1.2rem;padding:4px;touch-action:manipulation;')
       +'</div>';
   }).join('')
   +'<div style="text-align:center;margin-top:14px;">'
@@ -3090,7 +3109,7 @@ function renderDrillCard(){
     +'<div class="action-row" style="margin-top:12px;">'
     +'<button class="btn-secondary" onclick="revealDrill()">Reveal</button>'
     +'<button class="btn-primary" onclick="checkDrill(\''+w.fr.replace(/'/g,"\\'")+'\')" >Check ✓</button>'
-    +'<button onclick="speakFrench(\''+w.fr.replace(/'/g,"\\'")+'\')\" class="btn-speak" style="touch-action:manipulation;">🔊</button>'
+    +speakButtonHTML(w.fr,'btn-speak','touch-action:manipulation;')
     +'</div>';
   setTimeout(()=>document.getElementById('train-input')?.focus(),100);
 }
@@ -3148,7 +3167,7 @@ function renderStudySet(n){
         <div class="study-mini-fr">${w.fr}</div>
         <div class="study-mini-en">${w.en}</div>
         <div class="study-mini-zh">${w.zh}</div>
-        <button onclick="speakFrench('${w.fr}')" style="background:none;border:none;cursor:pointer;margin-top:4px;">🔊</button>
+        ${speakButtonHTML(w.fr,'','background:none;border:none;cursor:pointer;margin-top:4px;')}
       </div>`).join('')}</div>`;
   } else if(n===2){
     // Set 2 — shared sentence patterns
@@ -3158,7 +3177,7 @@ function renderStudySet(n){
         <div class="study-card-fr">${s.parts.join(' ')}</div>
         <div class="study-card-en">${s.target}</div>
         <div class="study-card-zh">${s.zh}</div>
-        <button onclick="speakFrench('${s.parts.join(' ')}')" style="background:none;border:none;cursor:pointer;margin-top:8px;font-size:1.2rem;">🔊</button>
+        ${speakButtonHTML(s.parts.join(' '),'','background:none;border:none;cursor:pointer;margin-top:8px;font-size:1.2rem;')}
       </div>`).join('');
   } else {
     // Set 3 — personalized: failed words first
@@ -3172,7 +3191,7 @@ function renderStudySet(n){
           <div class="study-card-fr">${w.fr}</div>
           <div class="study-card-en">${w.en}</div>
           <div class="study-card-zh">${w.zh}</div>
-          <button onclick="speakFrench('${w.fr}')" style="background:none;border:none;cursor:pointer;margin-top:6px;">🔊</button>
+          ${speakButtonHTML(w.fr,'','background:none;border:none;cursor:pointer;margin-top:6px;')}
         </div>`).join('');
     }
   }
