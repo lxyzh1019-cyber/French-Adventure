@@ -71,6 +71,47 @@ const syncMeta = {
   jess: { pendingCloud: false, lastLocalSave: 0, lastCloudOk: 0, suppressSnapshotUntil: 0 }
 };
 let roundDraftTimer = null;
+
+// Explicit round outcomes. Finishing every question and running out of lives
+// used to take the same path, so a knocked-out round was recorded as a
+// completed one — inflating format completion and daily round counts with
+// rounds the learner never finished.
+const ROUND_OUTCOME = {
+  COMPLETED:       'completed',       // every question answered
+  CHALLENGE_FAILED:'challengeFailed', // ran out of lives
+  ABANDONED:       'abandoned',       // learner left deliberately
+  INTERRUPTED:     'interrupted',     // app closed, tab evicted, screen lock
+  TIMED_OUT:       'timedOut',        // session limit reached
+};
+/** Only a genuinely completed round counts towards completion and caps. */
+function countsAsCompletion(outcome){ return outcome === ROUND_OUTCOME.COMPLETED; }
+
+let roundEnded = false;   // endRound must run once per round, not once per trigger
+let lastRoundOutcome = null;
+
+// Answers commit exactly once. Resuming a draft that was saved with the
+// feedback overlay open used to re-present the same question, letting the same
+// response score a second time; there was no identity to deduplicate on.
+let roundAttemptId = null;
+const committedAnswers = new Set();
+function newAttemptId(){
+  return (Date.now().toString(36) + Math.random().toString(36).slice(2, 8));
+}
+function questionInstanceId(index){
+  return roundAttemptId + ':' + index;
+}
+/**
+ * Claim the right to score the current question.
+ * Returns false if this question instance has already been committed, so a
+ * duplicate submit — from a resume, a double tap, or a rebound handler —
+ * cannot award points or evidence twice.
+ */
+function commitAnswerOnce(index = qIndex){
+  const id = questionInstanceId(index);
+  if(committedAnswers.has(id)) return false;
+  committedAnswers.add(id);
+  return true;
+}
 let lastWrongPenaltyAt = 0;
 
 function persistLocalStateMirror(player){
@@ -131,7 +172,9 @@ function collectRoundDraft(){
     if(inp) listenInput = inp.value || '';
   }catch(_){}
   return {
-    v: 1,
+    v: 2,
+    attemptId: roundAttemptId,
+    committed: [...committedAnswers],
     savedAt: Date.now(),
     tk, player: currentPlayer, grade: currentGrade, type: currentGameType,
     qIndex, questions, lives, roundScore, roundBasePoints, roundSpeedPoints, roundTopicTally,
@@ -175,6 +218,12 @@ function loadRoundDraftForStart(type){
   }catch(e){ return null; }
 }
 function restoreRoundDraft(d){
+  // Restore the attempt identity first: everything below depends on it to
+  // decide what has already been scored.
+  roundEnded = false;
+  roundAttemptId = d.attemptId || newAttemptId();
+  committedAnswers.clear();
+  (d.committed || []).forEach(id => committedAnswers.add(id));
   questions = d.questions || [];
   qIndex = Math.min(Math.max(0, d.qIndex|0), Math.max(0, questions.length - 1));
   lives = d.lives != null ? d.lives : 3;
@@ -197,7 +246,14 @@ function restoreRoundDraft(d){
   scrambleSource = d.scrambleSource ? [...d.scrambleSource] : [];
   builtWords = d.builtWords ? [...d.builtWords] : [];
   if(d.feedbackOpen){
+    // The overlay was open, so this question had already been answered and
+    // scored. Dismissing it and re-rendering the same question let the same
+    // response score a second time. Advance past it instead — the answer is
+    // committed, and the committed set below makes the guard belt-and-braces.
     try{ document.getElementById('feedback-overlay').classList.remove('show'); }catch(_){}
+    committedAnswers.add(questionInstanceId(qIndex));
+    if(qIndex < questions.length) qIndex++;
+    currentQ = questions[qIndex] || null;
   }
   renderLives();
   renderScore();
@@ -220,7 +276,7 @@ function applyWrongAttemptPenalty(koDelayMs){
   renderLives();
   const knockedOut = lives <= 0;
   if(knockedOut){
-    setTimeout(endRound, koDelayMs||1500);
+    setTimeout(()=>endRound(ROUND_OUTCOME.CHALLENGE_FAILED), koDelayMs||1500);
   }
   return knockedOut;
 }
@@ -684,6 +740,10 @@ function startSessionClock(){
     if(remaining <= 0){
       clearInterval(countdownInterval);
       if(cd){ cd.textContent='⏳ 0:00'; cd.classList.add('warning'); }
+      // Flush the round draft before locking. Drafts save on a short debounce,
+      // so without this the last few seconds of a round are lost and the child
+      // comes back to an earlier question than the one she was on.
+      if(currentPlayer && currentGameType) persistRoundDraftNow();
       lockApp();
       return;
     }
@@ -1453,6 +1513,7 @@ function startGame(type){
   }else{
     clearCurrentRoundDraft();
     lives=3;roundScore=0;roundBasePoints=0;roundSpeedPoints=0;qIndex=0;roundTopicTally={};
+    roundEnded=false;roundAttemptId=newAttemptId();committedAnswers.clear();
     questions=buildQuestions(type);
     renderLives();renderScore();
     document.getElementById('progress-bar').style.width='0%';
@@ -1563,6 +1624,7 @@ function renderQuiz(q,area,actions){
   speakFrench(q.word.fr);
 }
 function handleQuizAnswer(choice,q,btn){
+  if(!commitAnswerOnce()) return;
   document.querySelectorAll('.choice-btn').forEach(b=>b.disabled=true);
   const correct=choice===q.correct;
   btn.classList.add(correct?'correct':'wrong');
@@ -1735,6 +1797,7 @@ function renderScrambleState(q){
 }
 function clearScramble(){scrambleSource=[...currentQ.letters];scrambleAnswer=[];renderScrambleState(currentQ);scheduleRoundDraftPersist();}
 function checkScramble(target){
+  if(!commitAnswerOnce()) return;
   const scrambleType = currentQ.scrambleType || scrambleTypeFor(target);
   const answer = joinScrambleTiles(scrambleAnswer, scrambleType);
   const cmp = compareFrench(answer, target);
@@ -1787,6 +1850,7 @@ function renderBuilderState(q){
 function removeBuilt(i){builtWords.splice(i,1);renderBuilderState(currentQ);scheduleRoundDraftPersist();}
 function clearBuilder(){builtWords=[];renderBuilderState(currentQ);scheduleRoundDraftPersist();}
 function checkBuilder(){
+  if(!commitAnswerOnce()) return;
   const answer=builtWords.join(' '),correct=currentQ.parts.join(' ');
   if(answer===correct){
     currentQ.parts.forEach(p=>{
@@ -1861,7 +1925,10 @@ function nextQuestion(){document.getElementById('feedback-overlay').classList.re
 // ════════════════════════════════════════════════
 // ROUND END
 // ════════════════════════════════════════════════
-async function endRound(){
+async function endRound(outcome = ROUND_OUTCOME.COMPLETED){
+  if(roundEnded) return;      // a knockout timer and the last question can both fire
+  roundEnded = true;
+  lastRoundOutcome = outcome;
   clearCurrentRoundDraft();
   document.getElementById('feedback-overlay').classList.remove('show');
   const lpStars=roundScore>=80?3:roundScore>=40?2:roundScore>=15?1:0;
@@ -1872,10 +1939,16 @@ async function endRound(){
 
   applyWeekRolloverIfNeeded(s);
 
+  // Points earned are kept whatever the outcome — the learner did the work.
   s.totalStars+=roundScore;
   s.weekStars+=roundScore;
-  incrementRoundsToday(currentPlayer,currentGameType);
-  markGradeRoundComplete(s, todayKey(), currentGrade, currentGameType);
+  // Completion, though, means finishing. Running out of lives is not finishing,
+  // and must not consume a daily round or count as having played this format.
+  const completed = countsAsCompletion(outcome);
+  if(completed){
+    incrementRoundsToday(currentPlayer,currentGameType);
+    markGradeRoundComplete(s, todayKey(), currentGrade, currentGameType);
+  }
   const roundsLeft=DAILY_ROUND_LIMIT-roundsPlayedToday(currentPlayer,currentGameType);
 
   const touchedTopicKeys = [];
@@ -1914,7 +1987,8 @@ async function endRound(){
   if(!s.todayStats)s.todayStats={};
   const tk=todayKey();
   if(!s.todayStats[tk])s.todayStats[tk]={correct:0,wrong:0,rounds:0,stars:0};
-  s.todayStats[tk].rounds++;s.todayStats[tk].stars+=roundScore;
+  if(completed) s.todayStats[tk].rounds++;
+  s.todayStats[tk].stars+=roundScore;
 
   const newMoons=checkMoons(s);
   let moonHTML='';
@@ -1924,9 +1998,18 @@ async function endRound(){
   }
   const moonTrophies=[4,5,6,7,8,9,10].map(g=>s.moons&&s.moons['grade'+g]?'🌙G'+g:'').filter(Boolean).join(' ')+(s.moons&&s.moons.super?' · 🌟Super':'');
 
+  // Say plainly whether the round was finished. Running out of lives used to
+  // look identical to completing every question, which told the child — and the
+  // parent summary — something that was not true.
+  const outcomeLine = completed ? ''
+    : `<div class="rc-outcome" style="font-size:.8rem;color:var(--gold);margin-bottom:6px;">`
+      + `💛 Out of lives — this round doesn't count as finished, and it hasn't `
+      + `used up one of today's rounds. Your points are still yours!</div>`;
+
   area.innerHTML=unlockLine+`<div class="round-complete">
+    ${outcomeLine}
     <div class="rc-stars">${'⭐'.repeat(maxTopicTier)}${'☆'.repeat(Math.max(0,3-maxTopicTier))}</div>
-    <div class="rc-title">${maxTopicTier===3?'🏆 Topic round!':maxTopicTier===2?'🎉 Strong topics!':maxTopicTier===1?'👍 Topics improving!':'Keep practicing topics!'}</div>
+    <div class="rc-title">${!completed?'Good effort!':maxTopicTier===3?'🏆 Topic round!':maxTopicTier===2?'🎉 Strong topics!':maxTopicTier===1?'👍 Topics improving!':'Keep practicing topics!'}</div>
     <div class="rc-score">Leaderboard star points · +${roundBasePoints} base + ${roundSpeedPoints} speed = ${roundScore}</div>
     <div class="rc-breakdown">
       <div class="rc-stat"><span class="rc-stat-val">${roundBasePoints}</span><span class="rc-stat-lbl">Base</span></div>
@@ -2164,6 +2247,7 @@ function speakAndReveal(){
 }
 
 function checkListenAnswer(){
+  if(!commitAnswerOnce()) return;
   const answer = (document.getElementById('listen-input')?.value||'').trim();
   const target = currentQ?.word?.fr||'';
   // Dictation is an encoding task, so accents count. A meaning-correct answer

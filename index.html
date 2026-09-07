@@ -7,7 +7,7 @@
      styles ......... src/styles.css
      game logic ..... src/**/*.js
 
-   Built from bda638b
+   Built from 30b2f0b
   ============================================================
 -->
 <!DOCTYPE html>
@@ -1040,6 +1040,29 @@ const syncMeta = {
   jess: { pendingCloud: false, lastLocalSave: 0, lastCloudOk: 0, suppressSnapshotUntil: 0 }
 };
 let roundDraftTimer = null;
+const ROUND_OUTCOME = {
+  COMPLETED: "completed",
+  // every question answered
+  CHALLENGE_FAILED: "challengeFailed"
+};
+function countsAsCompletion(outcome) {
+  return outcome === ROUND_OUTCOME.COMPLETED;
+}
+let roundEnded = false;
+let roundAttemptId = null;
+const committedAnswers = /* @__PURE__ */ new Set();
+function newAttemptId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+function questionInstanceId(index) {
+  return roundAttemptId + ":" + index;
+}
+function commitAnswerOnce(index = qIndex) {
+  const id = questionInstanceId(index);
+  if (committedAnswers.has(id)) return false;
+  committedAnswers.add(id);
+  return true;
+}
 let lastWrongPenaltyAt = 0;
 function persistLocalStateMirror(player) {
   try {
@@ -1106,7 +1129,9 @@ function collectRoundDraft() {
   } catch (_) {
   }
   return {
-    v: 1,
+    v: 2,
+    attemptId: roundAttemptId,
+    committed: [...committedAnswers],
     savedAt: Date.now(),
     tk,
     player: currentPlayer,
@@ -1170,6 +1195,10 @@ function loadRoundDraftForStart(type) {
   }
 }
 function restoreRoundDraft(d) {
+  roundEnded = false;
+  roundAttemptId = d.attemptId || newAttemptId();
+  committedAnswers.clear();
+  (d.committed || []).forEach((id) => committedAnswers.add(id));
   questions = d.questions || [];
   qIndex = Math.min(Math.max(0, d.qIndex | 0), Math.max(0, questions.length - 1));
   lives = d.lives != null ? d.lives : 3;
@@ -1196,6 +1225,9 @@ function restoreRoundDraft(d) {
       document.getElementById("feedback-overlay").classList.remove("show");
     } catch (_) {
     }
+    committedAnswers.add(questionInstanceId(qIndex));
+    if (qIndex < questions.length) qIndex++;
+    currentQ = questions[qIndex] || null;
   }
   renderLives();
   renderScore();
@@ -1218,7 +1250,7 @@ function applyWrongAttemptPenalty(koDelayMs) {
   renderLives();
   const knockedOut = lives <= 0;
   if (knockedOut) {
-    setTimeout(endRound, koDelayMs || 1500);
+    setTimeout(() => endRound(ROUND_OUTCOME.CHALLENGE_FAILED), koDelayMs || 1500);
   }
   return knockedOut;
 }
@@ -1644,6 +1676,7 @@ function startSessionClock() {
         cd.textContent = "⏳ 0:00";
         cd.classList.add("warning");
       }
+      if (currentPlayer && currentGameType) persistRoundDraftNow();
       lockApp();
       return;
     }
@@ -2334,6 +2367,9 @@ function startGame(type) {
     roundSpeedPoints = 0;
     qIndex = 0;
     roundTopicTally = {};
+    roundEnded = false;
+    roundAttemptId = newAttemptId();
+    committedAnswers.clear();
     questions = buildQuestions(type);
     renderLives();
     renderScore();
@@ -2448,6 +2484,7 @@ function renderQuiz(q, area, actions) {
   speakFrench(q.word.fr);
 }
 function handleQuizAnswer(choice, q, btn) {
+  if (!commitAnswerOnce()) return;
   document.querySelectorAll(".choice-btn").forEach((b) => b.disabled = true);
   const correct = choice === q.correct;
   btn.classList.add(correct ? "correct" : "wrong");
@@ -2650,6 +2687,7 @@ function clearScramble() {
   scheduleRoundDraftPersist();
 }
 function checkScramble(target) {
+  if (!commitAnswerOnce()) return;
   const scrambleType = currentQ.scrambleType || scrambleTypeFor(target);
   const answer = joinScrambleTiles(scrambleAnswer, scrambleType);
   const cmp = compareFrench(answer, target);
@@ -2713,6 +2751,7 @@ function clearBuilder() {
   scheduleRoundDraftPersist();
 }
 function checkBuilder() {
+  if (!commitAnswerOnce()) return;
   const answer = builtWords.join(" "), correct = currentQ.parts.join(" ");
   if (answer === correct) {
     currentQ.parts.forEach((p) => {
@@ -2789,7 +2828,9 @@ function nextQuestion() {
   renderQuestion();
   scheduleRoundDraftPersist();
 }
-async function endRound() {
+async function endRound(outcome = ROUND_OUTCOME.COMPLETED) {
+  if (roundEnded) return;
+  roundEnded = true;
   clearCurrentRoundDraft();
   document.getElementById("feedback-overlay").classList.remove("show");
   const lpStars = roundScore >= 80 ? 3 : roundScore >= 40 ? 2 : roundScore >= 15 ? 1 : 0;
@@ -2799,8 +2840,11 @@ async function endRound() {
   applyWeekRolloverIfNeeded(s);
   s.totalStars += roundScore;
   s.weekStars += roundScore;
-  incrementRoundsToday(currentPlayer, currentGameType);
-  markGradeRoundComplete(s, todayKey(), currentGrade, currentGameType);
+  const completed = countsAsCompletion(outcome);
+  if (completed) {
+    incrementRoundsToday(currentPlayer, currentGameType);
+    markGradeRoundComplete(s, todayKey(), currentGrade, currentGameType);
+  }
   const roundsLeft = DAILY_ROUND_LIMIT - roundsPlayedToday(currentPlayer, currentGameType);
   const touchedTopicKeys = [];
   Object.entries(roundTopicTally).forEach(([tk2, o]) => {
@@ -2836,7 +2880,7 @@ async function endRound() {
   if (!s.todayStats) s.todayStats = {};
   const tk = todayKey();
   if (!s.todayStats[tk]) s.todayStats[tk] = { correct: 0, wrong: 0, rounds: 0, stars: 0 };
-  s.todayStats[tk].rounds++;
+  if (completed) s.todayStats[tk].rounds++;
   s.todayStats[tk].stars += roundScore;
   const newMoons = checkMoons(s);
   let moonHTML = "";
@@ -2846,9 +2890,11 @@ async function endRound() {
     confetti();
   }
   const moonTrophies = [4, 5, 6, 7, 8, 9, 10].map((g) => s.moons && s.moons["grade" + g] ? "🌙G" + g : "").filter(Boolean).join(" ") + (s.moons && s.moons.super ? " · 🌟Super" : "");
+  const outcomeLine = completed ? "" : `<div class="rc-outcome" style="font-size:.8rem;color:var(--gold);margin-bottom:6px;">💛 Out of lives — this round doesn't count as finished, and it hasn't used up one of today's rounds. Your points are still yours!</div>`;
   area.innerHTML = unlockLine + `<div class="round-complete">
+    ${outcomeLine}
     <div class="rc-stars">${"⭐".repeat(maxTopicTier)}${"☆".repeat(Math.max(0, 3 - maxTopicTier))}</div>
-    <div class="rc-title">${maxTopicTier === 3 ? "🏆 Topic round!" : maxTopicTier === 2 ? "🎉 Strong topics!" : maxTopicTier === 1 ? "👍 Topics improving!" : "Keep practicing topics!"}</div>
+    <div class="rc-title">${!completed ? "Good effort!" : maxTopicTier === 3 ? "🏆 Topic round!" : maxTopicTier === 2 ? "🎉 Strong topics!" : maxTopicTier === 1 ? "👍 Topics improving!" : "Keep practicing topics!"}</div>
     <div class="rc-score">Leaderboard star points · +${roundBasePoints} base + ${roundSpeedPoints} speed = ${roundScore}</div>
     <div class="rc-breakdown">
       <div class="rc-stat"><span class="rc-stat-val">${roundBasePoints}</span><span class="rc-stat-lbl">Base</span></div>
@@ -3035,6 +3081,7 @@ function speakAndReveal() {
   if (currentQ?.word?.fr) speakFrench(currentQ.word.fr);
 }
 function checkListenAnswer() {
+  if (!commitAnswerOnce()) return;
   const answer = (document.getElementById("listen-input")?.value || "").trim();
   const target = currentQ?.word?.fr || "";
   const cmp = compareFrench(answer, target);

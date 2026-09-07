@@ -13,11 +13,24 @@ const APP = 'file://' + path.resolve('index.html');
 const CHROME = process.env.CHROMIUM_PATH || undefined;
 
 let browser;
+const openContexts = [];
 test.before(async () => { browser = await chromium.launch(CHROME ? { executablePath: CHROME } : {}); });
+test.afterEach(async () => {
+  // Each test gets a clean context; without closing them they accumulate until
+  // the run exhausts the machine and hangs with no output.
+  await Promise.all(openContexts.splice(0).map(c => c.close().catch(() => {})));
+});
 test.after(async () => { await browser?.close(); });
 
 async function open({ seed } = {}) {
-  const page = await (await browser.newContext()).newPage();
+  const context = await browser.newContext();
+  openContexts.push(context);
+  // Never reach the network. Fonts and the Firebase SDK come from CDNs; waiting
+  // on them makes the suite slow and its timing dependent on the sandbox. The
+  // app is built to work without them, so this also exercises the offline path.
+  await context.route('**://*/**', route =>
+    route.request().url().startsWith('file://') ? route.continue() : route.abort());
+  const page = await context.newPage();
   const errors = [];
   page.on('pageerror', e => errors.push(String(e.message)));
   page.on('console', m => {
@@ -186,5 +199,88 @@ test('opening the app preserves everything a learner has earned', async () => {
   assert.equal(Object.keys(after.playedDays).length, 2, 'played days lost');
   assert.equal(after.weeklyHistory.length, 1, 'weekly history lost');
   assert.ok(after.gradeStats['2026-09-05'], 'grade stats lost');
+  assert.deepEqual(errors, []);
+});
+
+test('running out of lives is not recorded as completing the round', async () => {
+  // Regression: endRound was reached from both "answered every question" and
+  // "lives hit zero" and credited a completed round either way — consuming a
+  // daily round and marking the format as played.
+  const { page, errors } = await open();
+  await page.evaluate(() => selectPlayer('jenn'));
+  await page.waitForTimeout(400);
+
+  const r = await page.evaluate(async () => {
+    const stored = () => JSON.parse(localStorage.getItem('french_game_local_jenn') || '{}');
+    const roundsToday = () => {
+      const s = stored();
+      const tk = Object.keys(s.todayStats || {}).sort().pop();
+      return (s.todayStats?.[tk]?.rounds) || 0;
+    };
+    const livesShown = () => (document.getElementById('game-lives')?.textContent.match(/❤️/g) || []).length;
+
+    startGame('quiz');
+    await new Promise(r => setTimeout(r, 400));
+    const before = roundsToday();
+
+    // Deliberately pick a wrong answer each time, using only what is on screen:
+    // the correct choice is revealed in the feedback panel after a mistake.
+    for (let i = 0; i < 8 && livesShown() > 0; i++) {
+      const choices = [...document.querySelectorAll('#choices-grid button')];
+      if (!choices.length) break;
+      const shown = document.querySelector('.question-main')?.textContent || '';
+      // Any choice may be right; try the last one, then move on regardless.
+      choices[choices.length - 1].click();
+      await new Promise(r => setTimeout(r, 350));
+      const overlay = document.getElementById('feedback-overlay');
+      if (overlay?.classList.contains('show')) { nextQuestion(); await new Promise(r => setTimeout(r, 200)); }
+      if (shown === (document.querySelector('.question-main')?.textContent || '')) break;
+    }
+    await new Promise(r => setTimeout(r, 2400));   // knockout timer
+    return { before, after: roundsToday(), lives: livesShown(),
+             text: document.getElementById('game-area')?.textContent || '' };
+  });
+
+  if (r.lives === 0) {
+    assert.match(r.text, /out of lives|good effort/i, 'knockout was not communicated');
+    assert.equal(r.after, r.before, 'a knocked-out round was counted as completed');
+  }
+  assert.deepEqual(errors, []);
+});
+
+test('an answered question is never re-presented after a resume', async () => {
+  // Regression: a draft saved while the feedback overlay was open re-presented
+  // the same question on resume, letting the same response score twice.
+  const { page, errors } = await open();
+  await page.evaluate(() => selectPlayer('jenn'));
+  await page.waitForTimeout(400);
+
+  const r = await page.evaluate(async () => {
+    const progress = () => document.getElementById('progress-bar')?.style.width || '0%';
+    const question = () => document.querySelector('.question-main')?.textContent || null;
+
+    startGame('quiz');
+    await new Promise(r => setTimeout(r, 400));
+    const asked = question();
+
+    // Answer, then leave with the feedback overlay still open — what happens
+    // when an iPad locks mid-question.
+    document.querySelector('#choices-grid button')?.click();
+    await new Promise(r => setTimeout(r, 800));      // let the draft persist
+    const overlayOpen = !!document.getElementById('feedback-overlay')?.classList.contains('show');
+    const progressAtSave = progress();
+
+    exitGame();
+    await new Promise(r => setTimeout(r, 300));
+
+    startGame('quiz');                                // resume
+    await new Promise(r => setTimeout(r, 700));
+    return { asked, resumed: question(), overlayOpen,
+             progressAtSave, progressAfter: progress() };
+  });
+
+  assert.ok(r.overlayOpen, 'test did not reach the feedback-open state');
+  assert.notEqual(r.resumed, r.asked,
+    'resume re-presented the question that was already answered and scored');
   assert.deepEqual(errors, []);
 });
