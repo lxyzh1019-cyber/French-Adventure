@@ -5,6 +5,73 @@ deliberately rather than rediscovered.
 
 ---
 
+## 0. Progress loss — FIXED, and how it worked
+
+**Status:** fixed. Recorded here because it happened repeatedly and the shape of
+it is worth remembering.
+
+**What went wrong.** Jenn's and Jess's progress was wiped several times. It was
+not random. The chain:
+
+1. WebKit deletes all script-writable storage — `localStorage` included — after
+   about **7 days without the app being used**. They play once or twice a week.
+   A home-screen web app keeps its own counter rather than Safari's, but is not
+   exempt.
+2. With no local copy, the app started from `DEFAULT_STATE()` — every counter
+   zero.
+3. The cloud read is asynchronous, and a failure was swallowed by a
+   `console.warn`. Worse, a *missing* document and a *failed read* were
+   indistinguishable: `if (snap.exists()) onData(...)` simply called nothing in
+   both cases, so the app could not tell "she has no saved progress" from "we
+   could not reach the server".
+4. Any save then ran `setDoc(ref, state[player])` — **a full document replace**,
+   not a merge — writing the empty profile over her real one.
+
+A save needed no user action to fire: tapping a name starts a 10-second
+play-time timer that saves. On a warm start, where the Firebase SDK was already
+cached, the startup save fired *before* any read at all.
+
+The only reason this was ever recoverable is that the daily backup refuses to
+write when `totalStars` is zero and never overwrites an existing day, so the
+previous day's snapshot survived. That is why the "restore from backup" button
+exists and has been needed.
+
+**Why it can't happen again — six layers, no single point of failure:**
+
+1. **A write barrier.** `syncMeta[player].loadState` is `pending`, `loaded` or
+   `absent`. `saveState` will not write to the cloud while `pending`; the
+   session is held on the iPad and flushed once the profile is known.
+2. **A failed read is never mistaken for an empty one.** `fbInit` now reports
+   the *outcome* of the read. Only a positive server confirmation sets `absent`;
+   an error leaves the barrier closed indefinitely.
+3. **`fbSave` refuses to blank a populated profile.** If a write carries no
+   stars, it reads the stored document first and discards the write if that one
+   has any. Costs a read only in the suspicious case.
+4. **Backups happen earlier.** A snapshot is taken as soon as a profile is
+   confirmed, not only after a completed round, and a placeholder profile is
+   never archived.
+5. **Durable storage is requested** via `navigator.storage.persist()`
+   (iOS 17+), making eviction less likely to start the chain at all.
+6. **It is visible.** While the profile is unconfirmed the status line reads
+   "Working offline · progress saved here, will sync". No silent degradation.
+
+Layer 1 alone is sufficient. The rest exist so that a mistake in layer 1 is not
+catastrophic.
+
+Covered by `tests/browser/data-loss.test.js`, which reproduces the original
+failure — evicted storage plus a slow cloud read — and asserts 1,240 stars
+survive. Against the old code that test reports `expected: 1240, actual: 0`.
+
+**Two related bugs fixed at the same time:**
+
+- `clearProgress('today')` ran `s.topicStars = {}`, erasing *every* topic star
+  ever earned rather than today's, and doing it to **both** girls regardless of
+  which was selected.
+- The weekly rollover capped history at 4 entries while the rest of the code and
+  the docs said 8, silently discarding half of it.
+
+---
+
 ## 1. Firestore has no authentication — learner data is publicly writable
 
 **Status:** deferred by decision (M1). Not fixed.

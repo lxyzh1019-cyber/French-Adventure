@@ -67,8 +67,15 @@ let lastPlayTimeMark = 0;
 const LOCAL_STATE_PREFIX = 'french_game_local_';
 const ROUND_DRAFT_PREFIX = 'french_round_draft_';
 const syncMeta = {
-  jenn: { pendingCloud: false, lastLocalSave: 0, lastCloudOk: 0, suppressSnapshotUntil: 0 },
-  jess: { pendingCloud: false, lastLocalSave: 0, lastCloudOk: 0, suppressSnapshotUntil: 0 }
+  // loadState gates every cloud write. Until a read has told us what this learner
+  // actually has, we cannot know whether an in-memory profile is their real
+  // progress or an empty placeholder — and writing the placeholder destroys them.
+  //   'pending' — no answer yet. NEVER write to the cloud.
+  //   'loaded'  — a document was read; safe to write.
+  //   'absent'  — the server confirmed no document exists; safe to create one.
+  // A failed read stays 'pending' forever. It is never promoted to 'absent'.
+  jenn: { pendingCloud: false, lastLocalSave: 0, lastCloudOk: 0, suppressSnapshotUntil: 0, loadState: 'pending' },
+  jess: { pendingCloud: false, lastLocalSave: 0, lastCloudOk: 0, suppressSnapshotUntil: 0, loadState: 'pending' }
 };
 let roundDraftTimer = null;
 
@@ -288,7 +295,12 @@ function updateConnectionStatusUI(){
   let syncTxt = '—';
   if(p && syncMeta[p]){
     const m = syncMeta[p];
-    if(!online){
+    if(m.loadState === 'pending'){
+      // The most important state to be honest about: her saved progress has not
+      // been read yet, so nothing may be sent to the cloud. She can play; this
+      // session is held on the iPad and merges in once the profile arrives.
+      syncTxt = 'Working offline · progress saved here, will sync';
+    }else if(!online){
       syncTxt = m.lastLocalSave ? 'Saved on this iPad · cloud when online' : 'Not saved yet';
     }else if(m.pendingCloud){
       syncTxt = 'Waiting to sync to cloud…';
@@ -305,8 +317,9 @@ function updateConnectionStatusUI(){
     if(netEl) netEl.textContent = netTxt;
     if(syEl) syEl.textContent = syncTxt;
     if(dot){
-      dot.classList.toggle('cs-online', online);
-      dot.classList.toggle('cs-offline', !online);
+      const holding = !!(p && syncMeta[p] && syncMeta[p].loadState === 'pending');
+      dot.classList.toggle('cs-online', online && !holding);
+      dot.classList.toggle('cs-offline', !online || holding);
     }
   });
 }
@@ -364,7 +377,9 @@ function applyWeekRolloverIfNeeded(s){
         snapshotStars:rollup.stars,
         savedAt:todayKey()
       });
-      if(s.weeklyHistory.length>4)s.weeklyHistory.shift();
+      // 8 weeks, matching reconcilePlayerFromBackup and the documented shape.
+      // This was 4, so half the archived history was silently discarded.
+      while(s.weeklyHistory.length>8)s.weeklyHistory.shift();
     }
   }
   s.weekStars=0;
@@ -928,7 +943,9 @@ function initListeners(){
   if(!window.fbInit)return;
   listenersInitialized = true;
   ['jenn','jess'].forEach(p=>{
-    window.fbInit(p, data => { void applyPlayerData(p, data); });
+    window.fbInit(p,
+      data => { void applyPlayerData(p, data); },
+      status => { void onCloudLoadStatus(p, status); });
   });
 }
 
@@ -938,6 +955,37 @@ function initListeners(){
 // that everything is a module the ordering flips, so wait on the promise explicitly.
 // Resolves to null when the CDN is unreachable; initListeners() already no-ops then.
 void firebaseReady.then(initListeners);
+
+/**
+ * Record what the cloud read told us about a learner, and release any writes
+ * that were held back waiting for it.
+ *
+ * 'error' deliberately does nothing: an unreachable server must never be
+ * mistaken for a learner who has no saved progress.
+ */
+async function onCloudLoadStatus(player, status){
+  const meta = syncMeta[player];
+  if(!meta) return;
+
+  if(status === 'error'){
+    console.warn('Cloud read failed for', player, '- holding writes, playing locally');
+    updateConnectionStatusUI();
+    return;
+  }
+  if(status !== 'loaded' && status !== 'absent') return;
+  if(meta.loadState === 'loaded') return;         // already resolved
+
+  meta.loadState = status;
+  updateConnectionStatusUI();
+
+  // Snapshot the freshly-confirmed profile before this session can change
+  // anything. The old backup only ran at the end of a round, so a session that
+  // went wrong before finishing one had no restore point from today.
+  if(status === 'loaded') triggerDailyBackup(player);
+
+  // Anything the learner did while we were waiting is now safe to send.
+  if(meta.pendingCloud) await saveState(player, {patchOnly: true});
+}
 
 async function saveState(player, opts){
   if(recoveryWriteFreeze){
@@ -949,8 +997,20 @@ async function saveState(player, opts){
   if(!opts || !opts.patchOnly){
     state[player].lastUpdatedAt = Date.now();
   }
+  // Always safe: the local mirror is this device's own copy.
   persistLocalStateMirror(player);
   updateConnectionStatusUI();
+
+  // The barrier. Writing before we know what the learner already has is how a
+  // whole history gets replaced by an empty profile: storage is evicted after a
+  // week unused, the app starts from DEFAULT_STATE, and the first save
+  // full-replaces the cloud document ten seconds later.
+  if(syncMeta[player] && syncMeta[player].loadState === 'pending'){
+    syncMeta[player].pendingCloud = true;      // queued; flushed once resolved
+    updateConnectionStatusUI();
+    return;
+  }
+
   if(window.fbSave){
     const ok = await window.fbSave(player, state[player]);
     if(ok){
@@ -2574,6 +2634,9 @@ const BACKUP_DONE_KEY = 'french_backup_done_';
 function triggerDailyBackup(player){
   // Only once per player per day, only if we have real progress
   if(!window.fbBackupSave) return;
+  // Never snapshot a profile that has not been confirmed against the cloud —
+  // that would archive a placeholder as if it were the learner's real history.
+  if(!syncMeta[player] || syncMeta[player].loadState === 'pending') return;
   const dateKey = todayKey();
   const doneKey = BACKUP_DONE_KEY + player + '_' + dateKey;
   if(localStorage.getItem(doneKey)) return;
@@ -2821,8 +2884,13 @@ async function clearProgress(mode){
         });
       }
       if(s.playedDays) delete s.playedDays[today];
-      // Clear topic stars — per-day use
-      s.topicStars = {};
+      // Only today's topic stars. This used to be `s.topicStars = {}`, which
+      // erased every topic star the learner had ever earned — the comment said
+      // "per-day use" but topicStars is cumulative and is what earns the moons.
+      // Today's tier is recomputed from dailyTopicStats, which is cleared below,
+      // so the stars for other days survive untouched.
+      const todaysTopics = Object.keys((s.dailyTopicStats && s.dailyTopicStats[today]) || {});
+      todaysTopics.forEach(function(tk){ delete s.topicStars[tk]; });
       if(s.gradeStats && s.gradeStats[today]) delete s.gradeStats[today];
       if(s.gradeGameRounds && s.gradeGameRounds[today]) delete s.gradeGameRounds[today];
       if(s.dailyTopicStats && s.dailyTopicStats[today]) delete s.dailyTopicStats[today];
@@ -2914,6 +2982,17 @@ function startWallClock(){
   }
   tick();
   setInterval(tick,1000);
+}
+
+// Ask the browser to keep our storage. WebKit clears script-writable storage
+// after ~7 days without use, and these girls play once or twice a week. This is
+// best effort only — it can be declined, and it is not what makes the data safe;
+// the write barrier in saveState is.
+if(navigator.storage && navigator.storage.persist){
+  void navigator.storage.persisted()
+    .then(already => already ? true : navigator.storage.persist())
+    .then(granted => console.info('Persistent storage:', granted ? 'granted' : 'not granted'))
+    .catch(() => {});
 }
 
 hydrateStateFromLocalMirror();

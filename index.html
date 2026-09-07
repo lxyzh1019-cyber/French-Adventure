@@ -7,7 +7,7 @@
      styles ......... src/styles.css
      game logic ..... src/**/*.js
 
-   Built from 30b2f0b
+   Built from f7903d8
   ============================================================
 -->
 <!DOCTYPE html>
@@ -182,22 +182,47 @@ const firebaseReady = (async () => {
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
   window.fbListeners = {};
-  window.fbInit = async (player, onData) => {
+  window.fbInit = async (player, onData, onStatus = () => {
+  }) => {
+    const ref = doc(db, "french_game", player);
     try {
-      const ref = doc(db, "french_game", player);
       const snap = await getDoc(ref);
-      if (snap.exists()) onData(snap.data());
+      if (snap.exists()) {
+        onData(snap.data());
+        onStatus("loaded");
+      } else onStatus("absent");
+    } catch (e) {
+      console.warn("FB baseline read failed", e);
+      onStatus("error");
+    }
+    try {
       if (window.fbListeners[player]) window.fbListeners[player]();
       window.fbListeners[player] = onSnapshot(ref, (s) => {
-        if (s.exists()) onData(s.data());
-      }, (e) => console.warn("FB listen err", e));
+        if (s.exists()) {
+          onData(s.data());
+          onStatus("loaded");
+        } else onStatus("absent");
+      }, (e) => {
+        console.warn("FB listen err", e);
+        onStatus("error");
+      });
     } catch (e) {
-      console.warn("FB init err", e);
+      console.warn("FB listen attach failed", e);
+      onStatus("error");
     }
   };
   window.fbSave = async (player, data) => {
     try {
       const ref = doc(db, "french_game", player);
+      if (!Number(data?.totalStars)) {
+        const existing = await getDoc(ref);
+        if (existing.exists() && Number(existing.data()?.totalStars) > 0) {
+          console.error(
+            `REFUSED: tried to overwrite ${player}'s profile (${existing.data().totalStars} stars) with an empty one. This is the data-loss guard; the write was discarded.`
+          );
+          return false;
+        }
+      }
       await setDoc(ref, data);
       return true;
     } catch (e) {
@@ -1036,8 +1061,15 @@ let lastPlayTimeMark = 0;
 const LOCAL_STATE_PREFIX = "french_game_local_";
 const ROUND_DRAFT_PREFIX = "french_round_draft_";
 const syncMeta = {
-  jenn: { pendingCloud: false, lastLocalSave: 0, lastCloudOk: 0, suppressSnapshotUntil: 0 },
-  jess: { pendingCloud: false, lastLocalSave: 0, lastCloudOk: 0, suppressSnapshotUntil: 0 }
+  // loadState gates every cloud write. Until a read has told us what this learner
+  // actually has, we cannot know whether an in-memory profile is their real
+  // progress or an empty placeholder — and writing the placeholder destroys them.
+  //   'pending' — no answer yet. NEVER write to the cloud.
+  //   'loaded'  — a document was read; safe to write.
+  //   'absent'  — the server confirmed no document exists; safe to create one.
+  // A failed read stays 'pending' forever. It is never promoted to 'absent'.
+  jenn: { pendingCloud: false, lastLocalSave: 0, lastCloudOk: 0, suppressSnapshotUntil: 0, loadState: "pending" },
+  jess: { pendingCloud: false, lastLocalSave: 0, lastCloudOk: 0, suppressSnapshotUntil: 0, loadState: "pending" }
 };
 let roundDraftTimer = null;
 const ROUND_OUTCOME = {
@@ -1262,7 +1294,9 @@ function updateConnectionStatusUI() {
   let syncTxt = "—";
   if (p && syncMeta[p]) {
     const m = syncMeta[p];
-    if (!online) {
+    if (m.loadState === "pending") {
+      syncTxt = "Working offline · progress saved here, will sync";
+    } else if (!online) {
       syncTxt = m.lastLocalSave ? "Saved on this iPad · cloud when online" : "Not saved yet";
     } else if (m.pendingCloud) {
       syncTxt = "Waiting to sync to cloud…";
@@ -1279,8 +1313,9 @@ function updateConnectionStatusUI() {
     if (netEl) netEl.textContent = netTxt;
     if (syEl) syEl.textContent = syncTxt;
     if (dot) {
-      dot.classList.toggle("cs-online", online);
-      dot.classList.toggle("cs-offline", !online);
+      const holding = !!(p && syncMeta[p] && syncMeta[p].loadState === "pending");
+      dot.classList.toggle("cs-online", online && !holding);
+      dot.classList.toggle("cs-offline", !online || holding);
     }
   });
 }
@@ -1324,7 +1359,7 @@ function applyWeekRolloverIfNeeded(s) {
         snapshotStars: rollup.stars,
         savedAt: todayKey()
       });
-      if (s.weeklyHistory.length > 4) s.weeklyHistory.shift();
+      while (s.weeklyHistory.length > 8) s.weeklyHistory.shift();
     }
   }
   s.weekStars = 0;
@@ -1850,12 +1885,33 @@ function initListeners() {
   if (!window.fbInit) return;
   listenersInitialized = true;
   ["jenn", "jess"].forEach((p) => {
-    window.fbInit(p, (data) => {
-      void applyPlayerData(p, data);
-    });
+    window.fbInit(
+      p,
+      (data) => {
+        void applyPlayerData(p, data);
+      },
+      (status) => {
+        void onCloudLoadStatus(p, status);
+      }
+    );
   });
 }
 void firebaseReady.then(initListeners);
+async function onCloudLoadStatus(player, status) {
+  const meta = syncMeta[player];
+  if (!meta) return;
+  if (status === "error") {
+    console.warn("Cloud read failed for", player, "- holding writes, playing locally");
+    updateConnectionStatusUI();
+    return;
+  }
+  if (status !== "loaded" && status !== "absent") return;
+  if (meta.loadState === "loaded") return;
+  meta.loadState = status;
+  updateConnectionStatusUI();
+  if (status === "loaded") triggerDailyBackup(player);
+  if (meta.pendingCloud) await saveState(player, { patchOnly: true });
+}
 async function saveState(player, opts) {
   if (recoveryWriteFreeze) {
     console.warn("Recovery freeze enabled, skipping save for", player);
@@ -1866,6 +1922,11 @@ async function saveState(player, opts) {
   }
   persistLocalStateMirror(player);
   updateConnectionStatusUI();
+  if (syncMeta[player] && syncMeta[player].loadState === "pending") {
+    syncMeta[player].pendingCloud = true;
+    updateConnectionStatusUI();
+    return;
+  }
   if (window.fbSave) {
     const ok = await window.fbSave(player, state[player]);
     if (ok) {
@@ -3324,6 +3385,7 @@ function setRecoveryMsg(text, ok) {
 const BACKUP_DONE_KEY = "french_backup_done_";
 function triggerDailyBackup(player) {
   if (!window.fbBackupSave) return;
+  if (!syncMeta[player] || syncMeta[player].loadState === "pending") return;
   const dateKey = todayKey();
   const doneKey = BACKUP_DONE_KEY + player + "_" + dateKey;
   if (localStorage.getItem(doneKey)) return;
@@ -3565,7 +3627,10 @@ async function clearProgress(mode) {
         });
       }
       if (s.playedDays) delete s.playedDays[today];
-      s.topicStars = {};
+      const todaysTopics = Object.keys(s.dailyTopicStats && s.dailyTopicStats[today] || {});
+      todaysTopics.forEach(function(tk) {
+        delete s.topicStars[tk];
+      });
       if (s.gradeStats && s.gradeStats[today]) delete s.gradeStats[today];
       if (s.gradeGameRounds && s.gradeGameRounds[today]) delete s.gradeGameRounds[today];
       if (s.dailyTopicStats && s.dailyTopicStats[today]) delete s.dailyTopicStats[today];
@@ -3652,6 +3717,10 @@ function startWallClock() {
   }
   tick();
   setInterval(tick, 1e3);
+}
+if (navigator.storage && navigator.storage.persist) {
+  void navigator.storage.persisted().then((already) => already ? true : navigator.storage.persist()).then((granted) => console.info("Persistent storage:", granted ? "granted" : "not granted")).catch(() => {
+  });
 }
 hydrateStateFromLocalMirror();
 initConnectivityAndSyncUI();
