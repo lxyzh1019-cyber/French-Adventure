@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🇫🇷 French Adventure — Jenn & Jess</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<div class="container">
+
+  <div class="game-header">
+    <div class="game-title">🇫🇷 French Adventure</div>
+    <div class="game-subtitle">Alberta Curriculum • Grade 4–10 • Jenn & Jess Edition</div>
+  </div>
+
+  <!-- WALL CLOCK — select screen only, always visible -->
+  <div id="wall-clock-display" style="text-align:center;margin-bottom:12px;">
+    <div style="font-family:'Fredoka One',cursive;font-size:clamp(2.5rem,8vw,4.5rem);color:var(--text);letter-spacing:2px;" id="wall-clock-time">00:00</div>
+    <div style="font-size:.8rem;color:var(--text-muted);font-weight:700;" id="wall-clock-date"></div>
+  </div>
+
+  <!-- ── SELECT SCREEN ── -->
+  <div id="screen-select">
+    <div class="leaderboard">
+      <div class="lb-title">🏆 Weekly Champion Board</div>
+      <div class="lb-row jenn-row">
+        <div class="lb-name">Jenn</div>
+        <div class="lb-dots" id="lb-dots-jenn"></div>
+        <div class="lb-stats">
+          <div class="lb-stat"><span class="lb-stat-val" id="lb-stars-jenn">0</span><span class="lb-stat-lbl">⭐ Star pts</span></div>
+          <div class="lb-stat"><span class="lb-stat-val" id="lb-streak-jenn">0</span><span class="lb-stat-lbl">🔥 Streak</span></div>
+          <div class="lb-stat"><span class="lb-stat-val" id="lb-week-jenn">0</span><span class="lb-stat-lbl">📅 Week pts</span></div>
+        </div>
+      </div>
+      <div class="lb-row jess-row">
+        <div class="lb-name">Jess</div>
+        <div class="lb-dots" id="lb-dots-jess"></div>
+        <div class="lb-stats">
+          <div class="lb-stat"><span class="lb-stat-val" id="lb-stars-jess">0</span><span class="lb-stat-lbl">⭐ Star pts</span></div>
+          <div class="lb-stat"><span class="lb-stat-val" id="lb-streak-jess">0</span><span class="lb-stat-lbl">🔥 Streak</span></div>
+          <div class="lb-stat"><span class="lb-stat-val" id="lb-week-jess">0</span><span class="lb-stat-lbl">📅 Week pts</span></div>
+        </div>
+      </div>
+      <div class="week-reset" id="week-reset-msg"></div>
+    </div>
+    <!-- Parent summary on select screen -->
+    <div style="text-align:center;margin-bottom:8px;">
+      <button class="grade-tab summary-tab" onclick="showParentSummary()" style="margin:0 auto;padding:8px 20px;">📋 Parent Summary</button>
+    </div>
+    <div class="player-cards">
+      <div class="player-card jenn" onclick="selectPlayer('jenn')">
+        <span class="player-avatar">🐥</span>
+        <div class="player-name">Jenn</div>
+        <div class="player-stars" id="sel-stars-jenn">⭐ 0 star pts</div>
+        <div class="player-streak" id="sel-streak-jenn">🔥 0 day streak</div>
+        <div class="player-daily-mini" id="sel-daily-jenn"></div>
+      </div>
+      <div class="player-card jess" onclick="selectPlayer('jess')">
+        <span class="player-avatar">🦊</span>
+        <div class="player-name">Jess</div>
+        <div class="player-stars" id="sel-stars-jess">⭐ 0 star pts</div>
+        <div class="player-streak" id="sel-streak-jess">🔥 0 day streak</div>
+        <div class="player-daily-mini" id="sel-daily-jess"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── HUB SCREEN ── -->
+  <div id="screen-hub">
+    <!-- Back + countdown + wall clock — visible after player select -->
+    <div class="session-clock" id="session-clock" style="display:none;margin-bottom:12px;">
+      <div class="session-clock-back">
+        <button type="button" class="back-btn" onclick="goBack()">← Back</button>
+      </div>
+      <div class="session-clock-center">
+        <div class="clock-wall-hub" id="clock-wall">12:00 PM</div>
+        <div class="clock-divider">|</div>
+        <div class="session-game-time" id="session-game-time-box" title="Time in this app today (French Adventure)">
+          <span class="sgt-label">French_game</span>
+          <span class="sgt-val" id="hub-playtime-val">0:00</span>
+        </div>
+        <div class="clock-divider">|</div>
+        <div class="countdown-display" id="countdown-display">⏳ 20:00</div>
+      </div>
+      <div class="conn-status-bar" id="conn-status-hub" aria-live="polite">
+        <span class="cs-dot cs-online" id="conn-dot-hub"></span>
+        <div class="cs-line"><span class="cs-label">Internet</span><span class="cs-val" id="conn-net-hub">—</span></div>
+        <div class="cs-line"><span class="cs-label">Save</span><span class="cs-val" id="conn-sync-hub">—</span></div>
+      </div>
+    </div>
+    <div class="hub-header" id="hub-header">
+      <div class="hub-top-band">
+        <div class="hub-avatar" id="hub-avatar">🐥</div>
+        <div class="hub-info-col">
+          <div class="hub-name" id="hub-name">Jenn</div>
+          <div class="hub-stats">
+            <div class="hub-stat">⭐ <span id="hub-stars">0</span> star pts</div>
+            <div class="hub-stat">🔥 <span id="hub-streak">0</span> days</div>
+            <div class="hub-stat">📅 Week: <span id="hub-week">0</span> star pts</div>
+            <span class="hub-moons" id="hub-moons"></span>
+          </div>
+        </div>
+      </div>
+      <div class="hub-rules-mini" id="hub-rules-mini"><b>⭐ Topic stars</b> 60–79% = 1⭐ · 80–94% = 2⭐ · ≥95% = 3⭐ · topic seen in ≥3 games today &nbsp;|&nbsp; <b>🌙 Moon</b> All topics in a grade at 3⭐ &nbsp;|&nbsp; <b>🌟 Superstar</b> Moons on the two highest unlocked grades</div>
+      <div class="hub-slogan-wrap">
+        <div class="hub-slogan" id="hub-slogan"></div>
+        <div class="hub-slogan-actions" id="hub-slogan-actions">
+          <button type="button" class="hub-slogan-btn" id="hub-slogan-translate-btn" onclick="toggleSloganTranslation()">Translate to English</button>
+        </div>
+      </div>
+      <div class="hub-today-panel" id="hub-today-panel">
+        <div class="hub-profile-card" id="hub-profile-card">
+          <div class="hub-p-title">📋 Today</div>
+          <div class="hub-today-grid">
+            <div class="hub-profile-row"><span class="hub-p-label">⭐ Stars (today)</span><span class="hub-p-val" id="hub-day-stars-val">0</span></div>
+            <div class="hub-profile-row"><span class="hub-p-label">🎮 Rounds</span><span class="hub-p-val" id="hub-rounds-today-val">0</span></div>
+            <div class="hub-profile-row"><span class="hub-p-label">📊 Accuracy</span><span class="hub-p-val" id="hub-acc-today-val">—</span></div>
+            <div class="hub-profile-row"><span class="hub-p-label">🏋️ Drill</span><span class="hub-p-val" id="hub-drill-val">—</span></div>
+          </div>
+        </div>
+        <button type="button" class="hub-daily-summary-btn" id="hub-daily-summary-btn" onclick="toggleHubDailySummary()" aria-expanded="false">
+          <span>More: grade accuracy &amp; rules</span><span class="chev" id="hub-daily-chev">▼</span>
+        </button>
+        <div class="hub-daily-summary-block" id="hub-daily-summary-block" style="display:none;">
+          <div class="hds-title">Details</div>
+          <div id="hub-daily-summary-inner"></div>
+        </div>
+      </div>
+    </div>
+
+    <p class="hub-grade-bar-note" id="hub-grade-bar-note">Play: <strong>G4–G10</strong>. Higher grades unlock with the same rule — master the grade before (🌙 + 2 days ≥95%).</p>
+    <div class="grade-tabs" id="grade-tabs">
+      <button type="button" class="grade-tab active" id="tab-g4" onclick="setGrade(4)">G4</button>
+      <button type="button" class="grade-tab" id="tab-g5" onclick="setGrade(5)">G5</button>
+      <button type="button" class="grade-tab grade-tab-future grade-locked" id="tab-g6" onclick="setGrade(6)"><span class="grade-lock-top" title="Locked">🔒</span><span class="grade-num">G6</span></button>
+      <button type="button" class="grade-tab grade-tab-future grade-locked" id="tab-g7" onclick="setGrade(7)"><span class="grade-lock-top">🔒</span><span class="grade-num">G7</span></button>
+      <button type="button" class="grade-tab grade-tab-future grade-locked" id="tab-g8" onclick="setGrade(8)"><span class="grade-lock-top">🔒</span><span class="grade-num">G8</span></button>
+      <button type="button" class="grade-tab grade-tab-future grade-locked" id="tab-g9" onclick="setGrade(9)"><span class="grade-lock-top">🔒</span><span class="grade-num">G9</span></button>
+      <button type="button" class="grade-tab grade-tab-future grade-locked" id="tab-g10" onclick="setGrade(10)"><span class="grade-lock-top">🔒</span><span class="grade-num">G10</span></button>
+      <button type="button" class="grade-tab action-tab hub-cta-mw" onclick="showMyWords()">💪 My Words</button>
+      <button type="button" class="grade-tab study-tab hub-cta-study" onclick="showStudy()">📖 Study</button>
+    </div>
+
+    <div class="star-map" id="star-map-section">
+      <div class="sm-title">⭐ Topic Stars</div>
+      <div class="sm-grid" id="sm-grid"></div>
+    </div>
+
+    <div class="mini-games-grid">
+      <div class="mini-game-btn" id="btn-quiz" onclick="startGame('quiz')">
+        <span class="game-icon">🧠</span><span class="game-name">Quick Quiz</span>
+        <span class="game-desc">Multiple choice</span>
+        <span class="round-badge">2 left today</span>
+      </div>
+      <div class="mini-game-btn" id="btn-match" onclick="startGame('match')">
+        <span class="game-icon">🎯</span><span class="game-name">Word Match</span>
+        <span class="game-desc">Pair French to English</span>
+        <span class="round-badge">2 left today</span>
+      </div>
+      <div class="mini-game-btn" id="btn-scramble" onclick="startGame('scramble')">
+        <span class="game-icon">🔤</span><span class="game-name">Scramble</span>
+        <span class="game-desc">Unscramble the word</span>
+        <span class="round-badge">2 left today</span>
+      </div>
+      <div class="mini-game-btn" id="btn-builder" onclick="startGame('builder')">
+        <span class="game-icon">💬</span><span class="game-name">Sentence Builder</span>
+        <span class="game-desc">Build French sentences</span>
+        <span class="round-badge">2 left today</span>
+      </div>
+      <div class="mini-game-btn" id="btn-listen" onclick="startGame('listen')" style="border-color:var(--purple);">
+        <span class="game-icon">🎧</span><span class="game-name">Listen & Speak</span>
+        <span class="game-desc">Hear it · Say it · Type it</span>
+        <span class="round-badge">2 left today</span>
+      </div>
+      <div class="mini-game-btn boss-btn" id="btn-boss" onclick="startGame('boss')">
+        <span class="game-icon">⚡</span><span class="game-name">Boss Round</span>
+        <span class="game-desc">Mixed • All topics</span>
+        <span class="round-badge">2 left today</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── GAME SCREEN ── -->
+  <div id="screen-game">
+    <button class="back-btn" onclick="exitGame()">← Hub</button>
+    <div class="conn-status-bar" id="conn-status-game" aria-live="polite">
+      <span class="cs-dot cs-online" id="conn-dot-game"></span>
+      <div class="cs-line"><span class="cs-label">Internet</span><span class="cs-val" id="conn-net-game">—</span></div>
+      <div class="cs-line"><span class="cs-label">Save</span><span class="cs-val" id="conn-sync-game">—</span></div>
+    </div>
+    <div class="game-topbar">
+      <div class="game-topbar-title" id="game-title-bar">Quiz</div>
+      <div class="game-lives" id="game-lives">❤️❤️❤️</div>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <button class="btn-speak" id="btn-tts" onclick="speakCurrent()" title="Listen">🔊</button>
+        <button class="btn-speak" id="btn-stt" onclick="startSpeech()" title="Speak" style="display:none;">🎤</button>
+        <div class="game-score-pill">⭐ <span id="game-score">0</span> <span style="font-size:.65rem;opacity:.85;font-weight:700;">star pts</span></div>
+      </div>
+    </div>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progress-bar" style="width:0%"></div></div>
+    <div class="game-area" id="game-area"></div>
+    <div class="action-row" id="action-row"></div>
+    <div class="hint-panel" id="hint-panel">
+      <div class="hint-lang">Hint — Indice (中文 → parents only)</div>
+      <div class="hint-text" id="hint-text"></div>
+    </div>
+  </div>
+</div>
+
+<!-- FEEDBACK -->
+<div class="feedback-overlay" id="feedback-overlay">
+  <div class="feedback-card">
+    <span class="feedback-emoji" id="fb-emoji">🎉</span>
+    <div class="feedback-title" id="fb-title">Correct!</div>
+    <div class="feedback-msg" id="fb-msg"></div>
+    <div id="fb-correct-display"></div>
+    <div class="feedback-points" id="fb-points"></div>
+    <button class="btn-primary" onclick="nextQuestion()">Next →</button>
+  </div>
+</div>
+
+<!-- MY WORDS (#18 merged Conquer + Training) -->
+<div class="overlay" id="mywords-overlay">
+  <div class="overlay-card">
+    <button class="overlay-close" onclick="closeOverlay('mywords-overlay')">✕</button>
+    <div class="overlay-title">💪 My Words</div>
+    <div class="overlay-subtitle">Your personal practice list — study then drill!</div>
+    <div class="mywords-tabs">
+      <button class="mywords-tab active" id="mw-tab-list" onclick="showMyWordsTab('list')">📋 Word List</button>
+      <button class="mywords-tab" id="mw-tab-drill" onclick="showMyWordsTab('drill')">🏋️ Drill</button>
+    </div>
+    <div id="mywords-content"></div>
+  </div>
+</div>
+
+<!-- STUDY -->
+<div class="overlay" id="study-overlay">
+  <div class="overlay-card">
+    <button class="overlay-close" onclick="closeOverlay('study-overlay')">✕</button>
+    <div class="overlay-title">📖 Daily Study</div>
+    <div class="overlay-subtitle">Today's 3 sets — refresh your memory before playing!</div>
+    <div class="study-sets">
+      <button class="study-set-tab active" onclick="showStudySet(1)">Set 1 — Vocab</button>
+      <button class="study-set-tab" onclick="showStudySet(2)">Set 2 — Sentences</button>
+      <button class="study-set-tab" onclick="showStudySet(3)">Set 3 — My Words</button>
+    </div>
+    <div id="study-content"></div>
+    <div style="text-align:center;margin-top:14px;">
+      <button class="btn-primary" onclick="closeOverlay('study-overlay')">I'm Ready! →</button>
+    </div>
+  </div>
+</div>
+
+<!-- PARENT SUMMARY -->
+<div class="overlay" id="parent-overlay">
+  <div class="overlay-card">
+    <button class="overlay-close" onclick="closeOverlay('parent-overlay')">✕</button>
+    <div class="overlay-title" style="color:var(--gold);">📋 Parent Summary</div>
+    <div class="overlay-subtitle">Weekly & daily performance</div>
+    <div class="summary-mode-row" id="summary-mode-row">
+      <button type="button" class="summary-mode-btn active" id="summary-btn-weekly" onclick="setSummaryMode('weekly')">📅 Weekly</button>
+      <button type="button" class="summary-mode-btn" id="summary-btn-daily" onclick="setSummaryMode('daily')">📆 Daily</button>
+    </div>
+    <div id="summary-nav"></div>
+    <div class="parent-side-by-side" id="parent-stats-grid"></div>
+    <!-- Parent password + clear controls -->
+    <div class="parent-pwd-section">
+      <div class="parent-pwd-title">🔐 Parent Controls</div>
+      <div class="parent-pwd-row">
+        <input class="parent-pwd-input" id="parent-pwd" type="password" maxlength="4" placeholder="••••" autocomplete="off">
+        <button class="btn-clear-today" onclick="clearProgress('today')">🗑 Today</button>
+        <button class="btn-clear-prev" onclick="clearProgress('prev')">🗂 Old Days</button>
+        <button onclick="clearProgress('all')" style="background:rgba(232,68,90,.15);border:2px solid var(--jenn);border-radius:12px;padding:9px 14px;font-family:'Nunito',sans-serif;font-weight:800;font-size:.8rem;color:var(--jenn);cursor:pointer;touch-action:manipulation;">🔄 Reset All</button>
+      </div>
+      <div class="parent-pwd-row" style="justify-content:center;">
+        <button type="button" class="btn-secondary" onclick="toggleRecoveryFreeze()" style="padding:8px 12px;font-size:.74rem;">🛡 Freeze cloud writes</button>
+        <button type="button" class="btn-secondary" onclick="exportRecoveryBackup()" style="padding:8px 12px;font-size:.74rem;">💾 Export backup JSON</button>
+        <button type="button" class="btn-secondary" onclick="promptRecoveryImport()" style="padding:8px 12px;font-size:.74rem;">♻️ Import recovery JSON</button>
+      </div>
+      <div style="text-align:center;margin-top:6px;">
+        <button type="button" class="btn-secondary" onclick="renderBackupRestoreUI()" style="padding:8px 14px;font-size:.74rem;border-color:var(--green);color:var(--green);">📅 Show daily cloud backups</button>
+      </div>
+      <div id="backup-restore-panel" style="margin-top:8px;padding:10px 12px;background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.25);border-radius:12px;display:none;"></div>
+      <div id="recovery-msg" style="font-size:.72rem;color:var(--text-muted);text-align:center;min-height:20px;"></div>
+      <input id="recovery-import-file" type="file" accept="application/json" style="display:none;" onchange="handleRecoveryImport(event)">
+      <div class="pwd-msg" id="pwd-msg"></div>
+      <div style="font-size:.7rem;color:var(--text-muted);margin-top:4px;">
+        <b>Today:</b> clears today's stats, rounds, topic stars, missed words<br>
+        <b>Old Days:</b> clears previous stats, week stars, streak, old missed words<br>
+        <b>Reset All:</b> wipes everything — total stars, all history, full restart
+      </div>
+      <div class="parent-pwd-title" style="margin-top:14px;">📆 Screen time — allowed days</div>
+      <div class="weekday-hint">Green = kids may open the app · Red = blocked (parent password to play that day)</div>
+      <div class="weekday-grid" id="weekday-grid"></div>
+      <div class="parent-pwd-title" style="margin-top:10px;">🔓 Reopen closed grades</div>
+      <div id="parent-grade-reopen-controls" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:8px;"></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:8px;">
+        <button type="button" class="btn-secondary" onclick="revealFullPlayTime()" style="padding:8px 14px;font-size:.72rem;">Show full French times (uses password above)</button>
+        <div style="font-size:.62rem;color:var(--text-muted);text-align:center;max-width:420px;">Default view caps at 30 minutes on the child hub. This button reveals the real tracked time in stats and on the hub for this browser session.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TIME LOCK SCREEN -->
+<div class="lock-overlay" id="lock-overlay">
+  <div class="lock-emoji">🔒</div>
+  <div class="lock-title">Time's Up!</div>
+  <div class="lock-msg">20 minutes of French adventure — great work today! 🌟<br>Ask a parent to unlock for more.</div>
+  <div class="lock-pwd-row">
+    <input class="lock-pwd-input" id="lock-pwd" type="password" maxlength="4" placeholder="••••" autocomplete="off">
+    <button class="btn-primary" onclick="unlockApp()">Unlock</button>
+  </div>
+  <div class="lock-error" id="lock-error"></div>
+</div>
+
+<!-- WEEKDAY LOCK (parent sets allowed screen-time days) -->
+<div class="lock-overlay" id="weekday-lock-overlay">
+  <div class="lock-emoji">📆</div>
+  <div class="lock-title">Not a practice day</div>
+  <div class="lock-msg" id="weekday-lock-msg">Today is not an allowed screen-time day. Ask a parent to unlock.</div>
+  <div class="lock-pwd-row">
+    <input class="lock-pwd-input" id="weekday-lock-pwd" type="password" maxlength="4" placeholder="••••" autocomplete="off">
+    <button class="btn-primary" onclick="unlockWeekdaySession()">Unlock</button>
+  </div>
+  <div class="lock-error" id="weekday-lock-error"></div>
+  <button class="btn-secondary" onclick="cancelWeekdayLock()" style="margin-top:10px;">← Back</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module" src="./app.js"></script>
+</body>
+</html>

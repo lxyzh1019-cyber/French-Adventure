@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+
+      # Unit tests + every inline handler is bound on window.
+      - run: npm test
+
+      # The committed index.html is exactly what src/ builds.
+      - run: npm run check:drift
+
+      # End-to-end checks in a real browser: game modes render, resume works,
+      # every level is reachable, and a stored profile survives a load intact.
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:browser

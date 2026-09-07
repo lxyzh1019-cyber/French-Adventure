@@ -1,0 +1,19 @@
+{
+  "totalStars": 1240,
+  "weekStars": 85,
+  "streak": 6,
+  "lastPlayed": "Sat Sep 05 2026",
+  "weekStart": "2026-08-31",
+  "topicStars": { "4_colours": 3, "4_numbers": 3, "5_body": 2 },
+  "moons": { "grade4": true, "grade5": false, "super": false },
+  "gradeUnlocked": { "4": true, "5": true, "6": false },
+  "failedWords": { "chien": { "fr": "chien", "en": "dog", "misses": 2, "lastFailed": "2026-09-05" } },
+  "playedDays": { "2026-09-01": true, "2026-09-05": true },
+  "todayStats": { "2026-09-05": { "correct": 20, "wrong": 3, "rounds": 2, "stars": 85 } },
+  "dailyRounds": { "2026-09-05": { "quiz": 2, "match": 1 } },
+  "dailyTimeMs": { "2026-09-05": 1200000 },
+  "gradeStats": { "2026-09-05": { "4": { "correct": 20, "wrong": 3 } } },
+  "weeklyHistory": [{ "weekStart": "2026-08-24", "stars": 300, "correct": 90, "wrong": 12, "rounds": 8 }],
+  "tier1Conquered": true,
+  "lastUpdatedAt": 1757030000000
+}
