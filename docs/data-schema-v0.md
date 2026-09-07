@@ -26,7 +26,8 @@ There is no authentication. See [`known-risks.md`](known-risks.md).
 ### Rewards and streaks
 | Field | Type | Meaning |
 |---|---|---|
-| `totalStars` | number | Lifetime star points. Never decreases. |
+| `schemaVersion` | number | Migration version. Absent means v0 — see `src/state/migrations.js`. |
+| `totalStars` | number | Lifetime star points. Never decreases. Rebuilt from the per-day ledger when two devices merge. |
 | `weekStars` | number | Star points this week; archived into `weeklyHistory` at rollover. |
 | `streak` | number | Consecutive study days. |
 | `lastPlayed` | string | Last day played. Historically `Date#toDateString()` ("Sat Sep 06 2026"); now an Edmonton date key. Both are read. |

@@ -1,7 +1,8 @@
 import { firebaseReady } from './state/firebase-bootstrap.js';
 import { CURRICULUM, SENTENCES } from './content/curriculum-map.js';
 import { migrateProfile } from './state/migrations.js';
-import { SCHEMA_VERSION } from './state/schema.js';
+import { mergeProfiles } from './state/merge.js';
+import { SCHEMA_VERSION, hasAnyProgress } from './state/schema.js';
 import { GRADE_KEYS, levelLabel, levelNumber, recommendLevel,
          recommendationText, levelAccuracy, hasMoon } from './learning/levels.js';
 import { pickFrenchVoice, describeVoice, PREFERRED_LOCALE } from './speech/playback.js';
@@ -79,6 +80,10 @@ const syncMeta = {
   jenn: { pendingCloud: false, lastLocalSave: 0, lastCloudOk: 0, suppressSnapshotUntil: 0, loadState: 'pending' },
   jess: { pendingCloud: false, lastLocalSave: 0, lastCloudOk: 0, suppressSnapshotUntil: 0, loadState: 'pending' }
 };
+// Remote snapshots that arrived while a round was in progress. Merged into the
+// profile at round end rather than thrown away.
+const pendingRemoteData = { jenn: null, jess: null };
+
 let roundDraftTimer = null;
 
 // Explicit round outcomes. Finishing every question and running out of lives
@@ -853,45 +858,38 @@ async function applyPlayerData(p, data){
   }
   const localSnap = loadLocalStateMirror(p);
   const remoteLast = data ? Number(data.lastUpdatedAt || 0) : 0;
-  const scoreProgressRichness = function(s){
-    if(!s) return 0;
-    const todayCount = Object.keys(s.todayStats || {}).length;
-    const playedCount = Object.keys(s.playedDays || {}).length;
-    const weeklyCount = (s.weeklyHistory || []).length;
-    const topicCount = Object.keys(s.topicStars || {}).length;
-    return Number(s.totalStars || 0)
-      + Number(s.weekStars || 0)
-      + (todayCount * 5)
-      + (playedCount * 2)
-      + (weeklyCount * 10)
-      + topicCount;
-  };
+
+  // Combine the two sides rather than picking a winner.
+  //
+  // This used to score each profile for how "rich" it looked and then replace
+  // the whole thing with whichever scored higher — so if both iPads were used
+  // between syncs, one girl's entire session was discarded. mergeProfiles is
+  // commutative, idempotent and monotonic: order does not matter, redelivery
+  // does not matter, and nothing already earned can go backwards.
   let localNewer = false;
   if(!data){
     if(!localSnap) return;
     data = localSnap;
     localNewer = true;
-  }else if(localSnap && Number(localSnap.lastUpdatedAt||0) > remoteLast){
-    localNewer = true;
-    data = localSnap;
   }else if(localSnap){
-    // Guard against remote regressions: if cloud data is newer but clearly less complete,
-    // keep richer local progress and mark it for re-sync.
-    const localScore = scoreProgressRichness(localSnap);
-    const remoteScore = scoreProgressRichness(data);
-    if(localScore > remoteScore + 40){
-      console.warn('Using richer local snapshot for', p, { localScore, remoteScore });
-      localNewer = true;
-      data = localSnap;
-    }
+    data = mergeProfiles(migrateProfile(localSnap), migrateProfile(data));
+    // Local held something the cloud has not seen, so it needs sending back.
+    localNewer = Number(localSnap.lastUpdatedAt||0) > remoteLast;
   }
-  if(currentPlayer===p && currentGameType) return; // guard mid-round
-  const incomingUpdatedAt = Number(data.lastUpdatedAt || 0);
-  const localUpdatedAt = Number(state[p]?.lastUpdatedAt || 0);
-  if(incomingUpdatedAt && localUpdatedAt && incomingUpdatedAt < localUpdatedAt){
-    console.warn('Skipping stale snapshot for', p, incomingUpdatedAt, localUpdatedAt);
+
+  // Applying a snapshot mid-round would swap the profile out from under a live
+  // round, so it still waits — but it is now QUEUED rather than dropped. The
+  // old `return` discarded the other device's work outright.
+  if(currentPlayer===p && currentGameType){
+    pendingRemoteData[p] = pendingRemoteData[p]
+      ? mergeProfiles(pendingRemoteData[p], migrateProfile(data))
+      : migrateProfile(data);
     return;
   }
+  // An older snapshot is no longer discarded. It cannot overwrite anything —
+  // the merge only ever adds — and it may carry a round from another device
+  // that this one has never seen.
+  data = mergeProfiles(migrateProfile(state[p]), migrateProfile(data));
   // Week reset check (shared with endRound to prevent double-archive)
   applyWeekRolloverIfNeeded(data);
   // Streak reset if missed more than 1 day
@@ -944,6 +942,20 @@ void firebaseReady.then(initListeners);
  * 'error' deliberately does nothing: an unreachable server must never be
  * mistaken for a learner who has no saved progress.
  */
+/**
+ * Merge in any remote snapshot that arrived mid-round.
+ *
+ * Called at round end, and again when a round is abandoned, so a queued update
+ * is never left stranded if the child leaves without finishing.
+ */
+function applyPendingRemoteData(player){
+  if(!player || !pendingRemoteData[player]) return false;
+  const incoming = pendingRemoteData[player];
+  pendingRemoteData[player] = null;
+  state[player] = mergeProfiles(migrateProfile(state[player]), incoming);
+  return true;
+}
+
 async function onCloudLoadStatus(player, status){
   const meta = syncMeta[player];
   if(!meta) return;
@@ -989,6 +1001,16 @@ async function saveState(player, opts){
   if(syncMeta[player] && syncMeta[player].loadState === 'pending'){
     syncMeta[player].pendingCloud = true;      // queued; flushed once resolved
     updateConnectionStatusUI();
+    return;
+  }
+
+  // Do not CREATE an empty document. A learner with no cloud profile who has
+  // not played yet has nothing to save, and writing a blank profile only makes
+  // something a later bug could mistake for her real data. Once a document
+  // exists ('loaded') it is written normally, so an intentional clear still
+  // takes effect.
+  if(syncMeta[player] && syncMeta[player].loadState === 'absent'
+     && !hasAnyProgress(state[player])){
     return;
   }
 
@@ -1227,7 +1249,7 @@ function goBack(){
   document.getElementById('session-clock').style.display='none';
   showScreen('select');updateLeaderboard();
 }
-function exitGame(){if(currentPlayer&&currentGameType){persistRoundDraftNow();saveState(currentPlayer);}currentGameType=null;questions=[];showScreen('hub');document.getElementById('hint-panel').classList.remove('show');updateConnectionStatusUI();}
+function exitGame(){if(currentPlayer&&currentGameType){persistRoundDraftNow();applyPendingRemoteData(currentPlayer);saveState(currentPlayer);}currentGameType=null;questions=[];showScreen('hub');document.getElementById('hint-panel').classList.remove('show');updateConnectionStatusUI();}
 function showScreen(name){
   ['select','hub','game'].forEach(n=>document.getElementById(`screen-${n}`).style.display=n===name?'block':'none');
 }
@@ -1970,6 +1992,10 @@ async function endRound(outcome = ROUND_OUTCOME.COMPLETED){
   if(roundEnded) return;      // a knockout timer and the last question can both fire
   roundEnded = true;
   lastRoundOutcome = outcome;
+  // Fold in anything the other device sent while this round was being played.
+  // Safe here because the round's own evidence is already in state[currentPlayer]
+  // and the merge only ever adds.
+  applyPendingRemoteData(currentPlayer);
   clearCurrentRoundDraft();
   document.getElementById('feedback-overlay').classList.remove('show');
   const lpStars=roundScore>=80?3:roundScore>=40?2:roundScore>=15?1:0;

@@ -55,12 +55,37 @@ exists and has been needed.
 6. **It is visible.** While the profile is unconfirmed the status line reads
    "Working offline · progress saved here, will sync". No silent degradation.
 
+7. **An empty profile is never created.** A learner with no cloud document who
+   has not played has nothing worth saving, so nothing is written until she
+   earns something. Once a document exists it is written normally, so a
+   deliberate clear still takes effect.
+8. **Writes merge rather than replace.** Two devices' work is combined, so no
+   session can overwrite another (see below).
+
 Layer 1 alone is sufficient. The rest exist so that a mistake in layer 1 is not
 catastrophic.
 
 Covered by `tests/browser/data-loss.test.js`, which reproduces the original
 failure — evicted storage plus a slow cloud read — and asserts 1,240 stars
 survive. Against the old code that test reports `expected: 1240, actual: 0`.
+
+**Sync no longer picks a winner.** Conflict resolution used to score each
+profile for how "rich" it looked and replace the whole thing with whichever
+scored higher, so if both iPads were used between syncs one girl's entire
+session was discarded. `src/state/merge.js` combines them instead, under three
+properties that are each tested:
+
+- **commutative** — `merge(a,b)` equals `merge(b,a)`, so the order snapshots
+  arrive in cannot change what the devices converge on;
+- **idempotent** — redelivery of the same snapshot changes nothing;
+- **monotonic** — no counter is ever lower than it was in either input.
+
+Star totals are rebuilt from the merged per-day ledger rather than taking the
+maximum. Two iPads that each played one round offline from 1000 stars end at
+1050, not 1030 — a maximum would have silently dropped the smaller session.
+
+A remote update arriving *during* a round is also queued and merged at round
+end. It used to be dropped outright.
 
 **Two related bugs fixed at the same time:**
 

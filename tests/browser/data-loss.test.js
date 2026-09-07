@@ -63,9 +63,22 @@ async function boot({ cloudMode = 'fast', seedLocal = false, cloudDoc = POPULATE
     window.__writes = [];
     window.__blockRealFirebase = true;
 
-    window.fbInit = (player, onData) => {
+    window.__onData = {};
+    // Push a snapshot from "the other iPad" at any point after boot.
+    window.__deliver = (player, doc) => {
+      window.__cloud[player] = JSON.parse(JSON.stringify(doc));
+      window.__onData[player]?.(window.__cloud[player]);
+      window.__onStatus[player]?.('loaded');
+    };
+    window.__onStatus = {};
+    window.fbInit = (player, onData, onStatus = () => {}) => {
+      window.__onData[player] = onData;
+      window.__onStatus[player] = onStatus;
       if (mode === 'fail') return;                       // read never resolves
-      const deliver = () => { if (window.__cloud[player]) onData(window.__cloud[player]); };
+      const deliver = () => {
+        if (window.__cloud[player]) { onData(window.__cloud[player]); onStatus('loaded'); }
+        else onStatus('absent');
+      };
       if (mode === 'slow') setTimeout(deliver, 15000);   // resolves after the 10s tick
       else setTimeout(deliver, 50);
     };
@@ -181,4 +194,42 @@ test('weekly history keeps 8 weeks, not 4', async () => {
   const kept = await page.evaluate(() =>
     (window.__cloud.jenn?.weeklyHistory || []).length);
   assert.ok(kept >= 8, `weekly history truncated to ${kept} entries`);
+});
+
+test('a remote update arriving mid-round is kept, not dropped', async () => {
+  // Regression: applyPlayerData returned early during a round, discarding the
+  // other device's snapshot entirely. It is now queued and merged at round end.
+  const { page, errors } = await boot({ cloudMode: 'fast', seedLocal: true });
+  await page.waitForTimeout(800);
+
+  const r = await page.evaluate(async () => {
+    selectPlayer('jenn');
+    await new Promise(r => setTimeout(r, 300));
+    startGame('quiz');
+    await new Promise(r => setTimeout(r, 400));
+
+    // The other iPad finishes a round on a day this device has never seen.
+    const fromOtherDevice = {
+      ...window.__cloud.jenn,
+      totalStars: (window.__cloud.jenn.totalStars || 0) + 25,
+      playedDays: { ...(window.__cloud.jenn.playedDays || {}), '2026-09-09': true },
+      todayStats: { ...(window.__cloud.jenn.todayStats || {}),
+                    '2026-09-09': { correct: 7, wrong: 1, rounds: 1, stars: 25 } },
+      lastUpdatedAt: Date.now(),
+    };
+    window.__deliver('jenn', fromOtherDevice);        // arrives mid-round
+    await new Promise(r => setTimeout(r, 300));
+
+    exitGame();                                        // leaving drains the queue
+    await new Promise(r => setTimeout(r, 800));
+
+    const stored = JSON.parse(localStorage.getItem('french_game_local_jenn') || '{}');
+    return { playedDays: Object.keys(stored.playedDays || {}),
+             hasOtherDay: !!stored.todayStats?.['2026-09-09'] };
+  });
+
+  assert.ok(r.hasOtherDay,
+    "the other device's round was dropped because it arrived mid-round");
+  assert.ok(r.playedDays.includes('2026-09-09'));
+  assert.deepEqual(errors, []);
 });

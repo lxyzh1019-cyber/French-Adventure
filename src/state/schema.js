@@ -67,3 +67,22 @@ export const DAY_KEYED_FIELDS = [
 export const REQUIRED_MAPS = [
   ...DAY_KEYED_FIELDS, 'topicStars', 'failedWords', 'seedProfilePatches',
 ];
+
+/**
+ * Has this learner actually done anything?
+ *
+ * Used to decide whether a profile is worth writing to the cloud at all. A
+ * learner who has never played has nothing to save, and creating an empty
+ * document for her only produces something a later bug could mistake for real
+ * data. The first write happens when she earns something.
+ */
+export function hasAnyProgress(profile) {
+  if (!profile) return false;
+  if (Number(profile.totalStars) > 0 || Number(profile.weekStars) > 0
+      || Number(profile.streak) > 0) return true;
+  for (const field of [...DAY_KEYED_FIELDS, 'topicStars', 'failedWords']) {
+    if (Object.keys(profile[field] || {}).length) return true;
+  }
+  if ((profile.weeklyHistory || []).length) return true;
+  return Object.values(profile.moons || {}).some(Boolean);
+}

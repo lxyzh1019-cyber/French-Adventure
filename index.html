@@ -7,7 +7,7 @@
      styles ......... src/styles.css
      game logic ..... src/**/*.js
 
-   Built from b4c5ceb
+   Built from b17018e
   ============================================================
 -->
 <!DOCTYPE html>
@@ -981,6 +981,15 @@ const REQUIRED_MAPS = [
   "failedWords",
   "seedProfilePatches"
 ];
+function hasAnyProgress(profile) {
+  if (!profile) return false;
+  if (Number(profile.totalStars) > 0 || Number(profile.weekStars) > 0 || Number(profile.streak) > 0) return true;
+  for (const field of [...DAY_KEYED_FIELDS, "topicStars", "failedWords"]) {
+    if (Object.keys(profile[field] || {}).length) return true;
+  }
+  if ((profile.weeklyHistory || []).length) return true;
+  return Object.values(profile.moons || {}).some(Boolean);
+}
 const RETIRED_FIELDS = [];
 function toV1(profile) {
   const out = { ...profile };
@@ -1037,6 +1046,90 @@ function migrateProfile(raw) {
   }
   profile.schemaVersion = Math.max(version, Number(raw.schemaVersion) || 0);
   return profile;
+}
+const num = (v) => Number(v) || 0;
+const isObj = (v) => v && typeof v === "object" && !Array.isArray(v);
+function unionBy(a = {}, b = {}, resolve) {
+  const out = { ...a };
+  for (const [k, bv] of Object.entries(b || {})) {
+    out[k] = k in out ? resolve(out[k], bv) : bv;
+  }
+  return out;
+}
+function mergeDayEntry(a, b) {
+  if (a === b) return a;
+  if (typeof a === "number" || typeof b === "number") return Math.max(num(a), num(b));
+  if (typeof a === "boolean" || typeof b === "boolean") return !!a || !!b;
+  if (isObj(a) && isObj(b)) return unionBy(a, b, mergeDayEntry);
+  return a ?? b;
+}
+function sumDaily(profile, field, pick) {
+  let total = 0;
+  for (const day of Object.values(profile?.[field] || {})) total += num(pick(day));
+  return total;
+}
+function mergeStarTotal(a, b, merged, field, dayField, pick) {
+  const floor = Math.max(num(a?.[field]), num(b?.[field]));
+  const ledgerA = sumDaily(a, dayField, pick);
+  const ledgerB = sumDaily(b, dayField, pick);
+  const ledgerMerged = sumDaily(merged, dayField, pick);
+  const preLedger = Math.max(num(a?.[field]) - ledgerA, num(b?.[field]) - ledgerB, 0);
+  return Math.max(floor, preLedger + ledgerMerged);
+}
+function mergeWeeklyHistory(a = [], b = [], cap = 8) {
+  const byWeek = /* @__PURE__ */ new Map();
+  for (const entry of [...a || [], ...b || []]) {
+    if (!entry || !entry.weekStart) continue;
+    const existing = byWeek.get(entry.weekStart);
+    if (!existing) {
+      byWeek.set(entry.weekStart, entry);
+      continue;
+    }
+    byWeek.set(
+      entry.weekStart,
+      num(entry.stars) + num(entry.rounds) > num(existing.stars) + num(existing.rounds) ? entry : existing
+    );
+  }
+  return [...byWeek.values()].sort((x, y) => String(x.weekStart).localeCompare(String(y.weekStart))).slice(-cap);
+}
+function mergeFailedWords(a = {}, b = {}) {
+  return unionBy(a, b, (x, y) => ({
+    ...x,
+    ...y,
+    misses: Math.max(num(x.misses), num(y.misses)),
+    lastFailed: [x.lastFailed, y.lastFailed].filter(Boolean).sort().pop() ?? null
+  }));
+}
+function mergeProfiles(a, b) {
+  if (!a) return b ? { ...b } : null;
+  if (!b) return { ...a };
+  const merged = { ...a, ...b };
+  for (const field of DAY_KEYED_FIELDS) {
+    merged[field] = unionBy(a[field], b[field], mergeDayEntry);
+  }
+  merged.topicStars = unionBy(a.topicStars, b.topicStars, (x, y) => Math.max(num(x), num(y)));
+  merged.moons = defaultMoons();
+  for (const key of Object.keys(merged.moons)) {
+    merged.moons[key] = !!(a.moons?.[key] || b.moons?.[key]);
+  }
+  merged.gradeUnlocked = {};
+  for (const g of GRADE_KEYS$1) {
+    merged.gradeUnlocked[g] = !!(a.gradeUnlocked?.[g] || b.gradeUnlocked?.[g]);
+  }
+  merged.weeklyHistory = mergeWeeklyHistory(a.weeklyHistory, b.weeklyHistory);
+  merged.failedWords = mergeFailedWords(a.failedWords, b.failedWords);
+  merged.seedProfilePatches = { ...a.seedProfilePatches || {}, ...b.seedProfilePatches || {} };
+  merged.totalStars = mergeStarTotal(a, b, merged, "totalStars", "todayStats", (d) => d?.stars);
+  merged.weekStars = Math.max(num(a.weekStars), num(b.weekStars));
+  merged.streak = Math.max(num(a.streak), num(b.streak));
+  merged.lastUpdatedAt = Math.max(num(a.lastUpdatedAt), num(b.lastUpdatedAt));
+  merged.lastPlayed = [a.lastPlayed, b.lastPlayed].filter(Boolean).sort().pop() ?? null;
+  merged.weekStart = [a.weekStart, b.weekStart].filter(Boolean).sort().pop() ?? null;
+  merged.lastDrillComplete = [a.lastDrillComplete, b.lastDrillComplete].filter(Boolean).sort().pop() ?? null;
+  const newer = num(a.lastUpdatedAt) >= num(b.lastUpdatedAt) ? a : b;
+  merged.parentSettings = newer.parentSettings ?? a.parentSettings ?? b.parentSettings;
+  merged.schemaVersion = Math.max(num(a.schemaVersion), num(b.schemaVersion));
+  return merged;
 }
 const FIRST_GRADE_KEY = 4;
 const LAST_GRADE_KEY = 10;
@@ -1199,6 +1292,7 @@ const syncMeta = {
   jenn: { pendingCloud: false, lastLocalSave: 0, lastCloudOk: 0, suppressSnapshotUntil: 0, loadState: "pending" },
   jess: { pendingCloud: false, lastLocalSave: 0, lastCloudOk: 0, suppressSnapshotUntil: 0, loadState: "pending" }
 };
+const pendingRemoteData = { jenn: null, jess: null };
 let roundDraftTimer = null;
 const ROUND_OUTCOME = {
   COMPLETED: "completed",
@@ -1925,38 +2019,20 @@ async function applyPlayerData(p, data) {
   }
   const localSnap = loadLocalStateMirror(p);
   const remoteLast = data ? Number(data.lastUpdatedAt || 0) : 0;
-  const scoreProgressRichness = function(s) {
-    if (!s) return 0;
-    const todayCount = Object.keys(s.todayStats || {}).length;
-    const playedCount = Object.keys(s.playedDays || {}).length;
-    const weeklyCount = (s.weeklyHistory || []).length;
-    const topicCount = Object.keys(s.topicStars || {}).length;
-    return Number(s.totalStars || 0) + Number(s.weekStars || 0) + todayCount * 5 + playedCount * 2 + weeklyCount * 10 + topicCount;
-  };
   let localNewer = false;
   if (!data) {
     if (!localSnap) return;
     data = localSnap;
     localNewer = true;
-  } else if (localSnap && Number(localSnap.lastUpdatedAt || 0) > remoteLast) {
-    localNewer = true;
-    data = localSnap;
   } else if (localSnap) {
-    const localScore = scoreProgressRichness(localSnap);
-    const remoteScore = scoreProgressRichness(data);
-    if (localScore > remoteScore + 40) {
-      console.warn("Using richer local snapshot for", p, { localScore, remoteScore });
-      localNewer = true;
-      data = localSnap;
-    }
+    data = mergeProfiles(migrateProfile(localSnap), migrateProfile(data));
+    localNewer = Number(localSnap.lastUpdatedAt || 0) > remoteLast;
   }
-  if (currentPlayer === p && currentGameType) return;
-  const incomingUpdatedAt = Number(data.lastUpdatedAt || 0);
-  const localUpdatedAt = Number(state[p]?.lastUpdatedAt || 0);
-  if (incomingUpdatedAt && localUpdatedAt && incomingUpdatedAt < localUpdatedAt) {
-    console.warn("Skipping stale snapshot for", p, incomingUpdatedAt, localUpdatedAt);
+  if (currentPlayer === p && currentGameType) {
+    pendingRemoteData[p] = pendingRemoteData[p] ? mergeProfiles(pendingRemoteData[p], migrateProfile(data)) : migrateProfile(data);
     return;
   }
+  data = mergeProfiles(migrateProfile(state[p]), migrateProfile(data));
   applyWeekRolloverIfNeeded(data);
   const lastPlayedKey = toDateKey(data.lastPlayed);
   if (lastPlayedKey && daysBetweenKeys(lastPlayedKey, todayKey()) > 1) data.streak = 0;
@@ -1995,6 +2071,13 @@ function initListeners() {
   });
 }
 void firebaseReady.then(initListeners);
+function applyPendingRemoteData(player) {
+  if (!player || !pendingRemoteData[player]) return false;
+  const incoming = pendingRemoteData[player];
+  pendingRemoteData[player] = null;
+  state[player] = mergeProfiles(migrateProfile(state[player]), incoming);
+  return true;
+}
 async function onCloudLoadStatus(player, status) {
   const meta = syncMeta[player];
   if (!meta) return;
@@ -2023,6 +2106,9 @@ async function saveState(player, opts) {
   if (syncMeta[player] && syncMeta[player].loadState === "pending") {
     syncMeta[player].pendingCloud = true;
     updateConnectionStatusUI();
+    return;
+  }
+  if (syncMeta[player] && syncMeta[player].loadState === "absent" && !hasAnyProgress(state[player])) {
     return;
   }
   if (window.fbSave) {
@@ -2226,6 +2312,7 @@ function goBack() {
 function exitGame() {
   if (currentPlayer && currentGameType) {
     persistRoundDraftNow();
+    applyPendingRemoteData(currentPlayer);
     saveState(currentPlayer);
   }
   currentGameType = null;
@@ -2990,6 +3077,7 @@ function nextQuestion() {
 async function endRound(outcome = ROUND_OUTCOME.COMPLETED) {
   if (roundEnded) return;
   roundEnded = true;
+  applyPendingRemoteData(currentPlayer);
   clearCurrentRoundDraft();
   document.getElementById("feedback-overlay").classList.remove("show");
   const lpStars = roundScore >= 80 ? 3 : roundScore >= 40 ? 2 : roundScore >= 15 ? 1 : 0;
