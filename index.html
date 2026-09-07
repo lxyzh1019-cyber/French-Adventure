@@ -7,7 +7,7 @@
      styles ......... src/styles.css
      game logic ..... src/**/*.js
 
-   Built from 05f8149
+   Built from dee1020
   ============================================================
 -->
 <!DOCTYPE html>
@@ -148,6 +148,18 @@ const firebaseReady = (async () => {
   window.dispatchEvent(new Event("fbReady"));
   return { db };
 })();
+function frTokenize(s) {
+  const out = [];
+  const str = s.replace(/\s+/g, " ").trim();
+  str.split(/\s+/).forEach(function(tok) {
+    let t = tok;
+    const m = t.match(/^([\s\S]+?)([.!?…,;:«»—–]*)$/);
+    if (!m) return;
+    if (m[1]) out.push(m[1]);
+    if (m[2]) for (let i = 0; i < m[2].length; i++) out.push(m[2][i]);
+  });
+  return out;
+}
 const CURRICULUM = {
   4: {
     colours: { name: "Colours", icon: "🎨", vocab: [
@@ -650,18 +662,6 @@ const CURRICULUM = {
     ] }
   }
 };
-function frTokenize(s) {
-  const out = [];
-  const str = s.replace(/\s+/g, " ").trim();
-  str.split(/\s+/).forEach(function(tok) {
-    let t = tok;
-    const m = t.match(/^([\s\S]+?)([.!?…,;:«»—–]*)$/);
-    if (!m) return;
-    if (m[1]) out.push(m[1]);
-    if (m[2]) for (let i = 0; i < m[2].length; i++) out.push(m[2][i]);
-  });
-  return out;
-}
 const G10_BATCH_C_SENTENCES = [
   { fr: "Je veux devenir ingénieur dans le futur.", en: "I want to become an engineer in the future.", zh: "我想将来成为工程师。" },
   { fr: "Si j'étudie fort, je réussirai mes examens.", en: "If I study hard, I will pass my exams.", zh: "如果我努力学习，我会通过考试。" },
