@@ -7,7 +7,7 @@
      styles ......... src/styles.css
      game logic ..... src/**/*.js
 
-   Built from f7903d8
+   Built from b4c5ceb
   ============================================================
 -->
 <!DOCTYPE html>
@@ -910,6 +910,134 @@ const SENTENCES = {
     return { parts: frTokenize(s.fr), target: s.en, zh: s.zh };
   })
 };
+const SCHEMA_VERSION = 1;
+const GRADE_KEYS$1 = [4, 5, 6, 7, 8, 9, 10];
+const MAX_PLAYABLE_GRADE$1 = 10;
+function defaultParentSettings$1() {
+  return { weekdayOpen: [true, true, true, true, true, true, true] };
+}
+function defaultGradeUnlocked$1() {
+  const o = {};
+  for (const g of GRADE_KEYS$1) o[g] = g === 4;
+  return o;
+}
+function defaultGradeParentOpen$1() {
+  const o = {};
+  for (const g of GRADE_KEYS$1) o[g] = false;
+  o[4] = true;
+  return o;
+}
+function defaultMoons() {
+  const o = { super: false };
+  for (const g of GRADE_KEYS$1) o["grade" + g] = false;
+  return o;
+}
+function clampGradeUnlocks(o) {
+  if (!o) return;
+  for (let g = MAX_PLAYABLE_GRADE$1 + 1; g <= 10; g++) o[g] = false;
+}
+const DEFAULT_STATE$1 = () => ({
+  schemaVersion: SCHEMA_VERSION,
+  totalStars: 0,
+  weekStars: 0,
+  streak: 0,
+  lastPlayed: null,
+  weekStart: getWeekStart(),
+  topicStars: {},
+  dailyRounds: {},
+  moons: defaultMoons(),
+  failedWords: {},
+  playedDays: {},
+  todayStats: {},
+  dailyTimeMs: {},
+  lastDrillComplete: null,
+  parentSettings: defaultParentSettings$1(),
+  gradeUnlocked: defaultGradeUnlocked$1(),
+  gradeStats: {},
+  gradeGameRounds: {},
+  dailyTopicStats: {},
+  gradeParentOpen: defaultGradeParentOpen$1(),
+  tier1Conquered: false,
+  tier2Conquered: false,
+  tier3Conquered: false,
+  tier1ParentOpen: false,
+  tier2ParentOpen: false,
+  tier3ParentOpen: false,
+  seedProfilePatches: {},
+  lastUpdatedAt: 0
+});
+const DAY_KEYED_FIELDS = [
+  "todayStats",
+  "playedDays",
+  "dailyRounds",
+  "dailyTimeMs",
+  "gradeStats",
+  "gradeGameRounds",
+  "dailyTopicStats"
+];
+const REQUIRED_MAPS = [
+  ...DAY_KEYED_FIELDS,
+  "topicStars",
+  "failedWords",
+  "seedProfilePatches"
+];
+const RETIRED_FIELDS = [];
+function toV1(profile) {
+  const out = { ...profile };
+  for (const key of REQUIRED_MAPS) {
+    if (!out[key] || typeof out[key] !== "object") out[key] = {};
+  }
+  if (!Array.isArray(out.weeklyHistory)) out.weeklyHistory = [];
+  if (!Number.isFinite(Number(out.lastUpdatedAt))) out.lastUpdatedAt = 0;
+  if (!out.gradeUnlocked || typeof out.gradeUnlocked !== "object") {
+    out.gradeUnlocked = defaultGradeUnlocked$1();
+  }
+  clampGradeUnlocks(out.gradeUnlocked);
+  if (!out.gradeParentOpen || typeof out.gradeParentOpen !== "object") {
+    out.gradeParentOpen = defaultGradeParentOpen$1();
+  }
+  for (const g of GRADE_KEYS$1) {
+    if (out.gradeParentOpen[g] === void 0) out.gradeParentOpen[g] = false;
+  }
+  out.moons = Object.assign(defaultMoons(), out.moons || {});
+  for (const f of [
+    "tier1Conquered",
+    "tier2Conquered",
+    "tier3Conquered",
+    "tier1ParentOpen",
+    "tier2ParentOpen",
+    "tier3ParentOpen"
+  ]) {
+    if (out[f] === void 0) out[f] = false;
+  }
+  out.parentSettings = Object.assign(defaultParentSettings$1(), out.parentSettings || {});
+  if (!Array.isArray(out.parentSettings.weekdayOpen) || out.parentSettings.weekdayOpen.length !== 7) {
+    out.parentSettings.weekdayOpen = defaultParentSettings$1().weekdayOpen;
+  }
+  for (const f of RETIRED_FIELDS) {
+    if (out[f] !== void 0) {
+      out.legacy = out.legacy || {};
+      out.legacy[f] = out[f];
+      delete out[f];
+    }
+  }
+  out.schemaVersion = 1;
+  return out;
+}
+const MIGRATIONS = [toV1];
+function migrateProfile(raw) {
+  if (!raw || typeof raw !== "object") return DEFAULT_STATE$1();
+  let profile = { ...DEFAULT_STATE$1(), ...raw };
+  let version = Number(raw.schemaVersion) || 0;
+  while (version < SCHEMA_VERSION) {
+    const step = MIGRATIONS[version];
+    if (!step) break;
+    profile = step(profile);
+    version = Number(profile.schemaVersion) || version + 1;
+  }
+  profile.schemaVersion = Math.max(version, Number(raw.schemaVersion) || 0);
+  return profile;
+}
 const FIRST_GRADE_KEY = 4;
 const LAST_GRADE_KEY = 10;
 const GRADE_KEYS = [4, 5, 6, 7, 8, 9, 10];
@@ -1121,7 +1249,7 @@ function hydrateStateFromLocalMirror() {
     const lr = Number(loc.lastUpdatedAt || 0);
     const cr = Number(state[pl].lastUpdatedAt || 0);
     if (lr > cr) {
-      state[pl] = Object.assign({}, DEFAULT_STATE(), loc);
+      state[pl] = migrateProfile(loc);
       syncMeta[pl].pendingCloud = true;
     }
   });
@@ -1462,10 +1590,6 @@ function defaultGradeParentOpen() {
   for (let g = 4; g <= 10; g++) o[g] = false;
   o[4] = true;
   return o;
-}
-function clampGradeUnlocks(o) {
-  if (!o) return;
-  for (let g = MAX_PLAYABLE_GRADE + 1; g <= 10; g++) o[g] = false;
 }
 function ensureGradeParentOpenState(s) {
   if (!s.gradeParentOpen) s.gradeParentOpen = defaultGradeParentOpen();
@@ -1836,33 +1960,7 @@ async function applyPlayerData(p, data) {
   applyWeekRolloverIfNeeded(data);
   const lastPlayedKey = toDateKey(data.lastPlayed);
   if (lastPlayedKey && daysBetweenKeys(lastPlayedKey, todayKey()) > 1) data.streak = 0;
-  const def = DEFAULT_STATE();
-  state[p] = Object.assign({}, def, data);
-  if (!state[p].failedWords) state[p].failedWords = {};
-  if (!state[p].playedDays) state[p].playedDays = {};
-  if (!state[p].todayStats) state[p].todayStats = {};
-  if (!state[p].weeklyHistory) state[p].weeklyHistory = [];
-  if (!state[p].lastUpdatedAt) state[p].lastUpdatedAt = 0;
-  if (!state[p].dailyRounds) state[p].dailyRounds = {};
-  if (!state[p].dailyTimeMs) state[p].dailyTimeMs = {};
-  if (!state[p].gradeUnlocked) state[p].gradeUnlocked = defaultGradeUnlocked();
-  clampGradeUnlocks(state[p].gradeUnlocked);
-  if (!state[p].gradeStats) state[p].gradeStats = {};
-  if (!state[p].gradeGameRounds) state[p].gradeGameRounds = {};
-  if (!state[p].dailyTopicStats) state[p].dailyTopicStats = {};
-  ensureGradeParentOpenState(state[p]);
-  if (state[p].tier1Conquered === void 0) state[p].tier1Conquered = false;
-  if (state[p].tier2Conquered === void 0) state[p].tier2Conquered = false;
-  if (state[p].tier3Conquered === void 0) state[p].tier3Conquered = false;
-  if (state[p].tier1ParentOpen === void 0) state[p].tier1ParentOpen = false;
-  if (state[p].tier2ParentOpen === void 0) state[p].tier2ParentOpen = false;
-  if (state[p].tier3ParentOpen === void 0) state[p].tier3ParentOpen = false;
-  if (!data.gradeUnlocked) {
-    state[p].gradeUnlocked = defaultGradeUnlocked();
-  }
-  if (!data.moons || data.moons.grade6 === void 0) {
-    state[p].moons = Object.assign({ grade4: false, grade5: false, grade6: false, grade7: false, grade8: false, grade9: false, grade10: false, super: false }, state[p].moons || {});
-  }
+  state[p] = migrateProfile(data);
   if (data.parentSettings) {
     const merged = Object.assign(defaultParentSettings(), data.parentSettings);
     state.jenn.parentSettings = merged;

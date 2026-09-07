@@ -1,5 +1,7 @@
 import { firebaseReady } from './state/firebase-bootstrap.js';
 import { CURRICULUM, SENTENCES } from './content/curriculum-map.js';
+import { migrateProfile } from './state/migrations.js';
+import { SCHEMA_VERSION } from './state/schema.js';
 import { GRADE_KEYS, levelLabel, levelNumber, recommendLevel,
          recommendationText, levelAccuracy, hasMoon } from './learning/levels.js';
 import { pickFrenchVoice, describeVoice, PREFERRED_LOCALE } from './speech/playback.js';
@@ -142,7 +144,9 @@ function hydrateStateFromLocalMirror(){
     const lr = Number(loc.lastUpdatedAt||0);
     const cr = Number(state[pl].lastUpdatedAt||0);
     if(lr > cr){
-      state[pl] = Object.assign({}, DEFAULT_STATE(), loc);
+      // Same migration as the cloud path — a locally-mirrored profile is just
+      // as old, and must not reach the app in a pre-v1 shape.
+      state[pl] = migrateProfile(loc);
       syncMeta[pl].pendingCloud = true;
     }
   });
@@ -893,35 +897,12 @@ async function applyPlayerData(p, data){
   // Streak reset if missed more than 1 day
   const lastPlayedKey=toDateKey(data.lastPlayed);
   if(lastPlayedKey && daysBetweenKeys(lastPlayedKey, todayKey())>1) data.streak=0;
-  // Safe field-by-field merge — never zero out existing counters
-  const def=DEFAULT_STATE();
-  state[p]=Object.assign({}, def, data);
-  if(!state[p].failedWords) state[p].failedWords={};
-  if(!state[p].playedDays) state[p].playedDays={};
-  if(!state[p].todayStats) state[p].todayStats={};
-  if(!state[p].weeklyHistory) state[p].weeklyHistory=[];
-  if(!state[p].lastUpdatedAt) state[p].lastUpdatedAt=0;
-  if(!state[p].dailyRounds) state[p].dailyRounds={};
-  if(!state[p].dailyTimeMs) state[p].dailyTimeMs={};
-  if(!state[p].gradeUnlocked) state[p].gradeUnlocked=defaultGradeUnlocked();
-  clampGradeUnlocks(state[p].gradeUnlocked);
-  if(!state[p].gradeStats) state[p].gradeStats={};
-  if(!state[p].gradeGameRounds) state[p].gradeGameRounds={};
-  if(!state[p].dailyTopicStats) state[p].dailyTopicStats={};
-  ensureGradeParentOpenState(state[p]);
-  if(state[p].tier1Conquered===undefined) state[p].tier1Conquered=false;
-  if(state[p].tier2Conquered===undefined) state[p].tier2Conquered=false;
-  if(state[p].tier3Conquered===undefined) state[p].tier3Conquered=false;
-  if(state[p].tier1ParentOpen===undefined) state[p].tier1ParentOpen=false;
-  if(state[p].tier2ParentOpen===undefined) state[p].tier2ParentOpen=false;
-  if(state[p].tier3ParentOpen===undefined) state[p].tier3ParentOpen=false;
-  if(!data.gradeUnlocked){
-    state[p].gradeUnlocked = defaultGradeUnlocked();
-  }
-  if(!data.moons || data.moons.grade6 === undefined){
-    state[p].moons = Object.assign({ grade4:false, grade5:false, grade6:false, grade7:false, grade8:false, grade9:false, grade10:false, super:false }, state[p].moons || {});
-  }
+  // One versioned, idempotent migration replaces the wall of shape-fixups that
+  // used to run here on every snapshot. It never deletes: a field that no longer
+  // fits the model is preserved under `legacy` rather than dropped.
+  state[p]=migrateProfile(data);
   if(data.parentSettings){
+    // Parent settings are shared by both girls, so they are applied to both.
     const merged=Object.assign(defaultParentSettings(), data.parentSettings);
     state.jenn.parentSettings=merged; state.jess.parentSettings=merged;
   }
