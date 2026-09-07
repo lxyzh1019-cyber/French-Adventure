@@ -54,8 +54,13 @@ scripts/            CI guards (drift, inline handlers)
   automatic, and a missing export means a silently dead button.
 - `npm run check:drift` — rebuilds and compares against the committed
   `index.html`. Fails if they differ in either direction.
+- `npm run test:browser` — end-to-end checks in a real browser: every game
+  mode renders, an interrupted round resumes, French apostrophes reach the
+  speech API, every level is reachable, and a stored profile survives a load
+  with nothing lost.
 
-Both run in CI on every push and pull request.
+All three run in CI on every push and pull request. `npm run verify:all`
+runs the lot locally.
 
 ## Known risks
 

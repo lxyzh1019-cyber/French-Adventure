@@ -15,5 +15,14 @@ jobs:
           node-version: '20'
           cache: npm
       - run: npm ci
-      # Tests, inline-handler bindings, and "index.html matches src/".
-      - run: npm run verify
+
+      # Unit tests + every inline handler is bound on window.
+      - run: npm test
+
+      # The committed index.html is exactly what src/ builds.
+      - run: npm run check:drift
+
+      # End-to-end checks in a real browser: game modes render, resume works,
+      # every level is reachable, and a stored profile survives a load intact.
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:browser

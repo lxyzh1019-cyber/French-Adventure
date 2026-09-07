@@ -402,3 +402,6 @@ button,input{touch-action:manipulation;}
 @media (max-width:420px){
   .letter-tile.word-tile,.answer-slot.word-tile{width:auto;font-size:1.05rem;}
 }
+
+/* The suggested next level, replacing the old locked-tab styling. */
+.grade-tab-recommended{border-color:var(--gold)!important;box-shadow:0 0 0 2px rgba(245,158,11,.25);}
