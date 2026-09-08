@@ -62,15 +62,19 @@ Chromium is regression coverage, not the plan's actual-iPad gate.
 
 ## Manual tests still needed (parent, on the family iPads)
 
-From the audit's smoke checklist:
+The checklist is [`docs/ipad-test-checklist.md`](ipad-test-checklist.md) — one
+document, written as do / expect / if-not, ordered so that stopping after
+fifteen minutes still answers the questions that matter most. It already covers
+this round's two-iPad same-day merge check (§1.4), and §3.5 and §3.6 were added
+for the microphone and the Listen & Speak submit behaviour this round changed.
 
-- Open once online, complete part of a round, lock the screen, and resume.
-- Repeat in Word Match after selecting one tile and after completing two pairs.
-- Make one wrong match and immediately tap a new tile; confirm the new highlight remains and the app does not freeze.
-- On both iPads, complete different short rounds on the same day while one device is offline; reconnect and confirm both attempts appear (stars, rounds, today's counts).
-- Play `aujourd’hui`, `l’école`, `sœur`, `s’il vous plaît`; confirm buttons work and the French voice is understandable.
-- New: tap the mic, then tap it again to stop; confirm it stops and the label returns to 🎤. In Listen & Speak, say something wrong and confirm no life is lost until Check ✓ is tapped.
-- Keep the verified combined Jenn/Jess recovery file before any M2 migration. Note: this round bumps the profile schema to v2 (adds an empty `roundLog`; nothing rewritten).
+Two things it assumes rather than states:
+
+- Export the recovery file **before** starting. This round bumps the profile
+  schema to v2, which adds an empty `roundLog` and rewrites nothing, but the
+  test writes to the girls' real records either way.
+- One combined Jenn/Jess export is the intended format; a separate file per
+  child is not required.
 
 ## Release A — question for the content owner (ChatGPT)
 

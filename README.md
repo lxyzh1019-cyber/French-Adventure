@@ -56,7 +56,15 @@ scripts/            CI guards (drift, inline handlers)
   `index.html`. Fails if they differ in either direction.
 - `npm run check:release-a` — the imported assessment content
   (`content/releases/assessment-v1/`) still satisfies the Release A contract:
-  hashes, counts, every reference resolves, both forms complete.
+  hashes, counts, both forms complete, and every skill, outcome, rubric and
+  scoring-fixture reference resolves. Runs in CI, because that content is
+  committed and can regress.
+- `npm run check:content -- <dir>` — validates a *delivered* content package
+  (Release A or B) against its contract on the day it arrives, before anyone
+  implements against it. Checks required files, manifest counts, placeholder
+  text, A/B form independence, skill references, and that learning items carry
+  `zh` while no assessment item exposes it. It checks structure, not
+  educational quality.
 - `npm run test:browser` — end-to-end checks in a real browser: every game
   mode renders, Word Match resumes from every state (no selection, one
   selection, several pairs, after a wrong pair, and a finished board is not

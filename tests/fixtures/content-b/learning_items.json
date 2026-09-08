@@ -1,0 +1,3 @@
+{ "items": [
+  { "id": "l-1", "prompt": "Le document est sous la carte.", "accepted": ["under"], "zh": "在下面", "skillIds": ["s.prep.sous"] },
+  { "id": "l-2", "prompt": "Je pense que...", "accepted": ["I think that"], "zh": "我认为", "skillIds": ["s.func.opinion"] } ] }
