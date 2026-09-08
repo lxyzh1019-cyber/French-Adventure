@@ -1,0 +1,2 @@
+{ "items": [
+  { "id": "r-1", "prompt": "La clé est sous le livre.", "accepted": ["under"], "zh": "在下面", "skillIds": ["s.prep.sous"] } ] }

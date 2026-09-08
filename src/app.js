@@ -2329,7 +2329,12 @@ function checkListenAnswer(){
     showFeedback(true, currentQ.word);
   } else {
     logFailure(currentQ.word);
-    showFeedback(false, currentQ.word);
+    // cmp.meaning was already computed here but discarded, so a child who heard
+    // the word correctly and missed only an accent got the same flat "wrong" as
+    // one who wrote something else. Dictation is where that distinction matters
+    // most — it is the difference between "you misheard" and "nearly".
+    const note = cmp.meaning ? 'So close — check the accents and marks!' : null;
+    showFeedback(false, currentQ.word, note, target);
     applyWrongAttemptPenalty(1500);
   }
   scheduleRoundDraftPersist();

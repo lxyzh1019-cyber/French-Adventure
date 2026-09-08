@@ -1,0 +1,11 @@
+{ "forms": [
+  { "form": "A", "items": [
+    { "id": "a-lis-1", "type": "listening", "prompt": "Écoute et choisis.", "audioScript": "le chien",
+      "choices": ["dog","cat"], "accepted": ["dog"], "zh": "狗", "skillIds": ["s.listen.animals"] },
+    { "id": "a-read-1", "type": "reading", "prompt": "Que veut dire « chat » ?",
+      "choices": ["cat","dog"], "accepted": ["cat"], "zh": "猫", "skillIds": ["s.read.animals"] } ] },
+  { "form": "B", "items": [
+    { "id": "b-lis-1", "type": "listening", "prompt": "Écoute et réponds.", "audioScript": "le lapin",
+      "choices": ["rabbit","horse"], "accepted": ["rabbit"], "zh": "兔子", "skillIds": ["s.listen.animals"] },
+    { "id": "b-read-1", "type": "reading", "prompt": "Que signifie « cheval » ?",
+      "choices": ["horse","rabbit"], "accepted": ["horse"], "zh": "马", "skillIds": ["s.read.animals"] } ] } ] }

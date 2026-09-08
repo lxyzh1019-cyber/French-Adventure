@@ -54,6 +54,11 @@ scripts/            CI guards (drift, inline handlers)
   automatic, and a missing export means a silently dead button.
 - `npm run check:drift` — rebuilds and compares against the committed
   `index.html`. Fails if they differ in either direction.
+- `npm run check:content -- <dir>` — validates a delivered content package
+  (Release A or B) against its contract *before* anyone implements against it.
+  Checks required files, manifest counts, placeholder text, A/B form
+  independence, skill references, and that every item carries `zh` while no
+  assessment item exposes it. It checks structure, not educational quality.
 - `npm run test:browser` — end-to-end checks in a real browser: every game
   mode renders, an interrupted round resumes, French apostrophes reach the
   speech API, every level is reachable, and a stored profile survives a load
