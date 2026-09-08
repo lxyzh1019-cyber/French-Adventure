@@ -7,7 +7,7 @@
      styles ......... src/styles.css
      game logic ..... src/**/*.js
 
-   Built from f290a3e
+   Built from aaf28bd
   ============================================================
 -->
 <!DOCTYPE html>
@@ -910,7 +910,7 @@ const SENTENCES = {
     return { parts: frTokenize(s.fr), target: s.en, zh: s.zh };
   })
 };
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
 const GRADE_KEYS$1 = [4, 5, 6, 7, 8, 9, 10];
 const MAX_PLAYABLE_GRADE$1 = 10;
 function defaultParentSettings$1() {
@@ -964,6 +964,7 @@ const DEFAULT_STATE$1 = () => ({
   tier2ParentOpen: false,
   tier3ParentOpen: false,
   seedProfilePatches: {},
+  roundLog: {},
   lastUpdatedAt: 0
 });
 const DAY_KEYED_FIELDS = [
@@ -979,8 +980,43 @@ const REQUIRED_MAPS = [
   ...DAY_KEYED_FIELDS,
   "topicStars",
   "failedWords",
-  "seedProfilePatches"
+  "seedProfilePatches",
+  "roundLog"
 ];
+function makeRoundLogEntry({
+  id,
+  day,
+  type,
+  grade,
+  stars,
+  correct,
+  wrong,
+  completed,
+  grades,
+  topics,
+  at
+}) {
+  const tally = (m = {}) => {
+    const out = {};
+    for (const [k, v] of Object.entries(m || {})) {
+      out[k] = { c: Number(v?.c) || 0, w: Number(v?.w) || 0 };
+    }
+    return out;
+  };
+  return {
+    id: String(id),
+    day: String(day),
+    type: String(type || ""),
+    grade: Number(grade) || 0,
+    stars: Number(stars) || 0,
+    correct: Number(correct) || 0,
+    wrong: Number(wrong) || 0,
+    completed: completed ? 1 : 0,
+    grades: tally(grades),
+    topics: tally(topics),
+    at: Number(at) || 0
+  };
+}
 function hasAnyProgress(profile) {
   if (!profile) return false;
   if (Number(profile.totalStars) > 0 || Number(profile.weekStars) > 0 || Number(profile.streak) > 0) return true;
@@ -1033,7 +1069,15 @@ function toV1(profile) {
   out.schemaVersion = 1;
   return out;
 }
-const MIGRATIONS = [toV1];
+function toV2(profile) {
+  const out = { ...profile };
+  if (!out.roundLog || typeof out.roundLog !== "object" || Array.isArray(out.roundLog)) {
+    out.roundLog = {};
+  }
+  out.schemaVersion = 2;
+  return out;
+}
+const MIGRATIONS = [toV1, toV2];
 function migrateProfile(raw) {
   if (!raw || typeof raw !== "object") return DEFAULT_STATE$1();
   let profile = { ...DEFAULT_STATE$1(), ...raw };
@@ -1068,6 +1112,149 @@ function sumDaily(profile, field, pick) {
   for (const day of Object.values(profile?.[field] || {})) total += num(pick(day));
   return total;
 }
+function mergeRoundLog(a = {}, b = {}) {
+  return unionBy(a, b, (x, y) => num(x?.stars) >= num(y?.stars) ? x : y);
+}
+function summarizeRoundLog(log = {}) {
+  var _a, _b, _c, _d, _e, _f, _g;
+  const days = {};
+  for (const e of Object.values(log || {})) {
+    if (!e || !e.day) continue;
+    const d = days[_a = e.day] || (days[_a] = {
+      stars: 0,
+      correct: 0,
+      wrong: 0,
+      rounds: 0,
+      types: {},
+      grades: {},
+      gradeRounds: {},
+      topics: {}
+    });
+    d.stars += num(e.stars);
+    d.correct += num(e.correct);
+    d.wrong += num(e.wrong);
+    if (e.completed) {
+      d.rounds += 1;
+      d.types[e.type] = num(d.types[e.type]) + 1;
+      const gr = (_b = d.gradeRounds)[_c = e.grade] || (_b[_c] = {});
+      gr[e.type] = num(gr[e.type]) + 1;
+    }
+    for (const [g, t] of Object.entries(e.grades || {})) {
+      const gs = (_d = d.grades)[g] || (_d[g] = { correct: 0, wrong: 0 });
+      gs.correct += num(t?.c);
+      gs.wrong += num(t?.w);
+    }
+    for (const [tk, t] of Object.entries(e.topics || {})) {
+      const ts = (_f = (_e = d.topics)[tk] || (_e[tk] = {}))[_g = e.type] || (_f[_g] = { c: 0, w: 0 });
+      ts.c += num(t?.c);
+      ts.w += num(t?.w);
+    }
+  }
+  return days;
+}
+function ledgered(aVal, bVal, aLog, bLog, mLog) {
+  const base = Math.max(num(aVal) - num(aLog), num(bVal) - num(bLog), 0);
+  return base + num(mLog);
+}
+function mergeDayCounters(a, b, merged, aAgg, bAgg, mAgg) {
+  var _a, _b, _c, _d, _e;
+  const get = (o, ...path) => path.reduce((v, k) => v == null ? void 0 : v[k], o);
+  const days = /* @__PURE__ */ new Set([
+    ...Object.keys(aAgg),
+    ...Object.keys(bAgg),
+    ...Object.keys(mAgg)
+  ]);
+  for (const day of days) {
+    const ad = get(a, "todayStats", day), bd = get(b, "todayStats", day);
+    const md = merged.todayStats[day] = { ...merged.todayStats[day] || {} };
+    for (const f of ["correct", "wrong", "rounds", "stars"]) {
+      md[f] = ledgered(ad?.[f], bd?.[f], get(aAgg, day, f), get(bAgg, day, f), get(mAgg, day, f));
+    }
+  }
+  for (const day of days) {
+    const types = /* @__PURE__ */ new Set([
+      ...Object.keys(get(aAgg, day, "types") || {}),
+      ...Object.keys(get(bAgg, day, "types") || {}),
+      ...Object.keys(get(mAgg, day, "types") || {})
+    ]);
+    for (const t of types) {
+      const k = day + "_" + t;
+      merged.dailyRounds[k] = ledgered(
+        get(a, "dailyRounds", k),
+        get(b, "dailyRounds", k),
+        get(aAgg, day, "types", t),
+        get(bAgg, day, "types", t),
+        get(mAgg, day, "types", t)
+      );
+    }
+  }
+  for (const day of days) {
+    const grades = /* @__PURE__ */ new Set([
+      ...Object.keys(get(aAgg, day, "grades") || {}),
+      ...Object.keys(get(bAgg, day, "grades") || {}),
+      ...Object.keys(get(mAgg, day, "grades") || {})
+    ]);
+    for (const g of grades) {
+      const md = (_a = merged.gradeStats)[day] || (_a[day] = {});
+      md[g] = { ...md[g] || {} };
+      for (const f of ["correct", "wrong"]) {
+        md[g][f] = ledgered(
+          get(a, "gradeStats", day, g, f),
+          get(b, "gradeStats", day, g, f),
+          get(aAgg, day, "grades", g, f),
+          get(bAgg, day, "grades", g, f),
+          get(mAgg, day, "grades", g, f)
+        );
+      }
+    }
+  }
+  for (const day of days) {
+    for (const [g, byType] of Object.entries({ ...get(aAgg, day, "gradeRounds"), ...get(bAgg, day, "gradeRounds"), ...get(mAgg, day, "gradeRounds") })) {
+      const types = /* @__PURE__ */ new Set([
+        ...Object.keys(get(aAgg, day, "gradeRounds", g) || {}),
+        ...Object.keys(get(bAgg, day, "gradeRounds", g) || {}),
+        ...Object.keys(get(mAgg, day, "gradeRounds", g) || {})
+      ]);
+      const md = (_c = (_b = merged.gradeGameRounds)[day] || (_b[day] = {}))[g] || (_c[g] = {});
+      for (const t of types) {
+        md[t] = ledgered(
+          get(a, "gradeGameRounds", day, g, t),
+          get(b, "gradeGameRounds", day, g, t),
+          get(aAgg, day, "gradeRounds", g, t),
+          get(bAgg, day, "gradeRounds", g, t),
+          get(mAgg, day, "gradeRounds", g, t)
+        );
+      }
+    }
+  }
+  for (const day of days) {
+    const topics = /* @__PURE__ */ new Set([
+      ...Object.keys(get(aAgg, day, "topics") || {}),
+      ...Object.keys(get(bAgg, day, "topics") || {}),
+      ...Object.keys(get(mAgg, day, "topics") || {})
+    ]);
+    for (const tk of topics) {
+      const types = /* @__PURE__ */ new Set([
+        ...Object.keys(get(aAgg, day, "topics", tk) || {}),
+        ...Object.keys(get(bAgg, day, "topics", tk) || {}),
+        ...Object.keys(get(mAgg, day, "topics", tk) || {})
+      ]);
+      const md = (_e = (_d = merged.dailyTopicStats)[day] || (_d[day] = {}))[tk] || (_e[tk] = {});
+      for (const t of types) {
+        md[t] = { ...md[t] || {} };
+        for (const f of ["c", "w"]) {
+          md[t][f] = ledgered(
+            get(a, "dailyTopicStats", day, tk, t, f),
+            get(b, "dailyTopicStats", day, tk, t, f),
+            get(aAgg, day, "topics", tk, t, f),
+            get(bAgg, day, "topics", tk, t, f),
+            get(mAgg, day, "topics", tk, t, f)
+          );
+        }
+      }
+    }
+  }
+}
 function mergeStarTotal(a, b, merged, field, dayField, pick) {
   const floor = Math.max(num(a?.[field]), num(b?.[field]));
   const ledgerA = sumDaily(a, dayField, pick);
@@ -1075,6 +1262,20 @@ function mergeStarTotal(a, b, merged, field, dayField, pick) {
   const ledgerMerged = sumDaily(merged, dayField, pick);
   const preLedger = Math.max(num(a?.[field]) - ledgerA, num(b?.[field]) - ledgerB, 0);
   return Math.max(floor, preLedger + ledgerMerged);
+}
+function mergeWeekStars(a, b, merged) {
+  const ws = merged.weekStart;
+  const weekSum = (p) => {
+    let t = 0;
+    for (const [day, d] of Object.entries(p?.todayStats || {})) {
+      if (ws && weekStartOf(day) === ws) t += num(d?.stars);
+    }
+    return t;
+  };
+  const remainder = (p) => p?.weekStart === ws || !p?.weekStart ? num(p?.weekStars) - weekSum(p) : 0;
+  const base = Math.max(remainder(a), remainder(b), 0);
+  const floor = a?.weekStart === b?.weekStart ? Math.max(num(a?.weekStars), num(b?.weekStars)) : 0;
+  return Math.max(floor, base + weekSum(merged));
 }
 function mergeWeeklyHistory(a = [], b = [], cap = 8) {
   const byWeek = /* @__PURE__ */ new Map();
@@ -1107,6 +1308,15 @@ function mergeProfiles(a, b) {
   for (const field of DAY_KEYED_FIELDS) {
     merged[field] = unionBy(a[field], b[field], mergeDayEntry);
   }
+  merged.roundLog = mergeRoundLog(a.roundLog, b.roundLog);
+  mergeDayCounters(
+    a,
+    b,
+    merged,
+    summarizeRoundLog(a.roundLog),
+    summarizeRoundLog(b.roundLog),
+    summarizeRoundLog(merged.roundLog)
+  );
   merged.topicStars = unionBy(a.topicStars, b.topicStars, (x, y) => Math.max(num(x), num(y)));
   merged.moons = defaultMoons();
   for (const key of Object.keys(merged.moons)) {
@@ -1119,17 +1329,86 @@ function mergeProfiles(a, b) {
   merged.weeklyHistory = mergeWeeklyHistory(a.weeklyHistory, b.weeklyHistory);
   merged.failedWords = mergeFailedWords(a.failedWords, b.failedWords);
   merged.seedProfilePatches = { ...a.seedProfilePatches || {}, ...b.seedProfilePatches || {} };
-  merged.totalStars = mergeStarTotal(a, b, merged, "totalStars", "todayStats", (d) => d?.stars);
-  merged.weekStars = Math.max(num(a.weekStars), num(b.weekStars));
-  merged.streak = Math.max(num(a.streak), num(b.streak));
   merged.lastUpdatedAt = Math.max(num(a.lastUpdatedAt), num(b.lastUpdatedAt));
   merged.lastPlayed = [a.lastPlayed, b.lastPlayed].filter(Boolean).sort().pop() ?? null;
   merged.weekStart = [a.weekStart, b.weekStart].filter(Boolean).sort().pop() ?? null;
+  merged.totalStars = mergeStarTotal(a, b, merged, "totalStars", "todayStats", (d) => d?.stars);
+  merged.weekStars = mergeWeekStars(a, b, merged);
+  merged.streak = Math.max(num(a.streak), num(b.streak));
   merged.lastDrillComplete = [a.lastDrillComplete, b.lastDrillComplete].filter(Boolean).sort().pop() ?? null;
   const newer = num(a.lastUpdatedAt) >= num(b.lastUpdatedAt) ? a : b;
   merged.parentSettings = newer.parentSettings ?? a.parentSettings ?? b.parentSettings;
   merged.schemaVersion = Math.max(num(a.schemaVersion), num(b.schemaVersion));
   return merged;
+}
+const LISTEN_TIMEOUT_MS = 1e4;
+function createMicController({
+  recognition: recognition2,
+  onTranscript,
+  onState = () => {
+  },
+  timeoutMs = LISTEN_TIMEOUT_MS,
+  setTimeout: setT = globalThis.setTimeout.bind(globalThis),
+  clearTimeout: clearT = globalThis.clearTimeout.bind(globalThis)
+}) {
+  let state2 = "idle";
+  let timer = null;
+  function settle(reason) {
+    if (timer) {
+      clearT(timer);
+      timer = null;
+    }
+    if (state2 === "idle") return;
+    state2 = "idle";
+    onState("idle", reason);
+  }
+  function stopHard(reason) {
+    settle(reason);
+    try {
+      if (typeof recognition2.abort === "function") recognition2.abort();
+      else recognition2.stop?.();
+    } catch (_) {
+    }
+  }
+  function start() {
+    recognition2.onresult = (e) => {
+      let said = "";
+      try {
+        said = e.results[0][0].transcript;
+      } catch (_) {
+        said = "";
+      }
+      settle("result");
+      onTranscript(String(said || "").trim());
+    };
+    recognition2.onerror = (e) => settle("error:" + (e && e.error ? e.error : "unknown"));
+    recognition2.onend = () => settle("end");
+    recognition2.onnomatch = () => settle("nomatch");
+    try {
+      recognition2.start();
+    } catch (err) {
+      stopHard("start-failed");
+      return false;
+    }
+    state2 = "listening";
+    onState("listening");
+    timer = setT(() => stopHard("timeout"), timeoutMs);
+    return true;
+  }
+  return {
+    /** Tap: start if idle, stop if listening. Returns the new state. */
+    toggle() {
+      if (state2 === "listening") stopHard("tap");
+      else start();
+      return state2;
+    },
+    stop(reason = "stop") {
+      stopHard(reason);
+    },
+    get state() {
+      return state2;
+    }
+  };
 }
 const FIRST_GRADE_KEY = 4;
 const LAST_GRADE_KEY = 10;
@@ -1263,6 +1542,11 @@ let currentGrade = 4;
 let currentGameType = null;
 let questions = [], qIndex = 0, roundScore = 0, roundBasePoints = 0, roundSpeedPoints = 0, lives = 3, currentQ = null;
 let roundTopicTally = {};
+let roundAnswerTally = { correct: 0, wrong: 0 };
+let roundGradeTally = {};
+function roundIsLive() {
+  return !!(roundAttemptId && currentGameType && !roundEnded);
+}
 let builtWords = [], scrambleAnswer = [], scrambleSource = [];
 let matchSelected = null, matchPairs = [], matchMatched = [], matchFrOrder = [], matchEnOrder = [];
 let __roundDraftSnap = null;
@@ -1398,6 +1682,8 @@ function collectRoundDraft() {
     roundBasePoints,
     roundSpeedPoints,
     roundTopicTally,
+    roundAnswerTally,
+    roundGradeTally,
     currentQ,
     questionStartTime,
     feedbackOpen,
@@ -1460,6 +1746,8 @@ function restoreRoundDraft(d) {
   roundBasePoints = d.roundBasePoints | 0;
   roundSpeedPoints = d.roundSpeedPoints | 0;
   roundTopicTally = d.roundTopicTally && typeof d.roundTopicTally === "object" ? d.roundTopicTally : {};
+  roundAnswerTally = d.roundAnswerTally && typeof d.roundAnswerTally === "object" ? { correct: d.roundAnswerTally.correct | 0, wrong: d.roundAnswerTally.wrong | 0 } : { correct: 0, wrong: 0 };
+  roundGradeTally = d.roundGradeTally && typeof d.roundGradeTally === "object" ? d.roundGradeTally : {};
   currentQ = questions[qIndex] || null;
   questionStartTime = d.questionStartTime || Date.now();
   matchPairs = d.matchPairs || [];
@@ -1827,6 +2115,11 @@ function bumpGradeStats(s, grade, correct, wrong) {
   if (!s.gradeStats[tk][grade]) s.gradeStats[tk][grade] = { correct: 0, wrong: 0 };
   s.gradeStats[tk][grade].correct += correct;
   s.gradeStats[tk][grade].wrong += wrong;
+  if (roundIsLive()) {
+    if (!roundGradeTally[grade]) roundGradeTally[grade] = { c: 0, w: 0 };
+    roundGradeTally[grade].c += correct;
+    roundGradeTally[grade].w += wrong;
+  }
 }
 function tallyTopicFromWord(word, correct) {
   if (!word || !word.topic) return;
@@ -2174,6 +2467,7 @@ function updateTodayStat(type) {
   const k = todayKey();
   if (!s.todayStats[k]) s.todayStats[k] = { correct: 0, wrong: 0, rounds: 0, stars: 0 };
   s.todayStats[k][type] = (s.todayStats[k][type] || 0) + 1;
+  if (roundIsLive() && (type === "correct" || type === "wrong")) roundAnswerTally[type]++;
 }
 function getRequeueWords() {
   const s = state[currentPlayer];
@@ -2200,7 +2494,7 @@ function checkMoons(s) {
     const key = "grade" + g;
     if (!s.moons[key] && allThree(g)) {
       s.moons[key] = true;
-      newMoons.push({ emoji: "🌙", label: "Grade " + g + " Moon", msg: "All topics in Grade " + g + " at 3⭐!" });
+      newMoons.push({ emoji: "🌙", label: levelLabel(g) + " Moon", msg: "All topics in " + levelLabel(g) + " at 3⭐!" });
     }
   });
   const unlockedGrades = [4, 5, 6, 7, 8, 9, 10].filter((g) => s.gradeUnlocked && s.gradeUnlocked[g]);
@@ -2209,7 +2503,7 @@ function checkMoons(s) {
     const bothMooned = top2.every((g) => s.moons["grade" + g]);
     if (!s.moons.super && bothMooned) {
       s.moons.super = true;
-      newMoons.push({ emoji: "🌟", label: "Superstar", msg: "Moons on G" + top2[0] + " & G" + top2[1] + " — superstar!" });
+      newMoons.push({ emoji: "🌟", label: "Superstar", msg: "Moons on L" + levelNumber(top2[0]) + " & L" + levelNumber(top2[1]) + " — superstar!" });
     }
   }
   return newMoons;
@@ -2285,7 +2579,11 @@ function selectPlayer(p) {
   }
   pendingPlayer = null;
   currentPlayer = p;
-  currentGrade = 4;
+  try {
+    currentGrade = recommendLevel(state[p]).gradeKey || 4;
+  } catch (_) {
+    currentGrade = 4;
+  }
   hubDailySummaryOpen = false;
   const hdsb = document.getElementById("hub-daily-summary-block");
   const hdch = document.getElementById("hub-daily-chev");
@@ -2310,6 +2608,7 @@ function goBack() {
   updateLeaderboard();
 }
 function exitGame() {
+  stopAllMics();
   if (currentPlayer && currentGameType) {
     persistRoundDraftNow();
     applyPendingRemoteData(currentPlayer);
@@ -2343,6 +2642,7 @@ function refreshGradeTabs() {
     const el = document.getElementById("tab-g" + n);
     if (!el) return;
     el.classList.remove("grade-locked", "grade-tab-future");
+    el.classList.toggle("active", n === currentGrade);
     el.classList.toggle("grade-tab-recommended", n === rec.gradeKey);
     el.textContent = (hasMoon(s, n) ? "🌙 " : "") + "L" + levelNumber(n) + (n === rec.gradeKey ? " ⭐" : "");
     el.title = levelLabel(n) + (n === rec.gradeKey ? " — " + recommendationText(rec) : "");
@@ -2445,7 +2745,7 @@ function updateHub() {
   document.getElementById("hub-stars").textContent = s.totalStars;
   document.getElementById("hub-streak").textContent = s.streak;
   document.getElementById("hub-week").textContent = s.weekStars;
-  const moonLine = [4, 5, 6, 7, 8, 9, 10].map((g) => s.moons && s.moons["grade" + g] ? "🌙G" + g : "").filter(Boolean).join("  ") + (s.moons && s.moons.super ? "  🌟Super" : "");
+  const moonLine = [4, 5, 6, 7, 8, 9, 10].map((g) => s.moons && s.moons["grade" + g] ? "🌙L" + levelNumber(g) : "").filter(Boolean).join("  ") + (s.moons && s.moons.super ? "  🌟Super" : "");
   document.getElementById("hub-moons").textContent = moonLine;
   const sloganText = getDailySlogan();
   const sloganEl = document.getElementById("hub-slogan");
@@ -2540,6 +2840,33 @@ function escapeAttr(text) {
 function speakButtonHTML(text, cls, style) {
   return '<button type="button" class="' + escapeAttr(cls || "") + '"' + (style ? ' style="' + escapeAttr(style) + '"' : "") + ' data-speak="' + escapeAttr(text) + '">🔊</button>';
 }
+window.__faDebug = {
+  get matchPairs() {
+    return matchPairs;
+  },
+  get matchMatched() {
+    return matchMatched;
+  },
+  get matchSelected() {
+    return matchSelected;
+  },
+  get lives() {
+    return lives;
+  },
+  get roundBasePoints() {
+    return roundBasePoints;
+  },
+  get qIndex() {
+    return qIndex;
+  },
+  get roundAttemptId() {
+    return roundAttemptId;
+  },
+  get recognition() {
+    return recognition;
+  },
+  endRound: (o) => endRound(o)
+};
 document.addEventListener("click", function(e) {
   const t = e.target && e.target.closest ? e.target.closest("[data-speak]") : null;
   if (t) speakFrench(t.getAttribute("data-speak"));
@@ -2570,27 +2897,49 @@ function speakCurrent() {
   const text = currentQ.word?.fr || currentQ.parts?.join(" ") || "";
   if (text) speakFrench(text);
 }
+let quizMic = null;
+function micButtonState(btn, idleLabel) {
+  return (state2) => {
+    if (!btn) return;
+    btn.classList.toggle("listening", state2 === "listening");
+    btn.setAttribute("aria-pressed", state2 === "listening" ? "true" : "false");
+    btn.textContent = state2 === "listening" ? "⏹ Stop" : idleLabel;
+    btn.title = state2 === "listening" ? "Listening… tap to stop" : "Speak — tap again to stop";
+  };
+}
 function startSpeech() {
   if (!recognition) return;
   const btn = document.getElementById("btn-stt");
-  btn.classList.add("listening");
-  btn.textContent = "🎤...";
-  recognition.start();
-  recognition.onresult = (e) => {
-    const said = e.results[0][0].transcript.toLowerCase().trim();
-    const target = (currentQ?.word?.fr || "").toLowerCase().trim();
-    btn.classList.remove("listening");
-    btn.textContent = "🎤";
-    if (normalizeForRecognition(said) === normalizeForRecognition(target)) {
-      showToast(`🎤 The device heard "${said}" — that's the word!`);
-    } else {
-      showToast(`🎤 The device heard "${said}" — try again!`, "var(--gold)");
-    }
-  };
-  recognition.onerror = () => {
-    btn.classList.remove("listening");
-    btn.textContent = "🎤";
-  };
+  if (!quizMic) {
+    quizMic = createMicController({
+      recognition,
+      onState: micButtonState(btn, "🎤"),
+      onTranscript: (said) => {
+        const heard = said.toLowerCase().trim();
+        const target = (currentQ?.word?.fr || "").toLowerCase().trim();
+        if (!heard) {
+          showToast("🎤 The device did not hear anything — try again", "var(--gold)");
+          return;
+        }
+        if (normalizeForRecognition(heard) === normalizeForRecognition(target)) {
+          showToast(`🎤 The device heard "${heard}" — that's the word!`);
+        } else {
+          showToast(`🎤 The device heard "${heard}" — try again!`, "var(--gold)");
+        }
+      }
+    });
+  }
+  quizMic.toggle();
+}
+function stopAllMics() {
+  try {
+    quizMic && quizMic.stop("leave");
+  } catch (_) {
+  }
+  try {
+    listenMic && listenMic.stop("leave");
+  } catch (_) {
+  }
 }
 function startGame(type) {
   const played = roundsPlayedToday(currentPlayer, type);
@@ -2613,6 +2962,8 @@ function startGame(type) {
     roundSpeedPoints = 0;
     qIndex = 0;
     roundTopicTally = {};
+    roundAnswerTally = { correct: 0, wrong: 0 };
+    roundGradeTally = {};
     roundEnded = false;
     roundAttemptId = newAttemptId();
     committedAnswers.clear();
@@ -2811,6 +3162,7 @@ function renderMatch(q, area, actions) {
         matchSelected.btn = b;
       }
     });
+    if (!matchSelected.btn) matchSelected = null;
   }
 }
 function handleMatchClick(btn, side, word) {
@@ -2845,9 +3197,14 @@ function handleMatchClick(btn, side, word) {
     showToast(`✅ ${pair.fr} = ${pair.en}!`);
     if (matchMatched.length === matchPairs.length) setTimeout(() => showFeedback(true, null, `All ${matchPairs.length} pairs matched! 🎉`, null, null, { skipPoints: true }), 400);
   } else {
-    [btn, matchSelected.btn].forEach((b) => b.style.borderColor = "var(--jenn)");
+    const wrongPair = [btn, matchSelected.btn];
+    wrongPair.forEach((b) => b.style.borderColor = "var(--jenn)");
     setTimeout(() => {
-      [btn, matchSelected.btn].forEach((b) => b.style.borderColor = "");
+      wrongPair.forEach((b) => {
+        if (!b || b.classList.contains("used")) return;
+        if (matchSelected && matchSelected.btn === b) return;
+        b.style.borderColor = "";
+      });
     }, 600);
     const failFr = side === "fr" ? word : matchSelected.word;
     const failWord = matchPairs.find((p) => p.fr === failFr);
@@ -3104,14 +3461,8 @@ async function endRound(outcome = ROUND_OUTCOME.COMPLETED) {
     const st = computeTopicStarFromDaily(s, todayKey(), tk2);
     if (st > 0) s.topicStars[tk2] = Math.max(s.topicStars[tk2] || 0, st);
   });
-  const unl = tryUnlockGradesAndTiers(s);
-  let unlockLine = "";
-  if (unl.length) {
-    unlockLine = '<div class="unlock-banner">' + unl.map((u) => {
-      if (typeof u === "number") return "🔓 Grade " + u + " unlocked!";
-      return "";
-    }).filter(Boolean).join(" · ") + "</div>";
-  }
+  tryUnlockGradesAndTiers(s);
+  const unlockLine = "";
   let maxTopicTier = 0;
   touchedTopicKeys.forEach((tk2) => {
     const st = computeTopicStarFromDaily(s, todayKey(), tk2);
@@ -3129,6 +3480,22 @@ async function endRound(outcome = ROUND_OUTCOME.COMPLETED) {
   if (!s.todayStats[tk]) s.todayStats[tk] = { correct: 0, wrong: 0, rounds: 0, stars: 0 };
   if (completed) s.todayStats[tk].rounds++;
   s.todayStats[tk].stars += roundScore;
+  if (!s.roundLog) s.roundLog = {};
+  if (roundAttemptId && !s.roundLog[roundAttemptId]) {
+    s.roundLog[roundAttemptId] = makeRoundLogEntry({
+      id: roundAttemptId,
+      day: tk,
+      type: currentGameType,
+      grade: currentGrade,
+      stars: roundScore,
+      correct: roundAnswerTally.correct,
+      wrong: roundAnswerTally.wrong,
+      completed,
+      grades: roundGradeTally,
+      topics: roundTopicTally,
+      at: Date.now()
+    });
+  }
   const newMoons = checkMoons(s);
   let moonHTML = "";
   if (newMoons.length > 0) {
@@ -3136,7 +3503,7 @@ async function endRound(outcome = ROUND_OUTCOME.COMPLETED) {
     confetti();
     confetti();
   }
-  const moonTrophies = [4, 5, 6, 7, 8, 9, 10].map((g) => s.moons && s.moons["grade" + g] ? "🌙G" + g : "").filter(Boolean).join(" ") + (s.moons && s.moons.super ? " · 🌟Super" : "");
+  const moonTrophies = [4, 5, 6, 7, 8, 9, 10].map((g) => s.moons && s.moons["grade" + g] ? "🌙L" + levelNumber(g) : "").filter(Boolean).join(" ") + (s.moons && s.moons.super ? " · 🌟Super" : "");
   const outcomeLine = completed ? "" : `<div class="rc-outcome" style="font-size:.8rem;color:var(--gold);margin-bottom:6px;">💛 Out of lives — this round doesn't count as finished, and it hasn't used up one of today's rounds. Your points are still yours!</div>`;
   area.innerHTML = unlockLine + `<div class="round-complete">
     ${outcomeLine}
@@ -3186,7 +3553,7 @@ function renderMyWordsList() {
   }
   el.innerHTML = queue.slice(0, 15).map((w) => {
     const prog = Math.min(w.successCount / 2, 1);
-    return '<div class="conquer-word"><div class="conquer-fr">' + w.fr + '</div><div class="conquer-right"><div class="conquer-en">' + w.en + '</div><div class="conquer-zh">' + w.zh + '</div></div><div><div class="conquer-prog"><div class="conquer-prog-fill" style="width:' + Math.round(prog * 100) + '%"></div></div></div>' + speakButtonHTML(w.fr, "", "background:none;border:none;cursor:pointer;font-size:1.2rem;padding:4px;touch-action:manipulation;") + "</div>";
+    return '<div class="conquer-word"><div class="conquer-fr">' + w.fr + '</div><div class="conquer-right"><div class="conquer-en">' + w.en + '</div><div class="conquer-zh">' + w.zh + '</div></div><div><div class="conquer-prog"><div class="conquer-prog-fill" style="width:' + Math.round(prog * 100) + '%"></div></div></div>' + speakButtonHTML(w.fr, "speak-inline") + "</div>";
   }).join("") + `<div style="text-align:center;margin-top:14px;"><button class="btn-primary" onclick="showMyWordsTab('drill')">Start Drill 🏋️</button></div>`;
 }
 function renderMyWordsDrill() {
@@ -3224,7 +3591,7 @@ function renderDrillCard() {
   } else {
     drillHTML = `<div style="font-size:.85rem;color:var(--text-muted);margin-bottom:8px;">Translate:</div><div style="font-family:'Fredoka One',cursive;font-size:1.4rem;color:var(--french);margin-bottom:12px;">` + w.en + "</div>";
   }
-  el.innerHTML = '<div class="train-card">' + drillHTML + '<input class="train-input" id="train-input" placeholder="Type in French..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"><div style="font-size:.7rem;color:var(--text-muted);margin-top:8px;">' + (trainIndex + 1) + " / " + trainWords.length + `</div></div><div class="action-row" style="margin-top:12px;"><button class="btn-secondary" onclick="revealDrill()">Reveal</button><button class="btn-primary" onclick="checkDrill('` + w.fr.replace(/'/g, "\\'") + `')" >Check ✓</button>` + speakButtonHTML(w.fr, "btn-speak", "touch-action:manipulation;") + "</div>";
+  el.innerHTML = '<div class="train-card">' + drillHTML + '<input class="train-input" id="train-input" placeholder="Type in French..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"><div style="font-size:.7rem;color:var(--text-muted);margin-top:8px;">' + (trainIndex + 1) + " / " + trainWords.length + `</div></div><div class="action-row" style="margin-top:12px;"><button class="btn-secondary" onclick="revealDrill()">Reveal</button><button class="btn-primary" onclick="checkDrill('` + w.fr.replace(/'/g, "\\'") + `')" >Check ✓</button>` + speakButtonHTML(w.fr, "btn-speak") + "</div>";
   setTimeout(() => document.getElementById("train-input")?.focus(), 100);
 }
 function checkDrill(target) {
@@ -3282,7 +3649,7 @@ function renderStudySet(n) {
         <div class="study-mini-fr">${w.fr}</div>
         <div class="study-mini-en">${w.en}</div>
         <div class="study-mini-zh">${w.zh}</div>
-        ${speakButtonHTML(w.fr, "", "background:none;border:none;cursor:pointer;margin-top:4px;")}
+        ${speakButtonHTML(w.fr, "speak-inline", "margin-top:4px;")}
       </div>`).join("")}</div>`;
   } else if (n === 2) {
     const sents = seededShuffle(getSentences(currentGrade), seed + 1).slice(0, 4);
@@ -3291,7 +3658,7 @@ function renderStudySet(n) {
         <div class="study-card-fr">${s.parts.join(" ")}</div>
         <div class="study-card-en">${s.target}</div>
         <div class="study-card-zh">${s.zh}</div>
-        ${speakButtonHTML(s.parts.join(" "), "", "background:none;border:none;cursor:pointer;margin-top:8px;font-size:1.2rem;")}
+        ${speakButtonHTML(s.parts.join(" "), "speak-inline", "margin-top:8px;")}
       </div>`).join("");
   } else {
     const queue = getRequeueWords().slice(0, 8);
@@ -3303,7 +3670,7 @@ function renderStudySet(n) {
           <div class="study-card-fr">${w.fr}</div>
           <div class="study-card-en">${w.en}</div>
           <div class="study-card-zh">${w.zh}</div>
-          ${speakButtonHTML(w.fr, "", "background:none;border:none;cursor:pointer;margin-top:6px;")}
+          ${speakButtonHTML(w.fr, "speak-inline", "margin-top:6px;")}
         </div>`).join("");
     }
   }
@@ -3346,30 +3713,30 @@ function checkListenAnswer() {
   }
   scheduleRoundDraftPersist();
 }
+let listenMic = null;
 function startListenSpeech() {
   if (!recognition) return;
   const btn = document.getElementById("btn-stt-listen");
-  if (btn) {
-    btn.classList.add("listening");
-    btn.textContent = "🎤...";
-  }
-  recognition.start();
-  recognition.onresult = (e) => {
-    const said = e.results[0][0].transcript.toLowerCase().trim();
-    if (btn) {
-      btn.classList.remove("listening");
-      btn.textContent = "🎤 Speak";
+  listenMic = createMicController({
+    recognition,
+    onState: micButtonState(btn, "🎤 Speak"),
+    onTranscript: (said) => {
+      const input = document.getElementById("listen-input");
+      if (!said) {
+        showToast("🎤 The device did not hear anything — try again", "var(--gold)");
+        return;
+      }
+      if (input) {
+        input.value = said;
+        try {
+          input.focus();
+        } catch (_) {
+        }
+      }
+      showToast(`🎤 The device heard "${said}" — tap Check ✓, or fix it first`);
     }
-    const input = document.getElementById("listen-input");
-    if (input) input.value = said;
-    checkListenAnswer();
-  };
-  recognition.onerror = () => {
-    if (btn) {
-      btn.classList.remove("listening");
-      btn.textContent = "🎤 Speak";
-    }
-  };
+  });
+  listenMic.toggle();
 }
 let summaryWeekOffset = 0;
 function setSummaryMode(mode) {
@@ -3706,24 +4073,7 @@ function aggregateWeekFromDaily(s, weekStart) {
 function reconcilePlayerFromBackup(player, data) {
   if (!data || !data.players || !data.players[player]) return null;
   const incoming = data.players[player];
-  const merged = JSON.parse(JSON.stringify(state[player]));
-  const jToday = Object.assign({}, merged.todayStats || {}, incoming.todayStats || {});
-  const jPlayed = Object.assign({}, merged.playedDays || {}, incoming.playedDays || {});
-  merged.todayStats = jToday;
-  merged.playedDays = jPlayed;
-  merged.dailyTimeMs = Object.assign({}, merged.dailyTimeMs || {}, incoming.dailyTimeMs || {});
-  merged.dailyRounds = Object.assign({}, merged.dailyRounds || {}, incoming.dailyRounds || {});
-  merged.gradeStats = Object.assign({}, merged.gradeStats || {}, incoming.gradeStats || {});
-  merged.totalStars = Math.max(Number(merged.totalStars || 0), Number(incoming.totalStars || 0));
-  merged.weekStars = Math.max(Number(merged.weekStars || 0), Number(incoming.weekStars || 0));
-  merged.streak = Math.max(Number(merged.streak || 0), Number(incoming.streak || 0));
-  if (incoming.weeklyHistory && incoming.weeklyHistory.length) {
-    const byWeek = {};
-    [...merged.weeklyHistory || [], ...incoming.weeklyHistory].forEach((w) => {
-      if (w && w.weekStart) byWeek[w.weekStart] = w;
-    });
-    merged.weeklyHistory = Object.values(byWeek).sort((a, b) => String(a.weekStart).localeCompare(String(b.weekStart))).slice(-8);
-  }
+  const merged = mergeProfiles(migrateProfile(state[player]), migrateProfile(incoming));
   merged.weekStart = merged.weekStart || getWeekStart();
   const prevStart = previousWeekStartKey(getWeekStart());
   const already = (merged.weeklyHistory || []).some((w) => w.weekStart === prevStart);
@@ -3806,6 +4156,11 @@ async function clearProgress(mode) {
         });
       }
       if (s.todayStats) delete s.todayStats[today];
+      if (s.roundLog) {
+        Object.keys(s.roundLog).forEach((id) => {
+          if (s.roundLog[id] && s.roundLog[id].day === today) delete s.roundLog[id];
+        });
+      }
       if (s.dailyTimeMs && s.dailyTimeMs[today]) delete s.dailyTimeMs[today];
       if (s.lastDrillComplete === today) s.lastDrillComplete = null;
       if (s.failedWords) {
@@ -3842,6 +4197,11 @@ async function clearProgress(mode) {
       if (s.todayStats) {
         Object.keys(s.todayStats).forEach((k) => {
           if (k !== today) delete s.todayStats[k];
+        });
+      }
+      if (s.roundLog) {
+        Object.keys(s.roundLog).forEach((id) => {
+          if (!s.roundLog[id] || s.roundLog[id].day !== today) delete s.roundLog[id];
         });
       }
       if (s.gradeGameRounds) {
@@ -4197,7 +4557,12 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .btn-green{background:var(--green);border:none;border-radius:14px;padding:10px 20px;font-family:'Fredoka One',cursive;font-size:.9rem;color:white;cursor:pointer;}
 .btn-speak{background:var(--surface2);border:2px solid var(--purple);border-radius:12px;padding:8px 14px;font-size:.85rem;cursor:pointer;color:var(--text);font-weight:700;transition:all .2s;}
 .btn-speak:hover{background:rgba(124,58,237,.2);}
-.btn-speak.listening{border-color:var(--jenn);color:var(--jenn);animation:pulse 1s infinite;}
+.btn-speak.listening{border-color:var(--jenn);color:var(--jenn);background:rgba(244,63,94,.12);animation:pulse 1s infinite;}
+/* Every 🔊 that sits next to a word. This class used to be referenced but never
+   defined, so those buttons rendered at the browser default (~20px) — far below
+   a usable touch target on iPad. */
+.question-speak-inline,.speak-inline{background:rgba(79,70,229,.15);border:2px solid rgba(79,70,229,.4);border-radius:12px;padding:8px 14px;font-size:1.1rem;line-height:1;cursor:pointer;color:var(--text);font-weight:700;min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:6px;vertical-align:middle;}
+.question-speak-inline:active,.speak-inline:active{background:rgba(79,70,229,.3);}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 
 /* HINT */
@@ -4318,6 +4683,9 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   .word-chip{min-height:46px;padding:10px 16px;font-size:.95rem;}
   .letter-tile,.answer-slot{width:50px;height:50px;font-size:1.3rem;}
   .btn-primary,.btn-secondary,.btn-speak{min-height:50px;font-size:1rem;}
+  /* The mic and the word speakers need a real thumb target, not just height. */
+  .btn-speak{min-width:56px;min-height:56px;font-size:1.25rem;padding:8px 16px;}
+  .question-speak-inline,.speak-inline{min-width:52px;min-height:52px;font-size:1.3rem;}
   .mini-game-btn{padding:20px 12px;}
   .back-btn,.grade-tab{min-height:44px;}
   .train-input{font-size:1.1rem;min-height:54px;}
@@ -4377,7 +4745,7 @@ button,input{touch-action:manipulation;}
 
   <div class="game-header">
     <div class="game-title">🇫🇷 French Adventure</div>
-    <div class="game-subtitle">Alberta Curriculum • Grade 4–10 • Jenn & Jess Edition</div>
+    <div class="game-subtitle">Levels 1–7 • Jenn & Jess Edition</div>
   </div>
 
   <!-- WALL CLOCK — select screen only, always visible -->
@@ -4468,7 +4836,7 @@ button,input{touch-action:manipulation;}
           </div>
         </div>
       </div>
-      <div class="hub-rules-mini" id="hub-rules-mini"><b>⭐ Topic stars</b> 60–79% = 1⭐ · 80–94% = 2⭐ · ≥95% = 3⭐ · topic seen in ≥3 games today &nbsp;|&nbsp; <b>🌙 Moon</b> All topics in a grade at 3⭐ &nbsp;|&nbsp; <b>🌟 Superstar</b> Moons on the two highest unlocked grades</div>
+      <div class="hub-rules-mini" id="hub-rules-mini"><b>⭐ Topic stars</b> 60–79% = 1⭐ · 80–94% = 2⭐ · ≥95% = 3⭐ · topic seen in ≥3 games today &nbsp;|&nbsp; <b>🌙 Moon</b> All topics in a level at 3⭐ &nbsp;|&nbsp; <b>🌟 Superstar</b> Moons on the two highest levels played</div>
       <div class="hub-slogan-wrap">
         <div class="hub-slogan" id="hub-slogan"></div>
         <div class="hub-slogan-actions" id="hub-slogan-actions">
@@ -4486,7 +4854,7 @@ button,input{touch-action:manipulation;}
           </div>
         </div>
         <button type="button" class="hub-daily-summary-btn" id="hub-daily-summary-btn" onclick="toggleHubDailySummary()" aria-expanded="false">
-          <span>More: grade accuracy &amp; rules</span><span class="chev" id="hub-daily-chev">▼</span>
+          <span>More: level accuracy &amp; rules</span><span class="chev" id="hub-daily-chev">▼</span>
         </button>
         <div class="hub-daily-summary-block" id="hub-daily-summary-block" style="display:none;">
           <div class="hds-title">Details</div>
@@ -4495,15 +4863,15 @@ button,input{touch-action:manipulation;}
       </div>
     </div>
 
-    <p class="hub-grade-bar-note" id="hub-grade-bar-note">Play: <strong>G4–G10</strong>. Higher grades unlock with the same rule — master the grade before (🌙 + 2 days ≥95%).</p>
+    <p class="hub-grade-bar-note" id="hub-grade-bar-note">Play any level, <strong>L1–L7</strong>. The ⭐ marks the level suggested next.</p>
     <div class="grade-tabs" id="grade-tabs">
-      <button type="button" class="grade-tab active" id="tab-g4" onclick="setGrade(4)">G4</button>
-      <button type="button" class="grade-tab" id="tab-g5" onclick="setGrade(5)">G5</button>
-      <button type="button" class="grade-tab grade-tab-future grade-locked" id="tab-g6" onclick="setGrade(6)"><span class="grade-lock-top" title="Locked">🔒</span><span class="grade-num">G6</span></button>
-      <button type="button" class="grade-tab grade-tab-future grade-locked" id="tab-g7" onclick="setGrade(7)"><span class="grade-lock-top">🔒</span><span class="grade-num">G7</span></button>
-      <button type="button" class="grade-tab grade-tab-future grade-locked" id="tab-g8" onclick="setGrade(8)"><span class="grade-lock-top">🔒</span><span class="grade-num">G8</span></button>
-      <button type="button" class="grade-tab grade-tab-future grade-locked" id="tab-g9" onclick="setGrade(9)"><span class="grade-lock-top">🔒</span><span class="grade-num">G9</span></button>
-      <button type="button" class="grade-tab grade-tab-future grade-locked" id="tab-g10" onclick="setGrade(10)"><span class="grade-lock-top">🔒</span><span class="grade-num">G10</span></button>
+      <button type="button" class="grade-tab active" id="tab-g4" onclick="setGrade(4)" title="Level 1">L1</button>
+      <button type="button" class="grade-tab" id="tab-g5" onclick="setGrade(5)" title="Level 2">L2</button>
+      <button type="button" class="grade-tab" id="tab-g6" onclick="setGrade(6)" title="Level 3">L3</button>
+      <button type="button" class="grade-tab" id="tab-g7" onclick="setGrade(7)" title="Level 4">L4</button>
+      <button type="button" class="grade-tab" id="tab-g8" onclick="setGrade(8)" title="Level 5">L5</button>
+      <button type="button" class="grade-tab" id="tab-g9" onclick="setGrade(9)" title="Level 6">L6</button>
+      <button type="button" class="grade-tab" id="tab-g10" onclick="setGrade(10)" title="Level 7">L7</button>
       <button type="button" class="grade-tab action-tab hub-cta-mw" onclick="showMyWords()">💪 My Words</button>
       <button type="button" class="grade-tab study-tab hub-cta-study" onclick="showStudy()">📖 Study</button>
     </div>
@@ -4560,7 +4928,7 @@ button,input{touch-action:manipulation;}
       <div class="game-lives" id="game-lives">❤️❤️❤️</div>
       <div style="display:flex;gap:6px;align-items:center;">
         <button class="btn-speak" id="btn-tts" onclick="speakCurrent()" title="Listen">🔊</button>
-        <button class="btn-speak" id="btn-stt" onclick="startSpeech()" title="Speak" style="display:none;">🎤</button>
+        <button class="btn-speak" id="btn-stt" onclick="startSpeech()" title="Speak — tap again to stop" aria-pressed="false" style="display:none;">🎤</button>
         <div class="game-score-pill">⭐ <span id="game-score">0</span> <span style="font-size:.65rem;opacity:.85;font-weight:700;">star pts</span></div>
       </div>
     </div>
@@ -4659,7 +5027,7 @@ button,input{touch-action:manipulation;}
       <div class="parent-pwd-title" style="margin-top:14px;">📆 Screen time — allowed days</div>
       <div class="weekday-hint">Green = kids may open the app · Red = blocked (parent password to play that day)</div>
       <div class="weekday-grid" id="weekday-grid"></div>
-      <div class="parent-pwd-title" style="margin-top:10px;">🔓 Reopen closed grades</div>
+      <div class="parent-pwd-title" style="margin-top:10px;">🔓 Levels</div>
       <div id="parent-grade-reopen-controls" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:8px;"></div>
       <div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:8px;">
         <button type="button" class="btn-secondary" onclick="revealFullPlayTime()" style="padding:8px 14px;font-size:.72rem;">Show full French times (uses password above)</button>

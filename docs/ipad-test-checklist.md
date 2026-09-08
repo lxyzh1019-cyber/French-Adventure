@@ -174,6 +174,27 @@ untouched — **for both girls**.
 
 **If not:** If either child lost stars or a moon, tell me immediately.
 
+### 3.5 The microphone stops when you tap it again
+
+**Do:** In a Quick Quiz, tap 🎤. Tap it a second time.
+
+**Expect:** The first tap shows **⏹ Stop**. The second stops it and the button
+goes back to 🎤. Leaving it alone also returns it to 🎤 on its own after a few
+seconds of silence.
+
+**If not:** If it stays on **⏹ Stop**, or a second tap does nothing, say so —
+this is the one the girls complained about.
+
+### 3.6 A mishearing does not cost a life
+
+**Do:** In Listen & Speak, tap 🎤 and say something that is clearly not the
+word. Look at the hearts before and after.
+
+**Expect:** What the device heard appears in the box for you to accept or fix.
+No heart is lost, and no answer is submitted, until you tap **Check ✓**.
+
+**If not:** If a heart disappears before you tapped Check, tell me.
+
 ---
 
 # Part 4 — iPad behaviour

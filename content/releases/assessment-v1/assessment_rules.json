@@ -1,0 +1,151 @@
+{
+  "release_id": "assessment-v1.0.0",
+  "purpose": "Repeatable domain profile for regular-school Alberta FSL learners; not a school grade, immersion equivalence, diagnosis, or standardized test.",
+  "section_order": [
+    "listening",
+    "reading",
+    "vocabulary_grammar",
+    "writing",
+    "speaking"
+  ],
+  "section_boundaries": {
+    "pause_allowed": true,
+    "resume_across_devices": true,
+    "autosave_each_response": true,
+    "begin_next_section_only_with_at_least_minutes_remaining": 6
+  },
+  "administration": {
+    "first_form": "For the named learner ids, assign jenn=A and jess=B. For any other learner id, compute unsigned 32-bit FNV-1a over UTF-8 bytes of learner_id + \"|\" + release_id; assign A when the low bit is 0 and B when it is 1.",
+    "reassessment": "Use the other form. Do not reuse the same form within 60 days unless the prior attempt contained fewer than three valid scored items in every domain.",
+    "exposure": "Store every item id shown, even if unanswered or invalid. Never treat a recently taught or previously exposed item as secure progress evidence.",
+    "target_timing": "Plan two or three sittings. Suggested: listening+reading; vocabulary+writing; speaking. Each sitting should fit the family’s 20-minute limit.",
+    "language": "Instructions may be English. French stimulus remains French. No translations, hints, correctness feedback, lives, stars, bonuses, or leaderboard effects.",
+    "response_storage": [
+      "item_id",
+      "item_version",
+      "form",
+      "raw_response",
+      "selected_choice_ids",
+      "response_started_at_utc",
+      "response_submitted_at_utc",
+      "response_time_ms",
+      "audio_play_count",
+      "support_flag",
+      "technical_invalid_reason",
+      "scorer_id",
+      "rubric_version"
+    ]
+  },
+  "objective_routing": {
+    "listening": {
+      "entry_tier": "developing",
+      "entry_count": 4,
+      "weak": "0-1 correct: administer all 4 foundation items, then stop.",
+      "borderline": "2 correct: administer all 4 foundation and all 4 stretch items.",
+      "strong": "3-4 correct: administer all 4 stretch items, then stop."
+    },
+    "reading": {
+      "entry_tier": "developing",
+      "entry_count": 4,
+      "weak": "0-1 correct: administer all 4 foundation items, then stop.",
+      "borderline": "2 correct: administer all 4 foundation and all 4 stretch items.",
+      "strong": "3-4 correct: administer all 4 stretch items, then stop."
+    },
+    "vocabulary_grammar": {
+      "entry_tier": "developing",
+      "entry_count": 3,
+      "weak": "0-1 correct: administer all 4 foundation items, then stop.",
+      "borderline": "2 correct: administer all 4 foundation and all 3 stretch items.",
+      "strong": "3 correct: administer all 3 stretch items, then stop."
+    },
+    "invariant": "Within a tier, preserve the item order in assessment_items.json. Apply routing only after the full entry block is submitted. Invalid items do not count correct or incorrect."
+  },
+  "open_sections": {
+    "writing": "Administer all 6 prompts in listed order.",
+    "speaking": "Administer all 5 prompts in listed order. A parent may split the section after any prompt."
+  },
+  "replay": {
+    "listening_max_plays": 2,
+    "play_count_definition": "Count every completed or initiated playback after at least 500 ms.",
+    "technical_replay": "A playback that produces no audible output may be marked technical_invalid and repeated without consuming an allowed play."
+  },
+  "invalidity": {
+    "reasons": [
+      "audio_failed",
+      "microphone_failed",
+      "app_interrupted_before_submit",
+      "input_control_failed",
+      "parent_invalidated",
+      "wrong_item_rendered"
+    ],
+    "rule": "Exclude from numerator and denominator. Preserve the record. Do not convert to incorrect.",
+    "replacement": "Use the unused item at the same domain, form, and tier only if one exists and has not been exposed. Otherwise report insufficient_evidence; never borrow the parallel-form item during the same run.",
+    "support": "Any hint, translation, coaching, answer reveal, or parent correction before submit sets support_flag=true and excludes the response from independent band calculation. Preserve it as supported evidence."
+  },
+  "scoring": {
+    "objective": "One point per correct objective item; zero per incorrect item. Typed responses receive meaning and spelling flags. The item point requires spelling=true when W_ENCODING is tested; otherwise meaning=true earns the item point and spelling is reported separately.",
+    "tier_profile": "For each administered tier with at least 3 independent valid items, secure means >=75%; emerging means >=50% and <75%. The domain band is the highest tier observed at secure, or if none, the highest tier observed at emerging. If foundation is below 50%, report below_assessment_floor. Do not infer an unadministered tier.",
+    "objective_labels": [
+      "below_assessment_floor",
+      "foundation_emerging",
+      "foundation_secure",
+      "developing_emerging",
+      "developing_secure",
+      "stretch_emerging",
+      "stretch_secure",
+      "insufficient_evidence"
+    ],
+    "minimum_independent_valid_items": {
+      "listening": 6,
+      "reading": 6,
+      "vocabulary_grammar": 6,
+      "writing": 5,
+      "speaking": 4
+    },
+    "ceiling": "If stretch is secure, add upper_limit_not_measured=true. If every administered stretch item is correct, also add ceiling_reached=true. Do not claim a level above the bank.",
+    "writing": "Use WRITING-ANALYTIC-V1 only after a qualified human reviews the original response. Report each dimension and the prompt-level total. Aggregate only when at least 5 prompts are valid and reviewed.",
+    "speaking": "Use SPEAKING-ANALYTIC-V1 only after a qualified human listens to the original audio. A transcript cannot score comprehensibility, fluency, or pronunciation. Aggregate only when at least 4 prompts are valid and reviewed.",
+    "open_domain_labels": {
+      "0-29": "starting",
+      "30-49": "foundation",
+      "50-69": "developing",
+      "70-84": "stretch_emerging",
+      "85-100": "stretch_secure"
+    },
+    "pronunciation": "Report rubric observation, device transcript agreement, locale requested/resolved, noise flag, and technical confidence separately. Do not convert transcript agreement to a pronunciation score.",
+    "overall": "No total score and no average across domains. Missing domains remain missing."
+  },
+  "reporting": {
+    "required_fields": [
+      "domain_band",
+      "raw_points",
+      "points_possible",
+      "valid_independent_evidence_count",
+      "administered_tiers",
+      "strength_skill_ids",
+      "next_need_skill_ids",
+      "support_count",
+      "invalid_count",
+      "confidence",
+      "form",
+      "release_id"
+    ],
+    "confidence": {
+      "high": "minimum evidence met, no support, <=1 invalid item, and no contradictory adjacent-tier pattern",
+      "moderate": "minimum evidence met but one technical/support concern or adjacent-tier inconsistency exists",
+      "low": "minimum evidence barely met, multiple invalid/support events, or strong tier inconsistency",
+      "insufficient": "minimum evidence not met"
+    },
+    "prohibited_claims": [
+      "French Immersion Grade X",
+      "school grade placement",
+      "standardized percentile",
+      "perfect pronunciation"
+    ]
+  },
+  "pause_resume": {
+    "checkpoint": "after every submitted response and at every section boundary",
+    "resume": "Restore exact form, section, item order, exposure list, responses, play counts, and technical flags. Never replay a submitted item as a new scored item.",
+    "parent_invalidation": "May mark an attempt invalid without deleting it; create a linked replacement run id."
+  }
+}

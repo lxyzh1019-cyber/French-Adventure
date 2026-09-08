@@ -79,8 +79,25 @@ function toV1(profile) {
   return out;
 }
 
+/**
+ * v1 -> v2
+ *
+ * Adds the round ledger (`roundLog`). Nothing is rewritten: rounds played
+ * before the ledger existed stay in the day counters and are treated by the
+ * merge as history both devices already share. Only rounds finished from now
+ * on carry their own record.
+ */
+function toV2(profile) {
+  const out = { ...profile };
+  if (!out.roundLog || typeof out.roundLog !== 'object' || Array.isArray(out.roundLog)) {
+    out.roundLog = {};
+  }
+  out.schemaVersion = 2;
+  return out;
+}
+
 /** Ordered migrations. Index n takes a profile from version n to n+1. */
-const MIGRATIONS = [toV1];
+const MIGRATIONS = [toV1, toV2];
 
 /**
  * Bring a stored profile up to the current schema.

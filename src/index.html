@@ -13,7 +13,7 @@
 
   <div class="game-header">
     <div class="game-title">🇫🇷 French Adventure</div>
-    <div class="game-subtitle">Alberta Curriculum • Grade 4–10 • Jenn & Jess Edition</div>
+    <div class="game-subtitle">Levels 1–7 • Jenn & Jess Edition</div>
   </div>
 
   <!-- WALL CLOCK — select screen only, always visible -->
@@ -104,7 +104,7 @@
           </div>
         </div>
       </div>
-      <div class="hub-rules-mini" id="hub-rules-mini"><b>⭐ Topic stars</b> 60–79% = 1⭐ · 80–94% = 2⭐ · ≥95% = 3⭐ · topic seen in ≥3 games today &nbsp;|&nbsp; <b>🌙 Moon</b> All topics in a grade at 3⭐ &nbsp;|&nbsp; <b>🌟 Superstar</b> Moons on the two highest unlocked grades</div>
+      <div class="hub-rules-mini" id="hub-rules-mini"><b>⭐ Topic stars</b> 60–79% = 1⭐ · 80–94% = 2⭐ · ≥95% = 3⭐ · topic seen in ≥3 games today &nbsp;|&nbsp; <b>🌙 Moon</b> All topics in a level at 3⭐ &nbsp;|&nbsp; <b>🌟 Superstar</b> Moons on the two highest levels played</div>
       <div class="hub-slogan-wrap">
         <div class="hub-slogan" id="hub-slogan"></div>
         <div class="hub-slogan-actions" id="hub-slogan-actions">
@@ -122,7 +122,7 @@
           </div>
         </div>
         <button type="button" class="hub-daily-summary-btn" id="hub-daily-summary-btn" onclick="toggleHubDailySummary()" aria-expanded="false">
-          <span>More: grade accuracy &amp; rules</span><span class="chev" id="hub-daily-chev">▼</span>
+          <span>More: level accuracy &amp; rules</span><span class="chev" id="hub-daily-chev">▼</span>
         </button>
         <div class="hub-daily-summary-block" id="hub-daily-summary-block" style="display:none;">
           <div class="hds-title">Details</div>
@@ -131,15 +131,15 @@
       </div>
     </div>
 
-    <p class="hub-grade-bar-note" id="hub-grade-bar-note">Play: <strong>G4–G10</strong>. Higher grades unlock with the same rule — master the grade before (🌙 + 2 days ≥95%).</p>
+    <p class="hub-grade-bar-note" id="hub-grade-bar-note">Play any level, <strong>L1–L7</strong>. The ⭐ marks the level suggested next.</p>
     <div class="grade-tabs" id="grade-tabs">
-      <button type="button" class="grade-tab active" id="tab-g4" onclick="setGrade(4)">G4</button>
-      <button type="button" class="grade-tab" id="tab-g5" onclick="setGrade(5)">G5</button>
-      <button type="button" class="grade-tab grade-tab-future grade-locked" id="tab-g6" onclick="setGrade(6)"><span class="grade-lock-top" title="Locked">🔒</span><span class="grade-num">G6</span></button>
-      <button type="button" class="grade-tab grade-tab-future grade-locked" id="tab-g7" onclick="setGrade(7)"><span class="grade-lock-top">🔒</span><span class="grade-num">G7</span></button>
-      <button type="button" class="grade-tab grade-tab-future grade-locked" id="tab-g8" onclick="setGrade(8)"><span class="grade-lock-top">🔒</span><span class="grade-num">G8</span></button>
-      <button type="button" class="grade-tab grade-tab-future grade-locked" id="tab-g9" onclick="setGrade(9)"><span class="grade-lock-top">🔒</span><span class="grade-num">G9</span></button>
-      <button type="button" class="grade-tab grade-tab-future grade-locked" id="tab-g10" onclick="setGrade(10)"><span class="grade-lock-top">🔒</span><span class="grade-num">G10</span></button>
+      <button type="button" class="grade-tab active" id="tab-g4" onclick="setGrade(4)" title="Level 1">L1</button>
+      <button type="button" class="grade-tab" id="tab-g5" onclick="setGrade(5)" title="Level 2">L2</button>
+      <button type="button" class="grade-tab" id="tab-g6" onclick="setGrade(6)" title="Level 3">L3</button>
+      <button type="button" class="grade-tab" id="tab-g7" onclick="setGrade(7)" title="Level 4">L4</button>
+      <button type="button" class="grade-tab" id="tab-g8" onclick="setGrade(8)" title="Level 5">L5</button>
+      <button type="button" class="grade-tab" id="tab-g9" onclick="setGrade(9)" title="Level 6">L6</button>
+      <button type="button" class="grade-tab" id="tab-g10" onclick="setGrade(10)" title="Level 7">L7</button>
       <button type="button" class="grade-tab action-tab hub-cta-mw" onclick="showMyWords()">💪 My Words</button>
       <button type="button" class="grade-tab study-tab hub-cta-study" onclick="showStudy()">📖 Study</button>
     </div>
@@ -196,7 +196,7 @@
       <div class="game-lives" id="game-lives">❤️❤️❤️</div>
       <div style="display:flex;gap:6px;align-items:center;">
         <button class="btn-speak" id="btn-tts" onclick="speakCurrent()" title="Listen">🔊</button>
-        <button class="btn-speak" id="btn-stt" onclick="startSpeech()" title="Speak" style="display:none;">🎤</button>
+        <button class="btn-speak" id="btn-stt" onclick="startSpeech()" title="Speak — tap again to stop" aria-pressed="false" style="display:none;">🎤</button>
         <div class="game-score-pill">⭐ <span id="game-score">0</span> <span style="font-size:.65rem;opacity:.85;font-weight:700;">star pts</span></div>
       </div>
     </div>
@@ -295,7 +295,7 @@
       <div class="parent-pwd-title" style="margin-top:14px;">📆 Screen time — allowed days</div>
       <div class="weekday-hint">Green = kids may open the app · Red = blocked (parent password to play that day)</div>
       <div class="weekday-grid" id="weekday-grid"></div>
-      <div class="parent-pwd-title" style="margin-top:10px;">🔓 Reopen closed grades</div>
+      <div class="parent-pwd-title" style="margin-top:10px;">🔓 Levels</div>
       <div id="parent-grade-reopen-controls" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:8px;"></div>
       <div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:8px;">
         <button type="button" class="btn-secondary" onclick="revealFullPlayTime()" style="padding:8px 14px;font-size:.72rem;">Show full French times (uses password above)</button>

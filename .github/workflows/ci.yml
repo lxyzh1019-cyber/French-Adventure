@@ -22,6 +22,9 @@ jobs:
       # The committed index.html is exactly what src/ builds.
       - run: npm run check:drift
 
+      # The imported assessment content still satisfies the Release A contract.
+      - run: npm run check:release-a
+
       # End-to-end checks in a real browser: game modes render, resume works,
       # every level is reachable, and a stored profile survives a load intact.
       - run: npx playwright install --with-deps chromium

@@ -1,0 +1,195 @@
+{
+  "release_id": "assessment-v1.0.0",
+  "rubrics": [
+    {
+      "id": "WRITING-ANALYTIC-V1",
+      "version": 1,
+      "applies_to": "open_written",
+      "scorer_requirement": "Adult with functional French literacy; educator review preferred before decisions. Preserve the original response.",
+      "dimensions": [
+        {
+          "id": "message",
+          "weight": 3,
+          "anchors": {
+            "0": "No relevant French message.",
+            "1": "A few relevant words; requested message is mostly missing.",
+            "2": "Main message is understandable; one requested element may be missing.",
+            "3": "All requested elements are communicated clearly."
+          }
+        },
+        {
+          "id": "vocabulary",
+          "weight": 2,
+          "anchors": {
+            "0": "No usable French vocabulary.",
+            "1": "Very limited or frequently inappropriate vocabulary.",
+            "2": "Familiar vocabulary is generally appropriate.",
+            "3": "Appropriate range for the prompt, including useful detail."
+          }
+        },
+        {
+          "id": "structure",
+          "weight": 2,
+          "anchors": {
+            "0": "No interpretable sentence structure.",
+            "1": "Fragments or persistent word-order/verb problems obscure meaning.",
+            "2": "Simple sentences mostly work; errors do not block the message.",
+            "3": "Sentences are controlled and connected appropriately for the prompt."
+          }
+        },
+        {
+          "id": "conventions",
+          "weight": 2,
+          "anchors": {
+            "0": "Writing cannot be interpreted.",
+            "1": "Frequent spelling/article/accent errors interfere.",
+            "2": "Mostly readable; some errors in spelling, articles, accents, or punctuation.",
+            "3": "Conventions are accurate enough that errors are minor."
+          }
+        },
+        {
+          "id": "independence",
+          "weight": 1,
+          "anchors": {
+            "0": "Response was supplied or corrected by another person.",
+            "1": "Substantial unplanned support was used.",
+            "2": "Only allowed interface support was used.",
+            "3": "Completed independently without coaching."
+          }
+        }
+      ],
+      "calculation": "Sum score*weight. Divide by maximum weighted score (30) and multiply by 100.",
+      "examples": [
+        {
+          "prompt_id": "WA-D02",
+          "response": "Salut. bibliothèque 3 heure.",
+          "scores": {
+            "message": 2,
+            "vocabulary": 1,
+            "structure": 1,
+            "conventions": 1,
+            "independence": 3
+          },
+          "comment": "Place and time are present, but the message needs sentence structure and conventions."
+        },
+        {
+          "prompt_id": "WA-D02",
+          "response": "Salut! Retrouve-moi à la bibliothèque à quinze heures.",
+          "scores": {
+            "message": 3,
+            "vocabulary": 3,
+            "structure": 3,
+            "conventions": 3,
+            "independence": 3
+          },
+          "comment": "All requested information is clear and controlled."
+        },
+        {
+          "prompt_id": "WB-S02",
+          "response": "J’aime hiver parce que patiner. Il froid mais manteau.",
+          "scores": {
+            "message": 2,
+            "vocabulary": 2,
+            "structure": 1,
+            "conventions": 1,
+            "independence": 3
+          },
+          "comment": "The preference and reason are understandable; sentence control is still emerging."
+        }
+      ]
+    },
+    {
+      "id": "SPEAKING-ANALYTIC-V1",
+      "version": 1,
+      "applies_to": "open_spoken",
+      "scorer_requirement": "Adult who can understand spoken French must listen to the original recording. Transcript-only scoring is prohibited; educator review preferred.",
+      "dimensions": [
+        {
+          "id": "message",
+          "weight": 3,
+          "anchors": {
+            "0": "No relevant French message.",
+            "1": "A few relevant words; requested message is mostly missing.",
+            "2": "Main message is understandable; one requested element may be missing.",
+            "3": "All requested elements are communicated clearly."
+          }
+        },
+        {
+          "id": "comprehensibility",
+          "weight": 3,
+          "anchors": {
+            "0": "No French speech can be understood.",
+            "1": "A patient listener understands isolated parts.",
+            "2": "A patient listener understands the main message despite repetitions or errors.",
+            "3": "The whole message is readily understandable to a patient listener."
+          }
+        },
+        {
+          "id": "vocabulary_structure",
+          "weight": 2,
+          "anchors": {
+            "0": "No usable French forms.",
+            "1": "Limited words or fragments; frequent form problems.",
+            "2": "Familiar words and simple structures usually carry the message.",
+            "3": "Appropriate range and structure for the prompt."
+          }
+        },
+        {
+          "id": "fluency",
+          "weight": 1,
+          "anchors": {
+            "0": "No sustained response.",
+            "1": "Long pauses prevent a connected message.",
+            "2": "Some pauses or restarts, but the message continues.",
+            "3": "Pacing supports the message for this task."
+          }
+        },
+        {
+          "id": "pronunciation_observation",
+          "weight": 1,
+          "anchors": {
+            "0": "No scorable audio.",
+            "1": "Sound patterns often make familiar words hard to recognize.",
+            "2": "Most familiar words are recognizable; a few sound patterns need attention.",
+            "3": "Sound patterns and rhythm consistently support understanding."
+          }
+        }
+      ],
+      "calculation": "Sum score*weight. Divide by maximum weighted score (30) and multiply by 100.",
+      "examples": [
+        {
+          "prompt_id": "SA-F01",
+          "audio_description": "Name is clear; age phrase requires one replay; response is independent.",
+          "scores": {
+            "message": 3,
+            "comprehensibility": 2,
+            "vocabulary_structure": 2,
+            "fluency": 2,
+            "pronunciation_observation": 2
+          },
+          "comment": "Main message is clear. One sound target can be chosen later for teaching."
+        },
+        {
+          "prompt_id": "SA-D02",
+          "audio_description": "Directions contain all map steps and are readily understood with natural pauses.",
+          "scores": {
+            "message": 3,
+            "comprehensibility": 3,
+            "vocabulary_structure": 3,
+            "fluency": 3,
+            "pronunciation_observation": 3
+          },
+          "comment": "Complete, controlled response for the task."
+        },
+        {
+          "prompt_id": "SB-S01",
+          "audio_description": "Transcript captured several words, but the recording is too noisy to judge the child’s speech.",
+          "scores": null,
+          "technical_invalid_reason": "microphone_failed",
+          "comment": "Preserve as invalid evidence; do not infer pronunciation from the transcript."
+        }
+      ]
+    }
+  ],
+  "unresolved_review_handling": "If no eligible human scorer is available, retain the response and report awaiting_review. Do not assign a band or substitute speech-to-text/AI-only scoring."
+}

@@ -7,10 +7,24 @@
 // days into implementing against it. It checks structure, internal consistency,
 // and the two amendments this project added to the contracts:
 //
-//   - every item carries `zh`, because all 461 existing vocabulary entries do
-//     and the contracts never mention it;
+//   - every LEARNING item carries `zh`, because all 461 existing vocabulary
+//     entries do and the contracts never mention it;
 //   - no ASSESSMENT item exposes `zh`, because a translation is support and the
 //     plan's own Level 0 rule forbids support during assessment.
+//
+// Amendment 1 was originally written to cover assessment items too. The
+// delivered Release A carries no `zh` at all, deliberately and for exactly the
+// reason behind amendment 2: a translation is support, and support is barred
+// during assessment. Requiring it there contradicted the rule beside it, so it
+// now applies to learning content only.
+//
+// Content packages have been delivered in more than one shape — a flat `items`
+// array with a `form` field per item, or a `forms` array each holding its own
+// items; `answer_key.accepted_answers` or a top-level `accepted`. Each check
+// below accepts either, because a contract is about what a package must say,
+// not which spelling it says it in. A check that silently matches nothing is
+// worse than no check, so where a shape is not recognised the item is reported
+// rather than skipped.
 
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
@@ -54,6 +68,43 @@ const itemsOf = doc => Array.isArray(doc) ? doc
   : Array.isArray(doc?.forms) ? doc.forms.flatMap(f => f.items || [])
   : [];
 
+/**
+ * Group items into forms, however the package expresses them: an explicit
+ * `forms` array, or a flat item list where each item names its own `form`.
+ * Returns null when the package declares no forms at all, which for an
+ * assessment package is itself a failure.
+ */
+function formsOf(doc) {
+  if (Array.isArray(doc?.forms) && doc.forms.length) {
+    return doc.forms.map((f, i) => ({ name: f.form ?? f.name ?? String(i), items: f.items || [] }));
+  }
+  const byForm = new Map();
+  for (const item of itemsOf(doc)) {
+    if (!item?.form) continue;
+    if (!byForm.has(item.form)) byForm.set(item.form, []);
+    byForm.get(item.form).push(item);
+  }
+  return byForm.size ? [...byForm].map(([name, items]) => ({ name, items })) : null;
+}
+
+/** The learner-facing prompt, whichever field carries it. */
+const promptOf = item => item.prompt ?? item.prompt_en ?? '';
+
+/** Does this item state an accepted answer, in any of the shapes in use? */
+function hasAcceptedAnswer(item) {
+  // A rubric-scored open response has no key by design: a human scores it
+  // against the rubric, and validate-release-a.mjs checks the rubric link.
+  if (item.scoring?.method === 'analytic_rubric' || item.rubric_id || item.scoring?.rubric_id) return true;
+  const key = item.answer_key ?? {};
+  const candidates = [item.accepted, item.acceptedAnswers, item.answer, item.correct,
+                      key.accepted_answers, key.correct_choice_ids, key.correct_order];
+  return candidates.some(v => v !== undefined && (!Array.isArray(v) || v.length > 0));
+}
+
+/** Is this a listening item, and does it carry a script to read aloud? */
+const isListening = item => item.type === 'listening' || item.domain === 'listening';
+const audioScriptOf = item => item.audioScript ?? item.audio?.script_fr_ca;
+
 function detectRelease(dir) {
   const present = new Set(readdirSync(dir));
   if (present.has('assessment_items.json')) return RELEASE_A;
@@ -85,8 +136,12 @@ function checkManifestCounts(dir, actualCounts) {
   const manifest = readJSON(dir, 'manifest.json');
   if (!manifest) return;
   if (!manifest.version) fail('manifest.json', 'no version');
-  if (!manifest.counts) { notes.push('manifest.json declares no counts to cross-check'); return; }
-  for (const [key, declared] of Object.entries(manifest.counts)) {
+  // `counts: {items: n}` or a top-level `total_items` — both are a declared
+  // total to hold the files to.
+  const declaredCounts = manifest.counts
+    ?? (manifest.total_items !== undefined ? { items: manifest.total_items } : null);
+  if (!declaredCounts) { notes.push('manifest.json declares no counts to cross-check'); return; }
+  for (const [key, declared] of Object.entries(declaredCounts)) {
     const actual = actualCounts[key];
     if (actual === undefined) { notes.push(`manifest counts "${key}", which this check does not know how to verify`); continue; }
     if (Number(declared) !== actual) {
@@ -104,20 +159,21 @@ function checkItemsCommon(file, items, { isAssessment }) {
     else if (seen.has(item.id)) fail(where, `duplicate id, also at index ${seen.get(item.id)}`);
     else seen.set(item.id, i);
 
-    const accepted = item.accepted ?? item.acceptedAnswers ?? item.answer ?? item.correct;
-    if (accepted === undefined || (Array.isArray(accepted) && !accepted.length)) {
-      fail(where, 'has no accepted answer');
-    }
+    if (!hasAcceptedAnswer(item)) fail(where, 'has no accepted answer');
 
-    // Amendment 1: Chinese is part of this project's content contract.
-    if (item.zh === undefined || item.zh === '') fail(where, 'is missing `zh`');
+    // Amendment 1: Chinese is part of this project's content contract — for
+    // learning content. Assessment items carry no translation on purpose; see
+    // amendment 2 and the note at the top of this file.
+    if (!isAssessment && (item.zh === undefined || item.zh === '')) {
+      fail(where, 'is missing `zh`');
+    }
 
     // Amendment 2: an assessment item must not hand the learner a translation.
     if (isAssessment && item.zh !== undefined && item.showZh) {
       fail(where, 'exposes `zh` during an assessment item — a translation is support');
     }
 
-    if (item.type === 'listening' && !item.audioScript) {
+    if (isListening(item) && !audioScriptOf(item)) {
       fail(where, 'is a listening item with no audio script');
     }
   });
@@ -127,7 +183,7 @@ function checkItemsCommon(file, items, { isAssessment }) {
 function checkReleaseA(dir) {
   const doc = readJSON(dir, 'assessment_items.json');
   if (!doc) return {};
-  const forms = Array.isArray(doc?.forms) ? doc.forms : null;
+  const forms = formsOf(doc);
   const items = itemsOf(doc);
   if (!items.length) fail('assessment_items.json', 'contains no items');
 
@@ -137,7 +193,7 @@ function checkReleaseA(dir) {
     fail('assessment_items.json', 'declares no A/B forms — a repeat assessment needs an alternate form');
   } else {
     if (forms.length < 2) fail('assessment_items.json', `has ${forms.length} form(s); at least two are required`);
-    const byForm = forms.map(f => new Set((f.items || []).map(i => i.id)));
+    const byForm = forms.map(f => new Set(f.items.map(i => i.id)));
     for (let a = 0; a < byForm.length; a++) {
       for (let b = a + 1; b < byForm.length; b++) {
         const shared = [...byForm[a]].filter(id => byForm[b].has(id));
@@ -148,8 +204,8 @@ function checkReleaseA(dir) {
       }
     }
     const prompts = new Map();
-    for (const f of forms) for (const item of f.items || []) {
-      const p = (item.prompt || '').trim().toLowerCase();
+    for (const f of forms) for (const item of f.items) {
+      const p = promptOf(item).trim().toLowerCase();
       if (!p) continue;
       if (prompts.has(p)) fail('assessment_items.json', `prompt reused across forms: ${JSON.stringify(p.slice(0, 50))}`);
       else prompts.set(p, item.id);
@@ -160,9 +216,14 @@ function checkReleaseA(dir) {
   // author's intent rather than the implementer's reading of the rules.
   const fixtures = existsSync(join(dir, 'scoring_fixtures.json')) && readJSON(dir, 'scoring_fixtures.json');
   if (fixtures) {
-    const cases = Array.isArray(fixtures) ? fixtures : fixtures.cases || [];
+    const cases = Array.isArray(fixtures) ? fixtures : fixtures.cases || fixtures.fixtures || [];
     if (!cases.length) fail('scoring_fixtures.json', 'contains no cases');
-    const kinds = new Set(cases.map(c => c.kind || c.result));
+    // `technically_invalid` is the same case as `invalid` under another name:
+    // a response that could not be scored, which must never become "wrong".
+    const kinds = new Set(cases.map(c => {
+      const k = c.kind || c.result || c.case;
+      return k === 'technically_invalid' ? 'invalid' : k;
+    }));
     for (const kind of ['correct', 'partial', 'incorrect', 'invalid']) {
       if (!kinds.has(kind)) fail('scoring_fixtures.json', `has no "${kind}" case`);
     }
@@ -171,9 +232,14 @@ function checkReleaseA(dir) {
   const map = existsSync(join(dir, 'curriculum_map.json')) && readJSON(dir, 'curriculum_map.json');
   if (map) {
     const entries = Array.isArray(map) ? map : map.outcomes || [];
+    // Sources may be cited per outcome, or once for the whole map with the
+    // outcomes carrying locators into it. Both say where the outcome came
+    // from and when it was checked; neither may be missing.
+    const centralSources = Array.isArray(map.sources) && map.sources.length;
+    const centralDate = map.retrieval_date || map.retrievedAt || map.checkedAt;
     for (const [i, o] of entries.entries()) {
-      if (!o.source) fail('curriculum_map.json', `outcome ${o.id ?? i} cites no source document`);
-      if (!o.retrievedAt && !o.checkedAt) {
+      if (!o.source && !centralSources) fail('curriculum_map.json', `outcome ${o.id ?? i} cites no source document`);
+      if (!o.retrievedAt && !o.checkedAt && !centralDate) {
         fail('curriculum_map.json', `outcome ${o.id ?? i} has no date the source was checked`);
       }
     }

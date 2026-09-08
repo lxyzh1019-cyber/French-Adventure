@@ -54,17 +54,27 @@ scripts/            CI guards (drift, inline handlers)
   automatic, and a missing export means a silently dead button.
 - `npm run check:drift` — rebuilds and compares against the committed
   `index.html`. Fails if they differ in either direction.
-- `npm run check:content -- <dir>` — validates a delivered content package
-  (Release A or B) against its contract *before* anyone implements against it.
-  Checks required files, manifest counts, placeholder text, A/B form
-  independence, skill references, and that every item carries `zh` while no
-  assessment item exposes it. It checks structure, not educational quality.
+- `npm run check:release-a` — the imported assessment content
+  (`content/releases/assessment-v1/`) still satisfies the Release A contract:
+  hashes, counts, both forms complete, and every skill, outcome, rubric and
+  scoring-fixture reference resolves. Runs in CI, because that content is
+  committed and can regress.
+- `npm run check:content -- <dir>` — validates a *delivered* content package
+  (Release A or B) against its contract on the day it arrives, before anyone
+  implements against it. Checks required files, manifest counts, placeholder
+  text, A/B form independence, skill references, and that learning items carry
+  `zh` while no assessment item exposes it. It checks structure, not
+  educational quality.
 - `npm run test:browser` — end-to-end checks in a real browser: every game
-  mode renders, an interrupted round resumes, French apostrophes reach the
-  speech API, every level is reachable, and a stored profile survives a load
-  with nothing lost.
+  mode renders, Word Match resumes from every state (no selection, one
+  selection, several pairs, after a wrong pair, and a finished board is not
+  resumed), a rapid wrong match cannot disturb a newer selection, the mic
+  toggles and never sticks, every speak/mic control is a real touch target,
+  no screen shows a school-grade label, French apostrophes reach the speech
+  API, every level is reachable, and a stored profile survives a load with
+  nothing lost. Set `CHROMIUM_PATH` to use a preinstalled browser.
 
-All three run in CI on every push and pull request. `npm run verify:all`
+All of these run in CI on every push and pull request. `npm run verify:all`
 runs the lot locally.
 
 ## Known risks
