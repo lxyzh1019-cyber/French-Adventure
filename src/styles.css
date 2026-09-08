@@ -231,7 +231,12 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .btn-green{background:var(--green);border:none;border-radius:14px;padding:10px 20px;font-family:'Fredoka One',cursive;font-size:.9rem;color:white;cursor:pointer;}
 .btn-speak{background:var(--surface2);border:2px solid var(--purple);border-radius:12px;padding:8px 14px;font-size:.85rem;cursor:pointer;color:var(--text);font-weight:700;transition:all .2s;}
 .btn-speak:hover{background:rgba(124,58,237,.2);}
-.btn-speak.listening{border-color:var(--jenn);color:var(--jenn);animation:pulse 1s infinite;}
+.btn-speak.listening{border-color:var(--jenn);color:var(--jenn);background:rgba(244,63,94,.12);animation:pulse 1s infinite;}
+/* Every 🔊 that sits next to a word. This class used to be referenced but never
+   defined, so those buttons rendered at the browser default (~20px) — far below
+   a usable touch target on iPad. */
+.question-speak-inline,.speak-inline{background:rgba(79,70,229,.15);border:2px solid rgba(79,70,229,.4);border-radius:12px;padding:8px 14px;font-size:1.1rem;line-height:1;cursor:pointer;color:var(--text);font-weight:700;min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:6px;vertical-align:middle;}
+.question-speak-inline:active,.speak-inline:active{background:rgba(79,70,229,.3);}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 
 /* HINT */
@@ -352,6 +357,9 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   .word-chip{min-height:46px;padding:10px 16px;font-size:.95rem;}
   .letter-tile,.answer-slot{width:50px;height:50px;font-size:1.3rem;}
   .btn-primary,.btn-secondary,.btn-speak{min-height:50px;font-size:1rem;}
+  /* The mic and the word speakers need a real thumb target, not just height. */
+  .btn-speak{min-width:56px;min-height:56px;font-size:1.25rem;padding:8px 16px;}
+  .question-speak-inline,.speak-inline{min-width:52px;min-height:52px;font-size:1.3rem;}
   .mini-game-btn{padding:20px 12px;}
   .back-btn,.grade-tab{min-height:44px;}
   .train-input{font-size:1.1rem;min-height:54px;}

@@ -1,0 +1,144 @@
+{
+  "release_id": "assessment-v1.0.0",
+  "version": "1.0.0",
+  "compatible_master_plan_revision": 2,
+  "created_at": "2026-09-08T00:00:00Z",
+  "status": "content_complete_ready_for_implementation",
+  "intended_learners": "Regular-school Alberta FSL learners; individual domain profiling and enrichment, not immersion placement.",
+  "forms": [
+    "A",
+    "B"
+  ],
+  "item_counts": {
+    "A": {
+      "listening": {
+        "total": 12,
+        "by_difficulty": {
+          "foundation": 4,
+          "developing": 4,
+          "stretch": 4
+        }
+      },
+      "reading": {
+        "total": 12,
+        "by_difficulty": {
+          "foundation": 4,
+          "developing": 4,
+          "stretch": 4
+        }
+      },
+      "vocabulary_grammar": {
+        "total": 10,
+        "by_difficulty": {
+          "foundation": 4,
+          "developing": 3,
+          "stretch": 3
+        }
+      },
+      "writing": {
+        "total": 6,
+        "by_difficulty": {
+          "foundation": 2,
+          "developing": 2,
+          "stretch": 2
+        }
+      },
+      "speaking": {
+        "total": 5,
+        "by_difficulty": {
+          "foundation": 2,
+          "developing": 2,
+          "stretch": 1
+        }
+      }
+    },
+    "B": {
+      "listening": {
+        "total": 12,
+        "by_difficulty": {
+          "foundation": 4,
+          "developing": 4,
+          "stretch": 4
+        }
+      },
+      "reading": {
+        "total": 12,
+        "by_difficulty": {
+          "foundation": 4,
+          "developing": 4,
+          "stretch": 4
+        }
+      },
+      "vocabulary_grammar": {
+        "total": 10,
+        "by_difficulty": {
+          "foundation": 4,
+          "developing": 3,
+          "stretch": 3
+        }
+      },
+      "writing": {
+        "total": 6,
+        "by_difficulty": {
+          "foundation": 2,
+          "developing": 2,
+          "stretch": 2
+        }
+      },
+      "speaking": {
+        "total": 5,
+        "by_difficulty": {
+          "foundation": 2,
+          "developing": 2,
+          "stretch": 1
+        }
+      }
+    }
+  },
+  "total_items": 90,
+  "files": [
+    {
+      "name": "manifest.json",
+      "sha256": null,
+      "note": "Manifest excludes its own hash to avoid recursive self-hashing."
+    },
+    {
+      "name": "assessment_items.json",
+      "sha256": "73efb8c3acc80208c59f7bb79d13b912092b8fc55b833cfb61f90440c52ebdf4"
+    },
+    {
+      "name": "assessment_rules.json",
+      "sha256": "71c7cbff4b51a6efcb537a026e2e9558c8a1cb9b88b28e72ae691358aca9bc5e"
+    },
+    {
+      "name": "rubrics.json",
+      "sha256": "2e24bd39500c980e10b1e9037682190bf44ce8bcba4feba91d61d69a8ffd2cdf"
+    },
+    {
+      "name": "curriculum_map.json",
+      "sha256": "c19e58456103d5dff4ade3d2c0800b03041153e916a44981d1fe8e08ebed86f6"
+    },
+    {
+      "name": "scoring_fixtures.json",
+      "sha256": "eddfe1197cc3caf4f7bfe6da75f4619ee4f029ee7cfcc95e74c08fcc38f6c75f"
+    },
+    {
+      "name": "review_notes.md",
+      "sha256": "91292248746e4690a773da3956f211f8e854e614f90d7e70b94b20c9aa554a11"
+    }
+  ],
+  "validation": {
+    "json_parse": true,
+    "unique_item_ids": true,
+    "all_skill_refs_exist": true,
+    "all_outcome_refs_exist": true,
+    "all_rubric_refs_exist": true,
+    "parallel_blueprint": true,
+    "placeholder_scan": true,
+    "scoring_fixture_reference_check": true,
+    "human_language_review": "author_review_only; independent educator review recommended",
+    "psychometric_validation": false,
+    "audio_rendering_qa": "required_during_M2_on_actual_iPad"
+  },
+  "release_notes": "Complete A/B assessment content bank and scoring contract. M2 technical implementation remains gated by the accompanying M1 audit blockers and parent approval."
+}

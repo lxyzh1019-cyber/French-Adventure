@@ -27,7 +27,7 @@ There is no authentication. See [`known-risks.md`](known-risks.md).
 | Field | Type | Meaning |
 |---|---|---|
 | `schemaVersion` | number | Migration version. Absent means v0 — see `src/state/migrations.js`. |
-| `totalStars` | number | Lifetime star points. Never decreases. Rebuilt from the per-day ledger when two devices merge. |
+| `totalStars` | number | Lifetime star points. Never decreases. Rebuilt from the per-day ledger (itself reconciled through `roundLog`) when two devices merge. |
 | `weekStars` | number | Star points this week; archived into `weeklyHistory` at rollover. |
 | `streak` | number | Consecutive study days. |
 | `lastPlayed` | string | Last day played. Historically `Date#toDateString()` ("Sat Sep 06 2026"); now an Edmonton date key. Both are read. |
@@ -66,6 +66,11 @@ school grade and must never be presented as one.
 | `seedProfilePatches` | `{flag: true \| 'retired'}` | One-off profile corrections. All retired — they used to delete data on load. |
 | `lastUpdatedAt` | ms | Write ordering for sync. |
 
+### Round ledger (schema v2)
+| Field | Type | Meaning |
+|---|---|---|
+| `roundLog` | `{attemptId: {id, day, type, grade, stars, correct, wrong, completed, grades, topics, at}}` | One immutable record per finished round. The two-device merge unions these by id and rebuilds `todayStats`, `dailyRounds`, `gradeStats`, `gradeGameRounds`, `dailyTopicStats`, `weekStars` and `totalStars` from them, so two rounds on the same day from two iPads are both kept. Rounds from before v2 have no record and are treated as shared history (counted once, by the larger value). Cleared alongside the day counters by the parent "clear" actions. |
+
 ## Round draft
 
 Written on a short debounce during a round and on session timeout; cleared when
@@ -76,7 +81,7 @@ a round ends.
 | `v` | Draft format version (currently 2). |
 | `attemptId` | Identity for this round attempt. |
 | `committed` | Question instances already scored, so a resume cannot score one twice. |
-| `qIndex`, `questions`, `currentQ`, `lives`, `roundScore`, `roundBasePoints`, `roundSpeedPoints`, `roundTopicTally` | Round position and progress. |
+| `qIndex`, `questions`, `currentQ`, `lives`, `roundScore`, `roundBasePoints`, `roundSpeedPoints`, `roundTopicTally`, `roundAnswerTally`, `roundGradeTally` | Round position and progress. The two tallies are what this round alone has added to the day counters, so the ledger entry written at round end is exact even after a resume. |
 | `feedbackOpen` | Whether the feedback overlay was showing. If so the answer was already scored, and resume advances past it. |
 | `matchPairs`, `matchMatched`, `matchFrOrder`, `matchEnOrder`, `matchSelected` | Word Match board and selection. |
 | `scrambleAnswer`, `scrambleSource` | Scramble tiles. Rebuilt on resume if they cannot spell the target. |

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mergeProfiles } from '../src/state/merge.js';
 import { migrateProfile } from '../src/state/migrations.js';
-import { DEFAULT_STATE } from '../src/state/schema.js';
+import { DEFAULT_STATE, makeRoundLogEntry } from '../src/state/schema.js';
 
 const profile = (over = {}) => migrateProfile({ ...DEFAULT_STATE(), ...over });
 
@@ -87,12 +87,128 @@ test('two iPads used offline: BOTH rounds survive', () => {
     `expected both sessions to count (1050), got ${m.totalStars}`);
 });
 
-test('the same day recorded on both devices takes the fuller record', () => {
-  // A day's counters only grow, so the larger value is the more complete one.
-  const a = profile({ todayStats: { '2026-09-05': { correct: 10, wrong: 2, rounds: 2, stars: 50 } } });
-  const b = profile({ todayStats: { '2026-09-05': { correct: 6, wrong: 1, rounds: 1, stars: 30 } } });
+// A finished round as the app records it: the counters are bumped AND the
+// round is written to the ledger under its own id.
+function playRound(p, { id, day, type = 'quiz', grade = 4, stars, correct = 0, wrong = 0,
+                        completed = true, topic = null }) {
+  const s = JSON.parse(JSON.stringify(p));
+  s.totalStars += stars; s.weekStars += stars;
+  s.todayStats[day] ||= { correct: 0, wrong: 0, rounds: 0, stars: 0 };
+  s.todayStats[day].stars += stars; s.todayStats[day].correct += correct; s.todayStats[day].wrong += wrong;
+  if (completed) {
+    s.todayStats[day].rounds += 1;
+    s.dailyRounds[day + '_' + type] = (s.dailyRounds[day + '_' + type] || 0) + 1;
+    ((s.gradeGameRounds[day] ||= {})[grade] ||= {})[type] = (s.gradeGameRounds[day]?.[grade]?.[type] || 0) + 1;
+  }
+  (s.gradeStats[day] ||= {})[grade] ||= { correct: 0, wrong: 0 };
+  s.gradeStats[day][grade].correct += correct; s.gradeStats[day][grade].wrong += wrong;
+  const topics = {};
+  if (topic) {
+    topics[topic] = { c: correct, w: wrong };
+    (((s.dailyTopicStats[day] ||= {})[topic] ||= {})[type] ||= { c: 0, w: 0 });
+    s.dailyTopicStats[day][topic][type].c += correct; s.dailyTopicStats[day][topic][type].w += wrong;
+  }
+  s.playedDays[day] = true;
+  s.roundLog[id] = makeRoundLogEntry({ id, day, type, grade, stars, correct, wrong, completed,
+    grades: { [grade]: { c: correct, w: wrong } }, topics, at: 1 });
+  s.lastUpdatedAt += 1;
+  return s;
+}
+
+test('two iPads used offline on the SAME day: both rounds survive, in either order', () => {
+  // The M1 audit's reproduction. A shared baseline with an existing 40-star
+  // round today; iPad A adds a 30-star quiz, iPad B a 20-star match. The
+  // correct result is 1050 stars and three rounds; the old max-merge gave 1030
+  // and two.
+  const day = '2026-09-08';
+  const start = playRound(profile({ totalStars: 1000, weekStars: 0, weekStart: '2026-09-07' }),
+    { id: 'r0', day, type: 'quiz', stars: 40, correct: 8, wrong: 2, topic: '4_colours' });
+  assert.equal(start.totalStars, 1040);
+
+  const iPadA = playRound(start, { id: 'rA', day, type: 'quiz',  stars: 30, correct: 9, wrong: 1, topic: '4_colours' });
+  const iPadB = playRound(start, { id: 'rB', day, type: 'match', stars: 20, correct: 6, wrong: 0, grade: 5, topic: '5_body' });
+
+  for (const m of [mergeProfiles(iPadA, iPadB), mergeProfiles(iPadB, iPadA)]) {
+    assert.equal(m.totalStars, 1090, 'a same-day round was dropped from the lifetime total');
+    assert.equal(m.weekStars, 90, 'a same-day round was dropped from the week total');
+    assert.deepEqual(m.todayStats[day], { correct: 23, wrong: 3, rounds: 3, stars: 90 });
+    assert.equal(m.dailyRounds[day + '_quiz'], 2, 'the daily cap lost a quiz round');
+    assert.equal(m.dailyRounds[day + '_match'], 1);
+    assert.deepEqual(m.gradeStats[day], { 4: { correct: 17, wrong: 3 }, 5: { correct: 6, wrong: 0 } });
+    assert.deepEqual(m.gradeGameRounds[day], { 4: { quiz: 2 }, 5: { match: 1 } });
+    assert.deepEqual(m.dailyTopicStats[day]['4_colours'].quiz, { c: 17, w: 3 });
+    assert.deepEqual(m.dailyTopicStats[day]['5_body'].match, { c: 6, w: 0 });
+    assert.deepEqual(Object.keys(m.roundLog).sort(), ['r0', 'rA', 'rB']);
+  }
+});
+
+test('redelivering one side after the merge does not count its round twice', () => {
+  const day = '2026-09-08';
+  const start = playRound(profile({ totalStars: 1000, weekStart: '2026-09-07' }),
+    { id: 'r0', day, stars: 40 });
+  const iPadA = playRound(start, { id: 'rA', day, stars: 30 });
+  const iPadB = playRound(start, { id: 'rB', day, type: 'match', stars: 20 });
+
+  const once = mergeProfiles(iPadA, iPadB);
+  const again = mergeProfiles(once, iPadA);            // A's snapshot arrives again
+  const andAgain = mergeProfiles(mergeProfiles(again, iPadB), once);
+  for (const m of [again, andAgain]) {
+    assert.equal(m.totalStars, 1090);
+    assert.equal(m.weekStars, 90);
+    assert.equal(m.todayStats[day].rounds, 3);
+    assert.equal(m.dailyRounds[day + '_quiz'], 2);
+  }
+});
+
+test('the same day with two identical-looking rounds is still two rounds', () => {
+  // The hardest case for a counter: both devices play a quiz worth the same
+  // points. Only the ledger can tell them apart.
+  const day = '2026-09-08';
+  const start = profile({ totalStars: 500, weekStart: '2026-09-07' });
+  const a = playRound(start, { id: 'rA', day, stars: 25 });
+  const b = playRound(start, { id: 'rB', day, stars: 25 });
   const m = mergeProfiles(a, b);
-  assert.deepEqual(m.todayStats['2026-09-05'], { correct: 10, wrong: 2, rounds: 2, stars: 50 });
+  assert.equal(m.totalStars, 550);
+  assert.equal(m.todayStats[day].rounds, 2);
+  assert.equal(m.dailyRounds[day + '_quiz'], 2);
+});
+
+test('an unfinished (knocked-out) round keeps its points but is not a round', () => {
+  const day = '2026-09-08';
+  const start = profile({ totalStars: 500, weekStart: '2026-09-07' });
+  const a = playRound(start, { id: 'rA', day, stars: 10, completed: false });
+  const b = playRound(start, { id: 'rB', day, stars: 25 });
+  const m = mergeProfiles(a, b);
+  assert.equal(m.totalStars, 535);
+  assert.equal(m.todayStats[day].rounds, 1);
+  assert.equal(m.dailyRounds[day + '_quiz'], 1);
+});
+
+test('rounds from before the ledger existed are counted once, not lost', () => {
+  // A day recorded on both devices with no ledger entries: neither side can
+  // explain its counters, so the larger record is kept (the pre-ledger rule),
+  // and a new logged round on top of it is added exactly once.
+  const day = '2026-09-05';
+  const legacy = profile({ totalStars: 300, weekStart: '2026-08-31',
+    todayStats: { [day]: { correct: 10, wrong: 2, rounds: 2, stars: 50 } } });
+  const a = playRound(legacy, { id: 'rA', day, stars: 30, correct: 5 });
+  const b = legacy;
+  for (const m of [mergeProfiles(a, b), mergeProfiles(b, a)]) {
+    assert.equal(m.totalStars, 330);
+    assert.deepEqual(m.todayStats[day], { correct: 15, wrong: 2, rounds: 3, stars: 80 });
+  }
+});
+
+test('week stars survive a same-week, different-day split too', () => {
+  // Previously weekStars was a plain max even across different days.
+  const start = profile({ totalStars: 1000, weekStars: 40, weekStart: '2026-09-07',
+    todayStats: { '2026-09-07': { correct: 5, wrong: 0, rounds: 1, stars: 40 } } });
+  const a = playRound(start, { id: 'rA', day: '2026-09-08', stars: 30 });
+  const b = playRound(start, { id: 'rB', day: '2026-09-09', stars: 20 });
+  for (const m of [mergeProfiles(a, b), mergeProfiles(b, a)]) {
+    assert.equal(m.totalStars, 1050);
+    assert.equal(m.weekStars, 90, 'week stars took the larger side instead of both');
+  }
 });
 
 test('nested per-level and per-topic records merge rather than replace', () => {

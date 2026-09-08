@@ -1,0 +1,587 @@
+{
+  "release_id": "assessment-v1.0.0",
+  "retrieval_date": "2026-09-08",
+  "program": "Alberta French as a Second Language Nine-year Program of Studies (Grades 4–12)",
+  "program_status_note": "The current LearnAlberta pages continue to publish this FSL program. Release A uses Grades 4–7 as the core reference and Grade 8 only as a stretch/enrichment reference.",
+  "sources": [
+    {
+      "id": "AB-OPEN",
+      "kind": "official_publication_landing",
+      "url": "https://open.alberta.ca/publications/french-as-a-second-language-nine-year-program-of-studies-grade-4-to-grade-12",
+      "retrieved": "2026-09-08"
+    },
+    {
+      "id": "AB-G4",
+      "kind": "official_current_grade_page",
+      "url": "https://curriculum.learnalberta.ca/curriculum/en/pos/OLCFSL_9/FSL094",
+      "retrieved": "2026-09-08"
+    },
+    {
+      "id": "AB-G5",
+      "kind": "official_current_grade_page",
+      "url": "https://curriculum.learnalberta.ca/curriculum/en/pos/OLCFSL_9/FSL095",
+      "retrieved": "2026-09-08"
+    },
+    {
+      "id": "AB-G6",
+      "kind": "official_current_grade_page",
+      "url": "https://curriculum.learnalberta.ca/curriculum/en/pos/OLCFSL_9/FSL096",
+      "retrieved": "2026-09-08"
+    },
+    {
+      "id": "AB-G7",
+      "kind": "official_current_grade_page",
+      "url": "https://curriculum.learnalberta.ca/curriculum/en/pos/OLCFSL_9/FSL097",
+      "retrieved": "2026-09-08"
+    },
+    {
+      "id": "AB-G8",
+      "kind": "official_current_grade_page",
+      "url": "https://curriculum.learnalberta.ca/curriculum/en/pos/OLCFSL_9/FSL098",
+      "retrieved": "2026-09-08"
+    },
+    {
+      "id": "AB-PDF-MIRROR",
+      "kind": "text-accessible_mirror_of_Alberta_2004_document",
+      "url": "https://www.gov.nu.ca/sites/default/files/documents/2024-10/nine_year.pdf",
+      "retrieved": "2026-09-08",
+      "note": "Used to check page locators because the official page is dynamically served; the document identifies Alberta Learning as publisher and ISBN 0-7785-3772-2."
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "ABFSL-GEN-COM",
+      "component": "Communication",
+      "grade": "4-12",
+      "outcome_summary": "Use French to understand, express, and negotiate messages for real purposes.",
+      "locator": "Program p. 11"
+    },
+    {
+      "id": "ABFSL-GEN-LANG",
+      "component": "Language",
+      "grade": "4-12",
+      "outcome_summary": "Use French linguistic elements accurately enough to fulfil a communicative purpose.",
+      "locator": "Program p. 11"
+    },
+    {
+      "id": "ABFSL-GEN-CULT",
+      "component": "Culture",
+      "grade": "4-12",
+      "outcome_summary": "Use knowledge of Francophone cultures and one’s own culture to interact appropriately.",
+      "locator": "Program p. 11"
+    },
+    {
+      "id": "ABFSL-GEN-STRAT",
+      "component": "Language learning strategies",
+      "grade": "4-12",
+      "outcome_summary": "Use strategies to support French comprehension, production, and learning.",
+      "locator": "Program p. 11"
+    },
+    {
+      "id": "ABFSL-G4-LISTEN",
+      "component": "Communication",
+      "grade": "4",
+      "outcome_summary": "Identify key words and ideas in short, concrete oral texts.",
+      "locator": "Grade 4 pp. 13-14"
+    },
+    {
+      "id": "ABFSL-G4-READ",
+      "component": "Communication",
+      "grade": "4",
+      "outcome_summary": "Identify key words and ideas in short, concrete adapted or authentic written texts.",
+      "locator": "Grade 4 pp. 13-14"
+    },
+    {
+      "id": "ABFSL-G4-SPEAK",
+      "component": "Communication",
+      "grade": "4",
+      "outcome_summary": "Produce a simple oral message using familiar words, expressions, or modelled sentences.",
+      "locator": "Grade 4 p. 14"
+    },
+    {
+      "id": "ABFSL-G4-WRITE",
+      "component": "Communication",
+      "grade": "4",
+      "outcome_summary": "Produce a simple written message through labelling, substitution, or modelled sentences.",
+      "locator": "Grade 4 p. 14"
+    },
+    {
+      "id": "ABFSL-G4-LANG",
+      "component": "Language",
+      "grade": "4",
+      "outcome_summary": "Use familiar vocabulary, basic noun/article knowledge, location language, questions, and sound-symbol knowledge.",
+      "locator": "Grade 4 pp. 14-17"
+    },
+    {
+      "id": "ABFSL-G5-LISTEN",
+      "component": "Communication",
+      "grade": "5",
+      "outcome_summary": "Identify key words and ideas in simple concrete oral texts.",
+      "locator": "Grade 5 p. 20"
+    },
+    {
+      "id": "ABFSL-G5-READ",
+      "component": "Communication",
+      "grade": "5",
+      "outcome_summary": "Identify key words and ideas in simple concrete written texts.",
+      "locator": "Grade 5 p. 20"
+    },
+    {
+      "id": "ABFSL-G5-SPEAK",
+      "component": "Communication",
+      "grade": "5",
+      "outcome_summary": "Produce simple oral messages using familiar expressions and modelled sentences.",
+      "locator": "Grade 5 p. 20"
+    },
+    {
+      "id": "ABFSL-G5-WRITE",
+      "component": "Communication",
+      "grade": "5",
+      "outcome_summary": "Produce simple written messages using labelling, substitution, and modelled sentences.",
+      "locator": "Grade 5 p. 20"
+    },
+    {
+      "id": "ABFSL-G5-LANG",
+      "component": "Language",
+      "grade": "5",
+      "outcome_summary": "Use articles, gender and number, possessives, question words, subject pronouns, present verbs, and negation.",
+      "locator": "Grade 5 pp. 21-24"
+    },
+    {
+      "id": "ABFSL-G6-LISTEN",
+      "component": "Communication",
+      "grade": "6",
+      "outcome_summary": "Identify key words and ideas in simple concrete oral texts.",
+      "locator": "Grade 6 p. 27"
+    },
+    {
+      "id": "ABFSL-G6-READ",
+      "component": "Communication",
+      "grade": "6",
+      "outcome_summary": "Identify key words and ideas in simple concrete written texts.",
+      "locator": "Grade 6 p. 27"
+    },
+    {
+      "id": "ABFSL-G6-SPEAK",
+      "component": "Communication",
+      "grade": "6",
+      "outcome_summary": "Recombine familiar language to produce simple concrete oral messages.",
+      "locator": "Grade 6 p. 27"
+    },
+    {
+      "id": "ABFSL-G6-WRITE",
+      "component": "Communication",
+      "grade": "6",
+      "outcome_summary": "Recombine familiar language to produce simple concrete written messages.",
+      "locator": "Grade 6 p. 27"
+    },
+    {
+      "id": "ABFSL-G6-LANG",
+      "component": "Language",
+      "grade": "6",
+      "outcome_summary": "Apply sound-symbol knowledge, present-tense verb patterns, quantities, transportation language, and familiar expressions.",
+      "locator": "Grade 6 pp. 28-31"
+    },
+    {
+      "id": "ABFSL-G7-LISTEN",
+      "component": "Communication",
+      "grade": "7",
+      "outcome_summary": "In guided contexts, find main ideas or details in concrete oral texts using familiar language.",
+      "locator": "Grade 7 p. 35"
+    },
+    {
+      "id": "ABFSL-G7-READ",
+      "component": "Communication",
+      "grade": "7",
+      "outcome_summary": "In guided contexts, find main ideas or details in concrete written texts using familiar language.",
+      "locator": "Grade 7 p. 35"
+    },
+    {
+      "id": "ABFSL-G7-SPEAK",
+      "component": "Communication",
+      "grade": "7",
+      "outcome_summary": "Give a prepared, comprehensible present-tense message to describe, ask, answer, direct, or express a preference.",
+      "locator": "Grade 7 p. 35"
+    },
+    {
+      "id": "ABFSL-G7-WRITE",
+      "component": "Communication",
+      "grade": "7",
+      "outcome_summary": "Write a prepared, comprehensible present-tense message to describe, ask, answer, direct, or express a preference.",
+      "locator": "Grade 7 pp. 35-36"
+    },
+    {
+      "id": "ABFSL-G7-LANG",
+      "component": "Language",
+      "grade": "7",
+      "outcome_summary": "Use prior language with increasing accuracy and add contractions, prepositional phrases, and sentence-level word order.",
+      "locator": "Grade 7 pp. 36-37"
+    },
+    {
+      "id": "ABFSL-G8-ENRICH",
+      "component": "Communication",
+      "grade": "8",
+      "outcome_summary": "Understand and produce more detailed concrete messages in structured contexts.",
+      "locator": "Grade 8 pp. 42-43; enrichment reference only"
+    }
+  ],
+  "skills": [
+    {
+      "id": "L_KEYWORDS",
+      "domain": "Listening",
+      "description": "Recognize familiar words and global expressions.",
+      "outcome_ids": [
+        "ABFSL-G4-LISTEN",
+        "ABFSL-G5-LISTEN"
+      ],
+      "status": "assessed_in_release_a"
+    },
+    {
+      "id": "L_DIRECTIONS",
+      "domain": "Listening",
+      "description": "Act on a short concrete direction.",
+      "outcome_ids": [
+        "ABFSL-G4-LISTEN",
+        "ABFSL-G6-LISTEN"
+      ],
+      "status": "assessed_in_release_a"
+    },
+    {
+      "id": "L_MAIN_IDEA",
+      "domain": "Listening",
+      "description": "Identify the main idea of a short concrete message.",
+      "outcome_ids": [
+        "ABFSL-G6-LISTEN",
+        "ABFSL-G7-LISTEN"
+      ],
+      "status": "assessed_in_release_a"
+    },
+    {
+      "id": "L_DETAILS",
+      "domain": "Listening",
+      "description": "Locate stated details such as person, place, time, or preference.",
+      "outcome_ids": [
+        "ABFSL-G6-LISTEN",
+        "ABFSL-G7-LISTEN"
+      ],
+      "status": "assessed_in_release_a"
+    },
+    {
+      "id": "L_CONNECTED",
+      "domain": "Listening",
+      "description": "Follow a connected multi-sentence message.",
+      "outcome_ids": [
+        "ABFSL-G7-LISTEN",
+        "ABFSL-G8-ENRICH"
+      ],
+      "status": "assessed_in_release_a"
+    },
+    {
+      "id": "R_WORDS",
+      "domain": "Reading",
+      "description": "Recognize familiar words and expressions in context.",
+      "outcome_ids": [
+        "ABFSL-G4-READ",
+        "ABFSL-G5-READ"
+      ],
+      "status": "assessed_in_release_a"
+    },
+    {
+      "id": "R_SENTENCE",
+      "domain": "Reading",
+      "description": "Understand a simple concrete sentence.",
+      "outcome_ids": [
+        "ABFSL-G5-READ",
+        "ABFSL-G6-READ"
+      ],
+      "status": "assessed_in_release_a"
+    },
+    {
+      "id": "R_MAIN_IDEA",
+      "domain": "Reading",
+      "description": "Identify the main idea of a short connected text.",
+      "outcome_ids": [
+        "ABFSL-G6-READ",
+        "ABFSL-G7-READ"
+      ],
+      "status": "assessed_in_release_a"
+    },
+    {
+      "id": "R_DETAILS",
+      "domain": "Reading",
+      "description": "Find explicit details in a short connected text.",
+      "outcome_ids": [
+        "ABFSL-G6-READ",
+        "ABFSL-G7-READ"
+      ],
+      "status": "assessed_in_release_a"
+    },
+    {
+      "id": "R_INFERENCE",
+      "domain": "Reading",
+      "description": "Make a simple inference using context and familiar language.",
+      "outcome_ids": [
+        "ABFSL-G7-READ",
+        "ABFSL-G8-ENRICH"
+      ],
+      "status": "assessed_in_release_a"
+    },
+    {
+      "id": "R_CONNECTED",
+      "domain": "Reading",
+      "description": "Follow ideas across a short connected text.",
+      "outcome_ids": [
+        "ABFSL-G7-READ",
+        "ABFSL-G8-ENRICH"
+      ],
+      "status": "assessed_in_release_a"
+    },
+    {
+      "id": "VG_ARTICLES",
+      "domain": "Vocabulary and grammar",
+      "description": "Choose definite or indefinite articles for familiar nouns.",
+      "outcome_ids": [
+        "ABFSL-G4-LANG",
+        "ABFSL-G5-LANG"
+      ],
+      "status": "assessed_in_release_a"
+    },
+    {
+      "id": "VG_GENDER_NUMBER",
+      "domain": "Vocabulary and grammar",
+      "description": "Coordinate familiar nouns, articles, and basic adjective forms.",
+      "outcome_ids": [
+        "ABFSL-G5-LANG"
+      ],
+      "status": "assessed_in_release_a"
+    },
+    {
+      "id": "VG_POSSESSIVES",
+      "domain": "Vocabulary and grammar",
+      "description": "Use mon/ma/mes and son/sa/ses with familiar nouns.",
+      "outcome_ids": [
+        "ABFSL-G4-LANG",
+        "ABFSL-G5-LANG"
+      ],
+      "status": "assessed_in_release_a"
+    },
+    {
+      "id": "VG_PRESENT_CORE",
+      "domain": "Vocabulary and grammar",
+      "description": "Use present forms of être, avoir, aller, faire, aimer, and familiar -er verbs.",
+      "outcome_ids": [
+        "ABFSL-G5-LANG",
+        "ABFSL-G6-LANG"
+      ],
+      "status": "assessed_in_release_a"
+    },
+    {
+      "id": "VG_NEGATION",
+      "domain": "Vocabulary and grammar",
+      "description": "Form a simple negative message with ne…pas.",
+      "outcome_ids": [
+        "ABFSL-G5-LANG",
+        "ABFSL-G7-LANG"
+      ],
+      "status": "assessed_in_release_a"
+    },
+    {
+      "id": "VG_QUESTIONS",
+      "domain": "Vocabulary and grammar",
+      "description": "Interpret and use common question words and question forms.",
+      "outcome_ids": [
+        "ABFSL-G4-LANG",
+        "ABFSL-G5-LANG"
+      ],
+      "status": "assessed_in_release_a"
+    },
+    {
+      "id": "VG_LOCATION",
+      "domain": "Vocabulary and grammar",
+      "description": "Use familiar prepositions and location expressions.",
+      "outcome_ids": [
+        "ABFSL-G4-LANG",
+        "ABFSL-G7-LANG"
+      ],
+      "status": "assessed_in_release_a"
+    },
+    {
+      "id": "VG_CONTRACTIONS",
+      "domain": "Vocabulary and grammar",
+      "description": "Use common contractions with à/de plus an article.",
+      "outcome_ids": [
+        "ABFSL-G7-LANG"
+      ],
+      "status": "assessed_in_release_a"
+    },
+    {
+      "id": "VG_CONNECTED",
+      "domain": "Vocabulary and grammar",
+      "description": "Link ideas with simple connectors and maintain sentence order.",
+      "outcome_ids": [
+        "ABFSL-G7-LANG",
+        "ABFSL-G8-ENRICH"
+      ],
+      "status": "assessed_in_release_a"
+    },
+    {
+      "id": "W_ENCODING",
+      "domain": "Writing",
+      "description": "Spell familiar words with meaningful accents, apostrophes, and hyphens.",
+      "outcome_ids": [
+        "ABFSL-G4-WRITE",
+        "ABFSL-G6-LANG"
+      ],
+      "status": "assessed_in_release_a"
+    },
+    {
+      "id": "W_SENTENCE",
+      "domain": "Writing",
+      "description": "Write a simple sentence that communicates the requested message.",
+      "outcome_ids": [
+        "ABFSL-G4-WRITE",
+        "ABFSL-G5-WRITE"
+      ],
+      "status": "assessed_in_release_a"
+    },
+    {
+      "id": "W_DESCRIPTION",
+      "domain": "Writing",
+      "description": "Write two or more connected details about a familiar topic.",
+      "outcome_ids": [
+        "ABFSL-G6-WRITE",
+        "ABFSL-G7-WRITE"
+      ],
+      "status": "assessed_in_release_a"
+    },
+    {
+      "id": "W_QUESTION",
+      "domain": "Writing",
+      "description": "Write a relevant question and response.",
+      "outcome_ids": [
+        "ABFSL-G7-WRITE"
+      ],
+      "status": "assessed_in_release_a"
+    },
+    {
+      "id": "W_REASON",
+      "domain": "Writing",
+      "description": "State a preference or opinion with a simple reason.",
+      "outcome_ids": [
+        "ABFSL-G7-WRITE",
+        "ABFSL-G8-ENRICH"
+      ],
+      "status": "assessed_in_release_a"
+    },
+    {
+      "id": "W_CONNECTED",
+      "domain": "Writing",
+      "description": "Produce a short connected message with clear order.",
+      "outcome_ids": [
+        "ABFSL-G7-WRITE",
+        "ABFSL-G8-ENRICH"
+      ],
+      "status": "assessed_in_release_a"
+    },
+    {
+      "id": "S_INTRO",
+      "domain": "Speaking",
+      "description": "Give a short personal introduction.",
+      "outcome_ids": [
+        "ABFSL-G4-SPEAK",
+        "ABFSL-G5-SPEAK"
+      ],
+      "status": "assessed_in_release_a"
+    },
+    {
+      "id": "S_DESCRIPTION",
+      "domain": "Speaking",
+      "description": "Describe a familiar person, place, object, or situation.",
+      "outcome_ids": [
+        "ABFSL-G6-SPEAK",
+        "ABFSL-G7-SPEAK"
+      ],
+      "status": "assessed_in_release_a"
+    },
+    {
+      "id": "S_RESPONSE",
+      "domain": "Speaking",
+      "description": "Answer a familiar question with a relevant message.",
+      "outcome_ids": [
+        "ABFSL-G5-SPEAK",
+        "ABFSL-G7-SPEAK"
+      ],
+      "status": "assessed_in_release_a"
+    },
+    {
+      "id": "S_DIRECTIONS",
+      "domain": "Speaking",
+      "description": "Give simple directions in a structured context.",
+      "outcome_ids": [
+        "ABFSL-G7-SPEAK"
+      ],
+      "status": "assessed_in_release_a"
+    },
+    {
+      "id": "S_CONNECTED",
+      "domain": "Speaking",
+      "description": "Sustain a short prepared connected message.",
+      "outcome_ids": [
+        "ABFSL-G7-SPEAK",
+        "ABFSL-G8-ENRICH"
+      ],
+      "status": "assessed_in_release_a"
+    },
+    {
+      "id": "P_COMPREHENSIBILITY",
+      "domain": "Pronunciation observation",
+      "description": "Produce speech that a patient listener can understand.",
+      "outcome_ids": [
+        "ABFSL-G4-LANG",
+        "ABFSL-G7-LANG"
+      ],
+      "status": "assessed_in_release_a"
+    },
+    {
+      "id": "P_SOUND_SYMBOL",
+      "domain": "Pronunciation observation",
+      "description": "Relate common French sounds to spellings and diacritics.",
+      "outcome_ids": [
+        "ABFSL-G4-LANG",
+        "ABFSL-G6-LANG"
+      ],
+      "status": "assessed_in_release_a"
+    },
+    {
+      "id": "P_RHYTHM_LINKING",
+      "domain": "Pronunciation observation",
+      "description": "Use sufficiently clear French rhythm, elision, and word linking for the message.",
+      "outcome_ids": [
+        "ABFSL-G7-LANG",
+        "ABFSL-G8-ENRICH"
+      ],
+      "status": "assessed_in_release_a"
+    }
+  ],
+  "mapping_policy": {
+    "core_grades": [
+      "4",
+      "5",
+      "6",
+      "7"
+    ],
+    "enrichment_grades": [
+      "8"
+    ],
+    "claims": "Item links show outcome sampling, not full curriculum coverage or validation.",
+    "culture": "Francophone contexts appear in the bank, but cultural knowledge is not scored as a proxy for language ability.",
+    "strategies": "Assessment records replay and support behaviour; it does not score taught strategy use as a separate ability."
+  },
+  "coverage": {
+    "listening": "12 items per form; key words, directions, main idea, details, connected messages.",
+    "reading": "12 items per form; words, sentences, main idea, details, simple inference, connected texts.",
+    "vocabulary_grammar": "10 items per form; articles, agreement, possessives, core present verbs, negation, questions, location, contractions, connectors.",
+    "writing": "6 prompts per form; sentence, description, short message, question, reason, connected production.",
+    "speaking": "5 prompts per form; introduction, description, response, directions, connected production plus pronunciation observation."
+  }
+}

@@ -1,0 +1,279 @@
+{
+  "release_id": "assessment-v1.0.0",
+  "fixtures": [
+    {
+      "id": "FX-OBJ-CORRECT",
+      "case": "correct",
+      "item_id": "LA-F02",
+      "response": {
+        "choice_ids": [
+          "a"
+        ]
+      },
+      "expected": {
+        "points": 1,
+        "valid": true,
+        "support": false
+      }
+    },
+    {
+      "id": "FX-OBJ-WRONG",
+      "case": "incorrect",
+      "item_id": "LA-F02",
+      "response": {
+        "choice_ids": [
+          "b"
+        ]
+      },
+      "expected": {
+        "points": 0,
+        "valid": true,
+        "support": false
+      }
+    },
+    {
+      "id": "FX-TYPED-EXACT",
+      "case": "correct",
+      "item_id": "VGA-F04",
+      "response": {
+        "text": "où"
+      },
+      "expected": {
+        "points": 1,
+        "meaning": true,
+        "spelling": true,
+        "valid": true
+      }
+    },
+    {
+      "id": "FX-TYPED-ACCENT",
+      "case": "partial",
+      "item_id": "VGA-F04",
+      "response": {
+        "text": "ou"
+      },
+      "expected": {
+        "points": 0,
+        "meaning": true,
+        "spelling": false,
+        "valid": true,
+        "report_flag": "spelling_needs_correction"
+      }
+    },
+    {
+      "id": "FX-TYPED-SPACING",
+      "case": "correct",
+      "item_id": "VGA-S03",
+      "response": {
+        "text": "  Parce que  "
+      },
+      "expected": {
+        "points": 1,
+        "meaning": true,
+        "spelling": true,
+        "valid": true
+      }
+    },
+    {
+      "id": "FX-SUPPORTED",
+      "case": "supported",
+      "item_id": "RA-D02",
+      "response": {
+        "choice_ids": [
+          "a"
+        ],
+        "support_flag": true
+      },
+      "expected": {
+        "points": 1,
+        "valid": true,
+        "independent_band_included": false,
+        "support_count_increment": 1
+      }
+    },
+    {
+      "id": "FX-AUDIO-INVALID",
+      "case": "technically_invalid",
+      "item_id": "LB-D03",
+      "response": {
+        "choice_ids": [],
+        "technical_invalid_reason": "audio_failed"
+      },
+      "expected": {
+        "points": null,
+        "valid": false,
+        "incorrect": false,
+        "replacement_tier": "developing"
+      }
+    },
+    {
+      "id": "FX-MIC-INVALID",
+      "case": "technically_invalid",
+      "item_id": "SA-D01",
+      "response": {
+        "technical_invalid_reason": "microphone_failed",
+        "device_transcript": "après école soccer"
+      },
+      "expected": {
+        "rubric_score": null,
+        "valid": false,
+        "pronunciation_score": null
+      }
+    },
+    {
+      "id": "FX-WRITING-REVIEW",
+      "case": "human_scored_partial",
+      "item_id": "WA-D02",
+      "response": {
+        "text": "Salut. bibliothèque 3 heure.",
+        "support_flag": false
+      },
+      "human_scores": {
+        "message": 2,
+        "vocabulary": 1,
+        "structure": 1,
+        "conventions": 1,
+        "independence": 3
+      },
+      "expected": {
+        "weighted_points": 15,
+        "weighted_max": 30,
+        "percent": 50,
+        "valid": true
+      }
+    },
+    {
+      "id": "FX-SPEAKING-AWAIT",
+      "case": "awaiting_review",
+      "item_id": "SB-D01",
+      "response": {
+        "audio_ref": "local://attempt/audio-1",
+        "device_transcript": "il fait froid manteau"
+      },
+      "expected": {
+        "rubric_score": null,
+        "status": "awaiting_review",
+        "band": null
+      }
+    },
+    {
+      "id": "FX-FLOOR",
+      "case": "objective_band",
+      "domain": "listening",
+      "tier_results": {
+        "developing": {
+          "correct": 1,
+          "valid": 4
+        },
+        "foundation": {
+          "correct": 1,
+          "valid": 4
+        }
+      },
+      "expected": {
+        "band": "below_assessment_floor",
+        "confidence": "high",
+        "upper_limit_not_measured": false
+      }
+    },
+    {
+      "id": "FX-FOUNDATION",
+      "case": "objective_band",
+      "domain": "reading",
+      "tier_results": {
+        "developing": {
+          "correct": 1,
+          "valid": 4
+        },
+        "foundation": {
+          "correct": 3,
+          "valid": 4
+        }
+      },
+      "expected": {
+        "band": "foundation_secure",
+        "confidence": "high"
+      }
+    },
+    {
+      "id": "FX-DEVELOPING",
+      "case": "objective_band",
+      "domain": "listening",
+      "tier_results": {
+        "developing": {
+          "correct": 3,
+          "valid": 4
+        },
+        "stretch": {
+          "correct": 1,
+          "valid": 4
+        }
+      },
+      "expected": {
+        "band": "developing_secure",
+        "confidence": "high"
+      }
+    },
+    {
+      "id": "FX-STRETCH",
+      "case": "objective_band",
+      "domain": "vocabulary_grammar",
+      "tier_results": {
+        "developing": {
+          "correct": 3,
+          "valid": 3
+        },
+        "stretch": {
+          "correct": 2,
+          "valid": 3
+        }
+      },
+      "expected": {
+        "band": "stretch_emerging",
+        "confidence": "high",
+        "upper_limit_not_measured": false
+      }
+    },
+    {
+      "id": "FX-CEILING",
+      "case": "objective_band",
+      "domain": "reading",
+      "tier_results": {
+        "developing": {
+          "correct": 4,
+          "valid": 4
+        },
+        "stretch": {
+          "correct": 4,
+          "valid": 4
+        }
+      },
+      "expected": {
+        "band": "stretch_secure",
+        "confidence": "high",
+        "upper_limit_not_measured": true,
+        "ceiling_reached": true
+      }
+    },
+    {
+      "id": "FX-INSUFFICIENT",
+      "case": "objective_band",
+      "domain": "listening",
+      "tier_results": {
+        "developing": {
+          "correct": 2,
+          "valid": 3
+        },
+        "foundation": {
+          "correct": 1,
+          "valid": 2
+        }
+      },
+      "invalid_count": 3,
+      "expected": {
+        "band": "insufficient_evidence",
+        "confidence": "insufficient"
+      }
+    }
+  ]
+}

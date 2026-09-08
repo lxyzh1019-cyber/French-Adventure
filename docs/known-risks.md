@@ -84,6 +84,20 @@ Star totals are rebuilt from the merged per-day ledger rather than taking the
 maximum. Two iPads that each played one round offline from 1000 stars end at
 1050, not 1030 — a maximum would have silently dropped the smaller session.
 
+**Same-day rounds (M1 audit blocker 1, fixed).** The per-day ledger alone could
+not tell two rounds on the *same* day apart: each day's counters were merged
+by taking the larger value, so a 30-star quiz on one iPad and a 20-star match
+on the other, both on 2026-09-08, converged on 30. `weekStars` and the daily
+round cap were plain maximums too. Since schema v2 every finished round is
+also written to `roundLog` under its own attempt id; the merge unions the
+ledgers and rebuilds every counter it explains as *shared base + merged
+ledger*. Rounds finished before v2 have no record and are counted once by the
+old rule. Covered by the same-day cases in `tests/merge.test.js`.
+
+Not ledgered, and still merged by the larger value: `dailyTimeMs`, and answers
+given outside a round (the My Words drill). Two devices drilling on the same
+day keep the larger count, not the sum.
+
 A remote update arriving *during* a round is also queued and merged at round
 end. It used to be dropped outright.
 

@@ -106,3 +106,16 @@ test('unknown fields on a v0 profile survive', () => {
   const after = migrateProfile({ ...v0(), somethingOld: { a: 1 } });
   assert.deepEqual(after.somethingOld, { a: 1 });
 });
+
+test('v1 -> v2 adds an empty round ledger and nothing else', () => {
+  const v1 = { ...v0(), schemaVersion: 1 };
+  const after = migrateProfile(v1);
+  assert.equal(after.schemaVersion, 2);
+  assert.deepEqual(after.roundLog, {});
+  assert.equal(after.totalStars, 1240);
+  assert.deepEqual(after.todayStats, v1.todayStats, 'day counters were rewritten');
+  // Twice equals once, and an existing ledger is never cleared.
+  const withLog = { ...after, roundLog: { r1: { id: 'r1', day: '2026-09-05', stars: 30 } } };
+  assert.deepEqual(migrateProfile(withLog).roundLog, withLog.roundLog);
+  assert.deepEqual(migrateProfile(after), after);
+});

@@ -2,6 +2,8 @@ import { firebaseReady } from './state/firebase-bootstrap.js';
 import { CURRICULUM, SENTENCES } from './content/curriculum-map.js';
 import { migrateProfile } from './state/migrations.js';
 import { mergeProfiles } from './state/merge.js';
+import { makeRoundLogEntry } from './state/schema.js';
+import { createMicController } from './speech/recorder.js';
 import { SCHEMA_VERSION, hasAnyProgress } from './state/schema.js';
 import { GRADE_KEYS, levelLabel, levelNumber, recommendLevel,
          recommendationText, levelAccuracy, hasMoon } from './learning/levels.js';
@@ -47,6 +49,12 @@ let currentGameType = null;
 // Round state
 let questions=[], qIndex=0, roundScore=0, roundBasePoints=0, roundSpeedPoints=0, lives=3, currentQ=null;
 let roundTopicTally={};
+// What this round alone added to todayStats.correct/wrong and gradeStats, so
+// the finished round can be written to the ledger with exactly the deltas it
+// applied. Reset at round start, carried in the draft across a resume.
+let roundAnswerTally={correct:0,wrong:0};
+let roundGradeTally={};
+function roundIsLive(){ return !!(roundAttemptId && currentGameType && !roundEnded); }
 let builtWords=[], scrambleAnswer=[], scrambleSource=[];
 let matchSelected=null, matchPairs=[], matchMatched=[], matchFrOrder=[], matchEnOrder=[];
 let __roundDraftSnap=null;
@@ -194,6 +202,7 @@ function collectRoundDraft(){
     savedAt: Date.now(),
     tk, player: currentPlayer, grade: currentGrade, type: currentGameType,
     qIndex, questions, lives, roundScore, roundBasePoints, roundSpeedPoints, roundTopicTally,
+    roundAnswerTally, roundGradeTally,
     currentQ, questionStartTime, feedbackOpen,
     matchPairs, matchMatched, matchFrOrder, matchEnOrder,
     matchSelected: serializeMatchSelected(),
@@ -247,6 +256,8 @@ function restoreRoundDraft(d){
   roundBasePoints = d.roundBasePoints|0;
   roundSpeedPoints = d.roundSpeedPoints|0;
   roundTopicTally = d.roundTopicTally && typeof d.roundTopicTally === 'object' ? d.roundTopicTally : {};
+  roundAnswerTally = d.roundAnswerTally && typeof d.roundAnswerTally === 'object' ? { correct: d.roundAnswerTally.correct|0, wrong: d.roundAnswerTally.wrong|0 } : { correct: 0, wrong: 0 };
+  roundGradeTally = d.roundGradeTally && typeof d.roundGradeTally === 'object' ? d.roundGradeTally : {};
   currentQ = questions[qIndex] || null;
   questionStartTime = d.questionStartTime || Date.now();
   matchPairs = d.matchPairs || [];
@@ -672,6 +683,11 @@ function bumpGradeStats(s, grade, correct, wrong){
   if(!s.gradeStats[tk][grade]) s.gradeStats[tk][grade] = { correct: 0, wrong: 0 };
   s.gradeStats[tk][grade].correct += correct;
   s.gradeStats[tk][grade].wrong += wrong;
+  if(roundIsLive()){
+    if(!roundGradeTally[grade]) roundGradeTally[grade] = { c: 0, w: 0 };
+    roundGradeTally[grade].c += correct;
+    roundGradeTally[grade].w += wrong;
+  }
 }
 function tallyTopicFromWord(word, correct){
   if(!word || !word.topic) return;
@@ -1091,6 +1107,7 @@ function updateTodayStat(type){
   const k=todayKey();
   if(!s.todayStats[k])s.todayStats[k]={correct:0,wrong:0,rounds:0,stars:0};
   s.todayStats[k][type]=(s.todayStats[k][type]||0)+1;
+  if(roundIsLive() && (type==='correct'||type==='wrong')) roundAnswerTally[type]++;
 }
 function getRequeueWords(){
   const s=state[currentPlayer];
@@ -1135,7 +1152,7 @@ function checkMoons(s){
     const key='grade'+g;
     if(!s.moons[key]&&allThree(g)){
       s.moons[key]=true;
-      newMoons.push({emoji:'🌙',label:'Grade '+g+' Moon',msg:'All topics in Grade '+g+' at 3⭐!'});
+      newMoons.push({emoji:'🌙',label:levelLabel(g)+' Moon',msg:'All topics in '+levelLabel(g)+' at 3⭐!'});
     }
   });
   // Superstar = moons on the two highest currently-unlocked grades
@@ -1145,7 +1162,7 @@ function checkMoons(s){
     const bothMooned=top2.every(g=>s.moons['grade'+g]);
     if(!s.moons.super&&bothMooned){
       s.moons.super=true;
-      newMoons.push({emoji:'🌟',label:'Superstar',msg:'Moons on G'+top2[0]+' & G'+top2[1]+' — superstar!'});
+      newMoons.push({emoji:'🌟',label:'Superstar',msg:'Moons on L'+levelNumber(top2[0])+' & L'+levelNumber(top2[1])+' — superstar!'});
     }
   }
   return newMoons;
@@ -1227,7 +1244,10 @@ function selectPlayer(p){
     return;
   }
   pendingPlayer=null;
-  currentPlayer=p;currentGrade=4;
+  currentPlayer=p;
+  // Open the level the app suggests next rather than always L1; the ⭐ on the
+  // tabs used to point at one level while the content shown was another.
+  try{ currentGrade=recommendLevel(state[p]).gradeKey||4; }catch(_){ currentGrade=4; }
   hubDailySummaryOpen=false;
   const hdsb=document.getElementById('hub-daily-summary-block');
   const hdch=document.getElementById('hub-daily-chev');
@@ -1249,7 +1269,7 @@ function goBack(){
   document.getElementById('session-clock').style.display='none';
   showScreen('select');updateLeaderboard();
 }
-function exitGame(){if(currentPlayer&&currentGameType){persistRoundDraftNow();applyPendingRemoteData(currentPlayer);saveState(currentPlayer);}currentGameType=null;questions=[];showScreen('hub');document.getElementById('hint-panel').classList.remove('show');updateConnectionStatusUI();}
+function exitGame(){stopAllMics();if(currentPlayer&&currentGameType){persistRoundDraftNow();applyPendingRemoteData(currentPlayer);saveState(currentPlayer);}currentGameType=null;questions=[];showScreen('hub');document.getElementById('hint-panel').classList.remove('show');updateConnectionStatusUI();}
 function showScreen(name){
   ['select','hub','game'].forEach(n=>document.getElementById(`screen-${n}`).style.display=n===name?'block':'none');
 }
@@ -1274,6 +1294,7 @@ function refreshGradeTabs(){
     // Nothing is locked any more. Tabs show the level, a moon once every topic
     // is fully starred, and a pointer at whichever level is suggested next.
     el.classList.remove('grade-locked','grade-tab-future');
+    el.classList.toggle('active', n===currentGrade);
     el.classList.toggle('grade-tab-recommended', n===rec.gradeKey);
     el.textContent = (hasMoon(s,n) ? '🌙 ' : '') + 'L' + levelNumber(n)
                    + (n===rec.gradeKey ? ' ⭐' : '');
@@ -1395,7 +1416,7 @@ function updateHub(){
   document.getElementById('hub-stars').textContent=s.totalStars;
   document.getElementById('hub-streak').textContent=s.streak;
   document.getElementById('hub-week').textContent=s.weekStars;
-  const moonLine=[4,5,6,7,8,9,10].map(g=>s.moons&&s.moons['grade'+g]?'🌙G'+g:'').filter(Boolean).join('  ')+(s.moons&&s.moons.super?'  🌟Super':'');
+  const moonLine=[4,5,6,7,8,9,10].map(g=>s.moons&&s.moons['grade'+g]?'🌙L'+levelNumber(g):'').filter(Boolean).join('  ')+(s.moons&&s.moons.super?'  🌟Super':'');
   document.getElementById('hub-moons').textContent=moonLine;
   const sloganText=getDailySlogan();
   const sloganEl=document.getElementById('hub-slogan');
@@ -1504,6 +1525,16 @@ function speakButtonHTML(text, cls, style){
     + (style ? ' style="'+escapeAttr(style)+'"' : '')
     + ' data-speak="'+escapeAttr(text)+'">\uD83D\uDD0A</button>';
 }
+// Read-only window into round state for the browser tests. Everything in this
+// module is private to it; the tests need to see the board to prove resume and
+// scoring behave, and inferring it from the DOM would make them brittle.
+window.__faDebug = {
+  get matchPairs(){ return matchPairs; }, get matchMatched(){ return matchMatched; },
+  get matchSelected(){ return matchSelected; }, get lives(){ return lives; },
+  get roundBasePoints(){ return roundBasePoints; }, get qIndex(){ return qIndex; },
+  get roundAttemptId(){ return roundAttemptId; }, get recognition(){ return recognition; },
+  endRound: (o)=>endRound(o),
+};
 document.addEventListener('click', function(e){
   const t = e.target && e.target.closest ? e.target.closest('[data-speak]') : null;
   if(t) speakFrench(t.getAttribute('data-speak'));
@@ -1531,26 +1562,47 @@ function speakCurrent(){
   const text=currentQ.word?.fr||currentQ.parts?.join(' ')||'';
   if(text)speakFrench(text);
 }
+// One controller per mic button. Tap starts listening, tap again stops it,
+// and every way a listen can end (result, error, silence, timeout) resets the
+// button — it used to stay stuck pulsing after Safari ended on its own.
+let quizMic = null;
+function micButtonState(btn, idleLabel){
+  return (state)=>{
+    if(!btn) return;
+    btn.classList.toggle('listening', state==='listening');
+    btn.setAttribute('aria-pressed', state==='listening' ? 'true' : 'false');
+    btn.textContent = state==='listening' ? '⏹ Stop' : idleLabel;
+    btn.title = state==='listening' ? 'Listening… tap to stop' : 'Speak — tap again to stop';
+  };
+}
 function startSpeech(){
   if(!recognition)return;
   const btn=document.getElementById('btn-stt');
-  btn.classList.add('listening');btn.textContent='🎤...';
-  recognition.start();
-  recognition.onresult=e=>{
-    const said=e.results[0][0].transcript.toLowerCase().trim();
-    const target=(currentQ?.word?.fr||'').toLowerCase().trim();
-    btn.classList.remove('listening');btn.textContent='🎤';
-    // Speech-to-text rarely returns accents, so this is a recognition-level
-    // match, not a spelling one. It reports what the device heard and never
-    // claims the pronunciation was good: a transcript match is evidence that
-    // the recogniser understood a word, not that it was said well.
-    if(normalizeForRecognition(said)===normalizeForRecognition(target)){
-      showToast(`🎤 The device heard "${said}" — that's the word!`);
-    } else {
-      showToast(`🎤 The device heard "${said}" — try again!`,'var(--gold)');
-    }
-  };
-  recognition.onerror=()=>{btn.classList.remove('listening');btn.textContent='🎤';};
+  if(!quizMic){
+    quizMic=createMicController({
+      recognition,
+      onState: micButtonState(btn,'🎤'),
+      onTranscript: said=>{
+        const heard=said.toLowerCase().trim();
+        const target=(currentQ?.word?.fr||'').toLowerCase().trim();
+        if(!heard){ showToast('🎤 The device did not hear anything — try again', 'var(--gold)'); return; }
+        // Speech-to-text rarely returns accents, so this is a recognition-level
+        // match, not a spelling one. It reports what the device heard and never
+        // claims the pronunciation was good: a transcript match is evidence that
+        // the recogniser understood a word, not that it was said well.
+        if(normalizeForRecognition(heard)===normalizeForRecognition(target)){
+          showToast(`🎤 The device heard "${heard}" — that's the word!`);
+        } else {
+          showToast(`🎤 The device heard "${heard}" — try again!`,'var(--gold)');
+        }
+      }
+    });
+  }
+  quizMic.toggle();
+}
+function stopAllMics(){
+  try{ quizMic && quizMic.stop('leave'); }catch(_){}
+  try{ listenMic && listenMic.stop('leave'); }catch(_){}
 }
 
 // ════════════════════════════════════════════════
@@ -1576,6 +1628,7 @@ function startGame(type){
   }else{
     clearCurrentRoundDraft();
     lives=3;roundScore=0;roundBasePoints=0;roundSpeedPoints=0;qIndex=0;roundTopicTally={};
+    roundAnswerTally={correct:0,wrong:0};roundGradeTally={};
     roundEnded=false;roundAttemptId=newAttemptId();committedAnswers.clear();
     questions=buildQuestions(type);
     renderLives();renderScore();
@@ -1750,6 +1803,9 @@ function renderMatch(q,area,actions){
         matchSelected.btn=b;
       }
     });
+    // A saved selection whose tile no longer exists (or was matched meanwhile)
+    // must not survive as {btn:null}: the click handler dereferences .btn.
+    if(!matchSelected.btn) matchSelected=null;
   }
 }
 function handleMatchClick(btn,side,word){
@@ -1771,8 +1827,20 @@ function handleMatchClick(btn,side,word){
     showToast(`✅ ${pair.fr} = ${pair.en}!`);
     if(matchMatched.length===matchPairs.length)setTimeout(()=>showFeedback(true,null,`All ${matchPairs.length} pairs matched! 🎉`,null,null,{skipPoints:true}),400);
   } else {
-    [btn,matchSelected.btn].forEach(b=>b.style.borderColor='var(--jenn)');
-    setTimeout(()=>{[btn,matchSelected.btn].forEach(b=>b.style.borderColor='');},600);
+    // Capture both tiles NOW. The delayed reset used to read matchSelected.btn
+    // when the timer fired, after matchSelected had been set to null below —
+    // a TypeError if the child waited, and the wrong tile cleared if she had
+    // already started a new selection. The reset acts only on this pair, and
+    // leaves a tile alone if it has since been matched or re-selected.
+    const wrongPair=[btn,matchSelected.btn];
+    wrongPair.forEach(b=>b.style.borderColor='var(--jenn)');
+    setTimeout(()=>{
+      wrongPair.forEach(b=>{
+        if(!b||b.classList.contains('used'))return;
+        if(matchSelected&&matchSelected.btn===b)return;
+        b.style.borderColor='';
+      });
+    },600);
     const failFr=side==='fr'?word:matchSelected.word;
     const failWord=matchPairs.find(p=>p.fr===failFr);
     if(failWord){
@@ -2030,14 +2098,9 @@ async function endRound(outcome = ROUND_OUTCOME.COMPLETED){
     if(st>0)s.topicStars[tk]=Math.max(s.topicStars[tk]||0, st);
   });
 
-  const unl=tryUnlockGradesAndTiers(s);
-  let unlockLine='';
-  if(unl.length){
-    unlockLine='<div class="unlock-banner">'+unl.map(u=>{
-      if(typeof u==='number')return '🔓 Grade '+u+' unlocked!';
-      return '';
-    }).filter(Boolean).join(' · ')+'</div>';
-  }
+  // Levels are never locked, so there is nothing to announce here.
+  tryUnlockGradesAndTiers(s);
+  const unlockLine='';
 
   let maxTopicTier=0;
   touchedTopicKeys.forEach((tk)=>{
@@ -2057,13 +2120,26 @@ async function endRound(outcome = ROUND_OUTCOME.COMPLETED){
   if(completed) s.todayStats[tk].rounds++;
   s.todayStats[tk].stars+=roundScore;
 
+  // The ledger entry. Everything above is what this round added to the day
+  // counters; this records the same deltas under the round's own id so that
+  // when the other iPad's snapshot arrives the merge can tell two same-day
+  // rounds apart instead of keeping the larger day. Written once per attempt.
+  if(!s.roundLog) s.roundLog={};
+  if(roundAttemptId && !s.roundLog[roundAttemptId]){
+    s.roundLog[roundAttemptId]=makeRoundLogEntry({
+      id: roundAttemptId, day: tk, type: currentGameType, grade: currentGrade,
+      stars: roundScore, correct: roundAnswerTally.correct, wrong: roundAnswerTally.wrong,
+      completed, grades: roundGradeTally, topics: roundTopicTally, at: Date.now()
+    });
+  }
+
   const newMoons=checkMoons(s);
   let moonHTML='';
   if(newMoons.length>0){
     moonHTML=newMoons.map(m=>`<div class="moon-banner"><div class="moon-emoji">${m.emoji}</div><div class="moon-label">${m.label}</div><div class="moon-msg">${m.msg}</div></div>`).join('');
     confetti();confetti();
   }
-  const moonTrophies=[4,5,6,7,8,9,10].map(g=>s.moons&&s.moons['grade'+g]?'🌙G'+g:'').filter(Boolean).join(' ')+(s.moons&&s.moons.super?' · 🌟Super':'');
+  const moonTrophies=[4,5,6,7,8,9,10].map(g=>s.moons&&s.moons['grade'+g]?'🌙L'+levelNumber(g):'').filter(Boolean).join(' ')+(s.moons&&s.moons.super?' · 🌟Super':'');
 
   // Say plainly whether the round was finished. Running out of lives used to
   // look identical to completing every question, which told the child — and the
@@ -2133,7 +2209,7 @@ function renderMyWordsList(){
       +'<div class="conquer-fr">'+w.fr+'</div>'
       +'<div class="conquer-right"><div class="conquer-en">'+w.en+'</div><div class="conquer-zh">'+w.zh+'</div></div>'
       +'<div><div class="conquer-prog"><div class="conquer-prog-fill" style="width:'+Math.round(prog*100)+'%"></div></div></div>'
-      +speakButtonHTML(w.fr,'','background:none;border:none;cursor:pointer;font-size:1.2rem;padding:4px;touch-action:manipulation;')
+      +speakButtonHTML(w.fr,'speak-inline')
       +'</div>';
   }).join('')
   +'<div style="text-align:center;margin-top:14px;">'
@@ -2189,7 +2265,7 @@ function renderDrillCard(){
     +'<div class="action-row" style="margin-top:12px;">'
     +'<button class="btn-secondary" onclick="revealDrill()">Reveal</button>'
     +'<button class="btn-primary" onclick="checkDrill(\''+w.fr.replace(/'/g,"\\'")+'\')" >Check ✓</button>'
-    +speakButtonHTML(w.fr,'btn-speak','touch-action:manipulation;')
+    +speakButtonHTML(w.fr,'btn-speak')
     +'</div>';
   setTimeout(()=>document.getElementById('train-input')?.focus(),100);
 }
@@ -2249,7 +2325,7 @@ function renderStudySet(n){
         <div class="study-mini-fr">${w.fr}</div>
         <div class="study-mini-en">${w.en}</div>
         <div class="study-mini-zh">${w.zh}</div>
-        ${speakButtonHTML(w.fr,'','background:none;border:none;cursor:pointer;margin-top:4px;')}
+        ${speakButtonHTML(w.fr,'speak-inline','margin-top:4px;')}
       </div>`).join('')}</div>`;
   } else if(n===2){
     // Set 2 — shared sentence patterns
@@ -2259,7 +2335,7 @@ function renderStudySet(n){
         <div class="study-card-fr">${s.parts.join(' ')}</div>
         <div class="study-card-en">${s.target}</div>
         <div class="study-card-zh">${s.zh}</div>
-        ${speakButtonHTML(s.parts.join(' '),'','background:none;border:none;cursor:pointer;margin-top:8px;font-size:1.2rem;')}
+        ${speakButtonHTML(s.parts.join(' '),'speak-inline','margin-top:8px;')}
       </div>`).join('');
   } else {
     // Set 3 — personalized: failed words first
@@ -2273,7 +2349,7 @@ function renderStudySet(n){
           <div class="study-card-fr">${w.fr}</div>
           <div class="study-card-en">${w.en}</div>
           <div class="study-card-zh">${w.zh}</div>
-          ${speakButtonHTML(w.fr,'','background:none;border:none;cursor:pointer;margin-top:6px;')}
+          ${speakButtonHTML(w.fr,'speak-inline','margin-top:6px;')}
         </div>`).join('');
     }
   }
@@ -2335,21 +2411,24 @@ function checkListenAnswer(){
   scheduleRoundDraftPersist();
 }
 
+let listenMic = null;
 function startListenSpeech(){
   if(!recognition) return;
   const btn = document.getElementById('btn-stt-listen');
-  if(btn){btn.classList.add('listening');btn.textContent='🎤...';}
-  recognition.start();
-  recognition.onresult = e=>{
-    const said = e.results[0][0].transcript.toLowerCase().trim();
-    if(btn){btn.classList.remove('listening');btn.textContent='🎤 Speak';}
-    const input = document.getElementById('listen-input');
-    if(input) input.value = said;
-    checkListenAnswer();
-  };
-  recognition.onerror = ()=>{
-    if(btn){btn.classList.remove('listening');btn.textContent='🎤 Speak';}
-  };
+  // The button is re-rendered with every question, so rebind its state hook.
+  listenMic = createMicController({
+    recognition,
+    onState: micButtonState(btn,'🎤 Speak'),
+    onTranscript: said=>{
+      const input = document.getElementById('listen-input');
+      if(!said){ showToast('🎤 The device did not hear anything — try again', 'var(--gold)'); return; }
+      // Show what was heard and let the child decide. Auto-submitting the
+      // transcript used to cost a life for a mishearing she never saw.
+      if(input){ input.value = said; try{ input.focus(); }catch(_){} }
+      showToast(`🎤 The device heard "${said}" — tap Check ✓, or fix it first`);
+    }
+  });
+  listenMic.toggle();
 }
 
 // ════════════════════════════════════════════════
@@ -2780,24 +2859,10 @@ function aggregateWeekFromDaily(s, weekStart){
 function reconcilePlayerFromBackup(player, data){
   if(!data||!data.players||!data.players[player])return null;
   const incoming=data.players[player];
-  const merged=JSON.parse(JSON.stringify(state[player]));
-  const jToday=Object.assign({}, merged.todayStats||{}, incoming.todayStats||{});
-  const jPlayed=Object.assign({}, merged.playedDays||{}, incoming.playedDays||{});
-  merged.todayStats=jToday;
-  merged.playedDays=jPlayed;
-  merged.dailyTimeMs=Object.assign({}, merged.dailyTimeMs||{}, incoming.dailyTimeMs||{});
-  merged.dailyRounds=Object.assign({}, merged.dailyRounds||{}, incoming.dailyRounds||{});
-  merged.gradeStats=Object.assign({}, merged.gradeStats||{}, incoming.gradeStats||{});
-  merged.totalStars=Math.max(Number(merged.totalStars||0), Number(incoming.totalStars||0));
-  merged.weekStars=Math.max(Number(merged.weekStars||0), Number(incoming.weekStars||0));
-  merged.streak=Math.max(Number(merged.streak||0), Number(incoming.streak||0));
-  if(incoming.weeklyHistory&&incoming.weeklyHistory.length){
-    const byWeek={};
-    [...(merged.weeklyHistory||[]), ...incoming.weeklyHistory].forEach(w=>{
-      if(w&&w.weekStart)byWeek[w.weekStart]=w;
-    });
-    merged.weeklyHistory=Object.values(byWeek).sort((a,b)=>String(a.weekStart).localeCompare(String(b.weekStart))).slice(-8);
-  }
+  // Same merge as cross-device sync: the ledger reconciles same-day rounds
+  // and nothing earned on either side goes backwards. This used to be a
+  // last-writer-wins Object.assign per day plus a max on the totals.
+  const merged=mergeProfiles(migrateProfile(state[player]), migrateProfile(incoming));
   merged.weekStart = merged.weekStart || getWeekStart();
   const prevStart=previousWeekStartKey(getWeekStart());
   const already=(merged.weeklyHistory||[]).some(w=>w.weekStart===prevStart);
@@ -2883,6 +2948,9 @@ async function clearProgress(mode){
         });
       }
       if(s.todayStats) delete s.todayStats[today];
+      if(s.roundLog){
+        Object.keys(s.roundLog).forEach(id=>{ if(s.roundLog[id]&&s.roundLog[id].day===today) delete s.roundLog[id]; });
+      }
       if(s.dailyTimeMs && s.dailyTimeMs[today]) delete s.dailyTimeMs[today];
       if(s.lastDrillComplete===today) s.lastDrillComplete=null;
       if(s.failedWords){
@@ -2924,6 +2992,9 @@ async function clearProgress(mode){
         Object.keys(s.todayStats).forEach(k=>{
           if(k !== today) delete s.todayStats[k];
         });
+      }
+      if(s.roundLog){
+        Object.keys(s.roundLog).forEach(id=>{ if(!s.roundLog[id]||s.roundLog[id].day!==today) delete s.roundLog[id]; });
       }
       if(s.gradeGameRounds){
         Object.keys(s.gradeGameRounds).forEach(k=>{
