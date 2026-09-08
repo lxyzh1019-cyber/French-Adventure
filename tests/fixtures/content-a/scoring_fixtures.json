@@ -1,0 +1,5 @@
+{ "cases": [
+  { "kind": "correct", "itemId": "a-read-1", "response": "cat", "expectedScore": 1 },
+  { "kind": "partial", "itemId": "a-read-1", "response": "a cat", "expectedScore": 0.5 },
+  { "kind": "incorrect", "itemId": "a-read-1", "response": "dog", "expectedScore": 0 },
+  { "kind": "invalid", "itemId": "a-lis-1", "response": null, "expectedScore": null } ] }

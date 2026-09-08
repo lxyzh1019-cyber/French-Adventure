@@ -7,7 +7,7 @@
      styles ......... src/styles.css
      game logic ..... src/**/*.js
 
-   Built from b17018e
+   Built from f290a3e
   ============================================================
 -->
 <!DOCTYPE html>
@@ -3340,7 +3340,8 @@ function checkListenAnswer() {
     showFeedback(true, currentQ.word);
   } else {
     logFailure(currentQ.word);
-    showFeedback(false, currentQ.word);
+    const note = cmp.meaning ? "So close — check the accents and marks!" : null;
+    showFeedback(false, currentQ.word, note, target);
     applyWrongAttemptPenalty(1500);
   }
   scheduleRoundDraftPersist();

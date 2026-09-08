@@ -150,3 +150,27 @@ trusted.
 
 Deferred deliberately: the identifier scheme has to match the content packages
 that define the skills, so inventing one now would conflict with them.
+
+---
+
+## 3. Content packages are not yet delivered
+
+**Status:** blocking M2 and M3. Nothing to fix in code.
+
+The assessment (Release A) and the four-chapter story (Release B) are content,
+not code, and neither exists. M2 cannot start without A; M3 cannot start
+without B.
+
+`npm run check:content -- <dir>` validates a package the day it arrives — the
+day it arrives is much cheaper than three days into implementing against a
+broken one. It enforces the contracts in the master plan plus two amendments
+this project added:
+
+- **every item carries `zh`** — all 461 existing vocabulary entries do, and the
+  contracts never mention it, so without this it would silently disappear;
+- **no assessment item exposes `zh`** — a translation is support, which the
+  plan's own Level 0 rule forbids during assessment.
+
+It checks structure and internal consistency only. It cannot tell you whether
+the questions are any good, and passing it is not evidence of educational
+validity.

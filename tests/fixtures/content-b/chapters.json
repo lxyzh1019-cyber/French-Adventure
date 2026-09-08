@@ -1,0 +1,56 @@
+{
+ "chapters": [
+  {
+   "chapter_id": "ch1",
+   "title": "Chapter 1",
+   "scenes": [
+    {
+     "id": "ch1.s1",
+     "text": "..."
+    }
+   ],
+   "session_bookmarks": [
+    "ch1.s1"
+   ]
+  },
+  {
+   "chapter_id": "ch2",
+   "title": "Chapter 2",
+   "scenes": [
+    {
+     "id": "ch2.s1",
+     "text": "..."
+    }
+   ],
+   "session_bookmarks": [
+    "ch2.s1"
+   ]
+  },
+  {
+   "chapter_id": "ch3",
+   "title": "Chapter 3",
+   "scenes": [
+    {
+     "id": "ch3.s1",
+     "text": "..."
+    }
+   ],
+   "session_bookmarks": [
+    "ch3.s1"
+   ]
+  },
+  {
+   "chapter_id": "ch4",
+   "title": "Chapter 4",
+   "scenes": [
+    {
+     "id": "ch4.s1",
+     "text": "..."
+    }
+   ],
+   "session_bookmarks": [
+    "ch4.s1"
+   ]
+  }
+ ]
+}
