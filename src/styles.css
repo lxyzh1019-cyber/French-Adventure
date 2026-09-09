@@ -497,3 +497,30 @@ button,input{touch-action:manipulation;}
   padding: 12px 14px; margin-bottom: 14px;
   font-size: .78rem; line-height: 1.5; color: var(--text-muted);
 }
+
+/* The parent report. Plain typography on purpose: nothing here should read as
+   a grade, a ranking or a reward, so there are no medals, no colour scale and
+   nothing bigger than the text around it. */
+.assess-report {
+  text-align: left; border: 1px solid rgba(0,0,0,.12); border-radius: 12px;
+  padding: 12px 14px; margin-bottom: 10px; background: var(--card);
+}
+.assess-report-head { font-weight: 800; font-size: .8rem; margin-bottom: 4px; }
+.assess-report-note { font-size: .68rem; color: var(--text-muted); line-height: 1.45; margin: 6px 0; }
+.assess-report-section { border-top: 1px solid rgba(0,0,0,.08); padding-top: 8px; margin-top: 8px; }
+.assess-report-section-head { font-weight: 800; font-size: .76rem; margin-bottom: 4px; }
+.assess-report-row { display: flex; justify-content: space-between; gap: 10px; font-size: .72rem; }
+.assess-report-label { color: var(--text-muted); }
+.assess-report-value { text-align: right; }
+.assess-report-list { margin-top: 6px; }
+.assess-report-list-head { font-size: .72rem; font-weight: 700; }
+.assess-report-list ul { margin: 2px 0 0; padding-left: 18px; font-size: .72rem; line-height: 1.5; }
+.assess-report-empty { font-size: .7rem; color: var(--text-muted); }
+.assess-report-nested {
+  margin-top: 8px; margin-left: 10px; padding-left: 10px;
+  border-left: 2px solid rgba(0,0,0,.1);
+}
+.assess-report-nested-head { font-size: .72rem; font-weight: 700; }
+.assess-report-nested ul { margin: 2px 0 0; padding-left: 18px; font-size: .72rem; line-height: 1.5; }
+.assess-report-observation { margin-top: 6px; font-size: .72rem; }
+.assess-report-technical { font-size: .66rem; color: var(--text-muted); line-height: 1.4; }

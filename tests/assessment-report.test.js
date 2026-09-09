@@ -8,64 +8,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as C from '../src/assessment/content.js';
-import * as S from '../src/assessment/session.js';
 import * as R from '../src/assessment/report.js';
-import { newReview, responseKey } from '../src/assessment/run-model.js';
+import { responseKey } from '../src/assessment/run-model.js';
+import { administer, humanReview, idsIn, FULL_MARKS, SPEAKING_MARKS } from './helpers/administer.js';
 
-const NOW = Date.UTC(2026, 8, 9, 15, 0, 0);
 const RULES = C.RULES;
-
-/** Administer a whole run, answering objective items as `answer` decides. */
-function administer({ learner = 'jenn', answer = () => true, open = () => 'Je parle français.' } = {}) {
-  const { run } = S.startRun({ runs: {} }, learner, { now: NOW });
-  for (const domain of C.SECTION_ORDER) {
-    S.beginSection(run, domain, { now: NOW });
-    for (let i = 0; i < 60; i++) {
-      const item = S.nextItem(run, domain);
-      if (!item) break;
-      S.recordExposure(run, item.id, { now: NOW });
-      const patch = {};
-      if (Array.isArray(item.choices)) {
-        const key = item.answer_key?.correct_choice_ids || [];
-        const wrong = item.choices.map(c => c.id).find(c => !key.includes(c));
-        patch.selected_choice_ids = [answer(item) ? key[0] : wrong];
-      } else if (item.answer_key?.accepted_answers) {
-        patch.raw_response = answer(item) ? item.answer_key.accepted_answers[0] : 'zzzz';
-      } else {
-        patch.raw_response = open(item);
-        if (item.domain === 'speaking') {
-          patch.audio_ref = `clip_${item.id}`;
-          patch.transcript_observation = 'bonjour je parle';
-          patch.voice_requested_locale = 'fr-CA';
-          patch.voice_resolved_locale = 'fr-FR';
-        }
-      }
-      S.submitResponse(run, item.id, patch, { now: NOW });
-      S.applyRoutingIfEntryComplete(run, domain, { now: NOW });
-    }
-    S.completeSection(run, domain, { now: NOW });
-  }
-  S.completeRun(run, { now: NOW });
-  return run;
-}
-
-const FULL_MARKS = { message: 3, vocabulary: 3, structure: 3, conventions: 3, independence: 3 };
-const SPEAKING_MARKS = {
-  message: 3, comprehensibility: 3, vocabulary_structure: 3, fluency: 2, pronunciation_observation: 2,
-};
-
-/** A named human's rubric scoring of one open prompt. */
-function humanReview(run, itemId, scores, { scorerId = 'parent-1' } = {}) {
-  const response = run.responses[responseKey(itemId, 0)];
-  assert.ok(response, `${itemId} was never answered`);
-  run.review[responseKey(itemId, 0)] = newReview({
-    itemId, scorerId, rubricId: response.rubric_id, scores, reviewedAtUtc: NOW,
-  });
-  return response;
-}
-
-const idsIn = (run, domain) =>
-  Object.values(run.responses).filter(r => r.domain === domain).map(r => r.item_id);
 
 const sectionOf = (report, domain) => report.sections.find(s => s.domain === domain);
 

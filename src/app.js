@@ -18,6 +18,7 @@ import { configureAssessmentUI, openAssessment, pauseAssessment,
          playCurrentAudio, reportNoSound, submitCurrentItem,
          finishSection, startRecording, stopRecording, playOwnRecording,
          abandonRecording } from './modes/assessment-ui.js';
+import { renderAssessmentReports } from './modes/assessment-report-ui.js';
 import { createAudioCapture } from './speech/capture.js';
 import { createAudioStore } from './assessment/audio-store.js';
 import { normalizeForRecognition, compareFrench, scrambleTypeFor,
@@ -1568,6 +1569,10 @@ document.addEventListener('click', function(e){
                                // opened, and nothing on the screen would respond.
                                closeOverlay('parent-overlay');
                                void openAssessment(el.getAttribute('data-player'));
+                             } else setRecoveryMsg('❌ Enter parent password first'); break;
+    case 'assess-report':    if(ensureParentPassword()){
+                               renderAssessmentReports(document.getElementById('assess-report-panel'),
+                                                       assessment);
                              } else setRecoveryMsg('❌ Enter parent password first'); break;
     case 'assess-pause':     void pauseAssessment(); break;
     case 'assess-begin-section': void beginNextSection(); break;
