@@ -75,7 +75,15 @@ function sumDaily(profile, field, pick) {
 
 /** Union two ledgers. Same id from both sides is the same round. */
 function mergeRoundLog(a = {}, b = {}) {
-  return unionBy(a, b, (x, y) => (num(x?.stars) >= num(y?.stars) ? x : y));
+  return unionBy(a, b, (x, y) => {
+    // The same attempt id can appear on both sides in two states: a marker
+    // written when the round was abandoned, interrupted or timed out, and the
+    // real entry written if the learner came back and finished it. The finished
+    // one is the truth, whatever the star counts say — a marker carries none.
+    const xc = num(x?.completed), yc = num(y?.completed);
+    if (xc !== yc) return xc > yc ? x : y;
+    return num(x?.stars) >= num(y?.stars) ? x : y;
+  });
 }
 
 /**

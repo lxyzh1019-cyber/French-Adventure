@@ -13,8 +13,7 @@
 import {
   SCHEMA_VERSION, DEFAULT_STATE, GRADE_KEYS, REQUIRED_MAPS,
   defaultGradeUnlocked, defaultGradeParentOpen, defaultMoons,
-  defaultParentSettings, clampGradeUnlocks,
-} from './schema.js';
+  defaultParentSettings, clampGradeUnlocks, ROUND_OUTCOME } from './schema.js';
 
 /** Fields that were once written but are no longer part of the model. */
 const RETIRED_FIELDS = [];
@@ -96,8 +95,29 @@ function toV2(profile) {
   return out;
 }
 
+/**
+ * v2 → v3.
+ *
+ * Adds `outcome` to every round-ledger entry. Before this version a round could
+ * only end two ways — every question answered, or out of lives — so `completed`
+ * carried the whole story and the backfill is exact rather than a guess.
+ * Nothing else changes; no entry is dropped or rewritten.
+ */
+function toV3(profile) {
+  const out = { ...profile };
+  const log = {};
+  for (const [id, e] of Object.entries(out.roundLog || {})) {
+    log[id] = (e && typeof e === 'object' && !e.outcome)
+      ? { ...e, outcome: e.completed ? ROUND_OUTCOME.COMPLETED : ROUND_OUTCOME.CHALLENGE_FAILED }
+      : e;
+  }
+  out.roundLog = log;
+  out.schemaVersion = 3;
+  return out;
+}
+
 /** Ordered migrations. Index n takes a profile from version n to n+1. */
-const MIGRATIONS = [toV1, toV2];
+const MIGRATIONS = [toV1, toV2, toV3];
 
 /**
  * Bring a stored profile up to the current schema.

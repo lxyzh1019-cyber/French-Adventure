@@ -433,3 +433,98 @@ test('Sentence Builder: tapping a built word removes it', async () => {
   assert.equal(r.after, r.before - 1, 'tapping a built word removed exactly one');
   assert.deepEqual(errors, [], 'no page errors');
 });
+
+// ── The three round outcomes that were declared but never produced ──────────
+//
+// abandoned, interrupted and timedOut were in ROUND_OUTCOME from M1 onward but
+// nothing ever passed them to endRound and nothing stored them, so Rollup
+// dropped all three from the build as unreachable: the shipped index.html
+// contained only completed and challengeFailed. Walking out of a round left no
+// record that it had happened.
+//
+// A marker carries no stars, no correct and no wrong. Every day counter is
+// rebuilt from this ledger, so a marker holding a partial score would inflate
+// the day, and would be counted twice if she resumed the attempt and finished.
+
+const startQuiz = async (page) => {
+  await page.evaluate(async () => {
+    startGame('quiz');
+    await new Promise(r => setTimeout(r, 400));
+  });
+};
+
+test('leaving a round records it as abandoned, with no score attached', async () => {
+  const { page, errors } = await open();
+  await startQuiz(page);
+
+  const r = await page.evaluate(async () => {
+    const attempt = window.__faDebug.roundAttemptId;
+    exitGame();
+    await new Promise(res => setTimeout(res, 200));
+    const e = window.__faDebug.roundLog[attempt];
+    return { attempt, entry: e || null, outcome: window.__faDebug.lastRoundOutcome };
+  });
+
+  assert.ok(r.attempt, 'the round had an attempt id');
+  assert.ok(r.entry, 'walking out of a round left no record at all');
+  assert.equal(r.entry.outcome, 'abandoned');
+  assert.equal(r.entry.completed, 0, 'an abandoned round must not read as completed');
+  assert.equal(r.entry.stars, 0, 'a marker carries no score');
+  assert.equal(r.entry.correct, 0);
+  assert.equal(r.entry.wrong, 0);
+  assert.deepEqual(errors, [], 'no page errors');
+});
+
+test('the screen going away records the round as interrupted', async () => {
+  const { page, errors } = await open();
+  await startQuiz(page);
+
+  const attempt = await page.evaluate(() => window.__faDebug.roundAttemptId);
+  // Screen lock / app switch, as the page actually sees it.
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'hidden', { value: true, configurable: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await page.waitForTimeout(200);
+
+  const entry = await page.evaluate(a => window.__faDebug.roundLog[a] || null, attempt);
+  assert.ok(entry, 'an interrupted round left no record');
+  assert.equal(entry.outcome, 'interrupted');
+  assert.equal(entry.completed, 0);
+  assert.equal(entry.stars, 0);
+  assert.deepEqual(errors, [], 'no page errors');
+});
+
+test('finishing a resumed round supersedes its unfinished marker', async () => {
+  // The case the marker must not break: she leaves mid-round, comes back and
+  // finishes the same attempt. One entry, and it says completed.
+  const { page, errors } = await open();
+  await startQuiz(page);
+
+  const r = await page.evaluate(async () => {
+    const attempt = window.__faDebug.roundAttemptId;
+    exitGame();
+    await new Promise(res => setTimeout(res, 150));
+    const marker = { ...window.__faDebug.roundLog[attempt] };
+
+    // Resume the same attempt and let it end properly.
+    startGame('quiz');
+    await new Promise(res => setTimeout(res, 400));
+    const resumed = window.__faDebug.roundAttemptId;
+    await window.__faDebug.endRound('completed');
+    await new Promise(res => setTimeout(res, 400));
+
+    const log = window.__faDebug.roundLog;
+    return { attempt, resumed, marker, entry: log[resumed] || null,
+             ids: Object.keys(log).length };
+  });
+
+  assert.equal(r.marker.outcome, 'abandoned', 'the marker was written on the way out');
+  assert.ok(r.entry, 'the finished round left no entry');
+  assert.equal(r.entry.outcome, 'completed', 'the marker was not superseded');
+  assert.equal(r.entry.completed, 1);
+  if (r.attempt === r.resumed) {
+    assert.equal(r.ids, 1, 'one attempt must leave exactly one ledger entry');
+  }
+  assert.deepEqual(errors, [], 'no page errors');
+});

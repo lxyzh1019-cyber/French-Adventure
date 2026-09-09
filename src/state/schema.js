@@ -6,7 +6,7 @@
 import { getWeekStart } from '../util/dates.js';
 
 /** Bumped whenever a migration is needed. See migrations.js. */
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 export const GRADE_KEYS = [4, 5, 6, 7, 8, 9, 10];
 export const MAX_PLAYABLE_GRADE = 10;
@@ -86,8 +86,29 @@ export const REQUIRED_MAPS = [
  * per-level and per-topic tallies exactly as the round added them to
  * gradeStats and dailyTopicStats, so those can be reconciled the same way.
  */
+/**
+ * How a round ended. Only COMPLETED counts towards format completion, the daily
+ * round cap and the day's round tally; the rest are recorded so that starting a
+ * round and walking away is distinguishable from never starting one, and from
+ * finishing it.
+ */
+export const ROUND_OUTCOME = {
+  COMPLETED:        'completed',        // every question answered
+  CHALLENGE_FAILED: 'challengeFailed',  // ran out of lives
+  ABANDONED:        'abandoned',        // learner left deliberately
+  INTERRUPTED:      'interrupted',      // app closed, tab evicted, screen lock
+  TIMED_OUT:        'timedOut',         // session limit reached
+};
+
+const OUTCOMES = new Set(Object.values(ROUND_OUTCOME));
+
+/** Only a genuinely completed round counts towards completion and caps. */
+export function countsAsCompletion(outcome) {
+  return outcome === ROUND_OUTCOME.COMPLETED;
+}
+
 export function makeRoundLogEntry({ id, day, type, grade, stars, correct, wrong,
-                                    completed, grades, topics, at }) {
+                                    outcome, completed, grades, topics, at }) {
   const tally = (m = {}) => {
     const out = {};
     for (const [k, v] of Object.entries(m || {})) {
@@ -98,7 +119,14 @@ export function makeRoundLogEntry({ id, day, type, grade, stars, correct, wrong,
   return {
     id: String(id), day: String(day), type: String(type || ''), grade: Number(grade) || 0,
     stars: Number(stars) || 0, correct: Number(correct) || 0, wrong: Number(wrong) || 0,
-    completed: completed ? 1 : 0, grades: tally(grades), topics: tally(topics),
+    // `outcome` is the record; `completed` is derived from it and kept because
+    // every reader and the merge already speak in terms of it. Entries written
+    // before outcomes existed carry only `completed`, so fall back to it.
+    outcome: OUTCOMES.has(outcome)
+      ? outcome
+      : (completed ? ROUND_OUTCOME.COMPLETED : ROUND_OUTCOME.CHALLENGE_FAILED),
+    completed: (OUTCOMES.has(outcome) ? countsAsCompletion(outcome) : !!completed) ? 1 : 0,
+    grades: tally(grades), topics: tally(topics),
     at: Number(at) || 0,
   };
 }

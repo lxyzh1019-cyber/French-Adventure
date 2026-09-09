@@ -2,7 +2,7 @@ import { firebaseReady } from './state/firebase-bootstrap.js';
 import { CURRICULUM, SENTENCES } from './content/curriculum-map.js';
 import { migrateProfile } from './state/migrations.js';
 import { mergeProfiles } from './state/merge.js';
-import { makeRoundLogEntry } from './state/schema.js';
+import { makeRoundLogEntry, ROUND_OUTCOME, countsAsCompletion } from './state/schema.js';
 import { createMicController } from './speech/recorder.js';
 import { SCHEMA_VERSION, hasAnyProgress, DEFAULT_STATE,
          defaultParentSettings, defaultGradeUnlocked,
@@ -84,19 +84,8 @@ const pendingRemoteData = { jenn: null, jess: null };
 
 let roundDraftTimer = null;
 
-// Explicit round outcomes. Finishing every question and running out of lives
-// used to take the same path, so a knocked-out round was recorded as a
-// completed one — inflating format completion and daily round counts with
-// rounds the learner never finished.
-const ROUND_OUTCOME = {
-  COMPLETED:       'completed',       // every question answered
-  CHALLENGE_FAILED:'challengeFailed', // ran out of lives
-  ABANDONED:       'abandoned',       // learner left deliberately
-  INTERRUPTED:     'interrupted',     // app closed, tab evicted, screen lock
-  TIMED_OUT:       'timedOut',        // session limit reached
-};
-/** Only a genuinely completed round counts towards completion and caps. */
-function countsAsCompletion(outcome){ return outcome === ROUND_OUTCOME.COMPLETED; }
+// Round outcomes and countsAsCompletion live in state/schema.js, next to the
+// ledger entry that stores them.
 
 let roundEnded = false;   // endRound must run once per round, not once per trigger
 let lastRoundOutcome = null;
@@ -762,7 +751,10 @@ function startSessionClock(){
       // Flush the round draft before locking. Drafts save on a short debounce,
       // so without this the last few seconds of a round are lost and the child
       // comes back to an earlier question than the one she was on.
-      if(currentPlayer && currentGameType) persistRoundDraftNow();
+      if(currentPlayer && currentGameType){
+        recordUnfinishedRound(ROUND_OUTCOME.TIMED_OUT);
+        persistRoundDraftNow();
+      }
       lockApp();
       return;
     }
@@ -1035,6 +1027,11 @@ function flushOnExit(){
 }
 document.addEventListener('visibilitychange',()=>{
   if(document.hidden){
+    // Screen lock, app switch, or the tab going away. The round is not over —
+    // the draft is kept and she resumes where she was — but if this is the last
+    // the app ever sees of the attempt, it should say so rather than leave no
+    // record at all. A later completion of the same attempt supersedes it.
+    recordUnfinishedRound(ROUND_OUTCOME.INTERRUPTED);
     flushOnExit();
     flushPlayTimeTick(true);
   }
@@ -1248,7 +1245,7 @@ function goBack(){
   document.getElementById('session-clock').style.display='none';
   showScreen('select');updateLeaderboard();
 }
-function exitGame(){stopAllMics();if(currentPlayer&&currentGameType){persistRoundDraftNow();applyPendingRemoteData(currentPlayer);saveState(currentPlayer);}currentGameType=null;questions=[];showScreen('hub');document.getElementById('hint-panel').classList.remove('show');updateConnectionStatusUI();}
+function exitGame(){stopAllMics();if(currentPlayer&&currentGameType){recordUnfinishedRound(ROUND_OUTCOME.ABANDONED);persistRoundDraftNow();applyPendingRemoteData(currentPlayer);saveState(currentPlayer);}currentGameType=null;questions=[];showScreen('hub');document.getElementById('hint-panel').classList.remove('show');updateConnectionStatusUI();}
 function showScreen(name){
   ['select','hub','game'].forEach(n=>document.getElementById(`screen-${n}`).style.display=n===name?'block':'none');
 }
@@ -1507,6 +1504,8 @@ window.__faDebug = {
   get matchSelected(){ return matchSelected; }, get lives(){ return lives; },
   get roundBasePoints(){ return roundBasePoints; }, get qIndex(){ return qIndex; },
   get roundAttemptId(){ return roundAttemptId; }, get recognition(){ return recognition; },
+  get lastRoundOutcome(){ return lastRoundOutcome; },
+  get roundLog(){ return currentPlayer ? (state[currentPlayer].roundLog || {}) : {}; },
   endRound: (o)=>endRound(o),
 };
 document.addEventListener('click', function(e){
@@ -2032,6 +2031,33 @@ function nextQuestion(){document.getElementById('feedback-overlay').classList.re
 // ════════════════════════════════════════════════
 // ROUND END
 // ════════════════════════════════════════════════
+// Record that a round ended without being finished.
+//
+// This is deliberately NOT endRound. endRound awards the round's stars, runs the
+// moon checks and renders the round-complete screen; a learner who walks away
+// mid-round has not earned any of that, and her draft is kept so she can come
+// back to the question she was on.
+//
+// The marker carries no evidence — no stars, no correct, no wrong. All three
+// day counters are rebuilt from this ledger, so a marker holding a partial
+// score would either inflate the day or be counted twice when she resumes the
+// same attempt and finishes it. What the marker records is that an attempt
+// happened and how it ended, which is the part that was previously lost: the
+// three outcomes below were declared but never written anywhere, and Rollup
+// dropped them from the build as unreachable.
+function recordUnfinishedRound(outcome){
+  if(roundEnded || !currentPlayer || !currentGameType || !roundAttemptId) return;
+  const s = state[currentPlayer];
+  if(!s) return;
+  if(!s.roundLog) s.roundLog = {};
+  if(s.roundLog[roundAttemptId]) return;   // already finished, or already marked
+  s.roundLog[roundAttemptId] = makeRoundLogEntry({
+    id: roundAttemptId, day: todayKey(), type: currentGameType, grade: currentGrade,
+    stars: 0, correct: 0, wrong: 0, outcome, at: Date.now()
+  });
+  lastRoundOutcome = outcome;
+}
+
 async function endRound(outcome = ROUND_OUTCOME.COMPLETED){
   if(roundEnded) return;      // a knockout timer and the last question can both fire
   roundEnded = true;
@@ -2101,11 +2127,14 @@ async function endRound(outcome = ROUND_OUTCOME.COMPLETED){
   // when the other iPad's snapshot arrives the merge can tell two same-day
   // rounds apart instead of keeping the larger day. Written once per attempt.
   if(!s.roundLog) s.roundLog={};
-  if(roundAttemptId && !s.roundLog[roundAttemptId]){
+  // A marker may already sit under this id from an earlier abandon, interrupt or
+  // time-out of this same attempt. Finishing supersedes it; a second finish does
+  // not overwrite the first.
+  if(roundAttemptId && !(s.roundLog[roundAttemptId] || {}).completed){
     s.roundLog[roundAttemptId]=makeRoundLogEntry({
       id: roundAttemptId, day: tk, type: currentGameType, grade: currentGrade,
       stars: roundScore, correct: roundAnswerTally.correct, wrong: roundAnswerTally.wrong,
-      completed, grades: roundGradeTally, topics: roundTopicTally, at: Date.now()
+      outcome, grades: roundGradeTally, topics: roundTopicTally, at: Date.now()
     });
   }
 

@@ -7,7 +7,7 @@
      styles ......... src/styles.css
      game logic ..... src/**/*.js
 
-   Built from cc76bc1
+   Built from 154cbcb
   ============================================================
 -->
 <!DOCTYPE html>
@@ -910,7 +910,7 @@ const SENTENCES = {
     return { parts: frTokenize(s.fr), target: s.en, zh: s.zh };
   })
 };
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 3;
 const GRADE_KEYS$1 = [4, 5, 6, 7, 8, 9, 10];
 const MAX_PLAYABLE_GRADE$1 = 10;
 function defaultParentSettings() {
@@ -983,6 +983,22 @@ const REQUIRED_MAPS = [
   "seedProfilePatches",
   "roundLog"
 ];
+const ROUND_OUTCOME = {
+  COMPLETED: "completed",
+  // every question answered
+  CHALLENGE_FAILED: "challengeFailed",
+  // ran out of lives
+  ABANDONED: "abandoned",
+  // learner left deliberately
+  INTERRUPTED: "interrupted",
+  // app closed, tab evicted, screen lock
+  TIMED_OUT: "timedOut"
+  // session limit reached
+};
+const OUTCOMES = new Set(Object.values(ROUND_OUTCOME));
+function countsAsCompletion(outcome) {
+  return outcome === ROUND_OUTCOME.COMPLETED;
+}
 function makeRoundLogEntry({
   id,
   day,
@@ -991,6 +1007,7 @@ function makeRoundLogEntry({
   stars,
   correct,
   wrong,
+  outcome,
   completed,
   grades,
   topics,
@@ -1011,7 +1028,11 @@ function makeRoundLogEntry({
     stars: Number(stars) || 0,
     correct: Number(correct) || 0,
     wrong: Number(wrong) || 0,
-    completed: completed ? 1 : 0,
+    // `outcome` is the record; `completed` is derived from it and kept because
+    // every reader and the merge already speak in terms of it. Entries written
+    // before outcomes existed carry only `completed`, so fall back to it.
+    outcome: OUTCOMES.has(outcome) ? outcome : completed ? ROUND_OUTCOME.COMPLETED : ROUND_OUTCOME.CHALLENGE_FAILED,
+    completed: (OUTCOMES.has(outcome) ? countsAsCompletion(outcome) : !!completed) ? 1 : 0,
     grades: tally(grades),
     topics: tally(topics),
     at: Number(at) || 0
@@ -1077,7 +1098,17 @@ function toV2(profile) {
   out.schemaVersion = 2;
   return out;
 }
-const MIGRATIONS = [toV1, toV2];
+function toV3(profile) {
+  const out = { ...profile };
+  const log = {};
+  for (const [id, e] of Object.entries(out.roundLog || {})) {
+    log[id] = e && typeof e === "object" && !e.outcome ? { ...e, outcome: e.completed ? ROUND_OUTCOME.COMPLETED : ROUND_OUTCOME.CHALLENGE_FAILED } : e;
+  }
+  out.roundLog = log;
+  out.schemaVersion = 3;
+  return out;
+}
+const MIGRATIONS = [toV1, toV2, toV3];
 function migrateProfile(raw) {
   if (!raw || typeof raw !== "object") return DEFAULT_STATE();
   let profile = { ...DEFAULT_STATE(), ...raw };
@@ -1113,7 +1144,11 @@ function sumDaily(profile, field, pick) {
   return total;
 }
 function mergeRoundLog(a = {}, b = {}) {
-  return unionBy(a, b, (x, y) => num(x?.stars) >= num(y?.stars) ? x : y);
+  return unionBy(a, b, (x, y) => {
+    const xc = num(x?.completed), yc = num(y?.completed);
+    if (xc !== yc) return xc > yc ? x : y;
+    return num(x?.stars) >= num(y?.stars) ? x : y;
+  });
 }
 function summarizeRoundLog(log = {}) {
   var _a, _b, _c, _d, _e, _f, _g;
@@ -1549,15 +1584,8 @@ const syncMeta = {
 };
 const pendingRemoteData = { jenn: null, jess: null };
 let roundDraftTimer = null;
-const ROUND_OUTCOME = {
-  COMPLETED: "completed",
-  // every question answered
-  CHALLENGE_FAILED: "challengeFailed"
-};
-function countsAsCompletion(outcome) {
-  return outcome === ROUND_OUTCOME.COMPLETED;
-}
 let roundEnded = false;
+let lastRoundOutcome = null;
 let roundAttemptId = null;
 const committedAnswers = /* @__PURE__ */ new Set();
 function newAttemptId() {
@@ -2182,7 +2210,10 @@ function startSessionClock() {
         cd.textContent = "⏳ 0:00";
         cd.classList.add("warning");
       }
-      if (currentPlayer && currentGameType) persistRoundDraftNow();
+      if (currentPlayer && currentGameType) {
+        recordUnfinishedRound(ROUND_OUTCOME.TIMED_OUT);
+        persistRoundDraftNow();
+      }
       lockApp();
       return;
     }
@@ -2384,6 +2415,7 @@ function flushOnExit() {
 }
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) {
+    recordUnfinishedRound(ROUND_OUTCOME.INTERRUPTED);
     flushOnExit();
     flushPlayTimeTick();
   }
@@ -2570,6 +2602,7 @@ function goBack() {
 function exitGame() {
   stopAllMics();
   if (currentPlayer && currentGameType) {
+    recordUnfinishedRound(ROUND_OUTCOME.ABANDONED);
     persistRoundDraftNow();
     applyPendingRemoteData(currentPlayer);
     saveState(currentPlayer);
@@ -2821,6 +2854,12 @@ window.__faDebug = {
   },
   get recognition() {
     return recognition;
+  },
+  get lastRoundOutcome() {
+    return lastRoundOutcome;
+  },
+  get roundLog() {
+    return currentPlayer ? state[currentPlayer].roundLog || {} : {};
   },
   endRound: (o) => endRound(o)
 };
@@ -3394,9 +3433,29 @@ function nextQuestion() {
   renderQuestion();
   scheduleRoundDraftPersist();
 }
+function recordUnfinishedRound(outcome) {
+  if (roundEnded || !currentPlayer || !currentGameType || !roundAttemptId) return;
+  const s = state[currentPlayer];
+  if (!s) return;
+  if (!s.roundLog) s.roundLog = {};
+  if (s.roundLog[roundAttemptId]) return;
+  s.roundLog[roundAttemptId] = makeRoundLogEntry({
+    id: roundAttemptId,
+    day: todayKey(),
+    type: currentGameType,
+    grade: currentGrade,
+    stars: 0,
+    correct: 0,
+    wrong: 0,
+    outcome,
+    at: Date.now()
+  });
+  lastRoundOutcome = outcome;
+}
 async function endRound(outcome = ROUND_OUTCOME.COMPLETED) {
   if (roundEnded) return;
   roundEnded = true;
+  lastRoundOutcome = outcome;
   applyPendingRemoteData(currentPlayer);
   clearCurrentRoundDraft();
   document.getElementById("feedback-overlay").classList.remove("show");
@@ -3444,7 +3503,7 @@ async function endRound(outcome = ROUND_OUTCOME.COMPLETED) {
   if (completed) s.todayStats[tk].rounds++;
   s.todayStats[tk].stars += roundScore;
   if (!s.roundLog) s.roundLog = {};
-  if (roundAttemptId && !s.roundLog[roundAttemptId]) {
+  if (roundAttemptId && !(s.roundLog[roundAttemptId] || {}).completed) {
     s.roundLog[roundAttemptId] = makeRoundLogEntry({
       id: roundAttemptId,
       day: tk,
@@ -3453,7 +3512,7 @@ async function endRound(outcome = ROUND_OUTCOME.COMPLETED) {
       stars: roundScore,
       correct: roundAnswerTally.correct,
       wrong: roundAnswerTally.wrong,
-      completed,
+      outcome,
       grades: roundGradeTally,
       topics: roundTopicTally,
       at: Date.now()

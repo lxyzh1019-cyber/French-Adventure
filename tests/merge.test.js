@@ -318,3 +318,62 @@ test('a profile with nothing in it is recognised as having no progress', async (
   assert.equal(hasAnyProgress(profile({ weeklyHistory: [{ weekStart: '2026-01-05' }] })), true);
   assert.equal(hasAnyProgress(profile({ failedWords: { chien: { fr: 'chien' } } })), true);
 });
+
+test('a finished round beats an unfinished marker for the same attempt', () => {
+  // One iPad marked the attempt abandoned when she walked out; the other saw
+  // her come back and finish it. The finished entry is the truth, and it wins
+  // on both orderings — the marker carries no stars, so a stars-only rule
+  // would have picked correctly here by accident but not in general.
+  const marker = makeRoundLogEntry({
+    id: 'att-1', day: '2026-09-08', type: 'quiz', grade: 4,
+    stars: 0, correct: 0, wrong: 0, outcome: 'abandoned', at: 100,
+  });
+  const finished = makeRoundLogEntry({
+    id: 'att-1', day: '2026-09-08', type: 'quiz', grade: 4,
+    stars: 30, correct: 6, wrong: 1, outcome: 'completed', at: 200,
+  });
+
+  const a = profile({ roundLog: { 'att-1': marker } });
+  const b = profile({ roundLog: { 'att-1': finished } });
+
+  for (const m of [mergeProfiles(a, b), mergeProfiles(b, a)]) {
+    assert.equal(m.roundLog['att-1'].outcome, 'completed');
+    assert.equal(m.roundLog['att-1'].stars, 30);
+    assert.equal(Object.keys(m.roundLog).length, 1, 'the attempt stayed one entry');
+  }
+});
+
+test('a marker does not add to any day counter', () => {
+  // Day counters are rebuilt from the ledger. A marker must contribute nothing,
+  // or walking out of rounds would inflate the day.
+  const day = '2026-09-08';
+  const withMarker = profile({
+    totalStars: 1000,
+    todayStats: { [day]: { correct: 0, wrong: 0, rounds: 0, stars: 0 } },
+    roundLog: {
+      'att-x': makeRoundLogEntry({
+        id: 'att-x', day, type: 'quiz', grade: 4,
+        stars: 0, correct: 0, wrong: 0, outcome: 'interrupted', at: 1,
+      }),
+    },
+  });
+
+  const m = mergeProfiles(withMarker, profile({ totalStars: 1000 }));
+  assert.equal(m.totalStars, 1000, 'a marker invented stars');
+  assert.equal(m.todayStats[day]?.rounds || 0, 0, 'a marker counted as a round');
+  assert.equal(m.todayStats[day]?.stars || 0, 0);
+});
+
+test('two different unfinished attempts both survive', () => {
+  const day = '2026-09-08';
+  const mk = (id, outcome) => makeRoundLogEntry({
+    id, day, type: 'quiz', grade: 4, stars: 0, correct: 0, wrong: 0, outcome, at: 1,
+  });
+  const a = profile({ roundLog: { 'att-a': mk('att-a', 'abandoned') } });
+  const b = profile({ roundLog: { 'att-b': mk('att-b', 'timedOut') } });
+
+  const m = mergeProfiles(a, b);
+  assert.equal(Object.keys(m.roundLog).length, 2);
+  assert.equal(m.roundLog['att-a'].outcome, 'abandoned');
+  assert.equal(m.roundLog['att-b'].outcome, 'timedOut');
+});
