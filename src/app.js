@@ -1532,6 +1532,8 @@ document.addEventListener('click', function(e){
     case 'restore-backup':   void restoreFromBackup(el.getAttribute('data-player'),
                                                     el.getAttribute('data-backup-id')); break;
     case 'check-scramble':   if(currentQ) checkScramble(currentQ.word.fr); break;
+    case 'check-drill':      checkDrill(el.getAttribute('data-word')); break;
+    case 'remove-built':     removeBuilt(Number(el.getAttribute('data-index'))); break;
   }
 });
 
@@ -1941,7 +1943,7 @@ function renderBuilder(q,area,actions){
 function renderBuilderState(q){
   const built=document.getElementById('built-sentence'),bank=document.getElementById('word-bank');
   if(!built||!bank)return;
-  built.innerHTML=builtWords.length?builtWords.map((w,i)=>`<div class="built-word" onclick="removeBuilt(${i})">${w}</div>`).join(''):'<span style="color:var(--text-muted);font-size:.82rem;">Tap words below</span>';
+  built.innerHTML=builtWords.length?builtWords.map((w,i)=>`<div class="built-word" data-action="remove-built" data-index="${i}">${escapeAttr(w)}</div>`).join(''):'<span style="color:var(--text-muted);font-size:.82rem;">Tap words below</span>';
   bank.innerHTML='';
   const usedCount={};builtWords.forEach(w=>{usedCount[w]=(usedCount[w]||0)+1;});
   const seen={};
@@ -2242,7 +2244,7 @@ function renderDrillCard(){
     +'</div>'
     +'<div class="action-row" style="margin-top:12px;">'
     +'<button class="btn-secondary" onclick="revealDrill()">Reveal</button>'
-    +'<button class="btn-primary" onclick="checkDrill(\''+w.fr.replace(/'/g,"\\'")+'\')" >Check ✓</button>'
+    +'<button class="btn-primary" data-action="check-drill" data-word="'+escapeAttr(w.fr)+'">Check ✓</button>'
     +speakButtonHTML(w.fr,'btn-speak')
     +'</div>';
   setTimeout(()=>document.getElementById('train-input')?.focus(),100);

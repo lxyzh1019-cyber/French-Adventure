@@ -361,3 +361,75 @@ test('no learner-facing screen shows a G4-style or "Grade N" label', async () =>
   assert.deepEqual(hits, [], 'grade labels still shown');
   assert.deepEqual(errors, []);
 });
+
+// ── The two buttons that stopped interpolating into inline JS ───────────────
+//
+// Both were converted from onclick="fn('…')" to data-action + data-* and the
+// delegated listener. Neither had a browser test before, which is why the
+// conversion could have silently broken them: the suite renders My Words and
+// Sentence Builder but never pressed anything in either.
+
+test('My Words: the drill Check button scores a word with an apostrophe', async () => {
+  // aujourd'hui is the case that produced invalid inline JS under the old
+  // escaping: onclick="checkDrill('aujourd\'hui')". Seed it as a failed word
+  // so the drill has something to ask.
+  const { page, errors } = await open({
+    seed: {
+      // hydrateStateFromLocalMirror only adopts a mirror newer than what is in
+      // memory, so a seed without lastUpdatedAt is silently ignored.
+      lastUpdatedAt: Date.now(),
+      totalStars: 10,
+      failedWords: {
+        "aujourd'hui": {
+          fr: "aujourd'hui", en: 'today', zh: '今天', topic: 'time',
+          grade: 4, failCount: 3, successCount: 0, lastFailed: null,
+        },
+      },
+    },
+  });
+
+  const r = await page.evaluate(async () => {
+    showMyWordsTab('drill');
+    await new Promise(res => setTimeout(res, 200));
+    const btn = document.querySelector('[data-action="check-drill"]');
+    if (!btn) return { error: 'no check-drill button rendered' };
+    const word = btn.getAttribute('data-word');
+    const inlineJs = btn.getAttribute('onclick');
+    document.getElementById('train-input').value = word;
+    btn.click();
+    await new Promise(res => setTimeout(res, 200));
+    return { word, inlineJs, correct: document.body.textContent.includes('Correct') };
+  });
+
+  assert.equal(r.error, undefined, r.error);
+  assert.equal(r.inlineJs, null, 'the drill Check button carries no inline JS');
+  assert.equal(r.word, "aujourd'hui", 'the apostrophe survives the data attribute intact');
+  assert.ok(r.correct, 'typing the drilled word scored as correct');
+  assert.deepEqual(errors, [], 'no page errors');
+});
+
+test('Sentence Builder: tapping a built word removes it', async () => {
+  const { page, errors } = await open();
+
+  const r = await page.evaluate(async () => {
+    startGame('builder');
+    await new Promise(res => setTimeout(res, 300));
+    const bank = [...document.querySelectorAll('.bank-word, .word-chip')]
+      .filter(b => !b.classList.contains('used'));
+    if (!bank.length) return { error: 'no word bank rendered' };
+    bank[0].click(); bank[1] && bank[1].click();
+    await new Promise(res => setTimeout(res, 100));
+    const built = [...document.querySelectorAll('.built-word')];
+    const before = built.length;
+    const inlineJs = built[0] ? built[0].getAttribute('onclick') : 'no built word';
+    built[0] && built[0].click();
+    await new Promise(res => setTimeout(res, 100));
+    return { before, after: document.querySelectorAll('.built-word').length, inlineJs };
+  });
+
+  assert.equal(r.error, undefined, r.error);
+  assert.ok(r.before > 0, 'words were placed into the sentence');
+  assert.equal(r.inlineJs, null, 'a built word carries no inline JS');
+  assert.equal(r.after, r.before - 1, 'tapping a built word removed exactly one');
+  assert.deepEqual(errors, [], 'no page errors');
+});
