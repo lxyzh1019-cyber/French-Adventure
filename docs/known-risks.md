@@ -167,13 +167,19 @@ that define the skills, so inventing one now would conflict with them.
 
 ---
 
-## 3. Content packages are not yet delivered
+## 3. Release B is not yet delivered
 
-**Status:** blocking M2 and M3. Nothing to fix in code.
+**Status:** blocking M3. Nothing to fix in code.
 
-The assessment (Release A) and the four-chapter story (Release B) are content,
-not code, and neither exists. M2 cannot start without A; M3 cannot start
-without B.
+**Updated 2026-09-09.** Release A *has* been delivered. `assessment-v1.0.0` was
+imported unchanged to `content/releases/assessment-v1/` and validated: 90 items
+across two complete parallel forms, every skill, outcome, rubric and fixture
+reference resolving, listening items audio-only. M2 is under way. The earlier
+wording here — that neither package existed — was left stale after the import
+and is corrected.
+
+Release B, the four-chapter story, has not been authored. M3 cannot start
+without it.
 
 `npm run check:content -- <dir>` validates a package the day it arrives — the
 day it arrives is much cheaper than three days into implementing against a
