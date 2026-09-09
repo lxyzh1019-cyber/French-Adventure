@@ -12,6 +12,7 @@
 import * as session from '../assessment/session.js';
 import * as content from '../assessment/content.js';
 import { SECTION_STATUS, RUN_STATUS } from '../assessment/run-model.js';
+import { DENIED, INTERRUPTED } from '../speech/capture.js';
 import { escapeAttr } from '../util/html.js';
 
 const el = id => document.getElementById(id);
@@ -26,6 +27,8 @@ let deps = {
   onExit: () => {},
   speak: () => {},              // plays a French string aloud
   voiceInfo: () => ({}),        // { resolvedLocale, name } for the record
+  makeCapture: null,            // () => audio capture controller
+  audioStore: null,             // device-local clip storage
 };
 
 let activePlayer = null;
@@ -102,6 +105,34 @@ export async function beginNextSection() {
   render();
 }
 
+/**
+ * Sections where the on-screen keyboard can answer for the child.
+ *
+ * VGA-F04 accepts "où" and iOS predictive text supplies exactly that accent;
+ * the writing rubric's `conventions` dimension measures what autocorrect
+ * erases. The four input attributes are set on every field, but they are not
+ * sufficient — the QuickType bar above the keyboard cannot be suppressed from a
+ * web page at all — so the only honest fix is to ask the adult, and to say
+ * plainly that the app has not disabled anything.
+ */
+const KEYBOARD_SENSITIVE = new Set(['vocabulary_grammar', 'writing']);
+
+function keyboardNote() {
+  const n = document.createElement('div');
+  n.className = 'assess-parent-note';
+  const h = document.createElement('strong');
+  h.textContent = 'Before this part — a grown-up job';
+  const p = document.createElement('div');
+  p.style.marginTop = '4px';
+  p.textContent =
+    'For an accurate placement result, temporarily turn off Auto-Correction and '
+    + 'Predictive Text in Settings \u2192 General \u2192 Keyboard. '
+    + 'The app cannot switch these off itself, and with them on the keyboard may '
+    + 'supply accents and spellings this part is measuring.';
+  n.append(h, p);
+  return n;
+}
+
 const DOMAIN_LABEL = {
   listening: 'Listening',
   reading: 'Reading',
@@ -149,6 +180,7 @@ export function render() {
     const minutes = deps.minutesRemaining();
     const ok = session.canBeginNextSection(minutes);
     const need = content.RULES.section_boundaries.begin_next_section_only_with_at_least_minutes_remaining;
+    if (KEYBOARD_SENSITIVE.has(at.domain)) body.append(keyboardNote());
     body.append(card(
       `Next: ${DOMAIN_LABEL[at.domain] ?? at.domain}`,
       ok
@@ -169,8 +201,218 @@ export function render() {
   }
 
   if (content.routingFor(at.domain)) renderObjectiveItem(body, actions, run, item);
-  else body.append(card(`${DOMAIN_LABEL[at.domain] ?? at.domain}`,
-    'This part arrives in the next step of the build.'));
+  else renderOpenItem(body, actions, run, item);
+}
+
+// ── Open items: writing and speaking ────────────────────────────────────────
+//
+// Neither is scored here, or anywhere in the app. scoring.writing and
+// scoring.speaking both require a qualified human first, and for speaking that
+// human must listen to the original recording — a transcript cannot score
+// comprehensibility, fluency or pronunciation. So capture is all this does, and
+// the response goes to awaiting_review.
+//
+// The item's `model_response` is an exemplar for the scorer. It is never
+// rendered, never placed in the DOM, and a test checks the page for it.
+
+let capture = null;             // live audio controller, while recording
+let captureState = 'idle';
+let captureError = null;
+let clipUrl = null;             // object URL for replaying what was just said
+
+function resetCapture() {
+  if (clipUrl) { try { URL.revokeObjectURL(clipUrl); } catch { /* already gone */ } clipUrl = null; }
+  capture = null; captureState = 'idle'; captureError = null;
+}
+
+function renderOpenItem(body, actions, run, item) {
+  const d = draftFor(run, item);
+  const wrap = document.createElement('div');
+  wrap.className = 'assess-card';
+
+  const prompt = document.createElement('div');
+  prompt.className = 'assess-prompt';
+  prompt.textContent = item.prompt_en;
+  wrap.append(prompt);
+
+  // The picture some speaking prompts need. The brief that describes it is
+  // authoring instruction and must never be shown: printing SA-D02's labels
+  // would read "school, park, library, bank", the words the prompt is asking
+  // the child to produce.
+  const asset = content.assetFor(item.id);
+  if (asset) {
+    const figure = document.createElement('div');
+    figure.className = 'assess-figure';
+    figure.innerHTML = asset.svg;
+    wrap.append(figure);
+  }
+
+  if (item.item_type === 'open_written') wrap.append(writtenInput(d));
+  else wrap.append(speakingControls(d));
+
+  body.append(wrap);
+
+  const next = button(item.item_type === 'open_written' ? 'Next' : 'Next', 'assess-submit-item');
+  next.disabled = !hasOpenAnswer(item, d);
+  actions.append(next);
+}
+
+function hasOpenAnswer(item, d) {
+  if (d.technical_invalid_reason) return true;
+  return item.item_type === 'open_written'
+    ? !!String(d.raw_response).trim()
+    : !!d.audio_blob;
+}
+
+function writtenInput(d) {
+  const box = document.createElement('div');
+
+  const ta = document.createElement('textarea');
+  ta.className = 'assess-textarea';
+  ta.id = 'assess-written';
+  ta.rows = 4;
+  ta.value = d.raw_response;
+  // The same four attributes the typed items carry, for the same reason: iOS
+  // would otherwise supply the accents and spellings this section measures.
+  // They are not sufficient on their own — the QuickType bar cannot be
+  // suppressed from a page — which is why the parent is asked to turn
+  // Auto-Correction off before this section.
+  ta.setAttribute('autocomplete', 'off');
+  ta.setAttribute('autocorrect', 'off');
+  ta.setAttribute('autocapitalize', 'off');
+  ta.setAttribute('spellcheck', 'false');
+  ta.addEventListener('input', () => {
+    d.raw_response = ta.value;
+    const next = document.querySelector('[data-action="assess-submit-item"]');
+    if (next) next.disabled = !String(ta.value).trim();
+  });
+  box.append(ta);
+
+  const note = document.createElement('div');
+  note.className = 'assess-note';
+  note.textContent = 'Nobody marks this on the screen. A grown-up reads it later.';
+  box.append(note);
+  return box;
+}
+
+function speakingControls(d) {
+  const box = document.createElement('div');
+  box.className = 'assess-record';
+
+  if (d.technical_invalid_reason === DENIED) {
+    box.append(noteEl(
+      'The microphone is not available, so this one is skipped. That is not a wrong answer — '
+      + 'it is simply not counted. You can carry on with the rest.'));
+    return box;
+  }
+
+  const rec = document.createElement('button');
+  rec.type = 'button';
+  rec.className = captureState === 'recording' ? 'btn-secondary recording' : 'btn-primary';
+  rec.setAttribute('data-action', captureState === 'recording' ? 'assess-stop-record' : 'assess-record');
+  rec.textContent = captureState === 'recording' ? '■ Stop' : (d.audio_blob ? '● Record again' : '● Record');
+  box.append(rec);
+
+  if (d.audio_blob && captureState !== 'recording') {
+    const play = document.createElement('button');
+    play.type = 'button';
+    play.className = 'btn-secondary';
+    play.setAttribute('data-action', 'assess-play-own');
+    play.textContent = '▶︎ Hear it back';
+    box.append(play);
+  }
+
+  const state = document.createElement('div');
+  state.className = 'assess-note';
+  state.textContent = captureState === 'recording'
+    ? 'Recording… tap Stop when you have finished.'
+    : d.audio_blob
+      ? `Recorded${d.audio_duration_ms ? ` — ${Math.round(d.audio_duration_ms / 1000)} seconds` : ''}. `
+        + 'You can record again if you want to.'
+      : 'Tap Record, say your answer in French, then tap Stop.';
+  box.append(state);
+
+  if (captureError) box.append(noteEl(captureError));
+
+  const kept = document.createElement('div');
+  kept.className = 'assess-note';
+  kept.textContent = 'Your recording stays on this iPad so a grown-up can listen to it.';
+  box.append(kept);
+
+  return box;
+}
+
+function noteEl(text) {
+  const n = document.createElement('div');
+  n.className = 'assess-note';
+  n.textContent = text;
+  return n;
+}
+
+/** Start recording. A refused microphone is an invalid item, not a wrong one. */
+export async function startRecording() {
+  const run = currentRun();
+  if (!run || !draft || !deps.makeCapture) return;
+  captureError = null;
+  capture = deps.makeCapture();
+  const started = await capture.start();
+  if (!started.ok) {
+    // invalidity.rule: excluded from the numerator and the denominator.
+    draft.technical_invalid_reason = started.reason || DENIED;
+    captureState = 'idle';
+    capture = null;
+    render();
+    return;
+  }
+  captureState = 'recording';
+  render();
+}
+
+export async function stopRecording() {
+  if (!capture || !draft) return;
+  const result = await capture.stop();
+  captureState = 'idle';
+  capture = null;
+  if (result?.ok && result.blob) {
+    draft.audio_blob = result.blob;
+    draft.audio_duration_ms = result.durationMs ?? null;
+    draft.audio_mime = result.mimeType ?? null;
+    draft.technical_invalid_reason = null;
+    if (clipUrl) { try { URL.revokeObjectURL(clipUrl); } catch { /* gone */ } }
+    clipUrl = null;
+  } else {
+    captureError = 'That did not record. You can try again.';
+  }
+  render();
+}
+
+/** Let the learner hear her own answer back. Nothing is judged by it. */
+export function playOwnRecording() {
+  if (!draft?.audio_blob) return;
+  try {
+    if (!clipUrl) clipUrl = URL.createObjectURL(draft.audio_blob);
+    const audio = new Audio(clipUrl);
+    void audio.play();
+  } catch { captureError = 'That clip cannot be played back here.'; render(); }
+}
+
+/**
+ * The page is going away mid-recording.
+ *
+ * Whatever was captured is kept — it is still what she said — but the response
+ * is invalid, because she was interrupted rather than finished.
+ */
+export function abandonRecording() {
+  if (!capture || captureState !== 'recording' || !draft) return null;
+  const out = capture.abandon();
+  captureState = 'idle';
+  capture = null;
+  draft.technical_invalid_reason = INTERRUPTED;
+  if (out?.blob) {
+    draft.audio_blob = out.blob;
+    draft.audio_duration_ms = out.durationMs ?? null;
+  }
+  return out;
 }
 
 // ── Objective items ─────────────────────────────────────────────────────────
@@ -355,6 +597,20 @@ export async function submitCurrentItem() {
   if (!at.item || at.item.id !== draft.item_id) return;
   const d = draft;
   draft = null;
+  const item = at.item;
+
+  // The clip is filed before the response, so audio_ref never names something
+  // that is not there. A storage failure is survivable and recorded: the
+  // response still exists, and the reference says plainly that the audio does
+  // not — better than a review panel offering a play button to nothing.
+  let audioRef = null, audioDevice = null;
+  if (d.audio_blob && deps.audioStore) {
+    const stored = await deps.audioStore.put(run.run_id, d.item_id, d.audio_blob, {
+      durationMs: d.audio_duration_ms, mimeType: d.audio_mime,
+    });
+    audioRef = stored.ok ? stored.key : null;
+    audioDevice = stored.ok ? stored.device_id : null;
+  }
 
   await commit(r => {
     session.recordExposure(r, d.item_id, { now: Date.now() });
@@ -369,9 +625,15 @@ export async function submitCurrentItem() {
       voice_requested_locale: d.voice_requested_locale ?? null,
       voice_resolved_locale: d.voice_resolved_locale ?? null,
       voice_name: d.voice_name ?? null,
+      audio_ref: audioRef,
+      audio_device_id: audioDevice,
+      audio_duration_ms: d.audio_duration_ms ?? null,
+      audio_mime: d.audio_mime ?? null,
     }, { now: Date.now(), deviceId: deps.deviceId() });
     session.applyRoutingIfEntryComplete(r, at.domain, { now: Date.now() });
   });
+  resetCapture();
+  void item;
   render();
 }
 

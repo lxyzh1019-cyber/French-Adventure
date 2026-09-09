@@ -359,6 +359,17 @@ export function submitResponse(run, itemId, patch = {}, { now = Date.now(), atte
   // the section is submitted, and nothing in the item renderers reads these
   // fields. Storing the outcome is what makes the section's own review possible
   // later without re-deriving it from a bank that may have moved on.
+  // Open responses are not scored by anything here. scoring.writing and
+  // scoring.speaking both require a qualified human first, and for speaking that
+  // person must listen to the original recording — a transcript cannot score
+  // comprehensibility, fluency or pronunciation. Until then the response sits in
+  // awaiting_review, which is a state, not a placeholder score.
+  if (item?.scoring?.method === 'analytic_rubric') {
+    response.rubric_id = item.scoring.rubric_id ?? null;
+    response.review_status = response.technical_invalid_reason ? 'invalid' : 'awaiting_review';
+    response.scored_valid = !response.technical_invalid_reason;
+  }
+
   if (item?.scoring?.method === 'objective') {
     const graded = scoreObjective(item, {
       ...response,

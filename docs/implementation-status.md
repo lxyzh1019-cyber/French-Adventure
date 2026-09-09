@@ -20,7 +20,7 @@ States: `not_started` · `in_progress` · `ready_for_review` · `accepted` · `b
 | Milestone | State | Notes |
 |---|---|---|
 | M1 — Repair foundation | `ready_for_review` | Both audit blockers repaired with regressions; full Match resume matrix; parent iPad smoke checklist and recovery-file confirmation still required for `accepted`. |
-| M2 — Independent assessment | `in_progress` | Steps 0-3 complete: cleanup, data model, shell, and the three objective sections. Writing and speaking capture is Step 4. Nothing learner-facing yet. Step 0 cleanup on `claude/third-party-audit-validation-2oth5n`. Release A imported and validated; scoring rules proven against the content fixtures. No learner-facing assessment exists yet. Per master plan revision 3, M1 cleanup is folded into M2 rather than forming a separate milestone; parent approved building in parallel with the outstanding iPad checklist. |
+| M2 — Independent assessment | `in_progress` | Steps 0-4 complete: cleanup, data model, shell, objective sections, and writing/speaking capture. Domain scoring and the parent report are Step 5. Nothing learner-facing yet. Step 0 cleanup on `claude/third-party-audit-validation-2oth5n`. Release A imported and validated; scoring rules proven against the content fixtures. No learner-facing assessment exists yet. Per master plan revision 3, M1 cleanup is folded into M2 rather than forming a separate milestone; parent approved building in parallel with the outstanding iPad checklist. |
 | M3 — Learning pilot | `not_started` | Release B not yet authored. |
 | M4 — iPad validation | `not_started` | |
 | M5 — Evaluate and release pilot | `not_started` | |
@@ -272,6 +272,80 @@ and checks what surrounds it.
 
 18 new tests — 9 browser plus the session-level routing and playback cases.
 269 unit and 51 browser tests pass. The built page is 375 KB.
+
+## M2 Step 4 — writing and speaking capture
+
+Both open sections are captured and **neither is scored anywhere in the app**.
+`scoring.writing` and `scoring.speaking` each require a qualified human first,
+and for speaking that person must listen to the original recording — a
+transcript cannot score comprehensibility, fluency or pronunciation. Every open
+response is stored `awaiting_review`, which is a state, not a placeholder score,
+and a rubric score without a named `scorer_id` is refused.
+
+| Module | Role |
+|---|---|
+| `src/speech/capture.js` | Audio capture. Stream and recorder injected, so denial and interruption are driven by tests rather than hoped for on a device. |
+| `src/assessment/audio-store.js` | IndexedDB clip storage, device-local. Every operation resolves rather than throwing. |
+
+**The two failure paths, and why neither is a wrong answer.** A refused
+microphone stores `microphone_failed`; an interruption mid-recording stores
+`app_interrupted_before_submit` **and keeps whatever was captured** — it is
+still what she said. Both are excluded from the numerator and the denominator
+per `invalidity.rule`, and the screen tells the child plainly that a refused
+microphone is not a wrong answer.
+
+**Audio never leaves the device.** §3.6 forbids storing raw child audio by
+default, a Firestore document caps at 1 MiB, and no storage bucket exists. Clips
+live in IndexedDB keyed `runId/itemId#attempt`; only the reference and
+`audio_device_id` sync. The consequence is stated rather than discovered: a
+parent opening the review panel on the other iPad sees the prompt waiting with
+no audio to play, and clips should be reviewed the day they are recorded because
+iPadOS clears unused site storage after about a week.
+
+### The keyboard instruction (requirement 5)
+
+Shown on screen before the words and writing sections, and added to the iPad
+checklist as §5.0:
+
+> For an accurate placement result, temporarily turn off Auto-Correction and
+> Predictive Text in Settings → General → Keyboard.
+
+The app sets `autocorrect`, `autocapitalize`, `spellcheck` and `autocomplete`
+off on every field, but **a web page cannot disable the QuickType bar**, and the
+wording says so. A test asserts the note never claims the app has turned
+anything off.
+
+### Recovery export (requirement 1)
+
+Assessment runs now travel with the recovery file, carrying
+`blocked_by_content_domains` and `insufficient_domains` per run — a domain that
+reported no band must be able to say afterwards *which* shortfall it was, and
+neither can be recomputed from a file that dropped them. Import **merges**
+rather than replaces, so a file exported before today's sitting cannot erase
+today's answers. Audio is not in the file; `audio_device_id` says where it is.
+
+### Two near-misses, same class as Step 3's
+
+Both were tests flagging legitimate content, and both would have been switched
+off rather than fixed if left:
+
+- A scan for model answers checked `document.innerHTML`, which contains the
+  whole inlined release by construction. Scoped to what is *rendered* — the
+  answer keys shipping in the file is the accepted risk in `known-risks.md` §1c
+  and has no fix without a server; what is fixable is never showing them.
+- A scan for brief text flagged `SA-D02` for the word "school", which is in the
+  prompt's own English wording — "how to go from the school to the library".
+  The prompt is the task. Scoped to exclude it.
+
+### One real bug its own test caught
+
+`audio-store.js` unwrapped an `IDBRequest` with `out?.result ?? out`. A missing
+key gives `result: undefined`, so the fallback returned the request object,
+which is truthy — `has()` reported a missing clip as present.
+
+38 new tests: 10 capture, 8 audio store, 8 browser (writing, speaking, mic
+denial, artwork, keyboard note), plus the asset proofs. **301 unit and 59 browser
+tests pass.** The built page is 398 KB.
 
 ## Speaking artwork — built, and ready for review
 

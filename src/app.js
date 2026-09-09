@@ -16,7 +16,10 @@ import { createAssessmentStore } from './assessment/store.js';
 import { configureAssessmentUI, openAssessment, pauseAssessment,
          beginNextSection, renderAssessmentParentPanel, chooseOption,
          playCurrentAudio, reportNoSound, submitCurrentItem,
-         finishSection } from './modes/assessment-ui.js';
+         finishSection, startRecording, stopRecording, playOwnRecording,
+         abandonRecording } from './modes/assessment-ui.js';
+import { createAudioCapture } from './speech/capture.js';
+import { createAudioStore } from './assessment/audio-store.js';
 import { normalizeForRecognition, compareFrench, scrambleTypeFor,
          buildScrambleTiles, joinScrambleTiles, isScrambleSolvable,
          SCRAMBLE_TYPES } from './util/fr-text.js';
@@ -1044,6 +1047,10 @@ document.addEventListener('visibilitychange',()=>{
     // the app ever sees of the attempt, it should say so rather than leave no
     // record at all. A later completion of the same attempt supersedes it.
     recordUnfinishedRound(ROUND_OUTCOME.INTERRUPTED);
+    // A recording in progress when the screen locks is an interruption, not a
+    // wrong answer. Whatever was captured is kept; the response is marked
+    // invalid and excluded rather than scored.
+    abandonRecording();
     flushOnExit();
     // flushOnExit returns early unless a game round is live, so an assessment
     // in progress would otherwise be invisible to it.
@@ -1569,6 +1576,9 @@ document.addEventListener('click', function(e){
     case 'assess-no-sound':  reportNoSound(); break;
     case 'assess-submit-item': void submitCurrentItem(); break;
     case 'assess-finish-section': void finishSection(); break;
+    case 'assess-record':    void startRecording(); break;
+    case 'assess-stop-record': void stopRecording(); break;
+    case 'assess-play-own':  playOwnRecording(); break;
   }
 });
 
@@ -2889,6 +2899,23 @@ function exportRecoveryBackup(){
     players:{
       jenn:JSON.parse(JSON.stringify(state.jenn)),
       jess:JSON.parse(JSON.stringify(state.jess))
+    },
+    // Assessment runs travel with the backup. They are evidence collected once
+    // under test conditions and not reproducible — a second sitting of the same
+    // form is a different measurement, not a retake — so a recovery file that
+    // omitted them would silently lose more than the game records.
+    //
+    // blocked_by_content_domains and insufficient_domains ride along on each
+    // run: a domain that reported no band has to be able to say afterwards
+    // WHICH shortfall it was, and neither can be recomputed from a file that
+    // dropped them.
+    //
+    // Audio is not here. Clips stay in IndexedDB on the device that recorded
+    // them (§3.6), so a restored file carries the responses and the reference,
+    // and audio_device_id says where the recording actually is.
+    assessment:{
+      jenn:JSON.parse(JSON.stringify(assessment.get('jenn'))),
+      jess:JSON.parse(JSON.stringify(assessment.get('jess')))
     }
   };
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
@@ -2977,6 +3004,16 @@ async function handleRecoveryImport(evt){
     }
     if(reconciledJenn) state.jenn=reconciledJenn;
     if(reconciledJess) state.jess=reconciledJess;
+
+    // Assessment runs come back too, and are MERGED rather than replaced — the
+    // same rule as the profile. A file exported before today's sitting must not
+    // erase today's answers, and the join makes that structurally impossible.
+    // An older backup with no assessment section simply contributes nothing.
+    for(const p of ['jenn','jess']){
+      const incoming = data?.assessment?.[p];
+      if(incoming) assessment.applyRemote(p, incoming);
+    }
+
     renderParentSummary();
     updateLeaderboard();
     if(currentPlayer==='jenn' || currentPlayer==='jess') updateHub();
@@ -3163,6 +3200,14 @@ configureAssessmentUI({
     const v = frenchVoice || resolveFrenchVoice();
     return { resolvedLocale: v ? v.lang : null, name: v ? v.name : null };
   },
+  // Audio capture, and where the clip goes. The recording never leaves this
+  // device: there is no storage bucket, a Firestore document caps at 1 MiB, and
+  // §3.6 forbids keeping raw child audio by default.
+  makeCapture: () => createAudioCapture({
+    getStream: () => navigator.mediaDevices.getUserMedia({ audio: true }),
+    Recorder: window.MediaRecorder,
+  }),
+  audioStore: createAudioStore({ deviceId }),
   // A parent can open the assessment from the parent overlay without a learner
   // being selected, so there may be no hub to return to. updateHub reads
   // state[currentPlayer] and would throw.

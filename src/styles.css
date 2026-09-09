@@ -471,3 +471,29 @@ button,input{touch-action:manipulation;}
   border-radius: 12px; background: var(--card); color: var(--text);
 }
 .assess-input:focus { outline: none; border-color: var(--french); }
+
+/* Open items: writing and speaking. Capture only — nothing here is marked. */
+.assess-figure {
+  margin: 4px 0 16px; border: 1px solid rgba(0,0,0,.12); border-radius: 12px;
+  overflow: hidden; background: #fdfdfb;
+}
+.assess-figure svg { display: block; width: 100%; height: auto; }
+.assess-textarea {
+  width: 100%; padding: 12px 14px; font-size: 1rem; line-height: 1.5;
+  font-family: 'Nunito', sans-serif; border: 2px solid rgba(0,0,0,.12);
+  border-radius: 12px; background: var(--card); color: var(--text); resize: vertical;
+}
+.assess-textarea:focus { outline: none; border-color: var(--french); }
+.assess-record { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.assess-record .assess-note { flex-basis: 100%; }
+/* Recording is a state, not a verdict: it pulses so it is unmistakably ON,
+   and carries no colour that could read as right or wrong. */
+.assess-record button.recording { animation: assess-pulse 1.2s ease-in-out infinite; }
+@keyframes assess-pulse { 0%,100% { opacity: 1; } 50% { opacity: .55; } }
+
+/* The parent-facing keyboard note. Addressed to the adult, not the child. */
+.assess-parent-note {
+  border: 1px dashed rgba(0,0,0,.25); border-radius: 12px;
+  padding: 12px 14px; margin-bottom: 14px;
+  font-size: .78rem; line-height: 1.5; color: var(--text-muted);
+}
