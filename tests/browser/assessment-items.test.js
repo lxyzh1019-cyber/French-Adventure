@@ -16,6 +16,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { chromium } from 'playwright';
 import { readFileSync } from 'node:fs';
+import * as G from '../helpers/content-guards.js';
 
 // The bank, read from disk. The page cannot be asked what it is hiding.
 const ITEMS = JSON.parse(
@@ -38,6 +39,7 @@ async function openApp() {
   openContexts.push(context);
   await context.route('**://*/**', route =>
     route.request().url().startsWith('file://') ? route.continue() : route.abort());
+  await context.addInitScript(G.recordRendering);
   await context.addInitScript(() => {
     window.fbInit = () => {}; window.fbSave = async () => true;
     window.fbAssessInit = () => {}; window.fbAssessSave = async () => true;
@@ -165,57 +167,140 @@ test('reporting silence does not consume a play, and is not a wrong answer', asy
   assert.equal(resp.audio_play_count, 1, 'the silent replay consumed a play');
 });
 
-test('choosing an answer says nothing about whether it is right', async () => {
-  // administration.language. This is the guarantee a child would notice being
-  // broken, and the one most easily broken by a well-meaning tick.
-  const { page, errors } = await openApp();
+const snap = (page, sel) => page.evaluate(G.snapshot, sel);
+const renderLog = page => page.evaluate(() =>
+  window.__renderLog.map(s => s.replace(/\s+/g, ' ').trim()).filter(Boolean).sort());
+
+/** Open a sitting and stop on the first listening item. */
+async function firstItem(page) {
   await intoFirstSection(page);
+  return (await run(page)).sections.listening.plan[0];
+}
 
-  const before = await screenText(page);
-  await page.click('.assess-choice');
-  await page.waitForTimeout(200);
-  const after = await screenText(page);
+test('choosing an answer says nothing about whether it is right', async () => {
+  // administration.language, tested by mechanism rather than by vocabulary.
+  // Several prompts legitimately read "choose the correct ...", so a word scan
+  // flags the bank's own English (tests/fixtures/guard-regressions). Instead:
+  // two identical sittings, one choosing the key's answer and one choosing a
+  // distractor. Nothing at all may differ except which option is marked chosen.
+  const a = await openApp();
+  const b = await openApp();
+  const id = await firstItem(a.page);
+  assert.equal(await firstItem(b.page), id, 'the two sittings were not given the same item');
 
-  const banned = /correct|right|wrong|well done|nice|oops|try again|✅|❌|✔|✗|⭐/i;
-  assert.equal(banned.test(after), false, `feedback appeared after choosing: ${after.slice(0, 200)}`);
-  assert.equal(after.replace(/\s+/g, ''), before.replace(/\s+/g, ''),
-    'choosing an answer changed what the screen says');
+  const item = ITEMS.find(i => i.id === id);
+  const key = item.answer_key?.correct_choice_ids || [];
+  const right = key[0];
+  const wrong = item.choices.map(c => c.id).find(c => !key.includes(c));
+  assert.ok(right && wrong, `${id} has no right and wrong pair to compare`);
 
-  const styling = await page.evaluate(() => {
-    const b = document.querySelector('.assess-choice.chosen');
-    const cs = getComputedStyle(b);
-    return { border: cs.borderColor, bg: cs.backgroundColor };
-  });
-  // A chosen option is marked as chosen. Green or red would be a verdict.
-  assert.equal(/rgb\(\s*(0|1?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])\s*,\s*(1[6-9][0-9]|2[0-5][0-9])\s*,/.test(styling.border), false,
-    `the chosen option is coloured like a verdict: ${styling.border}`);
-  assert.deepEqual(errors, []);
+  await a.page.click(`[data-choice="${right}"]`);
+  await b.page.click(`[data-choice="${wrong}"]`);
+  await a.page.waitForTimeout(200);
+  await b.page.waitForTimeout(200);
+
+  const fullA = await snap(a.page, '#screen-assessment');
+  const fullB = await snap(b.page, '#screen-assessment');
+
+  // Everything but the options: identical, to the pixel colour.
+  assert.deepEqual(G.differences(G.prune(fullA, 'assess-choices'), G.prune(fullB, 'assess-choices')), [],
+    'the screen changed according to whether the answer was right');
+
+  // The options, compared by role rather than by position. A different button
+  // is chosen in each sitting, and it is allowed to look chosen.
+  const optionsA = G.nodesWithClass(fullA, 'assess-choice');
+  const optionsB = G.nodesWithClass(fullB, 'assess-choice');
+  const chosenIn = list => list.find(n => n.classes.includes('chosen'));
+  const restOf = list => list.filter(n => !n.classes.includes('chosen'));
+  assert.ok(chosenIn(optionsA) && chosenIn(optionsB), 'neither sitting marked a choice as chosen');
+
+  // Its own label and id aside, being chosen looks the same whether the option
+  // chosen was the key's or a distractor.
+  const IDENTITY = { ignoreAttrs: ['data-choice'], ignoreText: true };
+  assert.deepEqual(G.differences(chosenIn(optionsA), chosenIn(optionsB), IDENTITY), [],
+    'the chosen option is styled according to whether it is right');
+
+  // And every option left unchosen looks like every other, across both
+  // sittings - so the key's answer is not marked out in the sitting that
+  // missed it.
+  const reference = restOf(optionsA)[0];
+  for (const other of [...restOf(optionsA), ...restOf(optionsB)]) {
+    assert.deepEqual(G.differences(reference, other, IDENTITY), [],
+      'an option that was not chosen is drawn differently from the others');
+  }
+
+  assert.deepEqual([...a.errors, ...b.errors], []);
 });
 
-test('submitting moves straight on, with no verdict and no reward', async () => {
-  const { page, errors } = await openApp();
+test('submitting says nothing either, not even in passing', async () => {
+  // The same two sittings, submitted. The next screen must be identical, and
+  // so must everything that was put into the screen along the way - a verdict
+  // that appears and is taken away again is still a verdict.
+  const a = await openApp();
+  const b = await openApp();
+  const id = await firstItem(a.page);
+  assert.equal(await firstItem(b.page), id);
+
+  const item = ITEMS.find(i => i.id === id);
+  const key = item.answer_key?.correct_choice_ids || [];
+  const wrong = item.choices.map(c => c.id).find(c => !key.includes(c));
+
+  await a.page.click(`[data-choice="${key[0]}"]`);
+  await b.page.click(`[data-choice="${wrong}"]`);
+  await a.page.click('[data-action="assess-submit-item"]');
+  await b.page.click('[data-action="assess-submit-item"]');
+
+  const settled = page => page.waitForFunction(() => {
+    const r = window.__faDebug.assessment.runs('jenn')[0];
+    return Object.keys(r.responses).length === 1
+      && window.__faDebug.assessment.currentItemId?.() !== null;
+  }, null, { timeout: 5000 });
+  await settled(a.page);
+  await settled(b.page);
+  await a.page.waitForTimeout(250);
+  await b.page.waitForTimeout(250);
+
+  // The answers really did differ, so the comparison means something.
+  const scored = page => page.evaluate(() =>
+    Object.values(window.__faDebug.assessment.runs('jenn')[0].responses)[0].scored_correct);
+  assert.equal(await scored(a.page), true, 'the key answer was not recorded as correct');
+  assert.equal(await scored(b.page), false, 'the distractor was not recorded as incorrect');
+
+  assert.deepEqual(
+    G.differences(await snap(a.page, '#screen-assessment'),
+      await snap(b.page, '#screen-assessment')), [],
+    'the next screen showed how the last answer went');
+
+  assert.deepEqual(await renderLog(a.page), await renderLog(b.page),
+    'something was rendered into the screen and taken away again');
+  assert.deepEqual([...a.errors, ...b.errors], []);
+});
+
+test('no part of the game reward system is on the assessment screen', async () => {
+  // administration.language again: no lives, stars, bonuses or leaderboard.
+  // This reads class and id tokens - which are code, written by us - and never
+  // the item text, so an item that happens to use one of these words in its
+  // own English cannot trip it.
+  const { page } = await openApp();
   await intoFirstSection(page);
+
+  const tokens = await page.evaluate(() => {
+    const out = new Set();
+    const screen = document.getElementById('screen-assessment');
+    for (const el of [screen, ...screen.querySelectorAll('*')]) {
+      for (const c of el.classList) out.add(c);
+      if (el.id) out.add('#' + el.id);
+    }
+    return [...out];
+  });
+  const rewardish = tokens.filter(t =>
+    /star|life|lives|heart|moon|streak|score|trophy|leaderboard|badge|reward|hint/i.test(t));
+  assert.deepEqual(rewardish, [], 'game chrome is inside the assessment screen');
 
   const firstId = (await run(page)).sections.listening.plan[0];
   await page.click('.assess-choice');
   await page.click('[data-action="assess-submit-item"]');
   await page.waitForTimeout(300);
-
-  // The item's own instruction may legitimately contain words like "correct"
-  // — several prompts read "choose the correct ...". What must not appear is
-  // feedback ABOUT the answer, so the prompt on screen is excluded before the
-  // scan; a blunt word search would flag the bank's own English.
-  const { rest, prompt } = await page.evaluate(() => {
-    const screen = document.getElementById('screen-assessment');
-    const p = screen.querySelector('.assess-prompt')?.textContent ?? '';
-    return { rest: screen.textContent.split(p).join(' '), prompt: p };
-  });
-  assert.ok(prompt.length > 0, 'no prompt was rendered to exclude');
-  assert.equal(/\b(correct|incorrect|wrong|well done|try again)\b/i.test(rest), false,
-    `a verdict appeared outside the prompt: ${rest.slice(0, 200)}`);
-  assert.equal(/\b(score|points?|stars?|lives?|streak|bonus|leaderboard)\b/i.test(rest), false,
-    `a reward appeared: ${rest.slice(0, 200)}`);
-  assert.equal(/⭐|🌟|❤️|🏆|🌙|🎉|✅|❌/.test(rest), false, 'a reward or verdict glyph appeared');
 
   const r = await run(page);
   assert.ok(r.responses[`${firstId}#0`], 'the answer was not recorded');

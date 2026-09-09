@@ -11,6 +11,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { readFileSync } from 'node:fs';
 import { chromium } from 'playwright';
+import * as G from '../helpers/content-guards.js';
 
 const APP = 'file://' + path.resolve(process.env.APP_FILE || 'index.html');
 const CHROME = process.env.CHROMIUM_PATH || undefined;
@@ -32,6 +33,7 @@ async function openApp({ micAllowed = true } = {}) {
   openContexts.push(context);
   await context.route('**://*/**', route =>
     route.request().url().startsWith('file://') ? route.continue() : route.abort());
+  await context.addInitScript(G.recordRendering);
   await context.addInitScript((allowed) => {
     window.fbInit = () => {}; window.fbSave = async () => true;
     window.fbAssessInit = () => {}; window.fbAssessSave = async () => true;
@@ -186,25 +188,36 @@ test('a written answer is captured, unmarked, and left awaiting review', async (
   assert.deepEqual(errors, []);
 });
 
-test('no model answer is ever rendered on screen', async () => {
-  // Every open item carries a model_response for the scorer. It is an exemplar,
-  // not a prompt, and a child must never see one.
+test('no scorer-facing text is ever put in front of the child', async () => {
+  // Every open item carries a model_response and author_notes for whoever
+  // scores it. Both are for the adult; neither is a prompt.
   //
-  // Scoped to what is DISPLAYED, not to the page source. The whole release is
-  // inlined so the app works offline, so every model answer and every answer key
-  // is in the file by construction — that is the accepted, documented risk in
-  // known-risks.md §1c, and there is no fix without a server. What is fixable,
-  // and what this checks, is that none of it is ever put in front of the child.
+  // What this reads is what the learner-facing container actually rendered -
+  // its text and its attribute values - plus a record of everything inserted
+  // into it along the way, so a placeholder or a flash counts too. It does not
+  // read the page source: the whole release is inlined so the app works
+  // offline, so every model answer is in the file by construction. That is the
+  // documented risk in known-risks.md §1c and there is no fix without a
+  // server; scanning for it only re-detects the bundling
+  // (tests/fixtures/guard-regressions). What is fixable is never showing it.
   const { page } = await openApp();
   assert.ok(await reachSection(page, 'writing'), 'never reached the writing section');
 
-  const models = ITEMS.map(i => i.scoring?.model_response).filter(Boolean);
-  assert.ok(models.length > 0, 'no model responses were found to check against');
-
-  const shown = await page.evaluate(() => document.getElementById('screen-assessment').innerHTML);
-  for (const m of models) {
-    assert.equal(shown.includes(m), false, `a model answer is on screen: "${m}"`);
+  // Walk to the end, so every writing and speaking item is covered.
+  for (let n = 0; n < 200; n++) {
+    if (!(await positionOf(page)).next) break;
+    await advance(page);
   }
+
+  const scorerFacing = ITEMS.flatMap(i => [i.scoring?.model_response, i.author_notes]).filter(Boolean);
+  assert.ok(scorerFacing.length > 0, 'the release carries no scorer-facing text to check against');
+
+  const rendered = await page.evaluate(G.renderedStrings, '#screen-assessment');
+  const inserted = await page.evaluate(() => window.__renderLog);
+  assert.ok(inserted.length > 0, 'nothing was recorded, so this proves nothing');
+
+  assert.deepEqual(G.leakedStrings([...rendered, ...inserted], scorerFacing), [],
+    'scorer-facing text reached the learner');
 });
 
 // ── speaking ───────────────────────────────────────────────────────────────
@@ -274,10 +287,21 @@ test('a refused microphone is not a wrong answer', async () => {
 });
 
 test('a speaking prompt that needs a picture shows the picture, never the brief', async () => {
+  // A brief is instruction to an illustrator. Printing SA-D02's required_labels
+  // would hand the child "school, park, library, bank" - the vocabulary the
+  // prompt asks them to produce in French.
+  //
+  // The prompt itself, though, legitimately says "from the school to the
+  // library": those places are the task, and an earlier version of this guard
+  // flagged the item's own prompt for containing them
+  // (tests/fixtures/guard-regressions). So the brief is compared against the
+  // item's own learner-facing copy first, and what is left - the drawing
+  // instructions, the prohibitions, the labels the prompt does not name - is
+  // what must not appear.
   const { page } = await openApp();
   assert.ok(await reachSection(page, 'speaking'), 'never reached the speaking section');
 
-  const briefed = ITEMS.filter(i => i.stimulus && String(i.stimulus.type || '').endsWith('_brief'));
+  const briefed = ITEMS.filter(G.isBrief);
   let sawArtwork = false;
 
   for (let n = 0; n < 12; n++) {
@@ -292,32 +316,20 @@ test('a speaking prompt that needs a picture shows the picture, never the brief'
       sawArtwork = true;
       assert.ok(await page.$('#screen-assessment .assess-figure svg'), `${current} showed no picture`);
 
-      // The item's own prompt is excluded first. SA-D02 reads "how to go from
-      // the school to the library on the map", so "school" and "library" are
-      // legitimately on screen — they are the task. What must not appear is the
-      // brief: its route steps, its element list, its prohibitions, its note.
-      const { rest } = await page.evaluate(() => {
-        const screen = document.getElementById('screen-assessment');
-        const p = screen.querySelector('.assess-prompt')?.textContent ?? '';
-        return { rest: screen.textContent.split(p).join(' ') };
-      });
-      for (const key of ['required_elements', 'required_route', 'prohibited_text']) {
-        for (const phrase of item.stimulus[key] || []) {
-          assert.equal(rest.toLowerCase().includes(String(phrase).toLowerCase()), false,
-            `${current} printed its brief: "${phrase}"`);
-        }
-      }
-      // The English place names must not appear outside the prompt either: the
-      // map is labelled in French, and an English label would translate the
-      // vocabulary the prompt is asking for.
-      for (const label of item.stimulus.required_labels || []) {
-        assert.equal(rest.toLowerCase().includes(String(label).toLowerCase()), false,
-          `${current} shows the English place name "${label}" outside its prompt`);
-      }
-      if (item.stimulus.learner_view) {
-        assert.equal(rest.includes(item.stimulus.learner_view), false,
-          `${current} printed its learner_view note`);
-      }
+      const guarded = G.briefOnlyPhrases(item);
+      assert.ok(guarded.length > 0, `${current}: nothing of its brief is guarded against`);
+
+      // Scoped to the item on screen. A whole-session record would be the
+      // wrong haystack: "chair" and "table" are SA-F02's brief, and they are
+      // also the English choice labels of four listening and reading items
+      // answered earlier in the same sitting (tests/fixtures/guard-regressions).
+      const rendered = await page.evaluate(G.renderedStrings, '#screen-assessment');
+      const leaked = G.leakedStrings(rendered, guarded.map(g => g.phrase));
+      assert.deepEqual(leaked, [], `${current} printed its brief`);
+
+      // The prompt is on screen and is meant to be. Its own words are not a leak.
+      assert.ok((await screenText(page)).includes(item.prompt_en),
+        `${current} did not show its prompt`);
     }
 
     const rec = await page.$('[data-action="assess-record"]');
@@ -333,19 +345,64 @@ test('a speaking prompt that needs a picture shows the picture, never the brief'
   assert.equal(sawArtwork, true, 'no prompt with artwork was reached');
 });
 
-test('the open sections show no verdict, reward or score', async () => {
+test('a written answer is not reacted to, however good or bad it is', async () => {
+  // Writing and speaking are never scored by the app - scoring.writing
+  // requires a qualified human - so the mechanism is straightforward: two
+  // identical sittings, one submitting the release's own model answer and one
+  // submitting nonsense. If the screen or anything rendered into it differs,
+  // the app formed an opinion it is not entitled to have.
+  const a = await openApp();
+  const b = await openApp();
+  assert.ok(await reachSection(a.page, 'writing'), 'never reached the writing section');
+  assert.ok(await reachSection(b.page, 'writing'), 'never reached the writing section');
+
+  const itemId = await a.page.evaluate(() => {
+    const r = window.__faDebug.assessment.runs('jenn')[0];
+    return r.sections.writing.plan.find(id => !r.responses[`${id}#0`]) || null;
+  });
+  const model = ITEMS.find(i => i.id === itemId)?.scoring?.model_response;
+  assert.ok(model, `${itemId} has no model answer to submit`);
+
+  await a.page.fill('#assess-written', model);
+  await b.page.fill('#assess-written', 'zzz zzz');
+  await a.page.click('[data-action="assess-submit-item"]');
+  await b.page.click('[data-action="assess-submit-item"]');
+  await a.page.waitForTimeout(400);
+  await b.page.waitForTimeout(400);
+
+  const stored = page => page.evaluate(() =>
+    Object.values(window.__faDebug.assessment.runs('jenn')[0].responses)
+      .filter(x => x.domain === 'writing').map(x => x.raw_response));
+  assert.deepEqual(await stored(a.page), [model], 'the model answer was not the one submitted');
+  assert.notDeepEqual(await stored(b.page), [model], 'both sittings submitted the same thing');
+
+  const shot = page => page.evaluate(G.snapshot, '#screen-assessment');
+  assert.deepEqual(G.differences(await shot(a.page), await shot(b.page)), [],
+    'the screen responded to what was written');
+
+  const log = page => page.evaluate(() => window.__renderLog
+    .map(s => s.replace(/\s+/g, ' ').trim()).filter(Boolean).sort());
+  assert.deepEqual(await log(a.page), await log(b.page),
+    'something was rendered in response to what was written');
+  assert.deepEqual([...a.errors, ...b.errors], []);
+});
+
+test('no part of the game reward system is on the open sections', async () => {
+  // Class and id tokens only - those are code we wrote. Item text is left
+  // alone, so a prompt using one of these words cannot trip this.
   const { page } = await openApp();
   assert.ok(await reachSection(page, 'writing'), 'never reached the writing section');
 
-  const { rest, prompt } = await page.evaluate(() => {
+  const tokens = await page.evaluate(() => {
+    const out = new Set();
     const screen = document.getElementById('screen-assessment');
-    const p = screen.querySelector('.assess-prompt')?.textContent ?? '';
-    return { rest: screen.textContent.split(p).join(' '), prompt: p };
+    for (const el of [screen, ...screen.querySelectorAll('*')]) {
+      for (const c of el.classList) out.add(c);
+      if (el.id) out.add('#' + el.id);
+    }
+    return [...out];
   });
-  assert.ok(prompt.length > 0, 'no prompt was rendered to exclude');
-  assert.equal(/\b(correct|incorrect|wrong|well done|try again)\b/i.test(rest), false,
-    `a verdict appeared: ${rest.slice(0, 200)}`);
-  assert.equal(/\b(score|points?|stars?|lives?|streak|bonus|leaderboard)\b/i.test(rest), false,
-    `a reward appeared: ${rest.slice(0, 200)}`);
-  assert.equal(/⭐|🌟|❤️|🏆|🌙|🎉|✅|❌/.test(rest), false, 'a reward or verdict glyph appeared');
+  assert.deepEqual(tokens.filter(t =>
+    /star|life|lives|heart|moon|streak|score|trophy|leaderboard|badge|reward|hint/i.test(t)), [],
+    'game chrome is inside the assessment screen');
 });

@@ -1,0 +1,76 @@
+{
+  "_note": "Real content that a content guard wrongly flagged. Each entry is a regression: the guard must accept it. Never delete an entry to make a guard pass — the guard is what changes.",
+  "prompts_containing_verdict_words": {
+    "why": "Several item prompts legitimately read 'choose the correct ...'. A keyword scan for 'correct' flagged the bank's own English and would have been switched off rather than fixed.",
+    "found": "2026-09-09, M2 Step 3",
+    "examples": [
+      "Listen and choose the correct schedule.",
+      "Read and choose the correct answer."
+    ]
+  },
+  "prompt_naming_places_that_are_also_brief_labels": {
+    "why": "SA-D02 reads 'how to go from the school to the library on the map'. 'school' and 'library' are the task, and are also entries in the brief's required_labels. A scan for brief words flagged the prompt itself.",
+    "found": "2026-09-09, M2 Step 4",
+    "examples": [
+      {
+        "item": "SA-D02",
+        "prompt": "In French, tell someone how to go from the school to the library on the map.",
+        "brief_labels": [
+          "school",
+          "park",
+          "library",
+          "bank"
+        ]
+      },
+      {
+        "item": "SB-D02",
+        "prompt": "In French, tell someone how to go from the park to the bakery on the map.",
+        "brief_labels": [
+          "park",
+          "school",
+          "library",
+          "bakery",
+          "pool"
+        ]
+      }
+    ]
+  },
+  "model_answers_in_the_bundled_release": {
+    "why": "The whole release is inlined so the app works offline, so every model_response and answer key is in the page source by construction. Scanning document.innerHTML flagged that intentional bundling. The keys shipping in the file is the accepted risk in known-risks.md 1c; the fixable part is never RENDERING them.",
+    "found": "2026-09-09, M2 Step 4",
+    "examples": [
+      "Je m’appelle Alex.",
+      "Je m’appelle Alex et j’ai onze ans."
+    ]
+  },
+  "brief_words_that_are_another_items_answer_choices": {
+    "why": "SA-F02's brief lists 'chair' and 'table'. Both are also English choice labels in listening and reading items answered earlier in the same sitting, so a guard that searched everything rendered during the run flagged the speaking item for words shown by four other items. The haystack has to be the item on screen, not the session.",
+    "found": "2026-09-09, M2 Step 5",
+    "examples": [
+      {
+        "item": "SA-F02",
+        "brief_elements": [
+          "red pencil",
+          "blue book",
+          "green bag",
+          "chair",
+          "table"
+        ]
+      },
+      {
+        "shown_by": "LA-D01",
+        "choice_labels": [
+          "behind the chair beside the door",
+          "under the chair near the window"
+        ]
+      },
+      {
+        "shown_by": "RB-F03",
+        "choice_labels": [
+          "under the table",
+          "on the chair"
+        ]
+      }
+    ]
+  }
+}
