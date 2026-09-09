@@ -283,3 +283,153 @@ test('a parent can void an attempt without deleting it', () => {
   assert.equal(run.invalidated_reason, 'interrupted by a sibling');
   assert.equal(Object.keys(run.responses).length, 1, 'voiding an attempt destroyed its evidence');
 });
+
+// ── Reassessment: which form, and whether it can measure anything ───────────
+//
+// administration.reassessment, in the content owner's order. The exception is
+// permission to reuse a form, not an instruction to reuse it regardless of what
+// the learner has already seen.
+
+const terminalRun = ({ form = 'A', startedAt = NOW - 10 * DAY, responses = {}, exposure = {} } = {}) => ({
+  run_id: 'run_' + startedAt, learner_id: 'jenn', form,
+  status: RUN_STATUS.COMPLETE, started_at_utc: startedAt,
+  responses, exposure, sections: {}, section_order: content.SECTION_ORDER,
+});
+
+/** n valid, independent, scored responses in one domain. */
+const scored = (n, domain = 'listening') => Object.fromEntries(
+  Array.from({ length: n }, (_, i) => [`${domain}-${i}#0`,
+    { item_id: `${domain}-${i}`, domain, scored_correct: true, support_flag: false }]));
+
+/** Mark every item of a form's domain as already shown. */
+const exposeAll = (form, domains) => Object.fromEntries(
+  domains.flatMap(d => content.itemsFor({ form, domain: d })
+    .map(i => [i.id, { first_shown_at_utc: NOW - DAY, shown_count: 1 }])));
+
+test('resuming a paused attempt is not a reassessment', () => {
+  // The first branch of the rule. A run still in progress is picked up as it
+  // stands — same run, same form — and no form choice happens at all.
+  const store = freshStore();
+  const live = start(store);
+  live.form = 'A';
+  store.runs[live.run_id] = live;
+
+  const again = S.startRun(store, 'jenn', { now: NOW + 30 * DAY });
+  assert.equal(again.resumed, true, 'a paused attempt was treated as a new one');
+  assert.equal(again.run.run_id, live.run_id);
+  assert.equal(again.run.form, 'A', 'resuming changed the form');
+  assert.equal(again.plan, undefined, 'a form was chosen for a resume');
+});
+
+test('a new attempt within 60 days normally alternates', () => {
+  const prior = [terminalRun({ form: 'A', responses: scored(8) })];
+  const plan = S.planNextAttempt('jenn', prior, { now: NOW });
+  assert.equal(plan.form, 'B');
+  assert.equal(plan.reason, 'alternate_form');
+});
+
+test('a barely started attempt may repeat its form when enough is unexposed', () => {
+  // Two answers, and only those two items shown. The form is almost untouched,
+  // so spending the alternate on it would leave nothing fresh for the real one.
+  const prior = [terminalRun({
+    form: 'A',
+    responses: scored(2),
+    exposure: { 'LA-D01': { first_shown_at_utc: NOW - DAY, shown_count: 1 },
+                'LA-D02': { first_shown_at_utc: NOW - DAY, shown_count: 1 } },
+  })];
+  const plan = S.planNextAttempt('jenn', prior, { now: NOW });
+  assert.equal(plan.form, 'A', 'a nearly untouched form was thrown away');
+  assert.equal(plan.reason, 'reuse_barely_used_form');
+  assert.deepEqual(plan.insufficientDomains, []);
+});
+
+test('many exposed items that were technically invalid still count as exposed', () => {
+  // The trap. Nothing was measured — every response was invalid, so the attempt
+  // is "barely used" — but the items were still SHOWN, and exposure is about
+  // showing, not scoring. Reusing the form would re-ask a bank she has seen.
+  const shown = exposeAll('A', ['listening', 'reading', 'vocabulary_grammar']);
+  const invalid = Object.fromEntries(Object.keys(shown).slice(0, 20).map(id =>
+    [`${id}#0`, { item_id: id, domain: 'listening', technical_invalid_reason: 'audio_failed' }]));
+  const prior = [terminalRun({ form: 'A', responses: invalid, exposure: shown })];
+
+  assert.equal(S.barelyUsed(prior[0]), true, 'invalid responses should not read as evidence');
+  const plan = S.planNextAttempt('jenn', prior, { now: NOW });
+  assert.equal(plan.form, 'B', 'an exhausted form was reused because nothing scored on it');
+  assert.equal(plan.reason, 'alternate_form');
+});
+
+test('same-form reuse is refused when it cannot meet the minimum', () => {
+  // Barely used AND within 60 days — but the bank is gone, so the permission
+  // does not apply and the alternate is used instead.
+  const shown = exposeAll('A', ['listening', 'reading', 'vocabulary_grammar', 'writing', 'speaking']);
+  const prior = [terminalRun({ form: 'A', responses: scored(1), exposure: shown })];
+
+  assert.equal(S.barelyUsed(prior[0]), true);
+  const plan = S.planNextAttempt('jenn', prior, { now: NOW });
+  assert.equal(plan.form, 'B');
+  assert.notEqual(plan.reason, 'reuse_barely_used_form');
+});
+
+test('when neither form can supply fresh evidence, it is reported rather than faked', () => {
+  const both = {
+    ...exposeAll('A', content.SECTION_ORDER),
+    ...exposeAll('B', content.SECTION_ORDER),
+  };
+  const prior = [terminalRun({ form: 'A', responses: scored(8), exposure: both })];
+  const plan = S.planNextAttempt('jenn', prior, { now: NOW });
+  assert.equal(plan.reason, 'insufficient_fresh_evidence');
+  assert.ok(plan.insufficientDomains.length > 0, 'the shortfall was not named');
+  assert.equal(plan.sufficient, false);
+});
+
+test('the 60-day boundary decides whether reuse is even considered', () => {
+  const bare = ex => [terminalRun({ form: 'A', startedAt: ex, responses: scored(2),
+                                    exposure: { 'LA-D01': { shown_count: 1 } } })];
+  const justInside = S.planNextAttempt('jenn', bare(NOW - 59 * DAY), { now: NOW });
+  const justOutside = S.planNextAttempt('jenn', bare(NOW - 61 * DAY), { now: NOW });
+  assert.equal(justInside.form, 'A', 'inside 60 days a barely-used form may repeat');
+  assert.equal(justOutside.form, 'B', 'outside 60 days the alternate is used');
+  assert.equal(justOutside.reason, 'alternate_form');
+});
+
+test('an item seen in an earlier attempt is marked, not counted as fresh', () => {
+  // administration.exposure. The response is kept in full — it is still what
+  // she did — but scoring must not treat it as fresh independent evidence.
+  const store = freshStore();
+  const old = terminalRun({ form: 'A', responses: scored(2),
+                            exposure: { 'LA-D01': { shown_count: 1 } } });
+  store.runs[old.run_id] = old;
+
+  const { run } = S.startRun(store, 'jenn', { now: NOW });
+  assert.ok(run.previously_exposed.includes('LA-D01'));
+
+  S.beginSection(run, 'listening', { now: NOW });
+  const [firstPlanned] = run.sections.listening.plan;
+  S.submitResponse(run, firstPlanned, { scored_correct: true }, { now: NOW });
+  const r = run.responses[responseKey(firstPlanned, 0)];
+  if (firstPlanned === 'LA-D01') {
+    assert.equal(r.previously_exposed, true, 'a re-shown item was not marked');
+  }
+  const other = run.previously_exposed.includes(firstPlanned);
+  assert.equal(!!r.previously_exposed, other, 'the mark does not match the exposure record');
+});
+
+test('speaking cannot reach its minimum on either form until the artwork exists', () => {
+  // Not an exposure problem, and it must not be reported as one. Five prompts,
+  // two of them asset briefs that must never be rendered, against a minimum of
+  // four. Recorded so a domain with no band can say why.
+  for (const form of content.FORMS) {
+    const fresh = S.freshEvidenceByDomain(form, new Set());
+    assert.equal(fresh.speaking.sufficient, false,
+      `${form}/speaking unexpectedly reaches its minimum`);
+    assert.equal(fresh.speaking.available, 3);
+    assert.equal(fresh.speaking.minimum, 4);
+    for (const d of ['listening', 'reading', 'vocabulary_grammar', 'writing']) {
+      assert.equal(fresh[d].sufficient, true, `${form}/${d} cannot meet its minimum when fresh`);
+    }
+  }
+  const plan = S.planNextAttempt('jenn', [], { now: NOW });
+  assert.deepEqual(plan.blockedByContent, ['speaking']);
+  assert.deepEqual(plan.insufficientDomains, [], 'a content gap was reported as exposure');
+  assert.equal(plan.sufficient, true, 'an untouched bank was called exhausted');
+});

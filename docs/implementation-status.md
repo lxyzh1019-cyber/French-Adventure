@@ -226,6 +226,32 @@ in [`known-risks.md`](known-risks.md) §1c.
 36 new tests — 26 session unit tests, 10 browser. 260 unit and 42 browser tests
 pass.
 
+## Speaking cannot produce a band until two illustrations exist
+
+**Found in Step 3 preparation. Blocks a whole domain of the assessment.**
+
+Each form has five speaking prompts. Two of them — `SA-F02`/`SA-D02` on form A,
+`SB-F02`/`SB-D02` on form B — carry an asset *brief* rather than an asset, and
+must be skipped rather than rendered, because printing a brief's
+`required_elements` hands the child the vocabulary the prompt is testing.
+
+That leaves **three presentable prompts against a minimum of four**
+(`scoring.minimum_independent_valid_items.speaking`). So speaking will report
+`insufficient_evidence` on every attempt, on both forms, no matter how well a
+learner does, until the artwork is produced and reviewed.
+
+Nothing in code can fix this. It is recorded on every run as
+`blocked_by_content_domains`, kept distinct from the exposure-driven
+`insufficient_domains`, so a domain with no band can say which kind of shortfall
+it was rather than looking like an exhausted bank.
+
+Writing is unaffected: six prompts, all presentable, minimum five.
+
+**For the content owner:** the two illustration briefs are the smaller ask of
+the four — `required_elements` is a short object list with `prohibited_text`
+already specified. Producing those two alone does not fix speaking; all four
+matter, because the two map briefs are the developing-tier prompts.
+
 ## Release A — amended to `assessment-v1.0.1`
 
 Two edits, made under M2 Step 0 with parent approval. No item, answer key,

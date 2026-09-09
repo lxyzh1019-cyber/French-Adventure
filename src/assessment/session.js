@@ -31,35 +31,159 @@ export function newSittingId() {
  * form within 60 days unless the previous attempt gathered fewer than three
  * valid scored items in every domain.
  */
-export function chooseForm(learnerId, priorRuns = [], { now = Date.now(), releaseId = content.RELEASE_ID } = {}) {
-  const first = assignFirstForm(learnerId, releaseId);
-  const usable = priorRuns
-    .filter(r => r && r.status !== RUN_STATUS.PARENT_INVALIDATED)
-    .sort((a, b) => num(b.started_at_utc) - num(a.started_at_utc));
-  if (!usable.length) return first;
-
-  const last = usable[0];
-  const daysSince = (now - num(last.started_at_utc)) / 86400000;
-
-  // The exception, and the reason it matters. A previous attempt that gathered
-  // almost nothing did not really expose its form — a child who stopped after
-  // two items has not seen the bank. Pushing her onto the alternate anyway
-  // would spend both forms to measure her once, and leave nothing fresh for the
-  // reassessment. So a nearly-empty prior attempt may repeat its own form.
-  if (daysSince < 60 && barelyUsed(last)) return last.form;
-
-  return alternateForm(last.form) || first;
+export function chooseForm(learnerId, priorRuns = [], opts = {}) {
+  return planNextAttempt(learnerId, priorRuns, opts).form;
 }
 
-/** Fewer than three valid scored items in every domain — administration.reassessment. */
-export function barelyUsed(run) {
-  const perDomain = {};
-  for (const r of Object.values(run?.responses || {})) {
-    if (r.technical_invalid_reason) continue;
-    if (r.scored_correct === undefined && r.rubric_scored !== true) continue;
-    perDomain[r.domain] = (perDomain[r.domain] || 0) + 1;
+/** Every item id this learner has ever been shown, across all their runs. */
+export function exposedItemIds(runs = [], { excludeRunId = null } = {}) {
+  const seen = new Set();
+  for (const run of runs) {
+    if (!run || run.run_id === excludeRunId) continue;
+    for (const id of Object.keys(run.exposure || {})) seen.add(id);
   }
-  return Object.values(perDomain).every(n => n < 3);
+  return seen;
+}
+
+/** Valid, independent, scored responses per domain — administration.reassessment. */
+export function validIndependentByDomain(run) {
+  const per = {};
+  for (const r of Object.values(run?.responses || {})) {
+    if (r.technical_invalid_reason) continue;       // invalid: no evidence either way
+    if (r.support_flag) continue;                   // supported: not independent
+    const scored = r.scored_correct !== undefined || r.rubric_scored === true;
+    if (!scored) continue;
+    per[r.domain] = (per[r.domain] || 0) + 1;
+  }
+  return per;
+}
+
+/** True when every domain of a terminal attempt gathered fewer than three. */
+export function barelyUsed(run) {
+  const per = validIndependentByDomain(run);
+  return Object.values(per).every(n => n < 3);
+}
+
+/**
+ * How much fresh evidence a form could still yield, per domain.
+ *
+ * Exposure is permanent and this bank has no spares — invalidity.replacement
+ * can never fire against it — so an exposed item is not swapped out, it is
+ * re-shown and simply cannot count as fresh independent evidence. The estimate
+ * is therefore the *worst* routing path rather than the best: routing depends on
+ * how the learner performs, which is unknown before the attempt, and a form that
+ * only sometimes yields enough is a form that will sometimes waste a sitting.
+ */
+export function freshEvidenceByDomain(form, exposed = new Set()) {
+  const out = {};
+  const fresh = its => its.filter(i => !exposed.has(i.id) && !content.needsUnbuiltAsset(i)).length;
+
+  for (const domain of content.SECTION_ORDER) {
+    const minimum = num(content.minimumEvidenceFor(domain));
+    const routing = content.routingFor(domain);
+
+    let available;
+    if (!routing) {
+      // Open sections administer every prompt in listed order.
+      available = fresh(content.itemsFor({ form, domain }));
+    } else {
+      const entry = content.itemsFor({ form, domain, tier: routing.entry_tier })
+        .slice(0, routing.entry_count);
+      const foundation = content.itemsFor({ form, domain, tier: 'foundation' })
+        .filter(i => !entry.includes(i));
+      const stretch = content.itemsFor({ form, domain, tier: 'stretch' })
+        .filter(i => !entry.includes(i));
+      // Routing goes to [foundation], [foundation, stretch] or [stretch]; the
+      // guaranteed floor is the entry block plus the smaller single tier.
+      available = fresh(entry) + Math.min(fresh(foundation), fresh(stretch));
+    }
+    out[domain] = { available, minimum, sufficient: available >= minimum };
+  }
+  return out;
+}
+
+/**
+ * Which form the next attempt should use, and whether it can measure anything.
+ *
+ * The order is the content owner's:
+ *   1. A paused, resumable attempt is resumed — that is not a reassessment at
+ *      all, and startRun handles it before this function is reached.
+ *   2. A new attempt within 60 days normally alternates.
+ *   3. The same form may be reused only when every domain of the previous
+ *      terminal attempt gathered fewer than three valid independent scored
+ *      responses AND enough unexposed items remain in it.
+ *   4. Otherwise the alternate.
+ *   5. If neither form can supply enough fresh evidence, say so rather than
+ *      quietly counting repeated items as new.
+ */
+export function planNextAttempt(learnerId, priorRuns = [], { now = Date.now(), releaseId = content.RELEASE_ID } = {}) {
+  const first = assignFirstForm(learnerId, releaseId);
+  const terminal = priorRuns
+    .filter(r => r && r.status !== RUN_STATUS.PARENT_INVALIDATED && r.status !== RUN_STATUS.IN_PROGRESS)
+    .sort((a, b) => num(b.started_at_utc) - num(a.started_at_utc));
+
+  if (!terminal.length) {
+    return { form: first, reason: 'first_attempt', ...verdict(first, priorRuns) };
+  }
+
+  const last = terminal[0];
+  const alternate = alternateForm(last.form) || first;
+  const withinWindow = (now - num(last.started_at_utc)) / 86400000 < 60;
+
+  // The exception is permission to reuse, not an instruction to. It applies
+  // only if the form can still supply enough unexposed evidence.
+  if (withinWindow && barelyUsed(last)) {
+    const same = verdict(last.form, priorRuns);
+    if (same.sufficient) return { form: last.form, reason: 'reuse_barely_used_form', ...same };
+  }
+
+  const alt = verdict(alternate, priorRuns);
+  if (alt.sufficient) return { form: alternate, reason: 'alternate_form', ...alt };
+
+  const same = verdict(last.form, priorRuns);
+  if (same.sufficient) return { form: last.form, reason: 'alternate_exhausted', ...same };
+
+  // Neither can measure. Say so; do not present repeats as fresh.
+  return {
+    form: alternate,
+    reason: 'insufficient_fresh_evidence',
+    ...alt,
+    alternativeChecked: last.form,
+  };
+}
+
+/**
+ * Can this form still measure, given what this learner has already seen?
+ *
+ * Two different shortfalls have to be told apart, or one masks the other.
+ *
+ * A domain that cannot reach its minimum even on a pristine form is a gap in
+ * the content, not in what is left of it — today speaking is exactly that: five
+ * prompts of which two are asset briefs that must not be rendered, against a
+ * minimum of four. That is `blockedByContent`, it is true of both forms equally,
+ * and it must not decide which form to use or make an untouched bank look
+ * exhausted. It is reported so the shortfall is visible rather than silently
+ * producing a domain with no band.
+ *
+ * A domain that could have reached its minimum but no longer can, because this
+ * learner has seen too much of it, is `insufficientDomains` — and that is what
+ * form choice turns on.
+ */
+function verdict(form, priorRuns) {
+  const exposed = exposedItemIds(priorRuns);
+  const byDomain = freshEvidenceByDomain(form, exposed);
+  const pristine = freshEvidenceByDomain(form, new Set());
+
+  const blockedByContent = Object.keys(byDomain).filter(d => !pristine[d].sufficient);
+  const short = Object.keys(byDomain)
+    .filter(d => pristine[d].sufficient && !byDomain[d].sufficient);
+
+  return {
+    sufficient: short.length === 0,
+    freshEvidence: byDomain,
+    insufficientDomains: short,
+    blockedByContent,
+  };
 }
 
 /** Items for a section's entry block, in bank order. */
@@ -84,11 +208,12 @@ export function startRun(store, learnerId, { now = Date.now(), dayKey = null, de
   if (existing) return { run: existing, resumed: true };
 
   const priors = Object.values(store.runs || {}).filter(r => r.learner_id === learnerId);
+  const plan = planNextAttempt(learnerId, priors, { now });
   const run = newRun({
     runId: newRunId(),
     learnerId,
     releaseId: content.RELEASE_ID,
-    form: chooseForm(learnerId, priors, { now }),
+    form: plan.form,
     sectionOrder: content.SECTION_ORDER,
     contentSha: {
       assessment_items: content.declaredSha('assessment_items.json'),
@@ -98,7 +223,18 @@ export function startRun(store, learnerId, { now = Date.now(), dayKey = null, de
     startedAtUtc: now,
     startedDayKey: dayKey,
   });
-  return { run, resumed: false };
+  // Why this form, and what this attempt cannot measure before it begins.
+  // Recorded on the run so a report never has to reconstruct it, and so a
+  // domain that reports insufficient_evidence can say which kind of shortfall
+  // it was: too little left of the bank, or artwork that does not exist.
+  run.form_choice_reason = plan.reason;
+  run.insufficient_domains = plan.insufficientDomains;
+  run.blocked_by_content_domains = plan.blockedByContent;
+  // Items this learner has already been shown in an earlier attempt. They are
+  // still administered — the bank has no spares — but they cannot count as
+  // fresh independent evidence, and erasing the record would hide that.
+  run.previously_exposed = [...exposedItemIds(priors)];
+  return { run, resumed: false, plan };
 }
 
 /**
@@ -212,6 +348,10 @@ export function submitResponse(run, itemId, patch = {}, { now = Date.now(), atte
     response_submitted_at_utc: num(patch.response_submitted_at_utc) || now,
     written_at_ms: now,
   };
+  // administration.exposure: never treat a previously exposed item as secure
+  // progress evidence. The response is kept in full — it is still what she did
+  // — but it is marked so scoring cannot count it as fresh.
+  if ((run.previously_exposed || []).includes(itemId)) response.previously_exposed = true;
   if (response.response_started_at_utc && response.response_time_ms == null) {
     response.response_time_ms = response.response_submitted_at_utc - response.response_started_at_utc;
   }
