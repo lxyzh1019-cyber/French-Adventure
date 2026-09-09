@@ -236,6 +236,35 @@ autocorrect erases. The app sets every attribute a web page can set
 also says this on screen before those two parts — **but a web page cannot
 disable the QuickType bar**. Nothing in the app has turned these off for you.
 
+## 5.0b The device & feature check — do this first
+
+Parent Summary → enter password → **🔧 Device & feature check**. It asks this
+iPad whether it can do what the check-in needs, and it **spends no items and
+changes no records**: no answers, no history, no stars, nothing synced. The
+panel says so at the top.
+
+- [ ] **5.0b-1 French voice** — tap *Check the voice*. It names what was asked
+      for (fr-CA) and what this iPad will actually use. `fr-FR` is normal and
+      expected; **no French voice at all** means the listening part cannot be
+      done on this iPad.
+- [ ] **5.0b-2 French audio plays** — tap *Play a French phrase*. If you hear
+      it, tap **I heard it**. If you hear nothing, tap **I heard nothing** and
+      tell me — the listening part depends on this and no test can hear it for
+      you.
+- [ ] **5.0b-3 Microphone** — tap *Ask for the microphone*. Safari asks the
+      first time; allow it.
+- [ ] **5.0b-4 Recording** — record two seconds, stop, play it back, and answer
+      whether you heard it.
+- [ ] **5.0b-5 Storage** — tap *Keep and read back a clip*, then *Delete the
+      test clip*. Both should say Working. "Not working" here usually means a
+      private window or Safari set to block site data, and speaking recordings
+      would not survive.
+- [ ] **5.0b-6** Tap **Done — clear the test clips**. The test recording is
+      deleted.
+
+This is a machine check. It does not replace the rest of Part 5: only you can
+tell whether the French sounds right and whether a child can be understood.
+
 ## 5.1 Starting
 
 - [ ] **5.1** Parent Summary → enter password → **Start / resume — Jenn**.
@@ -296,6 +325,22 @@ disable the QuickType bar**. Nothing in the app has turned these off for you.
       will show the prompt waiting for review with no audio — that is expected,
       not a fault. **Review speaking on the day it is recorded**: iPadOS clears
       unused site storage after about a week.
+
+## 5.9 The report
+
+Parent Summary → enter password → **📊 Show check-in report**.
+
+- [ ] **5.9a** Five parts are listed — Listening, Reading, Vocabulary and
+      grammar, Writing, Speaking — each with where it sits and how much to read
+      into it.
+- [ ] **5.9b** **Pronunciation appears once, inside Speaking**, as observations
+      with no level and no score. Until you have listened to at least two
+      recordings it says so instead.
+- [ ] **5.9c** Writing and Speaking say *waiting for an adult to read or listen*
+      until someone has. That is correct: the app never marks them.
+- [ ] **5.9d** There is **no total, no average and no overall score** anywhere,
+      and nothing that reads like a school grade or a placement. If you see one,
+      that is a defect — tell me.
 
 ---
 

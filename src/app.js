@@ -19,6 +19,8 @@ import { configureAssessmentUI, openAssessment, pauseAssessment,
          finishSection, startRecording, stopRecording, playOwnRecording,
          abandonRecording } from './modes/assessment-ui.js';
 import { renderAssessmentReports } from './modes/assessment-report-ui.js';
+import { createDeviceCheck } from './modes/device-check.js';
+import { mountDeviceCheck } from './modes/device-check-ui.js';
 import { createAudioCapture } from './speech/capture.js';
 import { createAudioStore } from './assessment/audio-store.js';
 import { normalizeForRecognition, compareFrench, scrambleTypeFor,
@@ -1574,6 +1576,8 @@ document.addEventListener('click', function(e){
                                renderAssessmentReports(document.getElementById('assess-report-panel'),
                                                        assessment);
                              } else setRecoveryMsg('❌ Enter parent password first'); break;
+    case 'assess-device-check': if(ensureParentPassword()){ openDeviceCheck(); }
+                             else setRecoveryMsg('❌ Enter parent password first'); break;
     case 'assess-pause':     void pauseAssessment(); break;
     case 'assess-begin-section': void beginNextSection(); break;
     case 'assess-choose':    chooseOption(el.getAttribute('data-choice')); break;
@@ -3189,7 +3193,26 @@ if(navigator.storage && navigator.storage.persist){
 }
 
 hydrateStateFromLocalMirror();
+// Settle this device's identity at startup rather than whenever something
+// happens to write first. It is local, it is arbitrary, and the same value is
+// reached either way — but a parent opening the Device & Feature Check on a new
+// iPad should not be the thing that mints it, because that check is supposed to
+// leave nothing behind.
+deviceId();
 assessment.hydrate();
+// The pieces the assessment runs on. Named here because the parent-only Device
+// & Feature Check runs the SAME ones — a check written against its own copy of
+// this wiring would prove only that the copy works.
+const assessmentVoiceInfo = () => {
+  const v = frenchVoice || resolveFrenchVoice();
+  return { resolvedLocale: v ? v.lang : null, name: v ? v.name : null };
+};
+const makeAssessmentCapture = () => createAudioCapture({
+  getStream: () => navigator.mediaDevices.getUserMedia({ audio: true }),
+  Recorder: window.MediaRecorder,
+});
+const assessmentAudioStore = createAudioStore({ deviceId });
+
 configureAssessmentUI({
   store: assessment,
   showScreen,
@@ -3201,18 +3224,12 @@ configureAssessmentUI({
   speak: speakFrench,
   // Recorded on every listening response, so a whole section that fell back to
   // a France voice is visible afterwards rather than guessed at.
-  voiceInfo: () => {
-    const v = frenchVoice || resolveFrenchVoice();
-    return { resolvedLocale: v ? v.lang : null, name: v ? v.name : null };
-  },
+  voiceInfo: assessmentVoiceInfo,
   // Audio capture, and where the clip goes. The recording never leaves this
   // device: there is no storage bucket, a Firestore document caps at 1 MiB, and
   // §3.6 forbids keeping raw child audio by default.
-  makeCapture: () => createAudioCapture({
-    getStream: () => navigator.mediaDevices.getUserMedia({ audio: true }),
-    Recorder: window.MediaRecorder,
-  }),
-  audioStore: createAudioStore({ deviceId }),
+  makeCapture: makeAssessmentCapture,
+  audioStore: assessmentAudioStore,
   // A parent can open the assessment from the parent overlay without a learner
   // being selected, so there may be no hub to return to. updateHub reads
   // state[currentPlayer] and would throw.
@@ -3222,6 +3239,33 @@ configureAssessmentUI({
     renderAssessmentParentPanel();
   },
 });
+// ── the parent-only Device & Feature Check ──────────────────────────────────
+//
+// Same speak, same capture, same audio store as the assessment above. It writes
+// nothing but a diagnostic clip under its own key prefix, on this device, and
+// clears those on the way in and on the way out.
+let deviceCheckUnmount = null;
+function openDeviceCheck(){
+  const panel = document.getElementById('assess-device-check-panel');
+  if(!panel) return;
+  if(deviceCheckUnmount){ deviceCheckUnmount(); deviceCheckUnmount = null; }
+  const controller = createDeviceCheck({
+    speak: speakFrench,
+    voiceInfo: assessmentVoiceInfo,
+    makeCapture: makeAssessmentCapture,
+    audioStore: assessmentAudioStore,
+    requestedLocale: PREFERRED_LOCALE,
+    playBlob: async (blob) => {
+      const url = URL.createObjectURL(blob);
+      try { await new Audio(url).play(); }
+      finally { setTimeout(() => URL.revokeObjectURL(url), 30000); }
+    },
+  });
+  deviceCheckUnmount = mountDeviceCheck(panel, controller, {
+    onDone: () => { deviceCheckUnmount = null; },
+  });
+}
+
 initConnectivityAndSyncUI();
 showScreen('select');
 startWallClock();

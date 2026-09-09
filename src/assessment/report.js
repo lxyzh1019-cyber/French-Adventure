@@ -12,12 +12,12 @@
 // number would be the single most authoritative-looking thing in this report
 // and the least earned.
 //
-// One rule here is not the content owner's. Release A's reporting contract
-// requires strength_skill_ids and next_need_skill_ids and defines neither, so
-// SKILL_EVIDENCE_RULE below is written by the implementation, carries its own
-// id, and travels in the report so that a parent reading "next: R_MAIN_IDEA"
-// can see where the claim comes from. Its thresholds are the release's; only
-// the evidence minimum is ours.
+// The rule that turns answers into named strengths and next practice areas is
+// the content owner's, supplied on 2026-09-09 and recorded in
+// docs/implementation-status.md. Release A's reporting contract requires the two
+// lists and defines no derivation, so it travels in the report with its own id:
+// a parent reading "next: R_MAIN_IDEA" can see where the claim came from and
+// who made the rule.
 
 import * as content from './content.js';
 import { scoreObjective, scoreRubric, objectiveBand, openDomainLabel } from './scoring.js';
@@ -54,24 +54,73 @@ export const PRONUNCIATION_GROUP = {
 };
 
 /**
- * How a skill becomes a strength or a next need.
+ * How a skill becomes an observed strength or a suggested next practice area.
  *
- * Authored here, not by the content owner: Release A's reporting contract asks
- * for these two lists and defines no derivation. The cut scores are the
- * release's own (scoring.secure_threshold / scoring.emerging_threshold); the
- * two-attempt minimum is ours, and deliberately conservative — one item is an
- * anecdote, and a parent will act on this.
+ * This is the content owner's rule, supplied on 2026-09-09 and recorded in
+ * docs/implementation-status.md, not one invented here. Release A's reporting
+ * contract requires the two lists and the release itself defines no derivation,
+ * so the alternative would have been guessing at what a parent should act on.
+ *
+ * Only the current attempt counts. Evidence must be valid, unsupported, scored
+ * and from a distinct item; invalid, supported and awaiting-review responses
+ * contribute nothing in either direction.
  */
 export const SKILL_EVIDENCE_RULE = {
   id: 'skill-evidence-v1',
-  authored_by: 'implementation',
-  status: 'awaiting_content_owner_confirmation',
-  minimum_attempts_per_skill: 2,
-  strength: 'accuracy at or above scoring.secure_threshold',
-  next_need: 'accuracy below scoring.emerging_threshold',
-  between: 'reported as practising, and named as neither',
-  excluded: 'supported, invalid and previously exposed responses',
+  source: 'content owner, 2026-09-09 (docs/implementation-status.md)',
+  scope: 'this attempt only',
+  minimum_distinct_items: 2,
+  cut: 'scoring.secure_threshold: at or above is a strength, below is a next need',
+  max_per_list: 3,
+  ordering: 'by aggregate, then by more evidence, then by skill id',
+  excluded: 'invalid, supported and unreviewed responses',
 };
+
+/**
+ * Which rubric dimensions carry which skill.
+ *
+ * A rubric score is not one number per skill: the conventions dimension is what
+ * W_ENCODING is about, and the message dimension is not. Every dimension named
+ * here exists in rubrics.json and is scored 0-3, which is what makes the /3
+ * below a normalisation rather than a guess.
+ */
+export const RUBRIC_SKILL_DIMENSIONS = {
+  W_ENCODING: ['conventions'],
+  W_SENTENCE: ['message', 'structure'],
+  W_QUESTION: ['message', 'structure'],
+  W_CONNECTED: ['message', 'structure'],
+  W_DESCRIPTION: ['message', 'vocabulary', 'structure'],
+  W_REASON: ['message', 'vocabulary', 'structure'],
+  S_INTRO: ['message', 'comprehensibility', 'vocabulary_structure'],
+  S_DESCRIPTION: ['message', 'comprehensibility', 'vocabulary_structure'],
+  S_RESPONSE: ['message', 'comprehensibility', 'vocabulary_structure'],
+  S_DIRECTIONS: ['message', 'comprehensibility', 'vocabulary_structure'],
+  S_CONNECTED: ['message', 'comprehensibility', 'vocabulary_structure', 'fluency'],
+  P_COMPREHENSIBILITY: ['comprehensibility'],
+  P_SOUND_SYMBOL: ['pronunciation_observation'],
+  P_RHYTHM_LINKING: ['pronunciation_observation', 'fluency'],
+};
+
+const RUBRIC_MAX = 3;
+
+/**
+ * Skills a rubric-scored item tags that the rule gives no dimensions for.
+ *
+ * Four writing prompts also carry a vocabulary skill — WA-F02 and WB-F02 carry
+ * VG_NEGATION, WA-D01 carries VG_LOCATION, WB-D01 carries VG_GENDER_NUMBER —
+ * and the supplied rule says which dimensions each W_ and S_ skill reads but
+ * nothing about those. Rather than invent a mapping or drop them silently, the
+ * report names them: the writing prompt contributes nothing to that skill, and
+ * the skill is still measured by the vocabulary section's own items.
+ */
+export function unmappedRubricSkills(items = content.ITEMS) {
+  const out = new Set();
+  for (const item of items) {
+    if (item?.scoring?.method !== 'analytic_rubric') continue;
+    for (const id of item.skill_ids || []) if (!RUBRIC_SKILL_DIMENSIONS[id]) out.add(id);
+  }
+  return [...out].sort();
+}
 
 /**
  * What has to be true before a pronunciation observation may be shown at all.
@@ -156,58 +205,87 @@ function responsesFor(run, domain) {
  */
 export function skillEvidence(run, { rules = content.RULES, curriculum = content.CURRICULUM } = {}) {
   const skills = skillIndex(curriculum);
-  const secure = Number(rules.scoring.secure_threshold);
-  const emerging = Number(rules.scoring.emerging_threshold);
-  if (!Number.isFinite(secure) || !Number.isFinite(emerging)) {
-    throw new Error('assessment_rules.json: scoring thresholds are required to report skills');
+  const cut = Number(rules?.scoring?.secure_threshold);
+  if (!Number.isFinite(cut)) {
+    throw new Error('assessment_rules.json: scoring.secure_threshold is required to report skills');
   }
 
-  const acc = {};   // skill_id -> { attempts, score_sum, items:[] }
-  const bump = (skillId, score, itemId) => {
-    const s = skills[skillId];
-    if (!s || s.group === 'pronunciation') return;
-    const a = acc[skillId] || (acc[skillId] = { attempts: 0, score_sum: 0, items: [] });
-    a.attempts += 1;
-    a.score_sum += score;
-    a.items.push(itemId);
+  const acc = {};   // skill_id -> { values: [], items: Set }
+  const bump = (skillId, value, itemId) => {
+    if (!skills[skillId] || !Number.isFinite(value)) return;
+    const a = acc[skillId] || (acc[skillId] = { values: [], items: new Set() });
+    // "from a distinct item": a second attempt at the same item is the same
+    // evidence, and counting it twice would let one item classify a skill.
+    if (a.items.has(itemId)) return;
+    a.items.add(itemId);
+    a.values.push(value);
+  };
+
+  /** The mean of the dimensions this skill is actually about, normalised. */
+  const rubricValue = (skillId, scores) => {
+    const dims = RUBRIC_SKILL_DIMENSIONS[skillId];
+    if (!dims) return null;
+    const got = dims.map(d => Number(scores?.[d])).filter(Number.isFinite);
+    if (got.length !== dims.length) return null;
+    return (got.reduce((t, v) => t + v, 0) / got.length) / RUBRIC_MAX;
   };
 
   for (const response of Object.values(run?.responses || {})) {
     const item = content.getItem(response.item_id);
     if (!item) continue;
+
     if (item.scoring?.method === 'objective') {
       if (!isCountableObjective(response)) continue;
-      for (const id of item.skill_ids || []) bump(id, response.scored_correct ? 1 : 0, item.id);
+      const possible = num(item.scoring.correct_points ?? 1) || 1;
+      const value = num(response.points) / possible;
+      for (const id of item.skill_ids || []) bump(id, value, item.id);
       continue;
     }
-    // Open: only what a named human has actually reviewed, per rubrics.json.
+
+    // Open: only what a named human has reviewed, per rubrics.json. For
+    // speaking that person has listened to the original recording; a transcript
+    // cannot score comprehensibility, fluency or pronunciation and is never an
+    // input here.
     const review = reviewFor(run, response);
     if (!review || response.support_flag === true || response.technical_invalid_reason) continue;
-    const rubric = (content.RUBRICS.rubrics || []).find(x => x.id === review.rubric_id);
-    if (!rubric) continue;
-    const scored = scoreRubric(rubric, review.scores, response);
-    if (scored.status !== 'reviewed') continue;
-    for (const id of item.skill_ids || []) bump(id, scored.percent / 100, item.id);
+    for (const id of item.skill_ids || []) bump(id, rubricValue(id, review.scores), item.id);
   }
 
   return Object.entries(acc).map(([skill_id, a]) => {
-    const accuracy = a.attempts ? a.score_sum / a.attempts : 0;
-    const enough = a.attempts >= SKILL_EVIDENCE_RULE.minimum_attempts_per_skill;
-    const level = !enough ? 'insufficient_evidence'
-      : accuracy >= secure ? 'strength'
-        : accuracy < emerging ? 'next_need'
-          : 'practising';
+    const aggregate = a.values.reduce((t, v) => t + v, 0) / a.values.length;
+    const enough = a.items.size >= SKILL_EVIDENCE_RULE.minimum_distinct_items;
     return {
       skill_id,
       label: skills[skill_id].label,
       domain: skills[skill_id].domain,
-      attempts: a.attempts,
-      accuracy,
-      level,
-      item_ids: [...a.items],
+      group: skills[skill_id].group,
+      items: [...a.items],
+      evidence_count: a.items.size,
+      aggregate,
+      level: !enough ? 'insufficient_evidence' : aggregate >= cut ? 'strength' : 'next_need',
       rule_id: SKILL_EVIDENCE_RULE.id,
     };
   }).sort((x, y) => (x.skill_id < y.skill_id ? -1 : 1));
+}
+
+/**
+ * The named lists: at most three, strongest or weakest first.
+ *
+ * Ties break on more evidence, then on id, so the same run always names the
+ * same skills. A parent can only act on a few things at once, which is what the
+ * cap is for.
+ */
+export function namedSkills(evidence, level) {
+  const mine = evidence.filter(e => e.level === level);
+  const byAggregate = level === 'strength'
+    ? (a, b) => b.aggregate - a.aggregate
+    : (a, b) => a.aggregate - b.aggregate;
+  return [...mine]
+    .sort((a, b) => byAggregate(a, b)
+      || (b.evidence_count - a.evidence_count)
+      || (a.skill_id < b.skill_id ? -1 : 1))
+    .slice(0, SKILL_EVIDENCE_RULE.max_per_list)
+    .map(e => e.skill_id);
 }
 
 /**
@@ -217,7 +295,8 @@ export function skillEvidence(run, { rules = content.RULES, curriculum = content
  * of at least two distinct prompts. The device's transcript sits beside the
  * observation as a technical note, never inside it.
  */
-export function pronunciationObservations(run, { curriculum = content.CURRICULUM } = {}) {
+export function pronunciationObservations(run, opts = {}) {
+  const { curriculum = content.CURRICULUM } = opts;
   const skills = skillIndex(curriculum);
   const out = {
     rule_id: PRONUNCIATION_RULE.id,
@@ -280,8 +359,17 @@ export function pronunciationObservations(run, { curriculum = content.CURRICULUM
     skill_id: id,
     label: skills[id]?.label ?? id,
     observed_in: items,
-    level: null,                 // observations do not have levels
+    level: null,                 // an observation is not a band
   }));
+
+  // The same rule as everywhere else, applied only to what a person heard.
+  // Named skills, never a pronunciation figure: there is no total here and
+  // speech recognition is not an input to any of it.
+  const evidence = (opts.evidence || skillEvidence(run, opts))
+    .filter(e => e.group === 'pronunciation');
+  out.strength_skill_ids = namedSkills(evidence, 'strength');
+  out.next_need_skill_ids = namedSkills(evidence, 'next_need');
+  out.skill_evidence = evidence;
   return out;
 }
 
@@ -322,7 +410,9 @@ function tierResults(run, domain) {
 export function domainReport(run, domain, opts = {}) {
   const rules = opts.rules || content.RULES;
   const evidence = opts.evidence || skillEvidence(run, opts);
-  const mine = evidence.filter(e => e.domain === domain);
+  // Pronunciation is reported inside Speaking as observations, so its skills
+  // are not among Speaking's own strengths and needs.
+  const mine = evidence.filter(e => e.domain === domain && e.group !== 'pronunciation');
   const { raw, possible, invalid, support } = pointsFor(run, domain);
 
   const base = {
@@ -333,8 +423,8 @@ export function domainReport(run, domain, opts = {}) {
     points_possible: possible,
     valid_independent_evidence_count: 0,
     administered_tiers: [],
-    strength_skill_ids: mine.filter(e => e.level === 'strength').map(e => e.skill_id),
-    next_need_skill_ids: mine.filter(e => e.level === 'next_need').map(e => e.skill_id),
+    strength_skill_ids: namedSkills(mine, 'strength'),
+    next_need_skill_ids: namedSkills(mine, 'next_need'),
     support_count: support,
     invalid_count: invalid,
     confidence: 'insufficient',
@@ -428,7 +518,13 @@ export function runReport(run, opts = {}) {
     completed_at_utc: num(run?.completed_at_utc),
     sections,
     rules: {
-      skill_evidence: SKILL_EVIDENCE_RULE,
+      skill_evidence: {
+        ...SKILL_EVIDENCE_RULE,
+        // Named, not hidden: these are tagged on open prompts and the rule does
+        // not say which dimensions carry them, so those prompts contribute
+        // nothing to them.
+        unmapped_on_open_prompts: unmappedRubricSkills(),
+      },
       pronunciation: PRONUNCIATION_RULE,
       thresholds: { secure: rules.scoring.secure_threshold, emerging: rules.scoring.emerging_threshold },
     },

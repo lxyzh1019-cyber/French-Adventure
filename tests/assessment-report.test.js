@@ -76,7 +76,7 @@ test('pronunciation is inside the speaking section, not a sixth section', () => 
   assert.equal('domain_band' in p, false, 'pronunciation was given a domain_band');
 });
 
-test('P_ skills are observations, and never a strength or a next need', () => {
+test('P_ skills are named inside the observations, never in Speaking\'s own lists', () => {
   const run = administer({ answer: () => true });
   for (const id of idsIn(run, 'speaking')) humanReview(run, id, SPEAKING_MARKS);
   const report = R.runReport(run);
@@ -85,12 +85,16 @@ test('P_ skills are observations, and never a strength or a next need', () => {
   assert.deepEqual(named.filter(id => id.startsWith('P_')), [],
     'a pronunciation skill was reported as a strength or a need');
 
-  // They are reported — under Speaking, one level in, with no level of their own.
+  // They are reported — under Speaking, one level in, with their own lists and
+  // no band of their own.
   const p = sectionOf(report, 'speaking').pronunciation_observations;
   assert.ok(p.skills.length > 0, 'no pronunciation observation was reported at all');
   for (const s of p.skills) {
     assert.ok(s.skill_id.startsWith('P_'));
     assert.equal(s.level, null, `${s.skill_id} was given a level`);
+  }
+  for (const id of [...p.strength_skill_ids, ...p.next_need_skill_ids]) {
+    assert.ok(id.startsWith('P_'), `${id} was named among the pronunciation observations`);
   }
   // And S_ skills sit under Speaking itself.
   const speakingSkills = sectionOf(report, 'speaking').skill_evidence.map(e => e.skill_id);
@@ -304,4 +308,123 @@ test('a skill the report cannot place is an error, not a silent omission', () =>
   // that is what would quietly turn an observation into a band.
   assert.throws(() => R.skillIndex({ skills: [{ id: 'S_ODD', domain: 'Pronunciation observation' }] }),
     /does not match its domain/);
+});
+
+// ── the content owner's rule, in detail ─────────────────────────────────────
+
+test('a rubric skill reads the dimensions it is about, and no others', () => {
+  // W_ENCODING is conventions. Marking the message down must not move it, and
+  // marking conventions down must.
+  // W_ENCODING also draws on typed vocabulary items, so the comparison is
+  // between three reviews of the same run, not against an absolute.
+  const encoding = run => R.skillEvidence(run).find(e => e.skill_id === 'W_ENCODING').aggregate;
+
+  const full = administer();
+  for (const id of idsIn(full, 'writing')) humanReview(full, id, FULL_MARKS);
+
+  const poorMessage = administer();
+  for (const id of idsIn(poorMessage, 'writing')) humanReview(poorMessage, id, { ...FULL_MARKS, message: 0 });
+  assert.equal(encoding(poorMessage), encoding(full), 'the message dimension moved W_ENCODING');
+
+  const poorConventions = administer();
+  for (const id of idsIn(poorConventions, 'writing')) {
+    humanReview(poorConventions, id, { ...FULL_MARKS, conventions: 0 });
+  }
+  assert.ok(encoding(poorConventions) < encoding(full), 'W_ENCODING ignored its own dimension');
+
+  // And the writing skill that is only about the message follows the message.
+  const sentence = r => R.skillEvidence(r).find(e => e.skill_id === 'W_SENTENCE').aggregate;
+  assert.ok(sentence(poorMessage) < sentence(full), 'W_SENTENCE ignored the message dimension');
+  assert.equal(sentence(poorConventions), sentence(full), 'the conventions dimension moved W_SENTENCE');
+});
+
+test('every rubric dimension the rule names exists in the release', () => {
+  const dims = new Set(C.RUBRICS.rubrics.flatMap(r => r.dimensions.map(d => d.id)));
+  for (const [skill, named] of Object.entries(R.RUBRIC_SKILL_DIMENSIONS)) {
+    for (const d of named) {
+      assert.ok(dims.has(d), `${skill} is mapped to "${d}", which no rubric has`);
+    }
+  }
+  // Four writing prompts also carry a vocabulary skill, and the rule says
+  // nothing about those. They are named rather than dropped in silence.
+  assert.deepEqual(R.unmappedRubricSkills(),
+    ['VG_GENDER_NUMBER', 'VG_LOCATION', 'VG_NEGATION']);
+  const report = R.runReport(administer());
+  assert.deepEqual(report.rules.skill_evidence.unmapped_on_open_prompts,
+    R.unmappedRubricSkills(), 'the report does not say which skills it could not derive');
+
+  // Every other skill a rubric item carries is mapped, and each still gets its
+  // evidence from the section that tests it directly.
+  const openSkills = new Set(C.ITEMS
+    .filter(i => i.scoring?.method === 'analytic_rubric')
+    .flatMap(i => i.skill_ids || []));
+  for (const id of openSkills) {
+    assert.ok(R.RUBRIC_SKILL_DIMENSIONS[id] || R.unmappedRubricSkills().includes(id),
+      `${id} is scored by rubric with no dimensions mapped and no note saying so`);
+  }
+  // Each is still measured directly by the vocabulary section, so naming it
+  // here costs the child nothing - and where it does produce evidence, that
+  // evidence comes only from the items the rule can read.
+  const evidence = R.skillEvidence(administer());
+  for (const id of R.unmappedRubricSkills()) {
+    assert.ok(C.ITEMS.some(i => i.scoring?.method === 'objective' && (i.skill_ids || []).includes(id)),
+      `${id} is only ever tested by a prompt the rule cannot read`);
+    const found = evidence.find(e => e.skill_id === id);
+    if (!found) continue;                       // routing may not have asked it
+    assert.ok(found.items.every(itemId => C.getItem(itemId).scoring.method === 'objective'),
+      `${id} took evidence from a rubric prompt the rule does not map`);
+  }
+});
+
+test('a skill is grouped where the curriculum puts it, not where the evidence came from', () => {
+  // W_ENCODING is a writing skill and is also tested by typed vocabulary items.
+  const bearers = C.ITEMS.filter(i => (i.skill_ids || []).includes('W_ENCODING'));
+  assert.ok(bearers.some(i => i.domain === 'vocabulary_grammar'),
+    'the bank no longer tests W_ENCODING outside writing');
+
+  const evidence = R.skillEvidence(administer());
+  const encoding = evidence.find(e => e.skill_id === 'W_ENCODING');
+  assert.ok(encoding, 'W_ENCODING produced no evidence at all');
+  assert.equal(encoding.domain, 'writing', 'W_ENCODING was reported under the section that tested it');
+});
+
+test('at most three skills are named in each list, worst or best first', () => {
+  const report = R.runReport(administer({ answer: () => false }));
+  for (const section of report.sections) {
+    assert.ok(section.strength_skill_ids.length <= 3, `${section.domain} named too many strengths`);
+    assert.ok(section.next_need_skill_ids.length <= 3, `${section.domain} named too many needs`);
+    // Nothing is both.
+    const both = section.strength_skill_ids.filter(id => section.next_need_skill_ids.includes(id));
+    assert.deepEqual(both, [], `${section.domain} named a skill twice`);
+  }
+
+  // The order is the rule's: weakest first among needs.
+  const listening = report.sections.find(s => s.domain === 'listening');
+  const byId = Object.fromEntries(listening.skill_evidence.map(e => [e.skill_id, e]));
+  const aggregates = listening.next_need_skill_ids.map(id => byId[id].aggregate);
+  assert.deepEqual(aggregates, [...aggregates].sort((a, b) => a - b),
+    'the next needs are not in the order the rule gives');
+});
+
+test('two attempts at one item are one item, not two', () => {
+  const run = administer();
+  const first = Object.values(run.responses).find(r => r.domain === 'listening');
+  const skill = C.getItem(first.item_id).skill_ids[0];
+  const before = R.skillEvidence(run).find(e => e.skill_id === skill).evidence_count;
+
+  // The same item, a permitted second attempt.
+  run.responses[responseKey(first.item_id, 1)] = { ...first, attempt_index: 1 };
+  const after = R.skillEvidence(run).find(e => e.skill_id === skill).evidence_count;
+  assert.equal(after, before, 'a repeat of one item counted as a second item');
+});
+
+test('the strength cut is the release own secure threshold', () => {
+  assert.equal(C.RULES.scoring.secure_threshold, 0.75,
+    'the release moved its cut, so the supplied rule must be re-read with the content owner');
+  const run = administer({ answer: () => true });
+  const strict = { ...RULES, scoring: { ...RULES.scoring, secure_threshold: 1.01 } };
+  const evidence = R.skillEvidence(run, { rules: strict });
+  assert.deepEqual(evidence.filter(e => e.level === 'strength'), []);
+  assert.ok(evidence.some(e => e.level === 'next_need'),
+    'raising the cut left skills classified as neither');
 });

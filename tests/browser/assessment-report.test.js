@@ -127,10 +127,17 @@ test('the report shows the two named lists', async () => {
   const { page } = await open(reviewedRun());
   await askForReport(page);
   const headings = await page.evaluate(() =>
-    [...document.querySelectorAll('#assess-report-panel .assess-report-list-head')]
-      .map(e => e.textContent));
-  assert.equal(headings.filter(h => h === 'Observed strengths').length, 5);
-  assert.equal(headings.filter(h => h === 'Suggested next practice areas').length, 5);
+    [...document.querySelectorAll('#assess-report-panel .assess-report-list-head')].map(e => ({
+      text: e.textContent,
+      nested: !!e.closest('.assess-report-nested'),
+    })));
+  const named = t => headings.filter(h => h.text === t);
+  // One pair per section, and one more pair inside the pronunciation
+  // observations - which are named by the same rule, and still get no figure.
+  assert.equal(named('Observed strengths').length, 6);
+  assert.equal(named('Suggested next practice areas').length, 6);
+  assert.equal(named('Observed strengths').filter(h => h.nested).length, 1);
+  assert.equal(named('Suggested next practice areas').filter(h => h.nested).length, 1);
 });
 
 test('no number on screen is a total or an average across domains', async () => {

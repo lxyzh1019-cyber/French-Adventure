@@ -93,6 +93,13 @@ function pronunciationBlock(observations) {
   }
   box.append(ul);
 
+  // The same two lists as everywhere else, and no figure of any kind.
+  const evidence = observations.skill_evidence || [];
+  box.append(skillList('Observed strengths', observations.strength_skill_ids || [], evidence,
+    'Nothing here has enough listened-to evidence to call a strength.'));
+  box.append(skillList('Suggested next practice areas', observations.next_need_skill_ids || [], evidence,
+    'Nothing here stands out as a next practice area.'));
+
   for (const p of observations.prompts) {
     const line = div('assess-report-observation');
     line.append(div(null, `${p.item_id}: ${p.anchor ?? 'observed'}`));
@@ -162,11 +169,17 @@ export function buildReportElement(run, opts = {}) {
   for (const section of data.sections) box.append(sectionBlock(section));
 
   box.append(div('assess-report-note', data.overall_note));
+  const rule = data.rules.skill_evidence;
   box.append(div('assess-report-note',
-    `Strengths and next practice areas come from rule ${data.rules.skill_evidence.id}, `
-    + `written by the app rather than by the content author, and still to be confirmed by them. `
-    + `A skill is named only after ${data.rules.skill_evidence.minimum_attempts_per_skill} `
-    + 'independent answers.'));
+    `Strengths and next practice areas follow the content author's rule (${rule.id}): a skill is `
+    + `named only after ${rule.minimum_distinct_items} separate items, at most `
+    + `${rule.max_per_list} are listed for each part, and this attempt alone is counted.`));
+  if (rule.unmapped_on_open_prompts?.length) {
+    box.append(div('assess-report-note',
+      `A few writing prompts also touch ${rule.unmapped_on_open_prompts.join(', ')}. The rule does `
+      + 'not say how to read those from a writing score, so those prompts add nothing to them — '
+      + 'they are measured by the vocabulary and grammar part instead.'));
+  }
   return box;
 }
 

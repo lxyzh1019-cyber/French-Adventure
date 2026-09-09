@@ -54,14 +54,14 @@ States: `not_started` · `in_progress` · `ready_for_review` · `accepted` · `b
 
 | Check | Command | Count | Last result |
 |---|---|---|---|
-| Unit + handler export | `npm test` | 147 tests across 11 files; 39 inline handlers checked | pass |
+| Unit + handler export | `npm test` | 355 tests across 25 files; 37 inline handlers checked | pass |
 | Build parity | `npm run check:drift` | — | pass |
 | Release A contract | `npm run check:release-a` | 90 items, both forms | pass |
 | Content package contract | `npm run check:content -- <dir>` | 3 packages | pass |
-| Browser (Chromium) | `npm run test:browser` | 26 tests across 3 files | pass (`CHROMIUM_PATH=/opt/pw-browsers/chromium` in the sandbox) |
+| Browser (Chromium) | `npm run test:browser` | 76 tests across 8 files | pass (`CHROMIUM_PATH=/opt/pw-browsers/chromium` in the sandbox) |
 
-Counts verified by running the suites at `a8220ce`, not copied from a previous
-report.
+Counts verified by running the suites at the head of the M2 branch, not copied
+from a previous report.
 
 Chromium is regression coverage, not the plan's actual-iPad gate.
 
@@ -347,6 +347,116 @@ which is truthy — `has()` reported a missing clip as present.
 denial, artwork, keyboard note), plus the asset proofs. **301 unit and 59 browser
 tests pass.** The built page is 398 KB.
 
+## M2 Step 5 — the report, the parent report screen, and the device check
+
+### The content guards now test mechanisms, not vocabulary
+
+All three had been keyword scans, and all three flagged real content: a prompt
+reading "choose the correct schedule", a prompt naming the places its own map is
+labelled with, and the release data that is bundled into the page on purpose.
+Each was a reason to switch a guard off, which is the failure mode this project
+has already had once.
+
+| Guard | What it asks now |
+|---|---|
+| No feedback | Two identical sittings, one choosing the key's answer and one a distractor. Everything but the option list must be identical, being chosen must look the same either way, and every unchosen option must look like every other. Everything inserted into the screen is recorded, so a verdict that flashes for 60 ms is caught. |
+| Model answer | What the learner-facing container actually rendered — its text, its attribute values, everything inserted along the way — never the page source. The release is inlined so the app works offline; scanning the file only re-detects the bundling (`known-risks.md` §1c). |
+| Asset brief | The brief minus the item's own learner-facing copy. SA-D02 asks for directions "from the school to the library", so those words are the task; what is left is the illustrator's instruction. |
+
+`tests/fixtures/guard-regressions/false-positives.json` records four cases,
+including one found by running the new guards: "chair" and "table" are SA-F02's
+brief and also the choice labels of four items answered earlier in the same
+sitting, so the brief guard reads the item on screen rather than the session.
+Every recorded case is exercised by `tests/guard-regressions.test.js`, and each
+is paired with the true positive the guard must still catch. Verified by
+injecting five leaks into a copy of the built page and watching the matching
+guard fail each time.
+
+### The report
+
+`src/assessment/report.js` produces five banded sections in the release's own
+order and nothing else — no total, no average, no overall band, and a domain
+that was not measured stays missing (`scoring.overall`).
+
+**Pronunciation is not a sixth section.** It is a group nested inside the
+speaking report: `S_*` skills under Speaking, `P_*` skills under "Pronunciation
+observations" one level in, with no band and no figure of any kind. Nothing
+appears there until a named human has listened to the original recordings of at
+least two distinct prompts, and the device transcript is reported beside the
+observation rather than converted into one.
+
+Writing and speaking have no band until a person has reviewed the release's
+minimum — five prompts and four. A rubric score without a `scorer_id` is not a
+review, and an invalidated review stops counting while the response is kept.
+
+The strengths and next-needs derivation is the content owner's rule as recorded
+above, implemented literally: current attempt only; valid, unsupported, scored,
+distinct items; objective value = points ÷ points possible; rubric skills read
+the dimensions named for them and normalise by 3; at least two distinct items
+before a skill is classified; the release's `secure_threshold` is the cut; at
+most three ids per list, ordered by aggregate, then by more evidence, then by id.
+
+**One thing the rule does not cover, found while implementing it.** Four writing
+prompts also carry a vocabulary skill — WA-F02 and WB-F02 carry `VG_NEGATION`,
+WA-D01 carries `VG_LOCATION`, WB-D01 carries `VG_GENDER_NUMBER` — and the rule
+names dimensions for `W_` and `S_`/`P_` skills only. Those prompts therefore
+contribute nothing to those three skills, which are still measured directly by
+the vocabulary and grammar section's own items. Rather than invent a mapping or
+drop it in silence, `report.js` names them (`unmapped_on_open_prompts`) and the
+parent report says so on the page. **A question for the content owner:** should
+a writing prompt contribute to the vocabulary skill it also tests, and if so
+from which dimensions?
+
+### The parent report screen
+
+Behind the parent password, in the parent overlay: five sections, each with
+where it sits, how much to read into it, the evidence behind it, and two lists —
+**Observed strengths** and **Suggested next practice areas**. Bands are written
+out in words, because a parent reading `developing_secure` will guess at it.
+Built with `createElement` and `textContent` throughout.
+
+The no-total check in the browser suite is arithmetic rather than vocabulary: it
+computes the figures a total or a cross-domain average would be and asserts none
+is on the page, so a rewording cannot get one past it. Verified by injecting a
+"Total points" row into a copy of the built page and watching it fail.
+
+### The Device & Feature Check
+
+Parent-only, in the same overlay, headed **"Test mode — nothing here affects the
+learner's record."** It runs the same modules the assessment runs — the same
+`speakFrench`, the same capture factory, the same audio-store instance — because
+a check written against its own copy of that wiring would prove only that the
+copy works.
+
+Six checks, each started by the parent: the French voice (what was asked for and
+what this iPad will use), French audio playing, microphone permission, recording
+and playing it back, keeping and reading back a clip, and deleting it. Two of
+them can only be judged by the person in the room, and those wait for an answer
+rather than passing themselves.
+
+The storage check includes the failure this project has already had: a clip that
+was never stored must come back **absent**, not as an `IDBRequest` object, which
+is truthy and made a missing recording read as present.
+
+**It writes no record.** No run, response, exposure, review, score, report,
+star, streak or synchronisation record. The only thing it writes is a diagnostic
+clip under its own `devicecheck_` key prefix in IndexedDB on this device, and
+those are deleted on the way in and on the way out. A browser test runs every
+check against a device that already holds a finished run, a game profile and a
+real recording, then compares localStorage byte for byte, compares the
+assessment store, counts cloud writes, and checks that the real clip survived
+while the diagnostic one did not.
+
+One consequence worth recording: `deviceId()` used to mint this device's id
+whenever something first wrote, which meant a parent opening the check on a new
+iPad created it. The app now settles it at startup instead, so the check creates
+nothing.
+
+**It does not replace the iPad QA.** It says whether the machinery answers; a
+child hearing the French correctly, and a person hearing the child, is still a
+person's job. `docs/ipad-test-checklist.md` §5.0b covers running it, and §5.9
+the report.
+
 ## Speaking artwork — built, and ready for review
 
 **Was:** each form had five speaking prompts of which two carried an asset
@@ -498,6 +608,7 @@ administered sections, because pronunciation is reported separately (master plan
 
 ## Release A follow-ups that are not code
 
+- **Open question (Step 5):** four writing prompts also tag `VG_NEGATION`, `VG_LOCATION` or `VG_GENDER_NUMBER`, and the skill-evidence rule maps dimensions for `W_`/`S_`/`P_` skills only. Those prompts currently contribute nothing to those skills; the report says so rather than hiding it.
 - Map images for `SA-D02` and `SB-D02` (asset briefs in the items) must be produced and reviewed before those prompts are used.
 - The 24 listening scripts need listening QA on an actual iPad with the resolved `fr-CA` voice.
 - Someone must be named to score writing and speaking with the rubrics; until then those domains report `awaiting_review`.

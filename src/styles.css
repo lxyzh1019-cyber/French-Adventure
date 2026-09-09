@@ -524,3 +524,21 @@ button,input{touch-action:manipulation;}
 .assess-report-nested ul { margin: 2px 0 0; padding-left: 18px; font-size: .72rem; line-height: 1.5; }
 .assess-report-observation { margin-top: 6px; font-size: .72rem; }
 .assess-report-technical { font-size: .66rem; color: var(--text-muted); line-height: 1.4; }
+
+/* The Device & Feature Check. Parent-only, and plainly a test surface: the
+   notice at the top is not decoration, it is the first thing to read. */
+.device-check-notice {
+  font-size: .74rem; font-weight: 800; text-align: center;
+  border: 1px dashed rgba(0,0,0,.3); border-radius: 10px; padding: 8px 10px;
+}
+.device-check-note { font-size: .68rem; color: var(--text-muted); line-height: 1.45; margin: 6px 0 8px; }
+.device-check-item {
+  text-align: left; border: 1px solid rgba(0,0,0,.12); border-radius: 12px;
+  padding: 10px 12px; margin-bottom: 8px; background: var(--card);
+}
+.device-check-head { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.device-check-label { font-weight: 800; font-size: .76rem; }
+.device-check-status { font-size: .7rem; color: var(--text-muted); }
+.device-check-detail { font-size: .7rem; color: var(--text-muted); line-height: 1.45; margin-top: 4px; }
+.device-check-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.device-check-actions button { padding: 8px 12px; font-size: .72rem; min-height: 44px; }

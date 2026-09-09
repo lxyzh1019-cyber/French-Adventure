@@ -7,7 +7,7 @@
      styles ......... src/styles.css
      game logic ..... src/**/*.js
 
-   Built from 956a6a8
+   Built from 9986f5a
   ============================================================
 -->
 <!DOCTYPE html>
@@ -3030,7 +3030,7 @@ function render() {
       `Next: ${DOMAIN_LABEL[at.domain] ?? at.domain}`,
       ok ? "You can stop after any part and pick it up later, on either iPad." : `Not enough time left for a new part today — it needs about ${need} minutes. Come back next time and it will be here.`
     ));
-    if (ok) actions.append(button("Start this part", "assess-begin-section"));
+    if (ok) actions.append(button$1("Start this part", "assess-begin-section"));
     return;
   }
   const item = at.item;
@@ -3039,7 +3039,7 @@ function render() {
       `${DOMAIN_LABEL[at.domain] ?? at.domain} — finished`,
       "Nothing is marked here. You can stop, or carry on with the next part."
     ));
-    actions.append(button("Done with this part", "assess-finish-section"));
+    actions.append(button$1("Done with this part", "assess-finish-section"));
     return;
   }
   if (routingFor(at.domain)) renderObjectiveItem(body, actions, run, item);
@@ -3079,7 +3079,7 @@ function renderOpenItem(body, actions, run, item) {
   if (item.item_type === "open_written") wrap.append(writtenInput(d));
   else wrap.append(speakingControls(d));
   body.append(wrap);
-  const next = button(item.item_type === "open_written" ? "Next" : "Next", "assess-submit-item");
+  const next = button$1(item.item_type === "open_written" ? "Next" : "Next", "assess-submit-item");
   next.disabled = !hasOpenAnswer(item, d);
   actions.append(next);
 }
@@ -3243,7 +3243,7 @@ function renderObjectiveItem(body, actions, run, item) {
   if (Array.isArray(item.choices)) wrap.append(choiceList(item, d));
   else wrap.append(typedInput(d));
   body.append(wrap);
-  const next = button("Next", "assess-submit-item");
+  const next = button$1("Next", "assess-submit-item");
   next.disabled = !hasAnswer(d);
   actions.append(next);
 }
@@ -3395,7 +3395,7 @@ function card(title, note) {
   d.append(h, p);
   return d;
 }
-function button(label, action) {
+function button$1(label, action) {
   const b = document.createElement("button");
   b.type = "button";
   b.className = "btn-primary";
@@ -3436,14 +3436,39 @@ const PRONUNCIATION_GROUP = {
 };
 const SKILL_EVIDENCE_RULE = {
   id: "skill-evidence-v1",
-  authored_by: "implementation",
-  status: "awaiting_content_owner_confirmation",
-  minimum_attempts_per_skill: 2,
-  strength: "accuracy at or above scoring.secure_threshold",
-  next_need: "accuracy below scoring.emerging_threshold",
-  between: "reported as practising, and named as neither",
-  excluded: "supported, invalid and previously exposed responses"
+  source: "content owner, 2026-09-09 (docs/implementation-status.md)",
+  scope: "this attempt only",
+  minimum_distinct_items: 2,
+  cut: "scoring.secure_threshold: at or above is a strength, below is a next need",
+  max_per_list: 3,
+  ordering: "by aggregate, then by more evidence, then by skill id",
+  excluded: "invalid, supported and unreviewed responses"
 };
+const RUBRIC_SKILL_DIMENSIONS = {
+  W_ENCODING: ["conventions"],
+  W_SENTENCE: ["message", "structure"],
+  W_QUESTION: ["message", "structure"],
+  W_CONNECTED: ["message", "structure"],
+  W_DESCRIPTION: ["message", "vocabulary", "structure"],
+  W_REASON: ["message", "vocabulary", "structure"],
+  S_INTRO: ["message", "comprehensibility", "vocabulary_structure"],
+  S_DESCRIPTION: ["message", "comprehensibility", "vocabulary_structure"],
+  S_RESPONSE: ["message", "comprehensibility", "vocabulary_structure"],
+  S_DIRECTIONS: ["message", "comprehensibility", "vocabulary_structure"],
+  S_CONNECTED: ["message", "comprehensibility", "vocabulary_structure", "fluency"],
+  P_COMPREHENSIBILITY: ["comprehensibility"],
+  P_SOUND_SYMBOL: ["pronunciation_observation"],
+  P_RHYTHM_LINKING: ["pronunciation_observation", "fluency"]
+};
+const RUBRIC_MAX = 3;
+function unmappedRubricSkills(items2 = ITEMS) {
+  const out = /* @__PURE__ */ new Set();
+  for (const item of items2) {
+    if (item?.scoring?.method !== "analytic_rubric") continue;
+    for (const id of item.skill_ids || []) if (!RUBRIC_SKILL_DIMENSIONS[id]) out.add(id);
+  }
+  return [...out].sort();
+}
 const PRONUNCIATION_RULE = {
   id: "pronunciation-observation-v1",
   requires_human_review_of_original_audio: true,
@@ -3487,53 +3512,62 @@ function responsesFor(run, domain) {
 }
 function skillEvidence(run, { rules = RULES, curriculum = curriculum_map } = {}) {
   const skills2 = skillIndex(curriculum);
-  const secure = Number(rules.scoring.secure_threshold);
-  const emerging = Number(rules.scoring.emerging_threshold);
-  if (!Number.isFinite(secure) || !Number.isFinite(emerging)) {
-    throw new Error("assessment_rules.json: scoring thresholds are required to report skills");
+  const cut = Number(rules?.scoring?.secure_threshold);
+  if (!Number.isFinite(cut)) {
+    throw new Error("assessment_rules.json: scoring.secure_threshold is required to report skills");
   }
   const acc = {};
-  const bump = (skillId, score, itemId) => {
-    const s = skills2[skillId];
-    if (!s || s.group === "pronunciation") return;
-    const a = acc[skillId] || (acc[skillId] = { attempts: 0, score_sum: 0, items: [] });
-    a.attempts += 1;
-    a.score_sum += score;
-    a.items.push(itemId);
+  const bump = (skillId, value, itemId) => {
+    if (!skills2[skillId] || !Number.isFinite(value)) return;
+    const a = acc[skillId] || (acc[skillId] = { values: [], items: /* @__PURE__ */ new Set() });
+    if (a.items.has(itemId)) return;
+    a.items.add(itemId);
+    a.values.push(value);
+  };
+  const rubricValue = (skillId, scores) => {
+    const dims = RUBRIC_SKILL_DIMENSIONS[skillId];
+    if (!dims) return null;
+    const got = dims.map((d) => Number(scores?.[d])).filter(Number.isFinite);
+    if (got.length !== dims.length) return null;
+    return got.reduce((t, v) => t + v, 0) / got.length / RUBRIC_MAX;
   };
   for (const response of Object.values(run?.responses || {})) {
     const item = getItem(response.item_id);
     if (!item) continue;
     if (item.scoring?.method === "objective") {
       if (!isCountableObjective(response)) continue;
-      for (const id of item.skill_ids || []) bump(id, response.scored_correct ? 1 : 0, item.id);
+      const possible = num(item.scoring.correct_points ?? 1) || 1;
+      const value = num(response.points) / possible;
+      for (const id of item.skill_ids || []) bump(id, value, item.id);
       continue;
     }
     const review = reviewFor(run, response);
     if (!review || response.support_flag === true || response.technical_invalid_reason) continue;
-    const rubric = (rubrics_default.rubrics || []).find((x) => x.id === review.rubric_id);
-    if (!rubric) continue;
-    const scored = scoreRubric(rubric, review.scores, response);
-    if (scored.status !== "reviewed") continue;
-    for (const id of item.skill_ids || []) bump(id, scored.percent / 100, item.id);
+    for (const id of item.skill_ids || []) bump(id, rubricValue(id, review.scores), item.id);
   }
   return Object.entries(acc).map(([skill_id, a]) => {
-    const accuracy = a.attempts ? a.score_sum / a.attempts : 0;
-    const enough = a.attempts >= SKILL_EVIDENCE_RULE.minimum_attempts_per_skill;
-    const level = !enough ? "insufficient_evidence" : accuracy >= secure ? "strength" : accuracy < emerging ? "next_need" : "practising";
+    const aggregate = a.values.reduce((t, v) => t + v, 0) / a.values.length;
+    const enough = a.items.size >= SKILL_EVIDENCE_RULE.minimum_distinct_items;
     return {
       skill_id,
       label: skills2[skill_id].label,
       domain: skills2[skill_id].domain,
-      attempts: a.attempts,
-      accuracy,
-      level,
-      item_ids: [...a.items],
+      group: skills2[skill_id].group,
+      items: [...a.items],
+      evidence_count: a.items.size,
+      aggregate,
+      level: !enough ? "insufficient_evidence" : aggregate >= cut ? "strength" : "next_need",
       rule_id: SKILL_EVIDENCE_RULE.id
     };
   }).sort((x, y) => x.skill_id < y.skill_id ? -1 : 1);
 }
-function pronunciationObservations(run, { curriculum = curriculum_map } = {}) {
+function namedSkills(evidence, level) {
+  const mine = evidence.filter((e) => e.level === level);
+  const byAggregate = level === "strength" ? (a, b) => b.aggregate - a.aggregate : (a, b) => a.aggregate - b.aggregate;
+  return [...mine].sort((a, b) => byAggregate(a, b) || b.evidence_count - a.evidence_count || (a.skill_id < b.skill_id ? -1 : 1)).slice(0, SKILL_EVIDENCE_RULE.max_per_list).map((e) => e.skill_id);
+}
+function pronunciationObservations(run, opts = {}) {
+  const { curriculum = curriculum_map } = opts;
   const skills2 = skillIndex(curriculum);
   const out = {
     rule_id: PRONUNCIATION_RULE.id,
@@ -3594,8 +3628,12 @@ function pronunciationObservations(run, { curriculum = curriculum_map } = {}) {
     label: skills2[id]?.label ?? id,
     observed_in: items2,
     level: null
-    // observations do not have levels
+    // an observation is not a band
   }));
+  const evidence = (opts.evidence || skillEvidence(run, opts)).filter((e) => e.group === "pronunciation");
+  out.strength_skill_ids = namedSkills(evidence, "strength");
+  out.next_need_skill_ids = namedSkills(evidence, "next_need");
+  out.skill_evidence = evidence;
   return out;
 }
 function pointsFor(run, domain) {
@@ -3628,7 +3666,7 @@ function tierResults(run, domain) {
 function domainReport(run, domain, opts = {}) {
   const rules = opts.rules || RULES;
   const evidence = opts.evidence || skillEvidence(run, opts);
-  const mine = evidence.filter((e) => e.domain === domain);
+  const mine = evidence.filter((e) => e.domain === domain && e.group !== "pronunciation");
   const { raw, possible, invalid, support } = pointsFor(run, domain);
   const base = {
     domain,
@@ -3638,8 +3676,8 @@ function domainReport(run, domain, opts = {}) {
     points_possible: possible,
     valid_independent_evidence_count: 0,
     administered_tiers: [],
-    strength_skill_ids: mine.filter((e) => e.level === "strength").map((e) => e.skill_id),
-    next_need_skill_ids: mine.filter((e) => e.level === "next_need").map((e) => e.skill_id),
+    strength_skill_ids: namedSkills(mine, "strength"),
+    next_need_skill_ids: namedSkills(mine, "next_need"),
     support_count: support,
     invalid_count: invalid,
     confidence: "insufficient",
@@ -3724,7 +3762,13 @@ function runReport(run, opts = {}) {
     completed_at_utc: num(run?.completed_at_utc),
     sections,
     rules: {
-      skill_evidence: SKILL_EVIDENCE_RULE,
+      skill_evidence: {
+        ...SKILL_EVIDENCE_RULE,
+        // Named, not hidden: these are tagged on open prompts and the rule does
+        // not say which dimensions carry them, so those prompts contribute
+        // nothing to them.
+        unmapped_on_open_prompts: unmappedRubricSkills()
+      },
       pronunciation: PRONUNCIATION_RULE,
       thresholds: { secure: rules.scoring.secure_threshold, emerging: rules.scoring.emerging_threshold }
     },
@@ -3757,22 +3801,22 @@ const PRONUNCIATION_REASON = {
   awaiting_human_review: "Nobody has listened to the recordings yet, so there is nothing to report.",
   not_enough_prompts: "Only one prompt has been listened to. Two are needed before anything is said."
 };
-const div = (className, text) => {
+const div$1 = (className, text) => {
   const d = document.createElement("div");
   if (className) d.className = className;
   if (text != null) d.textContent = String(text);
   return d;
 };
 function row(label, value) {
-  const r = div("assess-report-row");
-  r.append(div("assess-report-label", label), div("assess-report-value", value));
+  const r = div$1("assess-report-row");
+  r.append(div$1("assess-report-label", label), div$1("assess-report-value", value));
   return r;
 }
 function skillList(title, skillIds, evidence, emptyText) {
-  const box = div("assess-report-list");
-  box.append(div("assess-report-list-head", title));
+  const box = div$1("assess-report-list");
+  box.append(div$1("assess-report-list-head", title));
   if (!skillIds.length) {
-    box.append(div("assess-report-empty", emptyText));
+    box.append(div$1("assess-report-empty", emptyText));
     return box;
   }
   const ul = document.createElement("ul");
@@ -3786,10 +3830,10 @@ function skillList(title, skillIds, evidence, emptyText) {
   return box;
 }
 function pronunciationBlock(observations) {
-  const box = div("assess-report-nested");
-  box.append(div("assess-report-nested-head", observations.label));
+  const box = div$1("assess-report-nested");
+  box.append(div$1("assess-report-nested-head", observations.label));
   if (!observations.available) {
-    box.append(div(
+    box.append(div$1(
       "assess-report-empty",
       PRONUNCIATION_REASON[observations.reason] || "Nothing to report yet."
     ));
@@ -3802,26 +3846,39 @@ function pronunciationBlock(observations) {
     ul.append(li);
   }
   box.append(ul);
+  const evidence = observations.skill_evidence || [];
+  box.append(skillList(
+    "Observed strengths",
+    observations.strength_skill_ids || [],
+    evidence,
+    "Nothing here has enough listened-to evidence to call a strength."
+  ));
+  box.append(skillList(
+    "Suggested next practice areas",
+    observations.next_need_skill_ids || [],
+    evidence,
+    "Nothing here stands out as a next practice area."
+  ));
   for (const p of observations.prompts) {
-    const line = div("assess-report-observation");
-    line.append(div(null, `${p.item_id}: ${p.anchor ?? "observed"}`));
+    const line = div$1("assess-report-observation");
+    line.append(div$1(null, `${p.item_id}: ${p.anchor ?? "observed"}`));
     const heard = p.transcript_observation ? `The device heard: "${p.transcript_observation}".` : "The device recorded no transcript.";
     const voice = p.voice_resolved_locale && p.voice_requested_locale && p.voice_resolved_locale !== p.voice_requested_locale ? ` The voice asked for was ${p.voice_requested_locale} and the device used ${p.voice_resolved_locale}.` : "";
-    line.append(div("assess-report-technical", `${heard}${voice} This is technical information only and is not part of the observation.`));
+    line.append(div$1("assess-report-technical", `${heard}${voice} This is technical information only and is not part of the observation.`));
     if (!p.audio_available_on_this_device) {
-      line.append(div(
+      line.append(div$1(
         "assess-report-technical",
         "The recording is on the other iPad. Speaking is best reviewed on the device that recorded it."
       ));
     }
     box.append(line);
   }
-  box.append(div("assess-report-note", observations.note));
+  box.append(div$1("assess-report-note", observations.note));
   return box;
 }
 function sectionBlock(section) {
-  const box = div("assess-report-section");
-  box.append(div("assess-report-section-head", section.label));
+  const box = div$1("assess-report-section");
+  box.append(div$1("assess-report-section-head", section.label));
   box.append(row("Where this sits", BAND_TEXT[section.domain_band] ?? section.domain_band));
   box.append(row("How much to read into it", CONFIDENCE_TEXT[section.confidence] ?? section.confidence));
   box.append(row("Independent answers counted", String(section.valid_independent_evidence_count)));
@@ -3834,7 +3891,7 @@ function sectionBlock(section) {
     box.append(row("Waiting for an adult", String(section.awaiting_review_count)));
   }
   if (section.upper_limit_not_measured) {
-    box.append(div(
+    box.append(div$1(
       "assess-report-note",
       "The hardest items here were secure, so the top of this is not measured."
     ));
@@ -3856,22 +3913,29 @@ function sectionBlock(section) {
 }
 function buildReportElement(run, opts = {}) {
   const data = runReport(run, opts);
-  const box = div("assess-report");
+  const box = div$1("assess-report");
   const when = data.completed_at_utc || data.started_at_utc;
-  box.append(div(
+  box.append(div$1(
     "assess-report-head",
     `${data.learner_id} · form ${data.form} · ${when ? new Date(when).toLocaleDateString() : "not dated"}`
   ));
-  box.append(div(
+  box.append(div$1(
     "assess-report-note",
     "One measurement, on one day, of what this check-in asks. It is not a school placement and it is not compared with anyone else."
   ));
   for (const section of data.sections) box.append(sectionBlock(section));
-  box.append(div("assess-report-note", data.overall_note));
-  box.append(div(
+  box.append(div$1("assess-report-note", data.overall_note));
+  const rule = data.rules.skill_evidence;
+  box.append(div$1(
     "assess-report-note",
-    `Strengths and next practice areas come from rule ${data.rules.skill_evidence.id}, written by the app rather than by the content author, and still to be confirmed by them. A skill is named only after ${data.rules.skill_evidence.minimum_attempts_per_skill} independent answers.`
+    `Strengths and next practice areas follow the content author's rule (${rule.id}): a skill is named only after ${rule.minimum_distinct_items} separate items, at most ${rule.max_per_list} are listed for each part, and this attempt alone is counted.`
   ));
+  if (rule.unmapped_on_open_prompts?.length) {
+    box.append(div$1(
+      "assess-report-note",
+      `A few writing prompts also touch ${rule.unmapped_on_open_prompts.join(", ")}. The rule does not say how to read those from a writing score, so those prompts add nothing to them — they are measured by the vocabulary and grammar part instead.`
+    ));
+  }
   return box;
 }
 function renderAssessmentReports(container, store, { players = ["jenn", "jess"] } = {}) {
@@ -3883,19 +3947,337 @@ function renderAssessmentReports(container, store, { players = ["jenn", "jess"] 
   }
   runs.sort((a, b) => (b.started_at_utc || 0) - (a.started_at_utc || 0));
   if (!runs.length) {
-    container.append(div("assess-report-empty", "No check-in has been done yet."));
+    container.append(div$1("assess-report-empty", "No check-in has been done yet."));
     return;
   }
   for (const run of runs) {
     const wrap = buildReportElement(run);
     if (run.status === "parent_invalidated") {
-      wrap.prepend(div(
+      wrap.prepend(div$1(
         "assess-report-note",
         "This attempt was set aside by a parent. It is kept, and it is not used as a measurement."
       ));
     }
     container.append(wrap);
   }
+}
+const DIAGNOSTIC_PREFIX = "devicecheck_";
+const TEST_MODE_NOTICE = "Test mode — nothing here affects the learner's record.";
+const CHECK_PHRASE = "Bonjour ! Ceci est un test du son.";
+function newDiagnosticRunId() {
+  return DIAGNOSTIC_PREFIX + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 6);
+}
+function isDiagnosticKey(key) {
+  return String(key ?? "").startsWith(DIAGNOSTIC_PREFIX);
+}
+const CHECKS = [
+  { id: "speech_locale", label: "French voice", needsPerson: false },
+  { id: "audio_playback", label: "French audio plays", needsPerson: true },
+  { id: "microphone_permission", label: "Microphone permission", needsPerson: false },
+  { id: "record_replay", label: "Recording and playing it back", needsPerson: true },
+  { id: "storage_roundtrip", label: "This device keeps a clip", needsPerson: false },
+  { id: "clip_delete", label: "A clip can be deleted", needsPerson: false }
+];
+const blank = () => Object.fromEntries(CHECKS.map((c) => [c.id, { id: c.id, label: c.label, status: "not_run", detail: "", at: 0 }]));
+function createDeviceCheck({
+  speak,
+  voiceInfo,
+  makeCapture,
+  audioStore,
+  playBlob,
+  requestedLocale = "fr-CA",
+  now: now2 = () => Date.now(),
+  onChange = () => {
+  }
+} = {}) {
+  let results = blank();
+  let capture2 = null;
+  let recorded = null;
+  let storedKey = null;
+  const diagnosticRunId = newDiagnosticRunId();
+  const set = (id, status, detail) => {
+    results[id] = { ...results[id], status, detail: String(detail ?? ""), at: now2() };
+    onChange(results);
+    return results[id];
+  };
+  async function purge() {
+    const keys = await audioStore.listKeys();
+    const mine = keys.filter(isDiagnosticKey);
+    for (const key of mine) {
+      const [runId, rest] = String(key).split("/");
+      const [itemId] = String(rest ?? "").split("#");
+      await audioStore.remove(runId, itemId);
+    }
+    storedKey = null;
+    return { removed: mine.length };
+  }
+  return {
+    diagnosticRunId,
+    results: () => results,
+    notice: TEST_MODE_NOTICE,
+    /** What voice the device will actually use, and what was asked for. */
+    checkSpeechLocale() {
+      const info = voiceInfo?.() || {};
+      const resolved = info.resolvedLocale || null;
+      if (!resolved) {
+        return set(
+          "speech_locale",
+          "fail",
+          `Asked for ${requestedLocale}. This device offers no French voice at all, so the listening section cannot be administered here.`
+        );
+      }
+      const detail = `Asked for ${requestedLocale}, this device will use ${resolved}${info.name ? ` (${info.name})` : ""}.` + (resolved.toLowerCase() === requestedLocale.toLowerCase() ? "" : " That is a different French, which is expected on most iPads and is recorded against every listening answer.");
+      return set("speech_locale", "pass", detail);
+    },
+    /** Speak a phrase. Only the person in the room can say whether it was heard. */
+    playSample() {
+      try {
+        speak(CHECK_PHRASE);
+      } catch (e) {
+        return set("audio_playback", "fail", `The device refused to speak: ${e?.message || e}`);
+      }
+      return set(
+        "audio_playback",
+        "needs_you",
+        `Said: "${CHECK_PHRASE}". Did you hear it?`
+      );
+    },
+    /** The person answers for the checks no code can judge. */
+    confirm(id, heard) {
+      const check = CHECKS.find((c) => c.id === id);
+      if (!check?.needsPerson) return results[id];
+      if (results[id]?.status !== "needs_you") return results[id];
+      return heard ? set(id, "pass", "Confirmed by the adult in the room.") : set(id, "fail", "The adult in the room heard nothing.");
+    },
+    /**
+     * Ask for the microphone and let it go again.
+     *
+     * The same capture module the speaking section uses, so a refusal here is
+     * the refusal a child would meet.
+     */
+    async checkMicrophone() {
+      capture2 = capture2 || makeCapture();
+      const started = await capture2.start();
+      if (!started.ok) {
+        return set(
+          "microphone_permission",
+          "fail",
+          started.reason === "microphone_failed" ? "The microphone was refused. Safari asks once per site; check Settings › Safari › Microphone, and the padlock in the address bar." : `The microphone did not start: ${started.reason || "unknown"}.`
+        );
+      }
+      capture2.abandon();
+      return set("microphone_permission", "pass", "The microphone opened and was released again.");
+    },
+    async startRecording() {
+      capture2 = capture2 || makeCapture();
+      recorded = null;
+      const started = await capture2.start();
+      if (!started.ok) {
+        return set("record_replay", "fail", `Recording did not start: ${started.reason || "unknown"}.`);
+      }
+      return set("record_replay", "recording", "Recording. Say something, then stop.");
+    },
+    async stopRecording() {
+      if (!capture2) return set("record_replay", "fail", "Nothing was recording.");
+      const out = await capture2.stop();
+      if (!out.ok || !out.blob) {
+        return set("record_replay", "fail", `No audio was captured: ${out.reason || "unknown"}.`);
+      }
+      recorded = { blob: out.blob, durationMs: out.durationMs, mimeType: out.mimeType };
+      return set(
+        "record_replay",
+        "needs_you",
+        `Captured ${Math.round((out.durationMs || 0) / 100) / 10}s. Play it back — do you hear it?`
+      );
+    },
+    hasRecording: () => !!recorded,
+    async playRecording() {
+      if (!recorded) return set("record_replay", "fail", "There is nothing recorded to play.");
+      try {
+        await playBlob(recorded.blob);
+      } catch (e) {
+        return set("record_replay", "fail", `The device would not play it back: ${e?.message || e}`);
+      }
+      return results.record_replay;
+    },
+    /**
+     * Write a clip, read it back, and ask for one that was never written.
+     *
+     * The last part is the one worth having. A missing clip must come back
+     * absent; an earlier version of the store returned the IDBRequest object
+     * instead, which is truthy, so a clip that was never saved read as saved.
+     */
+    async checkStorage() {
+      const blob = recorded?.blob ?? new Blob(["device-check"], { type: "text/plain" });
+      const put = await audioStore.put(diagnosticRunId, "sample", blob, { mimeType: recorded?.mimeType });
+      if (!put.ok) {
+        return set(
+          "storage_roundtrip",
+          "fail",
+          `This device would not keep a clip: ${put.error}. A private window or a browser set to block site data does this.`
+        );
+      }
+      storedKey = put.key;
+      const back = await audioStore.get(diagnosticRunId, "sample");
+      if (!back || !back.blob) {
+        return set("storage_roundtrip", "fail", "The clip was written but did not come back.");
+      }
+      const missing = await audioStore.get(diagnosticRunId, "never-written");
+      if (missing !== null && missing !== void 0) {
+        return set(
+          "storage_roundtrip",
+          "fail",
+          `A clip that was never stored came back as ${typeof missing}. It must come back absent.`
+        );
+      }
+      return set(
+        "storage_roundtrip",
+        "pass",
+        "Written, read back, and a clip that was never stored correctly came back as nothing."
+      );
+    },
+    /** Delete the diagnostic clip and prove it is gone. */
+    async checkDelete() {
+      if (!storedKey) {
+        return set("clip_delete", "not_run", "Run the storage check first, so there is one to delete.");
+      }
+      const removed = await audioStore.remove(diagnosticRunId, "sample");
+      if (!removed.ok) return set("clip_delete", "fail", `The clip would not delete: ${removed.error}`);
+      const still = await audioStore.has(diagnosticRunId, "sample");
+      if (still) return set("clip_delete", "fail", "The clip is still there after being deleted.");
+      storedKey = null;
+      return set("clip_delete", "pass", "Deleted, and confirmed gone.");
+    },
+    /** On the way in and on the way out: leave no diagnostic audio behind. */
+    purge,
+    async exit() {
+      try {
+        capture2?.abandon();
+      } catch {
+      }
+      capture2 = null;
+      recorded = null;
+      const out = await purge();
+      results = blank();
+      onChange(results);
+      return out;
+    }
+  };
+}
+const STATUS_TEXT = {
+  not_run: "Not run",
+  pass: "Working",
+  fail: "Not working",
+  needs_you: "Waiting for you",
+  recording: "Recording…"
+};
+const div = (className, text) => {
+  const d = document.createElement("div");
+  if (className) d.className = className;
+  if (text != null) d.textContent = String(text);
+  return d;
+};
+function button(label, action) {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "btn-secondary";
+  b.setAttribute("data-action", action);
+  b.textContent = label;
+  return b;
+}
+function controlsFor(id, result, controller) {
+  const row2 = div("device-check-actions");
+  if (id === "speech_locale") row2.append(button("Check the voice", "dc-locale"));
+  if (id === "audio_playback") {
+    row2.append(button("Play a French phrase", "dc-play"));
+    if (result.status === "needs_you") {
+      row2.append(button("I heard it", "dc-heard-yes"), button("I heard nothing", "dc-heard-no"));
+    }
+  }
+  if (id === "microphone_permission") row2.append(button("Ask for the microphone", "dc-mic"));
+  if (id === "record_replay") {
+    row2.append(result.status === "recording" ? button("Stop recording", "dc-rec-stop") : button("Record two seconds", "dc-rec-start"));
+    if (controller.hasRecording()) row2.append(button("Play it back", "dc-rec-play"));
+    if (result.status === "needs_you") {
+      row2.append(button("I heard it", "dc-replay-yes"), button("I heard nothing", "dc-replay-no"));
+    }
+  }
+  if (id === "storage_roundtrip") row2.append(button("Keep and read back a clip", "dc-storage"));
+  if (id === "clip_delete") row2.append(button("Delete the test clip", "dc-delete"));
+  return row2;
+}
+function mountDeviceCheck(container, controller, { onDone = () => {
+} } = {}) {
+  if (!container) return () => {
+  };
+  let done = false;
+  const draw = () => {
+    if (done) return;
+    const results = controller.results();
+    container.textContent = "";
+    container.append(div("device-check-notice", TEST_MODE_NOTICE));
+    container.append(div(
+      "device-check-note",
+      "This asks whether this iPad can do what the check-in needs. It is not the check-in, and it does not replace listening to it yourself on the day."
+    ));
+    for (const check of CHECKS) {
+      const result = results[check.id];
+      const box = div("device-check-item");
+      const head = div("device-check-head");
+      head.append(div("device-check-label", check.label));
+      const status = div("device-check-status", STATUS_TEXT[result.status] ?? result.status);
+      status.setAttribute("data-status", result.status);
+      head.append(status);
+      box.append(head);
+      if (result.detail) box.append(div("device-check-detail", result.detail));
+      box.append(controlsFor(check.id, result, controller));
+      container.append(box);
+    }
+    const foot = div("device-check-actions");
+    foot.append(button("Done — clear the test clips", "dc-exit"));
+    container.append(foot);
+  };
+  const handlers = {
+    "dc-locale": () => controller.checkSpeechLocale(),
+    "dc-play": () => controller.playSample(),
+    "dc-heard-yes": () => controller.confirm("audio_playback", true),
+    "dc-heard-no": () => controller.confirm("audio_playback", false),
+    "dc-mic": () => controller.checkMicrophone(),
+    "dc-rec-start": () => controller.startRecording(),
+    "dc-rec-stop": () => controller.stopRecording(),
+    "dc-rec-play": () => controller.playRecording(),
+    "dc-replay-yes": () => controller.confirm("record_replay", true),
+    "dc-replay-no": () => controller.confirm("record_replay", false),
+    "dc-storage": () => controller.checkStorage(),
+    "dc-delete": () => controller.checkDelete()
+  };
+  const onClick = async (event) => {
+    const el2 = event.target.closest?.("[data-action]");
+    if (!el2 || !container.contains(el2)) return;
+    const action = el2.getAttribute("data-action");
+    if (action === "dc-exit") {
+      done = true;
+      container.removeEventListener("click", onClick);
+      await controller.exit();
+      container.textContent = "";
+      onDone();
+      return;
+    }
+    const fn = handlers[action];
+    if (!fn) return;
+    el2.disabled = true;
+    try {
+      await fn();
+    } finally {
+      draw();
+    }
+  };
+  container.addEventListener("click", onClick);
+  void Promise.resolve(controller.purge()).then(draw);
+  draw();
+  return () => {
+    container.removeEventListener("click", onClick);
+  };
 }
 const DB_NAME = "french_assessment_audio";
 const STORE = "clips";
@@ -5390,6 +5772,11 @@ document.addEventListener("click", function(e) {
         );
       } else setRecoveryMsg("❌ Enter parent password first");
       break;
+    case "assess-device-check":
+      if (ensureParentPassword()) {
+        openDeviceCheck();
+      } else setRecoveryMsg("❌ Enter parent password first");
+      break;
     case "assess-pause":
       void pauseAssessment();
       break;
@@ -6845,7 +7232,17 @@ if (navigator.storage && navigator.storage.persist) {
   });
 }
 hydrateStateFromLocalMirror();
+deviceId();
 assessment.hydrate();
+const assessmentVoiceInfo = () => {
+  const v = frenchVoice || resolveFrenchVoice();
+  return { resolvedLocale: v ? v.lang : null, name: v ? v.name : null };
+};
+const makeAssessmentCapture = () => createAudioCapture({
+  getStream: () => navigator.mediaDevices.getUserMedia({ audio: true }),
+  Recorder: window.MediaRecorder
+});
+const assessmentAudioStore = createAudioStore({ deviceId });
 configureAssessmentUI({
   store: assessment,
   showScreen,
@@ -6857,18 +7254,12 @@ configureAssessmentUI({
   speak: speakFrench,
   // Recorded on every listening response, so a whole section that fell back to
   // a France voice is visible afterwards rather than guessed at.
-  voiceInfo: () => {
-    const v = frenchVoice || resolveFrenchVoice();
-    return { resolvedLocale: v ? v.lang : null, name: v ? v.name : null };
-  },
+  voiceInfo: assessmentVoiceInfo,
   // Audio capture, and where the clip goes. The recording never leaves this
   // device: there is no storage bucket, a Firestore document caps at 1 MiB, and
   // §3.6 forbids keeping raw child audio by default.
-  makeCapture: () => createAudioCapture({
-    getStream: () => navigator.mediaDevices.getUserMedia({ audio: true }),
-    Recorder: window.MediaRecorder
-  }),
-  audioStore: createAudioStore({ deviceId }),
+  makeCapture: makeAssessmentCapture,
+  audioStore: assessmentAudioStore,
   // A parent can open the assessment from the parent overlay without a learner
   // being selected, so there may be no hub to return to. updateHub reads
   // state[currentPlayer] and would throw.
@@ -6882,6 +7273,35 @@ configureAssessmentUI({
     renderAssessmentParentPanel();
   }
 });
+let deviceCheckUnmount = null;
+function openDeviceCheck() {
+  const panel = document.getElementById("assess-device-check-panel");
+  if (!panel) return;
+  if (deviceCheckUnmount) {
+    deviceCheckUnmount();
+    deviceCheckUnmount = null;
+  }
+  const controller = createDeviceCheck({
+    speak: speakFrench,
+    voiceInfo: assessmentVoiceInfo,
+    makeCapture: makeAssessmentCapture,
+    audioStore: assessmentAudioStore,
+    requestedLocale: PREFERRED_LOCALE,
+    playBlob: async (blob) => {
+      const url = URL.createObjectURL(blob);
+      try {
+        await new Audio(url).play();
+      } finally {
+        setTimeout(() => URL.revokeObjectURL(url), 3e4);
+      }
+    }
+  });
+  deviceCheckUnmount = mountDeviceCheck(panel, controller, {
+    onDone: () => {
+      deviceCheckUnmount = null;
+    }
+  });
+}
 initConnectivityAndSyncUI();
 showScreen("select");
 startWallClock();
@@ -7461,7 +7881,25 @@ button,input{touch-action:manipulation;}
 .assess-report-nested-head { font-size: .72rem; font-weight: 700; }
 .assess-report-nested ul { margin: 2px 0 0; padding-left: 18px; font-size: .72rem; line-height: 1.5; }
 .assess-report-observation { margin-top: 6px; font-size: .72rem; }
-.assess-report-technical { font-size: .66rem; color: var(--text-muted); line-height: 1.4; }</style>
+.assess-report-technical { font-size: .66rem; color: var(--text-muted); line-height: 1.4; }
+
+/* The Device & Feature Check. Parent-only, and plainly a test surface: the
+   notice at the top is not decoration, it is the first thing to read. */
+.device-check-notice {
+  font-size: .74rem; font-weight: 800; text-align: center;
+  border: 1px dashed rgba(0,0,0,.3); border-radius: 10px; padding: 8px 10px;
+}
+.device-check-note { font-size: .68rem; color: var(--text-muted); line-height: 1.45; margin: 6px 0 8px; }
+.device-check-item {
+  text-align: left; border: 1px solid rgba(0,0,0,.12); border-radius: 12px;
+  padding: 10px 12px; margin-bottom: 8px; background: var(--card);
+}
+.device-check-head { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.device-check-label { font-weight: 800; font-size: .76rem; }
+.device-check-status { font-size: .7rem; color: var(--text-muted); }
+.device-check-detail { font-size: .7rem; color: var(--text-muted); line-height: 1.45; margin-top: 4px; }
+.device-check-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.device-check-actions button { padding: 8px 12px; font-size: .72rem; min-height: 44px; }</style>
 </head>
 <body>
 <div class="container">
@@ -7777,6 +8215,11 @@ button,input{touch-action:manipulation;}
                 style="padding:8px 14px;font-size:.74rem;">📊 Show check-in report</button>
       </div>
       <div id="assess-report-panel" style="margin-top:8px;"></div>
+      <div style="text-align:center;margin-top:6px;">
+        <button type="button" class="btn-secondary" data-action="assess-device-check"
+                style="padding:8px 14px;font-size:.74rem;">🔧 Device &amp; feature check</button>
+      </div>
+      <div id="assess-device-check-panel" style="margin-top:8px;"></div>
       <div id="backup-restore-panel" style="margin-top:8px;padding:10px 12px;background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.25);border-radius:12px;display:none;"></div>
       <div id="recovery-msg" style="font-size:.72rem;color:var(--text-muted);text-align:center;min-height:20px;"></div>
       <input id="recovery-import-file" type="file" accept="application/json" style="display:none;" onchange="handleRecoveryImport(event)">
