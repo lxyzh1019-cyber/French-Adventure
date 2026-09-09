@@ -7,7 +7,7 @@
      styles ......... src/styles.css
      game logic ..... src/**/*.js
 
-   Built from 154cbcb
+   Built from d320133
   ============================================================
 -->
 <!DOCTYPE html>
@@ -1466,9 +1466,9 @@ function levelAccuracy(state2, gradeKey) {
     correct += g.correct || 0;
     wrong += g.wrong || 0;
   }
-  const attempts = correct + wrong;
-  if (!attempts) return null;
-  return { attempts, correct, wrong, accuracy: correct / attempts };
+  const attempts2 = correct + wrong;
+  if (!attempts2) return null;
+  return { attempts: attempts2, correct, wrong, accuracy: correct / attempts2 };
 }
 function hasMoon(state2, gradeKey) {
   return !!state2?.moons?.["grade" + gradeKey];
@@ -1542,6 +1542,58 @@ function describeVoice(voice, requested = PREFERRED_LOCALE) {
 function escapeAttr(text) {
   return String(text).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/'/g, "&#39;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
+function newAttemptId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+function createAttemptLedger() {
+  let attemptId = null;
+  const committed = /* @__PURE__ */ new Set();
+  const key = (index, part) => attemptId + ":" + index + (part == null ? "" : "#" + part);
+  return {
+    get attemptId() {
+      return attemptId;
+    },
+    /** Start a fresh attempt, discarding anything committed under the old one. */
+    begin(id = newAttemptId()) {
+      attemptId = id;
+      committed.clear();
+      return attemptId;
+    },
+    /** Resume an attempt from a draft: its id, and what it had already scored. */
+    restore(id, ids = []) {
+      attemptId = id || newAttemptId();
+      committed.clear();
+      for (const k of ids) committed.add(k);
+      return attemptId;
+    },
+    instanceId: key,
+    /**
+     * Claim the right to score one response. False means it is already scored,
+     * and the caller must not award points or evidence for it again.
+     */
+    commitOnce(index, part) {
+      const k = key(index, part);
+      if (committed.has(k)) return false;
+      committed.add(k);
+      return true;
+    },
+    /** Record a response as scored without claiming it — used when resuming
+     *  onto a question whose feedback was already showing. */
+    markCommitted(index, part) {
+      committed.add(key(index, part));
+    },
+    isCommitted(index, part) {
+      return committed.has(key(index, part));
+    },
+    /** For the round draft. */
+    snapshot() {
+      return [...committed];
+    },
+    get size() {
+      return committed.size;
+    }
+  };
+}
 let state = { jenn: DEFAULT_STATE(), jess: DEFAULT_STATE() };
 let currentPlayer = null;
 let currentGrade = 4;
@@ -1551,7 +1603,7 @@ let roundTopicTally = {};
 let roundAnswerTally = { correct: 0, wrong: 0 };
 let roundGradeTally = {};
 function roundIsLive() {
-  return !!(roundAttemptId && currentGameType && !roundEnded);
+  return !!(attempts.attemptId && currentGameType && !roundEnded);
 }
 let builtWords = [], scrambleAnswer = [], scrambleSource = [];
 let matchSelected = null, matchPairs = [], matchMatched = [], matchFrOrder = [], matchEnOrder = [];
@@ -1586,19 +1638,9 @@ const pendingRemoteData = { jenn: null, jess: null };
 let roundDraftTimer = null;
 let roundEnded = false;
 let lastRoundOutcome = null;
-let roundAttemptId = null;
-const committedAnswers = /* @__PURE__ */ new Set();
-function newAttemptId() {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-}
-function questionInstanceId(index) {
-  return roundAttemptId + ":" + index;
-}
-function commitAnswerOnce(index = qIndex) {
-  const id = questionInstanceId(index);
-  if (committedAnswers.has(id)) return false;
-  committedAnswers.add(id);
-  return true;
+const attempts = createAttemptLedger();
+function commitAnswerOnce(index = qIndex, part) {
+  return attempts.commitOnce(index, part);
 }
 let lastWrongPenaltyAt = 0;
 function persistLocalStateMirror(player) {
@@ -1667,8 +1709,8 @@ function collectRoundDraft() {
   }
   return {
     v: 2,
-    attemptId: roundAttemptId,
-    committed: [...committedAnswers],
+    attemptId: attempts.attemptId,
+    committed: attempts.snapshot(),
     savedAt: Date.now(),
     tk,
     player: currentPlayer,
@@ -1735,9 +1777,7 @@ function loadRoundDraftForStart(type) {
 }
 function restoreRoundDraft(d) {
   roundEnded = false;
-  roundAttemptId = d.attemptId || newAttemptId();
-  committedAnswers.clear();
-  (d.committed || []).forEach((id) => committedAnswers.add(id));
+  attempts.restore(d.attemptId, d.committed || []);
   questions = d.questions || [];
   qIndex = Math.min(Math.max(0, d.qIndex | 0), Math.max(0, questions.length - 1));
   lives = d.lives != null ? d.lives : 3;
@@ -1766,7 +1806,7 @@ function restoreRoundDraft(d) {
       document.getElementById("feedback-overlay").classList.remove("show");
     } catch (_) {
     }
-    committedAnswers.add(questionInstanceId(qIndex));
+    attempts.markCommitted(qIndex);
     if (qIndex < questions.length) qIndex++;
     currentQ = questions[qIndex] || null;
   }
@@ -2850,7 +2890,7 @@ window.__faDebug = {
     return qIndex;
   },
   get roundAttemptId() {
-    return roundAttemptId;
+    return attempts.attemptId;
   },
   get recognition() {
     return recognition;
@@ -2967,8 +3007,7 @@ function startGame(type) {
     roundAnswerTally = { correct: 0, wrong: 0 };
     roundGradeTally = {};
     roundEnded = false;
-    roundAttemptId = newAttemptId();
-    committedAnswers.clear();
+    attempts.begin();
     questions = buildQuestions(type);
     renderLives();
     renderScore();
@@ -3183,6 +3222,7 @@ function handleMatchClick(btn, side, word) {
   const frW = side === "fr" ? word : matchSelected.word, enW = side === "en" ? word : matchSelected.word;
   const pair = matchPairs.find((p) => p.fr === frW && p.en === enW);
   if (pair) {
+    if (!commitAnswerOnce(qIndex, pair.fr + "|" + pair.en)) return;
     [btn, matchSelected.btn].forEach((b) => {
       b.classList.add("used");
       b.style.borderColor = "var(--green)";
@@ -3434,13 +3474,13 @@ function nextQuestion() {
   scheduleRoundDraftPersist();
 }
 function recordUnfinishedRound(outcome) {
-  if (roundEnded || !currentPlayer || !currentGameType || !roundAttemptId) return;
+  if (roundEnded || !currentPlayer || !currentGameType || !attempts.attemptId) return;
   const s = state[currentPlayer];
   if (!s) return;
   if (!s.roundLog) s.roundLog = {};
-  if (s.roundLog[roundAttemptId]) return;
-  s.roundLog[roundAttemptId] = makeRoundLogEntry({
-    id: roundAttemptId,
+  if (s.roundLog[attempts.attemptId]) return;
+  s.roundLog[attempts.attemptId] = makeRoundLogEntry({
+    id: attempts.attemptId,
     day: todayKey(),
     type: currentGameType,
     grade: currentGrade,
@@ -3503,9 +3543,9 @@ async function endRound(outcome = ROUND_OUTCOME.COMPLETED) {
   if (completed) s.todayStats[tk].rounds++;
   s.todayStats[tk].stars += roundScore;
   if (!s.roundLog) s.roundLog = {};
-  if (roundAttemptId && !(s.roundLog[roundAttemptId] || {}).completed) {
-    s.roundLog[roundAttemptId] = makeRoundLogEntry({
-      id: roundAttemptId,
+  if (attempts.attemptId && !(s.roundLog[attempts.attemptId] || {}).completed) {
+    s.roundLog[attempts.attemptId] = makeRoundLogEntry({
+      id: attempts.attemptId,
       day: tk,
       type: currentGameType,
       grade: currentGrade,

@@ -11,6 +11,7 @@ import { GRADE_KEYS, levelLabel, levelNumber, recommendLevel,
          recommendationText, levelAccuracy, hasMoon } from './learning/levels.js';
 import { pickFrenchVoice, describeVoice, PREFERRED_LOCALE } from './speech/playback.js';
 import { escapeAttr } from './util/html.js';
+import { createAttemptLedger } from './state/attempts.js';
 import { normalizeForRecognition, compareFrench, scrambleTypeFor,
          buildScrambleTiles, joinScrambleTiles, isScrambleSolvable,
          SCRAMBLE_TYPES } from './util/fr-text.js';
@@ -44,7 +45,7 @@ let roundTopicTally={};
 // applied. Reset at round start, carried in the draft across a resume.
 let roundAnswerTally={correct:0,wrong:0};
 let roundGradeTally={};
-function roundIsLive(){ return !!(roundAttemptId && currentGameType && !roundEnded); }
+function roundIsLive(){ return !!(attempts.attemptId && currentGameType && !roundEnded); }
 let builtWords=[], scrambleAnswer=[], scrambleSource=[];
 let matchSelected=null, matchPairs=[], matchMatched=[], matchFrOrder=[], matchEnOrder=[];
 let __roundDraftSnap=null;
@@ -93,25 +94,15 @@ let lastRoundOutcome = null;
 // Answers commit exactly once. Resuming a draft that was saved with the
 // feedback overlay open used to re-present the same question, letting the same
 // response score a second time; there was no identity to deduplicate on.
-let roundAttemptId = null;
-const committedAnswers = new Set();
-function newAttemptId(){
-  return (Date.now().toString(36) + Math.random().toString(36).slice(2, 8));
-}
-function questionInstanceId(index){
-  return roundAttemptId + ':' + index;
-}
+const attempts = createAttemptLedger();
 /**
- * Claim the right to score the current question.
- * Returns false if this question instance has already been committed, so a
- * duplicate submit — from a resume, a double tap, or a rebound handler —
- * cannot award points or evidence twice.
+ * Claim the right to score the current response. False means it has already
+ * been scored — from a resume, a double tap, or a rebound handler — and must
+ * not award points or evidence again. `part` separates several scored
+ * responses within one question index; Word Match scores per pair.
  */
-function commitAnswerOnce(index = qIndex){
-  const id = questionInstanceId(index);
-  if(committedAnswers.has(id)) return false;
-  committedAnswers.add(id);
-  return true;
+function commitAnswerOnce(index = qIndex, part){
+  return attempts.commitOnce(index, part);
 }
 let lastWrongPenaltyAt = 0;
 
@@ -176,8 +167,8 @@ function collectRoundDraft(){
   }catch(_){}
   return {
     v: 2,
-    attemptId: roundAttemptId,
-    committed: [...committedAnswers],
+    attemptId: attempts.attemptId,
+    committed: attempts.snapshot(),
     savedAt: Date.now(),
     tk, player: currentPlayer, grade: currentGrade, type: currentGameType,
     qIndex, questions, lives, roundScore, roundBasePoints, roundSpeedPoints, roundTopicTally,
@@ -225,9 +216,7 @@ function restoreRoundDraft(d){
   // Restore the attempt identity first: everything below depends on it to
   // decide what has already been scored.
   roundEnded = false;
-  roundAttemptId = d.attemptId || newAttemptId();
-  committedAnswers.clear();
-  (d.committed || []).forEach(id => committedAnswers.add(id));
+  attempts.restore(d.attemptId, d.committed || []);
   questions = d.questions || [];
   qIndex = Math.min(Math.max(0, d.qIndex|0), Math.max(0, questions.length - 1));
   lives = d.lives != null ? d.lives : 3;
@@ -257,7 +246,7 @@ function restoreRoundDraft(d){
     // response score a second time. Advance past it instead — the answer is
     // committed, and the committed set below makes the guard belt-and-braces.
     try{ document.getElementById('feedback-overlay').classList.remove('show'); }catch(_){}
-    committedAnswers.add(questionInstanceId(qIndex));
+    attempts.markCommitted(qIndex);
     if(qIndex < questions.length) qIndex++;
     currentQ = questions[qIndex] || null;
   }
@@ -1503,7 +1492,7 @@ window.__faDebug = {
   get matchPairs(){ return matchPairs; }, get matchMatched(){ return matchMatched; },
   get matchSelected(){ return matchSelected; }, get lives(){ return lives; },
   get roundBasePoints(){ return roundBasePoints; }, get qIndex(){ return qIndex; },
-  get roundAttemptId(){ return roundAttemptId; }, get recognition(){ return recognition; },
+  get roundAttemptId(){ return attempts.attemptId; }, get recognition(){ return recognition; },
   get lastRoundOutcome(){ return lastRoundOutcome; },
   get roundLog(){ return currentPlayer ? (state[currentPlayer].roundLog || {}) : {}; },
   endRound: (o)=>endRound(o),
@@ -1604,7 +1593,7 @@ function startGame(type){
     clearCurrentRoundDraft();
     lives=3;roundScore=0;roundBasePoints=0;roundSpeedPoints=0;qIndex=0;roundTopicTally={};
     roundAnswerTally={correct:0,wrong:0};roundGradeTally={};
-    roundEnded=false;roundAttemptId=newAttemptId();committedAnswers.clear();
+    roundEnded=false;attempts.begin();
     questions=buildQuestions(type);
     renderLives();renderScore();
     document.getElementById('progress-bar').style.width='0%';
@@ -1790,6 +1779,13 @@ function handleMatchClick(btn,side,word){
   const frW=side==='fr'?word:matchSelected.word,enW=side==='en'?word:matchSelected.word;
   const pair=matchPairs.find(p=>p.fr===frW&&p.en===enW);
   if(pair){
+    // Word Match was the one scoring path that never went through the commit
+    // gate; it relied on the `used` class and matchMatched alone. Those hold
+    // for a redraw, but they are DOM and array state, not a record that
+    // survives in the draft — so the gate is authoritative here too. A pair is
+    // its own instance, since one Word Match round is a single question index
+    // with several scored responses.
+    if(!commitAnswerOnce(qIndex, pair.fr + '|' + pair.en)) return;
     [btn,matchSelected.btn].forEach(b=>{b.classList.add('used');b.style.borderColor='var(--green)';b.style.color='var(--green)';});
     matchMatched.push(pair);
     const fullW=findVocabWord(pair.fr)||pair;
@@ -2046,13 +2042,13 @@ function nextQuestion(){document.getElementById('feedback-overlay').classList.re
 // three outcomes below were declared but never written anywhere, and Rollup
 // dropped them from the build as unreachable.
 function recordUnfinishedRound(outcome){
-  if(roundEnded || !currentPlayer || !currentGameType || !roundAttemptId) return;
+  if(roundEnded || !currentPlayer || !currentGameType || !attempts.attemptId) return;
   const s = state[currentPlayer];
   if(!s) return;
   if(!s.roundLog) s.roundLog = {};
-  if(s.roundLog[roundAttemptId]) return;   // already finished, or already marked
-  s.roundLog[roundAttemptId] = makeRoundLogEntry({
-    id: roundAttemptId, day: todayKey(), type: currentGameType, grade: currentGrade,
+  if(s.roundLog[attempts.attemptId]) return;   // already finished, or already marked
+  s.roundLog[attempts.attemptId] = makeRoundLogEntry({
+    id: attempts.attemptId, day: todayKey(), type: currentGameType, grade: currentGrade,
     stars: 0, correct: 0, wrong: 0, outcome, at: Date.now()
   });
   lastRoundOutcome = outcome;
@@ -2130,9 +2126,9 @@ async function endRound(outcome = ROUND_OUTCOME.COMPLETED){
   // A marker may already sit under this id from an earlier abandon, interrupt or
   // time-out of this same attempt. Finishing supersedes it; a second finish does
   // not overwrite the first.
-  if(roundAttemptId && !(s.roundLog[roundAttemptId] || {}).completed){
-    s.roundLog[roundAttemptId]=makeRoundLogEntry({
-      id: roundAttemptId, day: tk, type: currentGameType, grade: currentGrade,
+  if(attempts.attemptId && !(s.roundLog[attempts.attemptId] || {}).completed){
+    s.roundLog[attempts.attemptId]=makeRoundLogEntry({
+      id: attempts.attemptId, day: tk, type: currentGameType, grade: currentGrade,
       stars: roundScore, correct: roundAnswerTally.correct, wrong: roundAnswerTally.wrong,
       outcome, grades: roundGradeTally, topics: roundTopicTally, at: Date.now()
     });

@@ -528,3 +528,35 @@ test('finishing a resumed round supersedes its unfinished marker', async () => {
   }
   assert.deepEqual(errors, [], 'no page errors');
 });
+
+test('a double tap on an answer scores once', async () => {
+  // §1.6 end to end. commitAnswerOnce had no test of any kind; the nearest one
+  // asserted that an answered question is not re-presented, which is the
+  // question index advancing, not the gate.
+  const { page, errors } = await open();
+
+  const r = await page.evaluate(async () => {
+    startGame('quiz');
+    await new Promise(res => setTimeout(res, 400));
+    const scoreOf = () => Number((document.getElementById('game-score')?.textContent || '')
+      .replace(/\D/g, '')) || 0;
+    const before = scoreOf();
+    const choices = [...document.querySelectorAll('#choices-grid button')];
+    if (!choices.length) return { error: 'no choices rendered' };
+
+    // Two taps as fast as the child could manage, before any redraw.
+    choices[0].click();
+    choices[0].click();
+    choices[0].click();
+    await new Promise(res => setTimeout(res, 400));
+    return { before, after: scoreOf() };
+  });
+
+  assert.equal(r.error, undefined, r.error);
+  // Either the answer was right and scored once, or wrong and scored nothing.
+  // What must not happen is the same response counting two or three times.
+  const gained = r.after - r.before;
+  assert.ok(gained === 0 || gained <= 20,
+    `three taps on one answer moved the score by ${gained}`);
+  assert.deepEqual(errors, [], 'no page errors');
+});
