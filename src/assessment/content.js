@@ -14,12 +14,14 @@ import RULES from '../../content/releases/assessment-v1/assessment_rules.json' w
 import ITEMS_DOC from '../../content/releases/assessment-v1/assessment_items.json' with { type: 'json' };
 import RUBRICS from '../../content/releases/assessment-v1/rubrics.json' with { type: 'json' };
 import CURRICULUM from '../../content/releases/assessment-v1/curriculum_map.json' with { type: 'json' };
+import { hasAssetFor, assetFor } from './assets.js';
 
 // scoring_fixtures.json is deliberately NOT imported. It is the test contract,
 // not child-facing content, and shipping it would put worked examples of the
 // scoring rules into the page.
 
 export { MANIFEST, RULES, RUBRICS, CURRICULUM };
+export { hasAssetFor, assetFor };
 
 export const RELEASE_ID = MANIFEST.release_id;
 export const ITEMS = ITEMS_DOC.items;
@@ -77,14 +79,25 @@ export function minimumEvidenceFor(domain) {
 /** replay.listening_max_plays — how many plays a listening item allows. */
 export const MAX_LISTENING_PLAYS = RULES.replay.listening_max_plays;
 
-/**
- * Items whose stimulus is an asset brief rather than a finished asset.
- *
- * SA-D02 and SB-D02 describe a map that has to be drawn and reviewed before
- * those prompts can be administered. They must be skipped rather than rendered:
- * printing the brief would hand the child the very vocabulary the item tests.
- */
-export function needsUnbuiltAsset(item) {
+/** True when an item's stimulus is an authoring brief rather than content. */
+export function hasAssetBrief(item) {
   const s = item?.stimulus;
   return !!(s && typeof s === 'object' && typeof s.type === 'string' && s.type.endsWith('_brief'));
+}
+
+/**
+ * Items that cannot be put in front of a learner.
+ *
+ * A brief describes what a picture must contain; it is authoring instruction,
+ * never something to display — printing SA-D02's required_labels would read
+ * "school, park, library, bank", which is the vocabulary the prompt asks the
+ * child to produce. So an item with a brief is unrenderable *until the artwork
+ * for it exists*, and renderable once it does.
+ *
+ * This is the distinction that decides whether the speaking domain can report a
+ * band at all: with none of the four assets built, each form had three
+ * presentable prompts against a minimum of four.
+ */
+export function needsUnbuiltAsset(item) {
+  return hasAssetBrief(item) && !hasAssetFor(item?.id);
 }

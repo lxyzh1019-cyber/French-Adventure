@@ -235,21 +235,25 @@ test('exposure records every showing, and the first one', () => {
 
 // ── items whose asset does not exist ────────────────────────────────────────
 
-test('an item needing an unbuilt asset is skipped, never presented', () => {
-  // Rendering the brief would print "school, park, library, bank" — the very
-  // vocabulary the item is testing.
+test('every speaking prompt is presentable now that its artwork exists', () => {
+  // Before the four assets were drawn, two prompts per form could not be shown
+  // and speaking could never reach its minimum. The skipping machinery is still
+  // there and is tested against a hidden-artwork case in
+  // tests/assessment-assets.test.js; here the point is that nothing is skipped.
   const run = start();
   S.beginSection(run, 'speaking', { now: NOW });
-  const skipped = S.skippedForMissingAsset(run, 'speaking');
-  assert.ok(skipped.length > 0, 'the speaking section has no brief-only prompts');
-  let seen = 0;
-  for (;;) {
+  assert.deepEqual(S.skippedForMissingAsset(run, 'speaking'), [],
+    'a speaking prompt is still unrenderable');
+
+  const shown = [];
+  for (let i = 0; i < 20; i++) {
     const item = S.nextItem(run, 'speaking');
     if (!item) break;
-    assert.equal(content.needsUnbuiltAsset(item), false, `${item.id} was presented from a brief`);
+    shown.push(item.id);
     S.submitResponse(run, item.id, {}, { now: NOW });
-    if (++seen > 20) break;
   }
+  assert.equal(shown.length, content.itemsFor({ form: run.form, domain: 'speaking' }).length,
+    'not every speaking prompt was offered');
 });
 
 test('a section whose only unanswered items are skipped counts as answered', () => {
@@ -426,22 +430,22 @@ test('an item seen in an earlier attempt is marked, not counted as fresh', () =>
   assert.equal(!!r.previously_exposed, other, 'the mark does not match the exposure record');
 });
 
-test('speaking cannot reach its minimum on either form until the artwork exists', () => {
-  // Not an exposure problem, and it must not be reported as one. Five prompts,
-  // two of them asset briefs that must never be rendered, against a minimum of
-  // four. Recorded so a domain with no band can say why.
+test('speaking reaches its minimum on both forms now the artwork exists', () => {
+  // This test previously asserted the opposite, and was right to: five prompts
+  // with two unrenderable left three against a minimum of four, so the domain
+  // reported insufficient_evidence however well a learner did. The artwork is
+  // what changed, not the minimum.
   for (const form of content.FORMS) {
     const fresh = S.freshEvidenceByDomain(form, new Set());
-    assert.equal(fresh.speaking.sufficient, false,
-      `${form}/speaking unexpectedly reaches its minimum`);
-    assert.equal(fresh.speaking.available, 3);
-    assert.equal(fresh.speaking.minimum, 4);
-    for (const d of ['listening', 'reading', 'vocabulary_grammar', 'writing']) {
-      assert.equal(fresh[d].sufficient, true, `${form}/${d} cannot meet its minimum when fresh`);
+    for (const [domain, v] of Object.entries(fresh)) {
+      assert.equal(v.sufficient, true,
+        `${form}/${domain}: ${v.available} presentable against a minimum of ${v.minimum}`);
     }
+    assert.equal(fresh.speaking.available, 5);
+    assert.equal(fresh.speaking.minimum, 4);
   }
   const plan = S.planNextAttempt('jenn', [], { now: NOW });
-  assert.deepEqual(plan.blockedByContent, ['speaking']);
-  assert.deepEqual(plan.insufficientDomains, [], 'a content gap was reported as exposure');
-  assert.equal(plan.sufficient, true, 'an untouched bank was called exhausted');
+  assert.deepEqual(plan.blockedByContent, [], 'a domain is still blocked by missing content');
+  assert.deepEqual(plan.insufficientDomains, []);
+  assert.equal(plan.sufficient, true);
 });

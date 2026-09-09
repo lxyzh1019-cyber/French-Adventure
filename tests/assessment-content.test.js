@@ -79,21 +79,24 @@ test('the thresholds and replay allowance come from the release', () => {
   assert.equal(C.MAX_LISTENING_PLAYS, C.RULES.replay.listening_max_plays);
 });
 
-test('the four items needing an unbuilt asset are identified', () => {
-  // Two map briefs and two illustration briefs. They carry a description of an
-  // asset that does not exist yet, and must be skipped rather than rendered:
-  // printing "school, park, library, bank" hands the child the vocabulary the
-  // item is testing.
-  const flagged = C.ITEMS.filter(C.needsUnbuiltAsset).map(i => i.id).sort();
-  assert.deepEqual(flagged, ['SA-D02', 'SA-F02', 'SB-D02', 'SB-F02']);
-  for (const id of flagged) {
+test('the four items carrying an asset brief are identified, and all have artwork', () => {
+  // A brief is authoring instruction: printing SA-D02's required_labels would
+  // read "school, park, library, bank", the vocabulary the prompt asks for. So
+  // an item with a brief is unrenderable until its artwork exists — and all
+  // four now have it, which is what lets speaking reach its minimum at all.
+  const briefed = C.ITEMS.filter(C.hasAssetBrief).map(i => i.id).sort();
+  assert.deepEqual(briefed, ['SA-D02', 'SA-F02', 'SB-D02', 'SB-F02']);
+  for (const id of briefed) {
     assert.equal(C.getItem(id).domain, 'speaking');
+    assert.equal(C.hasAssetFor(id), true, `${id} has no artwork`);
   }
+  assert.deepEqual(C.ITEMS.filter(C.needsUnbuiltAsset).map(i => i.id), [],
+    'an item is still unrenderable');
 });
 
-test('no other item carries a stimulus that cannot be rendered', () => {
+test('no item outside those four carries a stimulus that cannot be rendered', () => {
   for (const i of C.ITEMS) {
-    if (C.needsUnbuiltAsset(i)) continue;
+    if (C.hasAssetBrief(i)) continue;
     const s = i.stimulus;
     if (s && typeof s === 'object') {
       assert.equal(/_brief$/.test(String(s.type)), false,

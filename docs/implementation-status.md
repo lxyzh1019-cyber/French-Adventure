@@ -273,31 +273,52 @@ and checks what surrounds it.
 18 new tests — 9 browser plus the session-level routing and playback cases.
 269 unit and 51 browser tests pass. The built page is 375 KB.
 
-## Speaking cannot produce a band until two illustrations exist
+## Speaking artwork — built, and ready for review
 
-**Found in Step 3 preparation. Blocks a whole domain of the assessment.**
+**Was:** each form had five speaking prompts of which two carried an asset
+*brief* rather than an asset, leaving three presentable against a minimum of
+four. Speaking reported `insufficient_evidence` on every attempt, on both forms,
+however well a learner did.
 
-Each form has five speaking prompts. Two of them — `SA-F02`/`SA-D02` on form A,
-`SB-F02`/`SB-D02` on form B — carry an asset *brief* rather than an asset, and
-must be skipped rather than rendered, because printing a brief's
-`required_elements` hands the child the vocabulary the prompt is testing.
+**Now:** all four assets exist in `src/assessment/assets.js` as inline SVG, and
+each form administers all five prompts.
 
-That leaves **three presentable prompts against a minimum of four**
-(`scoring.minimum_independent_valid_items.speaking`). So speaking will report
-`insufficient_evidence` on every attempt, on both forms, no matter how well a
-learner does, until the artwork is produced and reviewed.
+| Item | Form | Tier | Asset |
+|---|---|---|---|
+| `SA-F02` | A | foundation | Illustration: table, chair, blue book and red pencil on the table, green bag beneath |
+| `SB-F02` | B | foundation | Illustration: window, bed, lamp **on** a table, book **under** a chair |
+| `SA-D02` | A | developing | Map: `école`, `parc`, `bibliothèque`, `banque` |
+| `SB-D02` | B | developing | Map: `parc`, `école`, `bibliothèque`, `boulangerie`, `piscine` |
 
-Nothing in code can fix this. It is recorded on every run as
-`blocked_by_content_domains`, kept distinct from the exposure-driven
-`insufficient_domains`, so a domain with no band can say which kind of shortfall
-it was rather than looking like an exhausted bank.
+Both developing-tier maps are included, not only the simpler illustrations.
 
-Writing is unaffected: six prompts, all presentable, minimum five.
+**Held to the briefs by tests, not by assertion:**
 
-**For the content owner:** the two illustration briefs are the smaller ask of
-the four — `required_elements` is a short object list with `prohibited_text`
-already specified. Producing those two alone does not fix speaking; all four
-matter, because the two map briefs are the developing-tier prompts.
+- Illustrations carry **no text of any kind** — both briefs list
+  `prohibited_text: French labels, English object labels`, and a label would
+  hand over the noun the child is meant to retrieve.
+- Maps carry their French place labels **and no route** — `learner_view` asks
+  for "map with French place labels; no route arrows". The place names are the
+  reference points for giving directions; an arrow would give the directions.
+- No asset repeats any phrase from its own brief, and none displays an accepted
+  answer from anywhere in the bank.
+- Each asset declares what it depicts, and the declaration is checked against
+  the brief's required list.
+- The SVG is inert: no script, no external reference, no network.
+
+**What the tests cannot tell you.** They prove nothing was dropped from a list
+and nothing leaked. They cannot tell you whether a ten-year-old looks at
+`SB-F02` and sees a book under a chair. **A person still has to look**, and the
+rendered preview is committed at
+[`docs/speaking-assets-preview.png`](speaking-assets-preview.png).
+
+Both first drafts had defects a render caught and a test could not: in `SA-F02`
+the chair back rose through the table and the pencil crossed it; in `SB-F02` the
+chair read as a shelf. Both were redrawn.
+
+**Still required before a speaking band is trusted:** review of these four by a
+person, and the listening/voice QA on an actual iPad. Speaking-band acceptance
+stays blocked until then.
 
 ## Release A — amended to `assessment-v1.0.1`
 
