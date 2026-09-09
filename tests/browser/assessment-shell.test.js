@@ -149,9 +149,18 @@ test('opening twice resumes the same run rather than starting a second', async (
 });
 
 test('a started section survives the page going away', async () => {
-  // The real test of resume: not a soft navigation, but the tab closing and
-  // the app booting again from what is on the device.
-  const { page, context } = await open();
+  // The real test of resume: not a soft navigation, but the app booting again
+  // from what the device holds.
+  //
+  // What the device holds is captured verbatim from the first page and given
+  // back to a fresh one. That is deliberate. Reopening a tab in the same
+  // browser context made this test depend on Chromium committing localStorage
+  // before the renderer died, which is not this app's behaviour and is exactly
+  // what went red on a loaded CI runner while the same commit passed on an idle
+  // one. The two claims are now separate and both are checked: the app writes a
+  // mirror that fully describes the run, and the app boots from such a mirror
+  // and resumes the same run rather than starting a new one.
+  const { page } = await open();
   await startAsParentOrFail(page, 'jenn');
   const before = await page.evaluate(async () => {
     await window.__faDebug.assessment.beginSection();
@@ -161,27 +170,21 @@ test('a started section survives the page going away', async () => {
   });
   assert.ok(before.plan.length > 0, 'no section plan was frozen');
 
-  // Confirm the mirror is actually on disk before the tab goes away.
-  // localStorage.setItem returns synchronously but Chromium persists it on its
-  // own schedule, and closing the page immediately can outrun that — which is
-  // what made this test flake under a loaded runner rather than any bug in
-  // resume. Reading it back is the write's own receipt.
-  const mirrored = await page.evaluate(() => {
+  // The mirror, exactly as the app wrote it.
+  const mirror = await page.evaluate(() => {
     const raw = localStorage.getItem('french_assessment_local_jenn');
-    if (!raw) return null;
-    const store = JSON.parse(raw);
-    const run = Object.values(store.runs || {})[0];
-    return run ? { runId: run.run_id, plan: run.sections?.listening?.plan ?? [] } : null;
+    return raw ? JSON.parse(raw) : null;
   });
-  assert.ok(mirrored, 'the run never reached this device\'s storage');
-  assert.equal(mirrored.runId, before.runId);
-  assert.deepEqual(mirrored.plan, before.plan, 'the mirror disagrees with memory');
-
+  assert.ok(mirror, 'the run never reached this device\'s storage');
+  const mirrored = Object.values(mirror.runs || {})[0];
+  assert.ok(mirrored, 'the mirror holds no run');
+  assert.equal(mirrored.run_id, before.runId);
+  assert.deepEqual(mirrored.sections?.listening?.plan ?? [], before.plan,
+    'the mirror disagrees with memory');
   await page.close();
 
-  const { page: page2 } = await open({ reuse: context });
-  // hydrate() runs at boot; wait for it to have adopted the mirror rather than
-  // assuming it has by the time the debug surface exists.
+  // A restarted device: nothing in memory, that mirror on disk.
+  const { page: page2 } = await open({ seedAssessment: mirror });
   await page2.waitForFunction(
     () => window.__faDebug.assessment.runs('jenn').length === 1, null, { timeout: 20000 });
   const after = await page2.evaluate(() => {
@@ -193,6 +196,12 @@ test('a started section survives the page going away', async () => {
   assert.equal(after.form, before.form, 'the form changed across a reload');
   assert.deepEqual(after.plan, before.plan, 'the section was re-planned on resume');
   assert.equal(after.status, before.status);
+
+  // And opening the assessment again continues it instead of starting another.
+  await startAsParent(page2, 'jenn');
+  const runs = await page2.evaluate(() => window.__faDebug.assessment.runs('jenn'));
+  assert.equal(runs.length, 1, 'a second run was started after the restart');
+  assert.equal(runs[0].run_id, before.runId);
 });
 
 test('a run started on another device is picked up, not replaced', async () => {
