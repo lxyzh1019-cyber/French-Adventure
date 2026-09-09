@@ -12,6 +12,9 @@ import { GRADE_KEYS, levelLabel, levelNumber, recommendLevel,
 import { pickFrenchVoice, describeVoice, PREFERRED_LOCALE } from './speech/playback.js';
 import { escapeAttr } from './util/html.js';
 import { createAttemptLedger } from './state/attempts.js';
+import { createAssessmentStore } from './assessment/store.js';
+import { configureAssessmentUI, openAssessment, pauseAssessment,
+         beginNextSection, renderAssessmentParentPanel } from './modes/assessment-ui.js';
 import { normalizeForRecognition, compareFrench, scrambleTypeFor,
          buildScrambleTiles, joinScrambleTiles, isScrambleSolvable,
          SCRAMBLE_TYPES } from './util/fr-text.js';
@@ -82,6 +85,19 @@ const syncMeta = {
 // Remote snapshots that arrived while a round was in progress. Merged into the
 // profile at round end rather than thrown away.
 const pendingRemoteData = { jenn: null, jess: null };
+
+// The assessment store. A separate document, a separate localStorage key and a
+// separate barrier of its own — see assessment/store.js for why it is not a
+// field on the profile.
+const DEVICE_ID_KEY = 'french_device_id';
+function deviceId(){
+  try{
+    let id = localStorage.getItem(DEVICE_ID_KEY);
+    if(!id){ id = 'dev_' + Math.random().toString(36).slice(2, 10); localStorage.setItem(DEVICE_ID_KEY, id); }
+    return id;
+  }catch(e){ return null; }
+}
+const assessment = createAssessmentStore({ players: ['jenn','jess'] });
 
 let roundDraftTimer = null;
 
@@ -317,6 +333,7 @@ async function flushPendingCloudSaves(){
       await saveState(pl);
     }
   }
+  await assessment.flushPending();
 }
 function initConnectivityAndSyncUI(){
   updateConnectionStatusUI();
@@ -744,6 +761,10 @@ function startSessionClock(){
         recordUnfinishedRound(ROUND_OUTCOME.TIMED_OUT);
         persistRoundDraftNow();
       }
+      // An assessment in progress is not a game round, so the branch above does
+      // not see it. Every response is already saved as it is submitted; this
+      // pushes anything the barrier or the network was still holding.
+      void assessment.flushPending();
       lockApp();
       return;
     }
@@ -909,7 +930,7 @@ function initListeners(){
 // real wiring — with `if(window.fbInit)` as a fallback for the other ordering. Now
 // that everything is a module the ordering flips, so wait on the promise explicitly.
 // Resolves to null when the CDN is unreachable; initListeners() already no-ops then.
-void firebaseReady.then(initListeners);
+void firebaseReady.then(() => { initListeners(); assessment.listen(); });
 
 /**
  * Record what the cloud read told us about a learner, and release any writes
@@ -1022,6 +1043,9 @@ document.addEventListener('visibilitychange',()=>{
     // record at all. A later completion of the same attempt supersedes it.
     recordUnfinishedRound(ROUND_OUTCOME.INTERRUPTED);
     flushOnExit();
+    // flushOnExit returns early unless a game round is live, so an assessment
+    // in progress would otherwise be invisible to it.
+    void assessment.flushPending();
     flushPlayTimeTick(true);
   }
 });
@@ -1236,7 +1260,7 @@ function goBack(){
 }
 function exitGame(){stopAllMics();if(currentPlayer&&currentGameType){recordUnfinishedRound(ROUND_OUTCOME.ABANDONED);persistRoundDraftNow();applyPendingRemoteData(currentPlayer);saveState(currentPlayer);}currentGameType=null;questions=[];showScreen('hub');document.getElementById('hint-panel').classList.remove('show');updateConnectionStatusUI();}
 function showScreen(name){
-  ['select','hub','game'].forEach(n=>document.getElementById(`screen-${n}`).style.display=n===name?'block':'none');
+  ['select','hub','game','assessment'].forEach(n=>document.getElementById(`screen-${n}`).style.display=n===name?'block':'none');
 }
 function setGrade(g){
   if(g < 4 || g > MAX_PLAYABLE_GRADE) return;
@@ -1494,6 +1518,17 @@ window.__faDebug = {
   get roundBasePoints(){ return roundBasePoints; }, get qIndex(){ return qIndex; },
   get roundAttemptId(){ return attempts.attemptId; }, get recognition(){ return recognition; },
   get lastRoundOutcome(){ return lastRoundOutcome; },
+  // The assessment surface the browser tests drive. Kept here rather than on
+  // window so the app's public globals stay the inline-handler contract that
+  // check-handlers.mjs polices.
+  assessment: {
+    open: p => openAssessment(p),
+    pause: () => pauseAssessment(),
+    beginSection: () => beginNextSection(),
+    store: p => assessment.get(p),
+    meta: p => assessment.meta(p),
+    runs: p => Object.values(assessment.get(p)?.runs || {}),
+  },
   get roundLog(){ return currentPlayer ? (state[currentPlayer].roundLog || {}) : {}; },
   endRound: (o)=>endRound(o),
 };
@@ -1518,6 +1553,10 @@ document.addEventListener('click', function(e){
     case 'check-scramble':   if(currentQ) checkScramble(currentQ.word.fr); break;
     case 'check-drill':      checkDrill(el.getAttribute('data-word')); break;
     case 'remove-built':     removeBuilt(Number(el.getAttribute('data-index'))); break;
+    case 'assess-open':      if(ensureParentPassword()) void openAssessment(el.getAttribute('data-player'));
+                             else setRecoveryMsg('❌ Enter parent password first'); break;
+    case 'assess-pause':     void pauseAssessment(); break;
+    case 'assess-begin-section': void beginNextSection(); break;
   }
 });
 
@@ -2513,6 +2552,7 @@ async function toggleWeekday(i){
 }
 
 function renderParentSummary(){
+  renderAssessmentParentPanel();
   const grid = document.getElementById('parent-stats-grid');
   const nav = document.getElementById('summary-nav');
   grid.innerHTML = '';
@@ -3095,6 +3135,24 @@ if(navigator.storage && navigator.storage.persist){
 }
 
 hydrateStateFromLocalMirror();
+assessment.hydrate();
+configureAssessmentUI({
+  store: assessment,
+  showScreen,
+  // The assessment reads the same session clock the games do, so a section is
+  // not begun with less time left than the rules allow.
+  minutesRemaining: () => (countdownEnd ? Math.max(0, (countdownEnd - Date.now()) / 60000) : Infinity),
+  todayKey,
+  deviceId,
+  // A parent can open the assessment from the parent overlay without a learner
+  // being selected, so there may be no hub to return to. updateHub reads
+  // state[currentPlayer] and would throw.
+  onExit: () => {
+    if(currentPlayer){ showScreen('hub'); updateHub(); }
+    else { showScreen('select'); }
+    renderAssessmentParentPanel();
+  },
+});
 initConnectivityAndSyncUI();
 showScreen('select');
 startWallClock();

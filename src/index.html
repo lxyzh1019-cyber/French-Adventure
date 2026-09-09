@@ -254,6 +254,25 @@
   </div>
 </div>
 
+<!-- ASSESSMENT
+     Deliberately plain, and deliberately unlike the game. No stars, no hearts,
+     no timer, no confetti: assessment.administration bars rewards and feedback
+     during a section, and a screen that looks like the game invites the child to
+     expect them. Everything below is filled by src/modes/assessment-ui.js. -->
+<div id="screen-assessment" style="display:none;">
+  <div class="assess-bar">
+    <div>
+      <div class="assess-title" id="assess-title">Check-in</div>
+      <div class="assess-sub" id="assess-sub"></div>
+    </div>
+    <button type="button" class="btn-secondary" data-action="assess-pause"
+            style="padding:8px 14px;font-size:.78rem;">Pause</button>
+  </div>
+  <div class="assess-progress"><div class="assess-progress-fill" id="assess-progress-fill"></div></div>
+  <div id="assess-body"></div>
+  <div id="assess-actions" class="action-row" style="margin-top:14px;"></div>
+</div>
+
 <!-- PARENT SUMMARY -->
 <div class="overlay" id="parent-overlay">
   <div class="overlay-card">
@@ -283,6 +302,21 @@
       <div style="text-align:center;margin-top:6px;">
         <button type="button" class="btn-secondary" onclick="renderBackupRestoreUI()" style="padding:8px 14px;font-size:.74rem;border-color:var(--green);color:var(--green);">📅 Show daily cloud backups</button>
       </div>
+      <!-- Assessment starts here, behind the parent password, and not from the
+           child's hub. Exposure is permanent and each form is 45 items: a child
+           who wanders in out of curiosity spends a measurement. -->
+      <div class="parent-pwd-title" style="margin-top:14px;">📋 Independent check-in</div>
+      <div style="font-size:.7rem;color:var(--text-muted);text-align:center;margin-bottom:6px;">
+        A quiet measurement, separate from the games. No hints, no points, nothing to win.
+        It can be paused between sections and picked up later, on either iPad.
+      </div>
+      <div class="parent-pwd-row" style="justify-content:center;">
+        <button type="button" class="btn-secondary" data-action="assess-open" data-player="jenn"
+                style="padding:8px 12px;font-size:.74rem;">Start / resume — Jenn</button>
+        <button type="button" class="btn-secondary" data-action="assess-open" data-player="jess"
+                style="padding:8px 12px;font-size:.74rem;">Start / resume — Jess</button>
+      </div>
+      <div id="assess-parent-panel" style="margin-top:8px;"></div>
       <div id="backup-restore-panel" style="margin-top:8px;padding:10px 12px;background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.25);border-radius:12px;display:none;"></div>
       <div id="recovery-msg" style="font-size:.72rem;color:var(--text-muted);text-align:center;min-height:20px;"></div>
       <input id="recovery-import-file" type="file" accept="application/json" style="display:none;" onchange="handleRecoveryImport(event)">

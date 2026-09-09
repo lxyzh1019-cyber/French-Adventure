@@ -20,7 +20,7 @@ States: `not_started` · `in_progress` · `ready_for_review` · `accepted` · `b
 | Milestone | State | Notes |
 |---|---|---|
 | M1 — Repair foundation | `ready_for_review` | Both audit blockers repaired with regressions; full Match resume matrix; parent iPad smoke checklist and recovery-file confirmation still required for `accepted`. |
-| M2 — Independent assessment | `in_progress` | Step 0 complete; Step 1 (data model) complete. Nothing learner-facing yet. Step 0 cleanup on `claude/third-party-audit-validation-2oth5n`. Release A imported and validated; scoring rules proven against the content fixtures. No learner-facing assessment exists yet. Per master plan revision 3, M1 cleanup is folded into M2 rather than forming a separate milestone; parent approved building in parallel with the outstanding iPad checklist. |
+| M2 — Independent assessment | `in_progress` | Steps 0-2 complete (cleanup, data model, assessment shell). Items are not yet rendered — that is Step 3. Nothing learner-facing yet. Step 0 cleanup on `claude/third-party-audit-validation-2oth5n`. Release A imported and validated; scoring rules proven against the content fixtures. No learner-facing assessment exists yet. Per master plan revision 3, M1 cleanup is folded into M2 rather than forming a separate milestone; parent approved building in parallel with the outstanding iPad checklist. |
 | M3 — Learning pilot | `not_started` | Release B not yet authored. |
 | M4 — iPad validation | `not_started` | |
 | M5 — Evaluate and release pilot | `not_started` | |
@@ -167,6 +167,64 @@ that learner the first time it attached.
 
 68 new unit tests: 18 model and migration, 14 merge, 10 content parity, 14 store
 barrier, plus the existing suites. 234 unit tests and 32 browser tests pass.
+
+## M2 Step 2 — the assessment shell
+
+Entry, form assignment, section navigation, autosave and cross-device resume.
+**No items are rendered yet** — an opened section says what it will administer
+and stops. That is Step 3.
+
+| Module | Role |
+|---|---|
+| `src/assessment/session.js` | Pure administration rules: form choice, entry blocks, routing, section boundaries, resume |
+| `src/modes/assessment-ui.js` | The screen. Injected dependencies only; reaches nothing global itself |
+| `src/index.html` | `#screen-assessment`, and the parent entry point |
+
+**Entry is parent-initiated, behind the password, and not on the child's hub.**
+Exposure is permanent and each form is 45 items, so a child who wanders in out
+of curiosity spends a measurement.
+
+**The screen is deliberately unlike the game** — no stars, hearts, timer or
+confetti. `administration.language` bars translations, hints, correctness
+feedback, lives, stars, bonuses and leaderboard effects during a section, and a
+screen that looks like the game invites a child to expect them. A browser test
+scans for reward glyphs and game vocabulary rather than trusting the styling.
+
+**Resume needs no cursor.** The next item is the first planned item with no
+response, so the responses *are* the position. A browser test closes the page
+entirely and reboots the app from what is on the device, rather than doing a
+soft navigation.
+
+**Rules implemented from the release, not from memory:**
+
+- `administration.first_form` — jenn=A, jess=B, anyone else by FNV-1a.
+- `administration.reassessment` — alternate forms, except that an attempt which
+  gathered fewer than three valid scored items in every domain may repeat its
+  own form. A child who stopped after two items has not seen the bank, and
+  spending the alternate on that would leave nothing fresh for the real attempt.
+- `section_boundaries` — a new section needs 6 minutes; a section already begun
+  runs to its end, so no child is stopped four items in by a clock.
+- `objective_routing` — the entry block is frozen first and routing applied only
+  once all of it is submitted; routed tiers are appended in bank order; the
+  decision and its timestamp are frozen.
+- `invalidity.rule` — an invalid entry answer is excluded from numerator and
+  denominator, so it neither helps nor hurts the routing.
+- `pause_resume.resume` — a submitted item is never replayed; a second
+  submission for the same key is refused rather than allowed to overwrite.
+
+**Items with unbuilt assets are skipped, never rendered.** All four are detected
+and passed over, and a section whose only unanswered items are skipped still
+counts as answered rather than stalling.
+
+**One defect found by its own test.** A parent can open the assessment from the
+parent overlay without a learner being selected, so pausing called `updateHub()`
+with `currentPlayer` null and threw. The exit path now checks.
+
+The built page grows 246 KB → 355 KB: the release is now imported, as recorded
+in [`known-risks.md`](known-risks.md) §1c.
+
+36 new tests — 26 session unit tests, 10 browser. 260 unit and 42 browser tests
+pass.
 
 ## Release A — amended to `assessment-v1.0.1`
 

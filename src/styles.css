@@ -413,3 +413,38 @@ button,input{touch-action:manipulation;}
 
 /* The suggested next level, replacing the old locked-tab styling. */
 .grade-tab-recommended{border-color:var(--gold)!important;box-shadow:0 0 0 2px rgba(245,158,11,.25);}
+
+/* ── Assessment ──────────────────────────────────────────────────────────────
+   Deliberately unlike the game. administration.language bars translations,
+   hints, correctness feedback, lives, stars, bonuses and leaderboard effects
+   during a section — and a screen that looks like the game invites a child to
+   expect all of them. Calm, plain, and obviously a different activity. */
+#screen-assessment { max-width: 720px; margin: 0 auto; padding: 8px 4px 24px; }
+
+.assess-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; margin-bottom: 10px;
+}
+.assess-title { font-family: 'Fredoka One', cursive; font-size: 1.15rem; color: var(--french); }
+.assess-sub { font-size: .74rem; color: var(--text-muted); margin-top: 2px; }
+
+/* Progress through the planned items — not a score, and never framed as one. */
+.assess-progress {
+  height: 6px; border-radius: 999px; background: rgba(0,0,0,.08);
+  overflow: hidden; margin-bottom: 16px;
+}
+.assess-progress-fill {
+  height: 100%; width: 0; border-radius: 999px;
+  background: var(--french); transition: width .25s ease;
+}
+
+.assess-card {
+  background: var(--card); border: 1px solid rgba(0,0,0,.08); border-radius: 16px;
+  padding: 18px 16px; margin-bottom: 12px;
+}
+.assess-prompt { font-size: .95rem; line-height: 1.5; margin-bottom: 14px; }
+.assess-note { font-size: .74rem; color: var(--text-muted); line-height: 1.45; }
+
+/* Every control the child touches is a real target on an iPad. */
+#screen-assessment button { min-height: 44px; touch-action: manipulation; }
+@media (pointer: coarse) { #screen-assessment button { min-height: 52px; } }
