@@ -448,3 +448,26 @@ button,input{touch-action:manipulation;}
 /* Every control the child touches is a real target on an iPad. */
 #screen-assessment button { min-height: 44px; touch-action: manipulation; }
 @media (pointer: coarse) { #screen-assessment button { min-height: 52px; } }
+
+/* Objective items. Plain on purpose: a chosen option is marked as chosen and
+   nothing more. No green, no red, no tick — administration.language bars
+   correctness feedback until the section is submitted, and colour is feedback. */
+.assess-stimulus {
+  font-family: 'Fredoka One', cursive; font-size: 1.15rem; line-height: 1.5;
+  color: var(--french); margin: 4px 0 16px;
+}
+.assess-audio { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 16px; }
+.assess-choices { display: grid; gap: 8px; }
+.assess-choice {
+  text-align: left; padding: 12px 14px; font-size: .92rem;
+  font-family: 'Nunito', sans-serif; font-weight: 700;
+  background: var(--card); color: var(--text);
+  border: 2px solid rgba(0,0,0,.12); border-radius: 12px; cursor: pointer;
+}
+.assess-choice.chosen { border-color: var(--french); background: rgba(37,99,235,.06); }
+.assess-input {
+  width: 100%; padding: 12px 14px; font-size: 1rem;
+  font-family: 'Nunito', sans-serif; border: 2px solid rgba(0,0,0,.12);
+  border-radius: 12px; background: var(--card); color: var(--text);
+}
+.assess-input:focus { outline: none; border-color: var(--french); }

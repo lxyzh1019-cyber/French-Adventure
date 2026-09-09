@@ -24,6 +24,8 @@ let deps = {
   todayKey: () => null,
   deviceId: () => null,
   onExit: () => {},
+  speak: () => {},              // plays a French string aloud
+  voiceInfo: () => ({}),        // { resolvedLocale, name } for the record
 };
 
 let activePlayer = null;
@@ -156,12 +158,235 @@ export function render() {
     return;
   }
 
-  // Step 3 renders the items. Until then the shell says plainly what it will
-  // administer rather than showing a half-working question.
-  const remaining = section.plan.filter(id => !run.responses[`${id}#0`]).length;
-  body.append(card(
-    `${DOMAIN_LABEL[at.domain] ?? at.domain} — ${remaining} to go`,
-    'The questions themselves arrive in the next step of the build. Nothing here is scored yet.'));
+  const item = at.item;
+  if (!item) {
+    // Every presentable item is answered; the section is ready to close.
+    body.append(card(
+      `${DOMAIN_LABEL[at.domain] ?? at.domain} — finished`,
+      'Nothing is marked here. You can stop, or carry on with the next part.'));
+    actions.append(button('Done with this part', 'assess-finish-section'));
+    return;
+  }
+
+  if (content.routingFor(at.domain)) renderObjectiveItem(body, actions, run, item);
+  else body.append(card(`${DOMAIN_LABEL[at.domain] ?? at.domain}`,
+    'This part arrives in the next step of the build.'));
+}
+
+// ── Objective items ─────────────────────────────────────────────────────────
+//
+// Three types, all from the bank: audio_choice (listening), text_choice
+// (reading and words) and typed_short (words).
+//
+// What is deliberately absent, per administration.language: any hint, any
+// translation of the French, any indication of whether the answer was right,
+// any score, life or streak. The answer IS graded on submit — routing reads the
+// entry block's result and cannot wait for the section to end — but nothing
+// here reads that grade, and the next item simply appears.
+
+/** The draft response for the item on screen, created on first render. */
+let draft = null;
+
+function draftFor(run, item) {
+  if (draft && draft.item_id === item.id) return draft;
+  draft = {
+    item_id: item.id,
+    selected_choice_ids: [],
+    raw_response: '',
+    response_started_at_utc: Date.now(),
+    playback_events: [],
+    technical_invalid_reason: null,
+    support_flag: false,
+  };
+  return draft;
+}
+
+function renderObjectiveItem(body, actions, run, item) {
+  const d = draftFor(run, item);
+
+  const wrap = document.createElement('div');
+  wrap.className = 'assess-card';
+
+  const prompt = document.createElement('div');
+  prompt.className = 'assess-prompt';
+  prompt.textContent = item.prompt_en;      // instructions may be English
+  wrap.append(prompt);
+
+  if (item.item_type === 'audio_choice') wrap.append(audioControls(item, d));
+
+  // A reading stimulus is French the learner is meant to read. A listening
+  // stimulus is not shown at all: audio.transcript_visibility is
+  // hidden_until_section_submitted, and a listening item that displays its
+  // script is a reading item.
+  if (item.stimulus?.text_fr && item.item_type !== 'audio_choice') {
+    const st = document.createElement('div');
+    st.className = 'assess-stimulus';
+    st.textContent = item.stimulus.text_fr;
+    wrap.append(st);
+  }
+
+  if (Array.isArray(item.choices)) wrap.append(choiceList(item, d));
+  else wrap.append(typedInput(d));
+
+  body.append(wrap);
+
+  const next = button('Next', 'assess-submit-item');
+  next.disabled = !hasAnswer(d);
+  actions.append(next);
+}
+
+function hasAnswer(d) {
+  return d.technical_invalid_reason
+    ? true
+    : !!(d.selected_choice_ids.length || String(d.raw_response).trim());
+}
+
+function audioControls(item, d) {
+  const box = document.createElement('div');
+  box.className = 'assess-audio';
+
+  const used = session.playsUsed(d);
+  const max = item.audio?.max_plays ?? content.MAX_LISTENING_PLAYS;
+
+  const play = document.createElement('button');
+  play.type = 'button';
+  play.className = 'btn-primary';
+  play.setAttribute('data-action', 'assess-play');
+  play.textContent = used === 0 ? '▶︎ Play' : '▶︎ Play again';
+  play.disabled = !session.canPlay(item, d);
+  box.append(play);
+
+  const left = document.createElement('div');
+  left.className = 'assess-note';
+  left.textContent = play.disabled
+    ? 'That was the last play for this one.'
+    : `${max - used} play${max - used === 1 ? '' : 's'} left`;
+  box.append(left);
+
+  // The child is the only one who can tell silence from a device fault, so the
+  // control has to be plain and easy to reach. A repeat after this does not
+  // consume a play (replay.technical_replay).
+  const nosound = document.createElement('button');
+  nosound.type = 'button';
+  nosound.className = 'btn-secondary';
+  nosound.setAttribute('data-action', 'assess-no-sound');
+  nosound.textContent = 'I heard nothing';
+  box.append(nosound);
+
+  return box;
+}
+
+function choiceList(item, d) {
+  const list = document.createElement('div');
+  list.className = 'assess-choices';
+  for (const c of item.choices) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'assess-choice';
+    b.setAttribute('data-action', 'assess-choose');
+    b.setAttribute('data-choice', c.id);
+    b.setAttribute('aria-pressed', String(d.selected_choice_ids.includes(c.id)));
+    if (d.selected_choice_ids.includes(c.id)) b.classList.add('chosen');
+    b.textContent = c.label;
+    list.append(b);
+  }
+  return list;
+}
+
+function typedInput(d) {
+  const input = document.createElement('input');
+  input.className = 'assess-input';
+  input.id = 'assess-typed';
+  input.type = 'text';
+  input.value = d.raw_response;
+  input.setAttribute('data-action-input', 'assess-typed');
+  // iOS will otherwise supply the accent this item is testing.
+  input.setAttribute('autocomplete', 'off');
+  input.setAttribute('autocorrect', 'off');
+  input.setAttribute('autocapitalize', 'off');
+  input.setAttribute('spellcheck', 'false');
+  input.addEventListener('input', () => {
+    d.raw_response = input.value;
+    const next = document.querySelector('[data-action="assess-submit-item"]');
+    if (next) next.disabled = !hasAnswer(d);
+  });
+  return input;
+}
+
+/** Choose an option. Choosing again clears it; nothing says whether it is right. */
+export function chooseOption(choiceId) {
+  if (!draft) return;
+  draft.selected_choice_ids = draft.selected_choice_ids.includes(choiceId) ? [] : [choiceId];
+  render();
+}
+
+/** Play the item's audio, consuming one of the allowed plays. */
+export async function playCurrentAudio() {
+  const run = currentRun();
+  if (!run || !draft) return;
+  const item = content.getItem(draft.item_id);
+  if (!item?.audio || !session.canPlay(item, draft)) return;
+  const info = deps.voiceInfo() || {};
+  session.recordPlayback(draft, { consumed: true, resolvedLocale: info.resolvedLocale ?? null });
+  draft.voice_requested_locale = item.audio.locale ?? null;
+  draft.voice_name = info.name ?? null;
+  deps.speak(item.audio.script_fr_ca);
+  render();
+}
+
+/**
+ * The learner reports silence.
+ *
+ * invalidity.rule: this is not a wrong answer. It is excluded from the
+ * numerator and the denominator, and the record is kept.
+ */
+export function reportNoSound() {
+  if (!draft) return;
+  draft.technical_invalid_reason = 'audio_failed';
+  session.recordPlayback(draft, { consumed: false });
+  render();
+}
+
+/** Submit the item on screen and move on. No verdict is shown. */
+export async function submitCurrentItem() {
+  const run = currentRun();
+  if (!run || !draft) return;
+  const at = session.resumePoint(run);
+  if (!at.item || at.item.id !== draft.item_id) return;
+  const d = draft;
+  draft = null;
+
+  await commit(r => {
+    session.recordExposure(r, d.item_id, { now: Date.now() });
+    session.submitResponse(r, d.item_id, {
+      selected_choice_ids: d.selected_choice_ids,
+      raw_response: d.raw_response || null,
+      response_started_at_utc: d.response_started_at_utc,
+      technical_invalid_reason: d.technical_invalid_reason,
+      support_flag: d.support_flag,
+      playback_events: d.playback_events,
+      audio_play_count: session.playsUsed(d),
+      voice_requested_locale: d.voice_requested_locale ?? null,
+      voice_resolved_locale: d.voice_resolved_locale ?? null,
+      voice_name: d.voice_name ?? null,
+    }, { now: Date.now(), deviceId: deps.deviceId() });
+    session.applyRoutingIfEntryComplete(r, at.domain, { now: Date.now() });
+  });
+  render();
+}
+
+/** Close a section the learner has worked through. */
+export async function finishSection() {
+  const run = currentRun();
+  if (!run) return;
+  const domain = session.nextSection(run);
+  if (!domain || !session.sectionIsAnswered(run, domain)) return;
+  await commit(r => {
+    session.completeSection(r, domain, { now: Date.now() });
+    if (!session.nextSection(r)) session.completeRun(r, { now: Date.now() });
+  });
+  deps.store.applyPendingRemote(activePlayer);
+  render();
 }
 
 function card(title, note) {

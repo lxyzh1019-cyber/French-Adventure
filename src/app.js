@@ -14,7 +14,9 @@ import { escapeAttr } from './util/html.js';
 import { createAttemptLedger } from './state/attempts.js';
 import { createAssessmentStore } from './assessment/store.js';
 import { configureAssessmentUI, openAssessment, pauseAssessment,
-         beginNextSection, renderAssessmentParentPanel } from './modes/assessment-ui.js';
+         beginNextSection, renderAssessmentParentPanel, chooseOption,
+         playCurrentAudio, reportNoSound, submitCurrentItem,
+         finishSection } from './modes/assessment-ui.js';
 import { normalizeForRecognition, compareFrench, scrambleTypeFor,
          buildScrambleTiles, joinScrambleTiles, isScrambleSolvable,
          SCRAMBLE_TYPES } from './util/fr-text.js';
@@ -1553,10 +1555,20 @@ document.addEventListener('click', function(e){
     case 'check-scramble':   if(currentQ) checkScramble(currentQ.word.fr); break;
     case 'check-drill':      checkDrill(el.getAttribute('data-word')); break;
     case 'remove-built':     removeBuilt(Number(el.getAttribute('data-index'))); break;
-    case 'assess-open':      if(ensureParentPassword()) void openAssessment(el.getAttribute('data-player'));
-                             else setRecoveryMsg('❌ Enter parent password first'); break;
+    case 'assess-open':      if(ensureParentPassword()){
+                               // The parent overlay is what the button lives in;
+                               // leaving it up would cover the assessment it just
+                               // opened, and nothing on the screen would respond.
+                               closeOverlay('parent-overlay');
+                               void openAssessment(el.getAttribute('data-player'));
+                             } else setRecoveryMsg('❌ Enter parent password first'); break;
     case 'assess-pause':     void pauseAssessment(); break;
     case 'assess-begin-section': void beginNextSection(); break;
+    case 'assess-choose':    chooseOption(el.getAttribute('data-choice')); break;
+    case 'assess-play':      void playCurrentAudio(); break;
+    case 'assess-no-sound':  reportNoSound(); break;
+    case 'assess-submit-item': void submitCurrentItem(); break;
+    case 'assess-finish-section': void finishSection(); break;
   }
 });
 
@@ -3144,6 +3156,13 @@ configureAssessmentUI({
   minutesRemaining: () => (countdownEnd ? Math.max(0, (countdownEnd - Date.now()) / 60000) : Infinity),
   todayKey,
   deviceId,
+  speak: speakFrench,
+  // Recorded on every listening response, so a whole section that fell back to
+  // a France voice is visible afterwards rather than guessed at.
+  voiceInfo: () => {
+    const v = frenchVoice || resolveFrenchVoice();
+    return { resolvedLocale: v ? v.lang : null, name: v ? v.name : null };
+  },
   // A parent can open the assessment from the parent overlay without a learner
   // being selected, so there may be no hub to return to. updateHub reads
   // state[currentPlayer] and would throw.

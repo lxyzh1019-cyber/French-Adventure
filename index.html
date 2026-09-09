@@ -7,7 +7,7 @@
      styles ......... src/styles.css
      game logic ..... src/**/*.js
 
-   Built from 1e2ed4e
+   Built from 56acca9
   ============================================================
 -->
 <!DOCTYPE html>
@@ -1175,7 +1175,7 @@ function migrateProfile(raw) {
   profile.schemaVersion = Math.max(version, Number(raw.schemaVersion) || 0);
   return profile;
 }
-const num$3 = (v) => Number(v) || 0;
+const num$4 = (v) => Number(v) || 0;
 const isObj$2 = (v) => v && typeof v === "object" && !Array.isArray(v);
 function unionBy$1(a = {}, b = {}, resolve) {
   const out = { ...a };
@@ -1186,21 +1186,21 @@ function unionBy$1(a = {}, b = {}, resolve) {
 }
 function mergeDayEntry(a, b) {
   if (a === b) return a;
-  if (typeof a === "number" || typeof b === "number") return Math.max(num$3(a), num$3(b));
+  if (typeof a === "number" || typeof b === "number") return Math.max(num$4(a), num$4(b));
   if (typeof a === "boolean" || typeof b === "boolean") return !!a || !!b;
   if (isObj$2(a) && isObj$2(b)) return unionBy$1(a, b, mergeDayEntry);
   return a ?? b;
 }
 function sumDaily(profile, field, pick) {
   let total = 0;
-  for (const day of Object.values(profile?.[field] || {})) total += num$3(pick(day));
+  for (const day of Object.values(profile?.[field] || {})) total += num$4(pick(day));
   return total;
 }
 function mergeRoundLog(a = {}, b = {}) {
   return unionBy$1(a, b, (x, y) => {
-    const xc = num$3(x?.completed), yc = num$3(y?.completed);
+    const xc = num$4(x?.completed), yc = num$4(y?.completed);
     if (xc !== yc) return xc > yc ? x : y;
-    return num$3(x?.stars) >= num$3(y?.stars) ? x : y;
+    return num$4(x?.stars) >= num$4(y?.stars) ? x : y;
   });
 }
 function summarizeRoundLog(log = {}) {
@@ -1218,31 +1218,31 @@ function summarizeRoundLog(log = {}) {
       gradeRounds: {},
       topics: {}
     });
-    d.stars += num$3(e.stars);
-    d.correct += num$3(e.correct);
-    d.wrong += num$3(e.wrong);
+    d.stars += num$4(e.stars);
+    d.correct += num$4(e.correct);
+    d.wrong += num$4(e.wrong);
     if (e.completed) {
       d.rounds += 1;
-      d.types[e.type] = num$3(d.types[e.type]) + 1;
+      d.types[e.type] = num$4(d.types[e.type]) + 1;
       const gr = (_b = d.gradeRounds)[_c = e.grade] || (_b[_c] = {});
-      gr[e.type] = num$3(gr[e.type]) + 1;
+      gr[e.type] = num$4(gr[e.type]) + 1;
     }
     for (const [g, t] of Object.entries(e.grades || {})) {
       const gs = (_d = d.grades)[g] || (_d[g] = { correct: 0, wrong: 0 });
-      gs.correct += num$3(t?.c);
-      gs.wrong += num$3(t?.w);
+      gs.correct += num$4(t?.c);
+      gs.wrong += num$4(t?.w);
     }
     for (const [tk, t] of Object.entries(e.topics || {})) {
       const ts = (_f = (_e = d.topics)[tk] || (_e[tk] = {}))[_g = e.type] || (_f[_g] = { c: 0, w: 0 });
-      ts.c += num$3(t?.c);
-      ts.w += num$3(t?.w);
+      ts.c += num$4(t?.c);
+      ts.w += num$4(t?.w);
     }
   }
   return days;
 }
 function ledgered(aVal, bVal, aLog, bLog, mLog) {
-  const base = Math.max(num$3(aVal) - num$3(aLog), num$3(bVal) - num$3(bLog), 0);
-  return base + num$3(mLog);
+  const base = Math.max(num$4(aVal) - num$4(aLog), num$4(bVal) - num$4(bLog), 0);
+  return base + num$4(mLog);
 }
 function mergeDayCounters(a, b, merged, aAgg, bAgg, mAgg) {
   var _a, _b, _c, _d, _e;
@@ -1344,11 +1344,11 @@ function mergeDayCounters(a, b, merged, aAgg, bAgg, mAgg) {
   }
 }
 function mergeStarTotal(a, b, merged, field, dayField, pick) {
-  const floor = Math.max(num$3(a?.[field]), num$3(b?.[field]));
+  const floor = Math.max(num$4(a?.[field]), num$4(b?.[field]));
   const ledgerA = sumDaily(a, dayField, pick);
   const ledgerB = sumDaily(b, dayField, pick);
   const ledgerMerged = sumDaily(merged, dayField, pick);
-  const preLedger = Math.max(num$3(a?.[field]) - ledgerA, num$3(b?.[field]) - ledgerB, 0);
+  const preLedger = Math.max(num$4(a?.[field]) - ledgerA, num$4(b?.[field]) - ledgerB, 0);
   return Math.max(floor, preLedger + ledgerMerged);
 }
 function mergeWeekStars(a, b, merged) {
@@ -1356,13 +1356,13 @@ function mergeWeekStars(a, b, merged) {
   const weekSum = (p) => {
     let t = 0;
     for (const [day, d] of Object.entries(p?.todayStats || {})) {
-      if (ws && weekStartOf(day) === ws) t += num$3(d?.stars);
+      if (ws && weekStartOf(day) === ws) t += num$4(d?.stars);
     }
     return t;
   };
-  const remainder = (p) => p?.weekStart === ws || !p?.weekStart ? num$3(p?.weekStars) - weekSum(p) : 0;
+  const remainder = (p) => p?.weekStart === ws || !p?.weekStart ? num$4(p?.weekStars) - weekSum(p) : 0;
   const base = Math.max(remainder(a), remainder(b), 0);
-  const floor = a?.weekStart === b?.weekStart ? Math.max(num$3(a?.weekStars), num$3(b?.weekStars)) : 0;
+  const floor = a?.weekStart === b?.weekStart ? Math.max(num$4(a?.weekStars), num$4(b?.weekStars)) : 0;
   return Math.max(floor, base + weekSum(merged));
 }
 function mergeWeeklyHistory(a = [], b = [], cap = 8) {
@@ -1376,7 +1376,7 @@ function mergeWeeklyHistory(a = [], b = [], cap = 8) {
     }
     byWeek.set(
       entry.weekStart,
-      num$3(entry.stars) + num$3(entry.rounds) > num$3(existing.stars) + num$3(existing.rounds) ? entry : existing
+      num$4(entry.stars) + num$4(entry.rounds) > num$4(existing.stars) + num$4(existing.rounds) ? entry : existing
     );
   }
   return [...byWeek.values()].sort((x, y) => String(x.weekStart).localeCompare(String(y.weekStart))).slice(-cap);
@@ -1385,7 +1385,7 @@ function mergeFailedWords(a = {}, b = {}) {
   return unionBy$1(a, b, (x, y) => ({
     ...x,
     ...y,
-    misses: Math.max(num$3(x.misses), num$3(y.misses)),
+    misses: Math.max(num$4(x.misses), num$4(y.misses)),
     lastFailed: [x.lastFailed, y.lastFailed].filter(Boolean).sort().pop() ?? null
   }));
 }
@@ -1405,7 +1405,7 @@ function mergeProfiles(a, b) {
     summarizeRoundLog(b.roundLog),
     summarizeRoundLog(merged.roundLog)
   );
-  merged.topicStars = unionBy$1(a.topicStars, b.topicStars, (x, y) => Math.max(num$3(x), num$3(y)));
+  merged.topicStars = unionBy$1(a.topicStars, b.topicStars, (x, y) => Math.max(num$4(x), num$4(y)));
   merged.moons = defaultMoons();
   for (const key of Object.keys(merged.moons)) {
     merged.moons[key] = !!(a.moons?.[key] || b.moons?.[key]);
@@ -1417,16 +1417,16 @@ function mergeProfiles(a, b) {
   merged.weeklyHistory = mergeWeeklyHistory(a.weeklyHistory, b.weeklyHistory);
   merged.failedWords = mergeFailedWords(a.failedWords, b.failedWords);
   merged.seedProfilePatches = { ...a.seedProfilePatches || {}, ...b.seedProfilePatches || {} };
-  merged.lastUpdatedAt = Math.max(num$3(a.lastUpdatedAt), num$3(b.lastUpdatedAt));
+  merged.lastUpdatedAt = Math.max(num$4(a.lastUpdatedAt), num$4(b.lastUpdatedAt));
   merged.lastPlayed = [a.lastPlayed, b.lastPlayed].filter(Boolean).sort().pop() ?? null;
   merged.weekStart = [a.weekStart, b.weekStart].filter(Boolean).sort().pop() ?? null;
   merged.totalStars = mergeStarTotal(a, b, merged, "totalStars", "todayStats", (d) => d?.stars);
   merged.weekStars = mergeWeekStars(a, b, merged);
-  merged.streak = Math.max(num$3(a.streak), num$3(b.streak));
+  merged.streak = Math.max(num$4(a.streak), num$4(b.streak));
   merged.lastDrillComplete = [a.lastDrillComplete, b.lastDrillComplete].filter(Boolean).sort().pop() ?? null;
-  const newer = num$3(a.lastUpdatedAt) >= num$3(b.lastUpdatedAt) ? a : b;
+  const newer = num$4(a.lastUpdatedAt) >= num$4(b.lastUpdatedAt) ? a : b;
   merged.parentSettings = newer.parentSettings ?? a.parentSettings ?? b.parentSettings;
-  merged.schemaVersion = Math.max(num$3(a.schemaVersion), num$3(b.schemaVersion));
+  merged.schemaVersion = Math.max(num$4(a.schemaVersion), num$4(b.schemaVersion));
   return merged;
 }
 const LISTEN_TIMEOUT_MS = 1e4;
@@ -1666,12 +1666,12 @@ const SECTION_STATUS = {
   COMPLETE: "complete"
 };
 const str = (v) => v == null ? null : String(v);
-const num$2 = (v) => Number(v) || 0;
+const num$3 = (v) => Number(v) || 0;
 function newRunId() {
   return "run_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
 }
 function responseKey(itemId, attemptIndex = 0) {
-  return `${itemId}#${num$2(attemptIndex)}`;
+  return `${itemId}#${num$3(attemptIndex)}`;
 }
 function defaultAssessmentStore(learnerId = null) {
   return {
@@ -1686,7 +1686,7 @@ function newSection(domain, { entryTier = null, entryCount = 0 } = {}) {
     domain: String(domain),
     status: SECTION_STATUS.NOT_STARTED,
     entry_tier: str(entryTier),
-    entry_count: num$2(entryCount),
+    entry_count: num$3(entryCount),
     // The exact order administered. Append-only: an item that has been shown
     // cannot be un-shown, so the plan only ever grows.
     plan: [],
@@ -1723,10 +1723,10 @@ function newRun({
     // still say which bytes they were collected against.
     content_sha: { ...contentSha },
     device_id_started: str(deviceId2),
-    started_at_utc: num$2(startedAtUtc),
+    started_at_utc: num$3(startedAtUtc),
     started_day_key: str(startedDayKey),
     status: RUN_STATUS.IN_PROGRESS,
-    status_at_utc: num$2(startedAtUtc),
+    status_at_utc: num$3(startedAtUtc),
     invalidated_reason: null,
     invalidated_by: null,
     // pause_resume.parent_invalidation: an invalidated attempt is kept and a
@@ -1741,6 +1741,59 @@ function newRun({
     // `report` is DERIVED and deliberately absent. Storing it would make a
     // computed value a merge input, and two devices could then disagree about
     // a number neither of them measured.
+  };
+}
+function newResponse({
+  itemId,
+  itemVersion = 1,
+  form,
+  domain = null,
+  difficultyTier = null,
+  attemptIndex = 0,
+  deviceId: deviceId2 = null
+} = {}) {
+  return {
+    // ── assessment_rules.json → administration.response_storage ──
+    item_id: str(itemId),
+    item_version: num$3(itemVersion),
+    form: str(form),
+    raw_response: null,
+    selected_choice_ids: [],
+    response_started_at_utc: null,
+    response_submitted_at_utc: null,
+    response_time_ms: null,
+    audio_play_count: 0,
+    support_flag: false,
+    technical_invalid_reason: null,
+    scorer_id: null,
+    rubric_version: null,
+    // ── required elsewhere in the rules, or by the merge ──
+    attempt_index: num$3(attemptIndex),
+    // Denormalised so a report never has to re-open the item bank to know which
+    // domain and tier a response belongs to.
+    domain: str(domain),
+    difficulty_tier: str(difficultyTier),
+    // replay.play_count_definition counts a playback once it passes 500 ms, and
+    // a playback that produced nothing may be repeated without consuming one.
+    // The count alone cannot express that, so the events are kept.
+    playback_events: [],
+    replacement_for_item_id: null,
+    replaced_by_item_id: null,
+    // Speaking audio stays on the device that recorded it; only the handle and
+    // its metadata sync. Firestore documents cap at 1 MiB and no storage bucket
+    // is configured, and §3.6 forbids storing raw child audio by default.
+    audio_ref: null,
+    audio_device_id: null,
+    audio_duration_ms: null,
+    audio_mime: null,
+    // scoring.pronunciation: a device transcript is an observation. It is never
+    // an input to a score, which is why it does not live under raw_response.
+    transcript_observation: null,
+    voice_requested_locale: null,
+    voice_resolved_locale: null,
+    voice_name: null,
+    device_id: str(deviceId2),
+    written_at_ms: 0
   };
 }
 const MIGRATIONS = [];
@@ -1804,7 +1857,7 @@ function migrateAssessmentStore(raw) {
   store.assessmentSchemaVersion = Math.max(version, stated);
   return store;
 }
-const num$1 = (v) => Number(v) || 0;
+const num$2 = (v) => Number(v) || 0;
 const isObj = (v) => v && typeof v === "object" && !Array.isArray(v);
 function unionBy(a = {}, b = {}, resolve) {
   const out = { ...a };
@@ -1815,8 +1868,8 @@ function unionBy(a = {}, b = {}, resolve) {
 }
 const sortedUnion = (a = [], b = []) => [.../* @__PURE__ */ new Set([...a || [], ...b || []])].sort();
 function mergeResponse(x, y) {
-  const xs = num$1(x?.response_submitted_at_utc);
-  const ys = num$1(y?.response_submitted_at_utc);
+  const xs = num$2(x?.response_submitted_at_utc);
+  const ys = num$2(y?.response_submitted_at_utc);
   let winner, loser;
   if (xs && ys && xs !== ys) {
     [winner, loser] = xs < ys ? [x, y] : [y, x];
@@ -1832,7 +1885,7 @@ function mergeResponse(x, y) {
   return differs ? { ...winner, duplicate_submission: true, duplicate_from_device_id: loser?.device_id ?? null } : winner;
 }
 function mergeReview(x, y) {
-  const later = num$1(x?.reviewed_at_utc) >= num$1(y?.reviewed_at_utc) ? x : y;
+  const later = num$2(x?.reviewed_at_utc) >= num$2(y?.reviewed_at_utc) ? x : y;
   const invalidated = !!(x?.invalidated || y?.invalidated);
   return {
     ...later,
@@ -1841,7 +1894,7 @@ function mergeReview(x, y) {
   };
 }
 function mergeExposure(x, y) {
-  const xf = num$1(x?.first_shown_at_utc), yf = num$1(y?.first_shown_at_utc);
+  const xf = num$2(x?.first_shown_at_utc), yf = num$2(y?.first_shown_at_utc);
   return {
     ...x,
     ...y,
@@ -1850,7 +1903,7 @@ function mergeExposure(x, y) {
     // field's job — administration.exposure, "never treat a previously exposed
     // item as secure progress evidence" — needs only "was it shown", which max
     // preserves. It can under-count two genuinely separate showings.
-    shown_count: Math.max(num$1(x?.shown_count), num$1(y?.shown_count))
+    shown_count: Math.max(num$2(x?.shown_count), num$2(y?.shown_count))
   };
 }
 const isPrefix = (short, long) => short.every((v, i) => long[i] === v);
@@ -1861,18 +1914,18 @@ function mergeSection(x, y) {
   if (a.length >= b.length && isPrefix(b, a)) plan = a;
   else if (b.length > a.length && isPrefix(a, b)) plan = b;
   else {
-    const xr = num$1(x?.routed_at_utc), yr = num$1(y?.routed_at_utc);
+    const xr = num$2(x?.routed_at_utc), yr = num$2(y?.routed_at_utc);
     plan = xr && yr ? xr <= yr ? a : b : a.length >= b.length ? a : b;
     conflict = true;
   }
-  const routedFirst = num$1(x?.routed_at_utc) && num$1(y?.routed_at_utc) ? num$1(x.routed_at_utc) <= num$1(y.routed_at_utc) ? x : y : num$1(x?.routed_at_utc) ? x : num$1(y?.routed_at_utc) ? y : null;
+  const routedFirst = num$2(x?.routed_at_utc) && num$2(y?.routed_at_utc) ? num$2(x.routed_at_utc) <= num$2(y.routed_at_utc) ? x : y : num$2(x?.routed_at_utc) ? x : num$2(y?.routed_at_utc) ? y : null;
   const statusRank = { [SECTION_STATUS.NOT_STARTED]: 0, [SECTION_STATUS.IN_PROGRESS]: 1, [SECTION_STATUS.COMPLETE]: 2 };
   const status = (statusRank[x?.status] ?? 0) >= (statusRank[y?.status] ?? 0) ? x?.status : y?.status;
   const firstOf = (k) => {
-    const xv = num$1(x?.[k]), yv = num$1(y?.[k]);
+    const xv = num$2(x?.[k]), yv = num$2(y?.[k]);
     return xv && yv ? Math.min(xv, yv) : xv || yv || null;
   };
-  const lastOf = (k) => Math.max(num$1(x?.[k]), num$1(y?.[k])) || null;
+  const lastOf = (k) => Math.max(num$2(x?.[k]), num$2(y?.[k])) || null;
   return {
     ...x,
     ...y,
@@ -1881,7 +1934,7 @@ function mergeSection(x, y) {
     administered_tiers: sortedUnion(x?.administered_tiers, y?.administered_tiers),
     sitting_ids: sortedUnion(x?.sitting_ids, y?.sitting_ids),
     routing_decision: routedFirst ? routedFirst.routing_decision : x?.routing_decision ?? y?.routing_decision ?? null,
-    routed_at_utc: routedFirst ? num$1(routedFirst.routed_at_utc) : null,
+    routed_at_utc: routedFirst ? num$2(routedFirst.routed_at_utc) : null,
     started_at_utc: firstOf("started_at_utc"),
     completed_at_utc: lastOf("completed_at_utc"),
     ...conflict ? { routing_conflict: true } : {}
@@ -1890,7 +1943,7 @@ function mergeSection(x, y) {
 function mergeRun(x, y) {
   const identity = ["learner_id", "release_id", "form", "started_at_utc"];
   const conflicted = identity.some((k) => x?.[k] != null && y?.[k] != null && x[k] !== y[k]);
-  const primary = num$1(x?.started_at_utc) <= num$1(y?.started_at_utc) ? x : y;
+  const primary = num$2(x?.started_at_utc) <= num$2(y?.started_at_utc) ? x : y;
   const rank = (r) => RUN_STATUS_RANK[r] ?? 0;
   const status = rank(x?.status) >= rank(y?.status) ? x?.status : y?.status;
   const statusSide = rank(x?.status) >= rank(y?.status) ? x : y;
@@ -1902,7 +1955,7 @@ function mergeRun(x, y) {
   return {
     ...primary,
     status,
-    status_at_utc: num$1(statusSide?.status_at_utc),
+    status_at_utc: num$2(statusSide?.status_at_utc),
     invalidated_reason: statusSide?.invalidated_reason ?? null,
     invalidated_by: statusSide?.invalidated_by ?? null,
     // Never un-link a replacement.
@@ -1921,10 +1974,10 @@ function mergeAssessmentStores(a, b) {
   return {
     ...a,
     ...b,
-    assessmentSchemaVersion: Math.max(num$1(a.assessmentSchemaVersion), num$1(b.assessmentSchemaVersion)),
+    assessmentSchemaVersion: Math.max(num$2(a.assessmentSchemaVersion), num$2(b.assessmentSchemaVersion)),
     learner_id: a.learner_id ?? b.learner_id ?? null,
     runs: unionBy(a.runs, b.runs, mergeRun),
-    lastUpdatedAt: Math.max(num$1(a.lastUpdatedAt), num$1(b.lastUpdatedAt))
+    lastUpdatedAt: Math.max(num$2(a.lastUpdatedAt), num$2(b.lastUpdatedAt))
   };
 }
 const ASSESSMENT_LOCAL_PREFIX = "french_assessment_local_";
@@ -2075,6 +2128,65 @@ function createAssessmentStore({
     }
   };
 }
+const num$1 = (v) => Number(v) || 0;
+const SPELLING_SKILL = "W_ENCODING";
+function isTechnicallyInvalid(response) {
+  return !!(response && response.technical_invalid_reason);
+}
+function scoreObjective(item, response = {}) {
+  if (item?.scoring?.method !== "objective") throw new Error(`${item?.id}: not an objective item`);
+  const support = !!response.support_flag;
+  const base = {
+    valid: true,
+    incorrect: false,
+    support,
+    independent_band_included: !support,
+    support_count_increment: support ? 1 : 0
+  };
+  if (isTechnicallyInvalid(response)) {
+    return {
+      ...base,
+      points: null,
+      valid: false,
+      replacement_tier: item.difficulty_tier,
+      technical_invalid_reason: response.technical_invalid_reason
+    };
+  }
+  if (Array.isArray(item.choices)) {
+    const want = [...item.answer_key?.correct_choice_ids || []].sort();
+    const got = [...response.choice_ids || response.selected_choice_ids || []].sort();
+    const correct2 = want.length > 0 && want.length === got.length && want.every((v, i) => v === got[i]);
+    return {
+      ...base,
+      points: correct2 ? num$1(item.scoring.correct_points ?? 1) : num$1(item.scoring.incorrect_points),
+      incorrect: !correct2
+    };
+  }
+  const text = String(response.text ?? "");
+  const accepted = item.answer_key?.accepted_answers || [];
+  const meaning = accepted.some((a) => normalizeForRecognition(a) === normalizeForRecognition(text));
+  const spelling = accepted.some((a) => normalizeForSpelling(a) === normalizeForSpelling(text));
+  const spellingCounts = (item.skill_ids || []).includes(SPELLING_SKILL);
+  const correct = spellingCounts ? spelling : meaning;
+  const out = {
+    ...base,
+    points: correct ? num$1(item.scoring.correct_points ?? 1) : num$1(item.scoring.incorrect_points),
+    incorrect: !correct,
+    meaning,
+    spelling
+  };
+  if (meaning && !spelling) out.report_flag = "spelling_needs_correction";
+  return out;
+}
+function routeAfterEntry(domain, entryCorrect, entryValid, rules) {
+  const r = rules.objective_routing[domain];
+  if (!r) throw new Error(`no routing for ${domain}`);
+  const n = num$1(entryCorrect);
+  const strongMin = r.entry_count === 3 ? 3 : 3;
+  if (n >= strongMin) return ["stretch"];
+  if (n === 2) return ["foundation", "stretch"];
+  return ["foundation"];
+}
 function fnv1a32(str2) {
   let h = 2166136261;
   for (const b of new TextEncoder().encode(String(str2))) {
@@ -2100,11 +2212,13 @@ const MANIFEST = {
 const section_order = ["listening", "reading", "vocabulary_grammar", "writing", "speaking"];
 const section_boundaries = { "begin_next_section_only_with_at_least_minutes_remaining": 6 };
 const objective_routing = { "listening": { "entry_tier": "developing", "entry_count": 4, "weak": "0-1 correct: administer all 4 foundation items, then stop.", "borderline": "2 correct: administer all 4 foundation and all 4 stretch items.", "strong": "3-4 correct: administer all 4 stretch items, then stop." }, "reading": { "entry_tier": "developing", "entry_count": 4, "weak": "0-1 correct: administer all 4 foundation items, then stop.", "borderline": "2 correct: administer all 4 foundation and all 4 stretch items.", "strong": "3-4 correct: administer all 4 stretch items, then stop." }, "vocabulary_grammar": { "entry_tier": "developing", "entry_count": 3, "weak": "0-1 correct: administer all 4 foundation items, then stop.", "borderline": "2 correct: administer all 4 foundation and all 3 stretch items.", "strong": "3 correct: administer all 3 stretch items, then stop." }, "invariant": "Within a tier, preserve the item order in assessment_items.json. Apply routing only after the full entry block is submitted. Invalid items do not count correct or incorrect." };
+const replay = { "listening_max_plays": 2 };
 const scoring = { "minimum_independent_valid_items": { "listening": 6, "reading": 6, "vocabulary_grammar": 6, "writing": 5, "speaking": 4 } };
 const RULES = {
   section_order,
   section_boundaries,
   objective_routing,
+  replay,
   scoring
 };
 const items = /* @__PURE__ */ JSON.parse('[{"id":"LA-F01","version":1,"release_id":"assessment-v1.0.1","form":"A","domain":"listening","difficulty_tier":"foundation","item_type":"audio_choice","prompt_en":"Listen and choose the person named.","stimulus":null,"choices":[{"id":"a","label":"Émile"},{"id":"b","label":"Léa"},{"id":"c","label":"Noah"},{"id":"d","label":"Sofia"}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["L_KEYWORDS"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"A-name","estimated_seconds":45,"audio":{"script_fr_ca":"Bonjour, je m’appelle Émile.","locale":"fr-CA","source_type":"runtime_tts_from_reviewed_script","max_plays":2,"transcript_visibility":"hidden_until_section_submitted","listening_qa_focus":"Confirm wording, rate, and intelligibility on an actual iPad; do not reveal text during the item."},"author_notes":null},{"id":"LA-F02","version":1,"release_id":"assessment-v1.0.1","form":"A","domain":"listening","difficulty_tier":"foundation","item_type":"audio_choice","prompt_en":"Listen and choose the object.","stimulus":null,"choices":[{"id":"a","label":"red pencil"},{"id":"b","label":"blue book"},{"id":"c","label":"green bag"},{"id":"d","label":"yellow ruler"}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["L_DIRECTIONS"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"A-object","estimated_seconds":45,"audio":{"script_fr_ca":"Prends le crayon rouge.","locale":"fr-CA","source_type":"runtime_tts_from_reviewed_script","max_plays":2,"transcript_visibility":"hidden_until_section_submitted","listening_qa_focus":"Confirm wording, rate, and intelligibility on an actual iPad; do not reveal text during the item."},"author_notes":null},{"id":"LA-F03","version":1,"release_id":"assessment-v1.0.1","form":"A","domain":"listening","difficulty_tier":"foundation","item_type":"audio_choice","prompt_en":"Listen and choose the weather picture.","stimulus":null,"choices":[{"id":"a","label":"snowy and cold"},{"id":"b","label":"sunny and hot"},{"id":"c","label":"windy and warm"},{"id":"d","label":"rainy and mild"}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["L_KEYWORDS"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"A-weather","estimated_seconds":45,"audio":{"script_fr_ca":"Il fait froid et il neige.","locale":"fr-CA","source_type":"runtime_tts_from_reviewed_script","max_plays":2,"transcript_visibility":"hidden_until_section_submitted","listening_qa_focus":"Confirm wording, rate, and intelligibility on an actual iPad; do not reveal text during the item."},"author_notes":null},{"id":"LA-F04","version":1,"release_id":"assessment-v1.0.1","form":"A","domain":"listening","difficulty_tier":"foundation","item_type":"audio_choice","prompt_en":"Listen and choose the correct family fact.","stimulus":null,"choices":[{"id":"a","label":"My sister is ten."},{"id":"b","label":"My brother is ten."},{"id":"c","label":"My sister is twelve."},{"id":"d","label":"My cousin is ten."}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["L_KEYWORDS","L_DETAILS"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"A-family","estimated_seconds":45,"audio":{"script_fr_ca":"Ma sœur a dix ans.","locale":"fr-CA","source_type":"runtime_tts_from_reviewed_script","max_plays":2,"transcript_visibility":"hidden_until_section_submitted","listening_qa_focus":"Confirm wording, rate, and intelligibility on an actual iPad; do not reveal text during the item."},"author_notes":null},{"id":"LA-D01","version":1,"release_id":"assessment-v1.0.1","form":"A","domain":"listening","difficulty_tier":"developing","item_type":"audio_choice","prompt_en":"Listen and choose the location.","stimulus":null,"choices":[{"id":"a","label":"under the table beside the bag"},{"id":"b","label":"on the table inside the bag"},{"id":"c","label":"behind the chair beside the door"},{"id":"d","label":"under the chair near the window"}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["L_DIRECTIONS","L_DETAILS"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"A-location","estimated_seconds":45,"audio":{"script_fr_ca":"Le livre est sous la table, à côté du sac.","locale":"fr-CA","source_type":"runtime_tts_from_reviewed_script","max_plays":2,"transcript_visibility":"hidden_until_section_submitted","listening_qa_focus":"Confirm wording, rate, and intelligibility on an actual iPad; do not reveal text during the item."},"author_notes":null},{"id":"LA-D02","version":1,"release_id":"assessment-v1.0.1","form":"A","domain":"listening","difficulty_tier":"developing","item_type":"audio_choice","prompt_en":"Listen and choose the correct schedule.","stimulus":null,"choices":[{"id":"a","label":"Tuesday: science morning, music afternoon"},{"id":"b","label":"Tuesday: music morning, science afternoon"},{"id":"c","label":"Thursday: science morning, music afternoon"},{"id":"d","label":"Tuesday: math morning, art afternoon"}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["L_DETAILS"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"A-schedule","estimated_seconds":45,"audio":{"script_fr_ca":"Le mardi matin, j’ai les sciences. Après le dîner, j’ai la musique.","locale":"fr-CA","source_type":"runtime_tts_from_reviewed_script","max_plays":2,"transcript_visibility":"hidden_until_section_submitted","listening_qa_focus":"Confirm wording, rate, and intelligibility on an actual iPad; do not reveal text during the item."},"author_notes":null},{"id":"LA-D03","version":1,"release_id":"assessment-v1.0.1","form":"A","domain":"listening","difficulty_tier":"developing","item_type":"audio_choice","prompt_en":"Listen and choose the route.","stimulus":null,"choices":[{"id":"a","label":"straight to the park, then left at the library"},{"id":"b","label":"right at the park, then straight to the school"},{"id":"c","label":"straight to the library, then right at the park"},{"id":"d","label":"left immediately, then stop at the store"}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["L_DIRECTIONS","L_CONNECTED"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"A-route","estimated_seconds":45,"audio":{"script_fr_ca":"Va tout droit jusqu’au parc, puis tourne à gauche devant la bibliothèque.","locale":"fr-CA","source_type":"runtime_tts_from_reviewed_script","max_plays":2,"transcript_visibility":"hidden_until_section_submitted","listening_qa_focus":"Confirm wording, rate, and intelligibility on an actual iPad; do not reveal text during the item."},"author_notes":null},{"id":"LA-D04","version":1,"release_id":"assessment-v1.0.1","form":"A","domain":"listening","difficulty_tier":"developing","item_type":"audio_choice","prompt_en":"Listen and choose the speaker’s preference.","stimulus":null,"choices":[{"id":"a","label":"likes apples; dislikes cheese"},{"id":"b","label":"likes cheese; dislikes apples"},{"id":"c","label":"likes apples and cheese"},{"id":"d","label":"dislikes apples and cheese"}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["L_MAIN_IDEA","L_DETAILS"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"A-preference","estimated_seconds":45,"audio":{"script_fr_ca":"Pour ma collation, j’aime les pommes, mais je n’aime pas le fromage.","locale":"fr-CA","source_type":"runtime_tts_from_reviewed_script","max_plays":2,"transcript_visibility":"hidden_until_section_submitted","listening_qa_focus":"Confirm wording, rate, and intelligibility on an actual iPad; do not reveal text during the item."},"author_notes":null},{"id":"LA-S01","version":1,"release_id":"assessment-v1.0.1","form":"A","domain":"listening","difficulty_tier":"stretch","item_type":"audio_choice","prompt_en":"Listen and choose the best plan.","stimulus":null,"choices":[{"id":"a","label":"visit the museum because of rain"},{"id":"b","label":"play soccer because it will be sunny"},{"id":"c","label":"visit the park before the storm"},{"id":"d","label":"stay at school because it will snow"}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["L_MAIN_IDEA","L_CONNECTED"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"A-plan","estimated_seconds":70,"audio":{"script_fr_ca":"Il va pleuvoir cet après-midi. Nous allons visiter le musée au lieu de jouer au soccer dehors.","locale":"fr-CA","source_type":"runtime_tts_from_reviewed_script","max_plays":2,"transcript_visibility":"hidden_until_section_submitted","listening_qa_focus":"Confirm wording, rate, and intelligibility on an actual iPad; do not reveal text during the item."},"author_notes":null},{"id":"LA-S02","version":1,"release_id":"assessment-v1.0.1","form":"A","domain":"listening","difficulty_tier":"stretch","item_type":"audio_choice","prompt_en":"Listen and choose the invitation details.","stimulus":null,"choices":[{"id":"a","label":"Saturday 3:00, Camille’s home, bring cards"},{"id":"b","label":"Sunday 3:00, school, bring a book"},{"id":"c","label":"Saturday 5:00, park, bring food"},{"id":"d","label":"Friday 3:00, Camille’s home, bring skates"}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["L_DETAILS","L_CONNECTED"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"A-invitation","estimated_seconds":70,"audio":{"script_fr_ca":"La fête de Camille est samedi à quinze heures, chez elle, au 24 rue Jasper. Apporte un jeu de cartes.","locale":"fr-CA","source_type":"runtime_tts_from_reviewed_script","max_plays":2,"transcript_visibility":"hidden_until_section_submitted","listening_qa_focus":"Confirm wording, rate, and intelligibility on an actual iPad; do not reveal text during the item."},"author_notes":null},{"id":"LA-S03","version":1,"release_id":"assessment-v1.0.1","form":"A","domain":"listening","difficulty_tier":"stretch","item_type":"audio_choice","prompt_en":"Listen and choose what happened.","stimulus":null,"choices":[{"id":"a","label":"The bus was late, so Zoé walked."},{"id":"b","label":"Zoé missed school because she slept."},{"id":"c","label":"The bus arrived early, so Zoé rode it."},{"id":"d","label":"Zoé walked to the bus station."}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["L_MAIN_IDEA","L_CONNECTED"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"A-sequence","estimated_seconds":70,"audio":{"script_fr_ca":"Zoé voulait prendre l’autobus, mais il était en retard. Alors, elle est allée à l’école à pied.","locale":"fr-CA","source_type":"runtime_tts_from_reviewed_script","max_plays":2,"transcript_visibility":"hidden_until_section_submitted","listening_qa_focus":"Confirm wording, rate, and intelligibility on an actual iPad; do not reveal text during the item."},"author_notes":null},{"id":"LA-S04","version":1,"release_id":"assessment-v1.0.1","form":"A","domain":"listening","difficulty_tier":"stretch","item_type":"audio_choice","prompt_en":"Listen and choose the supported conclusion.","stimulus":null,"choices":[{"id":"a","label":"The note places the key near the window."},{"id":"b","label":"Malik finds the key under the map."},{"id":"c","label":"The office is beside the window."},{"id":"d","label":"The map says the key is in the office."}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["L_DETAILS","L_CONNECTED"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"A-clue","estimated_seconds":70,"audio":{"script_fr_ca":"Au début, Malik pense que la clé est dans le bureau. Puis il voit une note sous la carte. La note dit que la clé est près de la fenêtre.","locale":"fr-CA","source_type":"runtime_tts_from_reviewed_script","max_plays":2,"transcript_visibility":"hidden_until_section_submitted","listening_qa_focus":"Confirm wording, rate, and intelligibility on an actual iPad; do not reveal text during the item."},"author_notes":null},{"id":"LB-F01","version":1,"release_id":"assessment-v1.0.1","form":"B","domain":"listening","difficulty_tier":"foundation","item_type":"audio_choice","prompt_en":"Listen and choose the person named.","stimulus":null,"choices":[{"id":"a","label":"Chloé"},{"id":"b","label":"Amir"},{"id":"c","label":"Émile"},{"id":"d","label":"Nina"}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["L_KEYWORDS"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"B-name","estimated_seconds":45,"audio":{"script_fr_ca":"Salut, je m’appelle Chloé.","locale":"fr-CA","source_type":"runtime_tts_from_reviewed_script","max_plays":2,"transcript_visibility":"hidden_until_section_submitted","listening_qa_focus":"Confirm wording, rate, and intelligibility on an actual iPad; do not reveal text during the item."},"author_notes":null},{"id":"LB-F02","version":1,"release_id":"assessment-v1.0.1","form":"B","domain":"listening","difficulty_tier":"foundation","item_type":"audio_choice","prompt_en":"Listen and choose the object.","stimulus":null,"choices":[{"id":"a","label":"blue book"},{"id":"b","label":"red pencil"},{"id":"c","label":"green ruler"},{"id":"d","label":"yellow bag"}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["L_DIRECTIONS"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"B-object","estimated_seconds":45,"audio":{"script_fr_ca":"Montre-moi le livre bleu.","locale":"fr-CA","source_type":"runtime_tts_from_reviewed_script","max_plays":2,"transcript_visibility":"hidden_until_section_submitted","listening_qa_focus":"Confirm wording, rate, and intelligibility on an actual iPad; do not reveal text during the item."},"author_notes":null},{"id":"LB-F03","version":1,"release_id":"assessment-v1.0.1","form":"B","domain":"listening","difficulty_tier":"foundation","item_type":"audio_choice","prompt_en":"Listen and choose the weather picture.","stimulus":null,"choices":[{"id":"a","label":"windy and cloudy"},{"id":"b","label":"snowy and cold"},{"id":"c","label":"sunny and hot"},{"id":"d","label":"rainy with a rainbow"}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["L_KEYWORDS"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"B-weather","estimated_seconds":45,"audio":{"script_fr_ca":"Il y a du vent et des nuages.","locale":"fr-CA","source_type":"runtime_tts_from_reviewed_script","max_plays":2,"transcript_visibility":"hidden_until_section_submitted","listening_qa_focus":"Confirm wording, rate, and intelligibility on an actual iPad; do not reveal text during the item."},"author_notes":null},{"id":"LB-F04","version":1,"release_id":"assessment-v1.0.1","form":"B","domain":"listening","difficulty_tier":"foundation","item_type":"audio_choice","prompt_en":"Listen and choose the correct family fact.","stimulus":null,"choices":[{"id":"a","label":"My brother is eleven."},{"id":"b","label":"My sister is eleven."},{"id":"c","label":"My brother is nine."},{"id":"d","label":"My uncle is eleven."}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["L_KEYWORDS","L_DETAILS"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"B-family","estimated_seconds":45,"audio":{"script_fr_ca":"Mon frère a onze ans.","locale":"fr-CA","source_type":"runtime_tts_from_reviewed_script","max_plays":2,"transcript_visibility":"hidden_until_section_submitted","listening_qa_focus":"Confirm wording, rate, and intelligibility on an actual iPad; do not reveal text during the item."},"author_notes":null},{"id":"LB-D01","version":1,"release_id":"assessment-v1.0.1","form":"B","domain":"listening","difficulty_tier":"developing","item_type":"audio_choice","prompt_en":"Listen and choose the location.","stimulus":null,"choices":[{"id":"a","label":"behind the chair near the door"},{"id":"b","label":"under the table beside the window"},{"id":"c","label":"on the chair near the board"},{"id":"d","label":"inside the desk by the door"}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["L_DIRECTIONS","L_DETAILS"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"B-location","estimated_seconds":45,"audio":{"script_fr_ca":"Le sac est derrière la chaise, près de la porte.","locale":"fr-CA","source_type":"runtime_tts_from_reviewed_script","max_plays":2,"transcript_visibility":"hidden_until_section_submitted","listening_qa_focus":"Confirm wording, rate, and intelligibility on an actual iPad; do not reveal text during the item."},"author_notes":null},{"id":"LB-D02","version":1,"release_id":"assessment-v1.0.1","form":"B","domain":"listening","difficulty_tier":"developing","item_type":"audio_choice","prompt_en":"Listen and choose the correct schedule.","stimulus":null,"choices":[{"id":"a","label":"Thursday: math morning, art afternoon"},{"id":"b","label":"Thursday: art morning, math afternoon"},{"id":"c","label":"Tuesday: math morning, art afternoon"},{"id":"d","label":"Thursday: science morning, music afternoon"}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["L_DETAILS"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"B-schedule","estimated_seconds":45,"audio":{"script_fr_ca":"Le jeudi matin, j’ai les mathématiques. Après le dîner, j’ai les arts.","locale":"fr-CA","source_type":"runtime_tts_from_reviewed_script","max_plays":2,"transcript_visibility":"hidden_until_section_submitted","listening_qa_focus":"Confirm wording, rate, and intelligibility on an actual iPad; do not reveal text during the item."},"author_notes":null},{"id":"LB-D03","version":1,"release_id":"assessment-v1.0.1","form":"B","domain":"listening","difficulty_tier":"developing","item_type":"audio_choice","prompt_en":"Listen and choose the route.","stimulus":null,"choices":[{"id":"a","label":"right after the school, then continue to the hospital"},{"id":"b","label":"left before the school, then stop at the park"},{"id":"c","label":"straight past the hospital, then right"},{"id":"d","label":"right after the hospital, then return to school"}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["L_DIRECTIONS","L_CONNECTED"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"B-route","estimated_seconds":45,"audio":{"script_fr_ca":"Tourne à droite après l’école, puis continue jusqu’à l’hôpital.","locale":"fr-CA","source_type":"runtime_tts_from_reviewed_script","max_plays":2,"transcript_visibility":"hidden_until_section_submitted","listening_qa_focus":"Confirm wording, rate, and intelligibility on an actual iPad; do not reveal text during the item."},"author_notes":null},{"id":"LB-D04","version":1,"release_id":"assessment-v1.0.1","form":"B","domain":"listening","difficulty_tier":"developing","item_type":"audio_choice","prompt_en":"Listen and choose the speaker’s preference.","stimulus":null,"choices":[{"id":"a","label":"likes milk; does not drink juice in the morning"},{"id":"b","label":"likes juice; does not drink milk"},{"id":"c","label":"drinks milk and juice every morning"},{"id":"d","label":"does not drink milk or juice"}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["L_MAIN_IDEA","L_DETAILS"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"B-preference","estimated_seconds":45,"audio":{"script_fr_ca":"J’aime le lait, mais je ne bois pas de jus le matin.","locale":"fr-CA","source_type":"runtime_tts_from_reviewed_script","max_plays":2,"transcript_visibility":"hidden_until_section_submitted","listening_qa_focus":"Confirm wording, rate, and intelligibility on an actual iPad; do not reveal text during the item."},"author_notes":null},{"id":"LB-S01","version":1,"release_id":"assessment-v1.0.1","form":"B","domain":"listening","difficulty_tier":"stretch","item_type":"audio_choice","prompt_en":"Listen and choose the best plan.","stimulus":null,"choices":[{"id":"a","label":"skate and wear warm clothing"},{"id":"b","label":"swim and bring sunscreen"},{"id":"c","label":"stay home because of rain"},{"id":"d","label":"play soccer without a coat"}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["L_MAIN_IDEA","L_CONNECTED"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"B-plan","estimated_seconds":70,"audio":{"script_fr_ca":"Il fera très froid demain. Nous allons patiner, mais nous devons porter des mitaines et une tuque.","locale":"fr-CA","source_type":"runtime_tts_from_reviewed_script","max_plays":2,"transcript_visibility":"hidden_until_section_submitted","listening_qa_focus":"Confirm wording, rate, and intelligibility on an actual iPad; do not reveal text during the item."},"author_notes":null},{"id":"LB-S02","version":1,"release_id":"assessment-v1.0.1","form":"B","domain":"listening","difficulty_tier":"stretch","item_type":"audio_choice","prompt_en":"Listen and choose the invitation details.","stimulus":null,"choices":[{"id":"a","label":"Wednesday 4:00, library, bring notebook and pencil"},{"id":"b","label":"Tuesday 4:00, school, bring a tablet"},{"id":"c","label":"Wednesday 6:00, library, bring a book only"},{"id":"d","label":"Friday 4:00, community centre, bring a game"}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["L_DETAILS","L_CONNECTED"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"B-invitation","estimated_seconds":70,"audio":{"script_fr_ca":"Le club se rencontre mercredi à seize heures à la bibliothèque. Apporte ton cahier et un crayon.","locale":"fr-CA","source_type":"runtime_tts_from_reviewed_script","max_plays":2,"transcript_visibility":"hidden_until_section_submitted","listening_qa_focus":"Confirm wording, rate, and intelligibility on an actual iPad; do not reveal text during the item."},"author_notes":null},{"id":"LB-S03","version":1,"release_id":"assessment-v1.0.1","form":"B","domain":"listening","difficulty_tier":"stretch","item_type":"audio_choice","prompt_en":"Listen and choose what happened.","stimulus":null,"choices":[{"id":"a","label":"A flat tire caused Anaïs to walk."},{"id":"b","label":"Anaïs rode quickly to the park."},{"id":"c","label":"The park was closed, so she went home."},{"id":"d","label":"Anaïs repaired a bus tire."}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["L_MAIN_IDEA","L_CONNECTED"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"B-sequence","estimated_seconds":70,"audio":{"script_fr_ca":"Anaïs voulait faire du vélo, mais son pneu était crevé. Elle a donc marché jusqu’au parc.","locale":"fr-CA","source_type":"runtime_tts_from_reviewed_script","max_plays":2,"transcript_visibility":"hidden_until_section_submitted","listening_qa_focus":"Confirm wording, rate, and intelligibility on an actual iPad; do not reveal text during the item."},"author_notes":null},{"id":"LB-S04","version":1,"release_id":"assessment-v1.0.1","form":"B","domain":"listening","difficulty_tier":"stretch","item_type":"audio_choice","prompt_en":"Listen and choose the supported conclusion.","stimulus":null,"choices":[{"id":"a","label":"The message is in an envelope behind the clock."},{"id":"b","label":"The message is inside the drawer."},{"id":"c","label":"The clock is in an envelope."},{"id":"d","label":"Félix puts the envelope in the drawer."}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["L_DETAILS","L_CONNECTED"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"B-clue","estimated_seconds":70,"audio":{"script_fr_ca":"D’abord, Félix cherche le message dans le tiroir. Ensuite, il remarque une enveloppe derrière l’horloge. Le message est dans l’enveloppe.","locale":"fr-CA","source_type":"runtime_tts_from_reviewed_script","max_plays":2,"transcript_visibility":"hidden_until_section_submitted","listening_qa_focus":"Confirm wording, rate, and intelligibility on an actual iPad; do not reveal text during the item."},"author_notes":null},{"id":"RA-F01","version":1,"release_id":"assessment-v1.0.1","form":"A","domain":"reading","difficulty_tier":"foundation","item_type":"text_choice","prompt_en":"Read and choose the matching meaning.","stimulus":{"text_fr":"La porte est ouverte."},"choices":[{"id":"a","label":"The door is open."},{"id":"b","label":"The window is closed."},{"id":"c","label":"The room is large."},{"id":"d","label":"The chair is broken."}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["R_WORDS","R_SENTENCE"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"A-sign","estimated_seconds":45,"audio":null,"author_notes":null},{"id":"RA-F02","version":1,"release_id":"assessment-v1.0.1","form":"A","domain":"reading","difficulty_tier":"foundation","item_type":"text_choice","prompt_en":"Read and choose the correct picture description.","stimulus":{"text_fr":"Un petit chien noir."},"choices":[{"id":"a","label":"small black dog"},{"id":"b","label":"large white cat"},{"id":"c","label":"small brown rabbit"},{"id":"d","label":"black bird"}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["R_WORDS"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"A-description","estimated_seconds":45,"audio":null,"author_notes":null},{"id":"RA-F03","version":1,"release_id":"assessment-v1.0.1","form":"A","domain":"reading","difficulty_tier":"foundation","item_type":"text_choice","prompt_en":"Read and choose where the object is.","stimulus":{"text_fr":"Le cahier est dans le sac."},"choices":[{"id":"a","label":"in the bag"},{"id":"b","label":"under the desk"},{"id":"c","label":"on the chair"},{"id":"d","label":"beside the door"}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["R_SENTENCE"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"A-location","estimated_seconds":45,"audio":null,"author_notes":null},{"id":"RA-F04","version":1,"release_id":"assessment-v1.0.1","form":"A","domain":"reading","difficulty_tier":"foundation","item_type":"text_choice","prompt_en":"Read and choose the correct day.","stimulus":{"text_fr":"Aujourd’hui, c’est lundi. Demain, c’est…"},"choices":[{"id":"a","label":"mardi"},{"id":"b","label":"dimanche"},{"id":"c","label":"jeudi"},{"id":"d","label":"samedi"}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["R_WORDS","R_SENTENCE"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"A-calendar","estimated_seconds":45,"audio":null,"author_notes":null},{"id":"RA-D01","version":1,"release_id":"assessment-v1.0.1","form":"A","domain":"reading","difficulty_tier":"developing","item_type":"text_choice","prompt_en":"Read the note and choose its purpose.","stimulus":{"text_fr":"N’oublie pas ton dîner. Il est dans le réfrigérateur. Bonne journée! — Papa"},"choices":[{"id":"a","label":"to remind someone about lunch"},{"id":"b","label":"to invite someone to dinner"},{"id":"c","label":"to describe a refrigerator"},{"id":"d","label":"to cancel a school day"}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["R_MAIN_IDEA"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"A-note","estimated_seconds":45,"audio":null,"author_notes":null},{"id":"RA-D02","version":1,"release_id":"assessment-v1.0.1","form":"A","domain":"reading","difficulty_tier":"developing","item_type":"text_choice","prompt_en":"Read and choose the correct detail.","stimulus":{"text_fr":"La bibliothèque ouvre à neuf heures. Le samedi, elle ferme à quinze heures."},"choices":[{"id":"a","label":"It closes at 3:00 on Saturday."},{"id":"b","label":"It opens at 3:00 every day."},{"id":"c","label":"It is closed on Saturday."},{"id":"d","label":"It opens at 8:00."}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["R_DETAILS"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"A-hours","estimated_seconds":45,"audio":null,"author_notes":null},{"id":"RA-D03","version":1,"release_id":"assessment-v1.0.1","form":"A","domain":"reading","difficulty_tier":"developing","item_type":"text_choice","prompt_en":"Read the directions and choose the destination.","stimulus":{"text_fr":"Pars de l’école. Tourne à gauche au parc. La banque est à droite, mais continue tout droit. Le bâtiment avec une croix rouge est devant toi."},"choices":[{"id":"a","label":"hospital"},{"id":"b","label":"bank"},{"id":"c","label":"park"},{"id":"d","label":"school"}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["R_DETAILS","R_INFERENCE"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"A-route","estimated_seconds":45,"audio":null,"author_notes":null},{"id":"RA-D04","version":1,"release_id":"assessment-v1.0.1","form":"A","domain":"reading","difficulty_tier":"developing","item_type":"text_choice","prompt_en":"Read and choose the sentence that is true.","stimulus":{"text_fr":"Mina porte un manteau parce qu’il fait froid. Elle n’a pas de bottes, car il ne neige pas."},"choices":[{"id":"a","label":"It is cold but not snowy."},{"id":"b","label":"It is hot and snowy."},{"id":"c","label":"Mina has boots and no coat."},{"id":"d","label":"Mina dislikes her coat."}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["R_MAIN_IDEA","R_DETAILS"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"A-weather","estimated_seconds":45,"audio":null,"author_notes":null},{"id":"RA-S01","version":1,"release_id":"assessment-v1.0.1","form":"A","domain":"reading","difficulty_tier":"stretch","item_type":"text_choice","prompt_en":"Read the message and choose the main idea.","stimulus":{"text_fr":"Bonjour Samir, le club de sciences change de salle. Nous ne sommes plus au local 12. Retrouve-nous au laboratoire, près du gymnase, à 15 h 30."},"choices":[{"id":"a","label":"The science club has a new meeting room."},{"id":"b","label":"The gym is closed for science."},{"id":"c","label":"Samir must arrive at 12:00."},{"id":"d","label":"The laboratory is beside room 12."}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["R_MAIN_IDEA","R_CONNECTED"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"A-message","estimated_seconds":75,"audio":null,"author_notes":null},{"id":"RA-S02","version":1,"release_id":"assessment-v1.0.1","form":"A","domain":"reading","difficulty_tier":"stretch","item_type":"text_choice","prompt_en":"Read the text and choose why Élise changes her plan.","stimulus":{"text_fr":"Élise veut aller au parc à bicyclette. Elle regarde par la fenêtre: la pluie commence et le vent est fort. Elle téléphone à son amie et propose de jouer à un jeu chez elle."},"choices":[{"id":"a","label":"The weather makes cycling unpleasant."},{"id":"b","label":"Her bicycle is at her friend’s house."},{"id":"c","label":"The park closes early."},{"id":"d","label":"She has no telephone."}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["R_INFERENCE","R_CONNECTED"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"A-narrative","estimated_seconds":75,"audio":null,"author_notes":null},{"id":"RA-S03","version":1,"release_id":"assessment-v1.0.1","form":"A","domain":"reading","difficulty_tier":"stretch","item_type":"text_choice","prompt_en":"Read both statements and choose what they agree on.","stimulus":{"text_fr":"Note 1: « La boîte était déjà ouverte quand je suis arrivée. » Note 2: « J’ai vu la boîte ouverte à midi, mais je n’ai touché à rien. »"},"choices":[{"id":"a","label":"The box was open."},{"id":"b","label":"The writer opened the box."},{"id":"c","label":"The box was empty."},{"id":"d","label":"Both writers arrived at noon."}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["R_DETAILS","R_INFERENCE"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"A-evidence","estimated_seconds":75,"audio":null,"author_notes":null},{"id":"RA-S04","version":1,"release_id":"assessment-v1.0.1","form":"A","domain":"reading","difficulty_tier":"stretch","item_type":"text_choice","prompt_en":"Read the short text and choose the best title.","stimulus":{"text_fr":"Au Canada, des communautés francophones vivent dans plusieurs provinces et territoires. Elles créent des écoles, des festivals, des médias et des œuvres en français. Leurs histoires et leurs façons de parler ne sont pas toutes les mêmes."},"choices":[{"id":"a","label":"Many Francophone communities in Canada"},{"id":"b","label":"One French accent for everyone"},{"id":"c","label":"A school without festivals"},{"id":"d","label":"How to travel only in Quebec"}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["R_MAIN_IDEA","R_CONNECTED"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"A-culture","estimated_seconds":75,"audio":null,"author_notes":null},{"id":"RB-F01","version":1,"release_id":"assessment-v1.0.1","form":"B","domain":"reading","difficulty_tier":"foundation","item_type":"text_choice","prompt_en":"Read and choose the matching meaning.","stimulus":{"text_fr":"La fenêtre est fermée."},"choices":[{"id":"a","label":"The window is closed."},{"id":"b","label":"The door is open."},{"id":"c","label":"The table is clean."},{"id":"d","label":"The room is empty."}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["R_WORDS","R_SENTENCE"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"B-sign","estimated_seconds":45,"audio":null,"author_notes":null},{"id":"RB-F02","version":1,"release_id":"assessment-v1.0.1","form":"B","domain":"reading","difficulty_tier":"foundation","item_type":"text_choice","prompt_en":"Read and choose the correct picture description.","stimulus":{"text_fr":"Un grand chat blanc."},"choices":[{"id":"a","label":"large white cat"},{"id":"b","label":"small black dog"},{"id":"c","label":"large brown horse"},{"id":"d","label":"white rabbit"}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["R_WORDS"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"B-description","estimated_seconds":45,"audio":null,"author_notes":null},{"id":"RB-F03","version":1,"release_id":"assessment-v1.0.1","form":"B","domain":"reading","difficulty_tier":"foundation","item_type":"text_choice","prompt_en":"Read and choose where the object is.","stimulus":{"text_fr":"Le crayon est sous la table."},"choices":[{"id":"a","label":"under the table"},{"id":"b","label":"inside the bag"},{"id":"c","label":"on the chair"},{"id":"d","label":"near the window"}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["R_SENTENCE"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"B-location","estimated_seconds":45,"audio":null,"author_notes":null},{"id":"RB-F04","version":1,"release_id":"assessment-v1.0.1","form":"B","domain":"reading","difficulty_tier":"foundation","item_type":"text_choice","prompt_en":"Read and choose the correct month.","stimulus":{"text_fr":"Nous sommes en juin. Le mois prochain, ce sera…"},"choices":[{"id":"a","label":"juillet"},{"id":"b","label":"mai"},{"id":"c","label":"janvier"},{"id":"d","label":"novembre"}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["R_WORDS","R_SENTENCE"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"B-calendar","estimated_seconds":45,"audio":null,"author_notes":null},{"id":"RB-D01","version":1,"release_id":"assessment-v1.0.1","form":"B","domain":"reading","difficulty_tier":"developing","item_type":"text_choice","prompt_en":"Read the note and choose its purpose.","stimulus":{"text_fr":"Ton sac de sport est près de la porte. Apporte-le à l’école pour le match. — Maman"},"choices":[{"id":"a","label":"to remind someone to bring a sports bag"},{"id":"b","label":"to ask someone to buy a door"},{"id":"c","label":"to cancel a match"},{"id":"d","label":"to describe a classroom"}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["R_MAIN_IDEA"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"B-note","estimated_seconds":45,"audio":null,"author_notes":null},{"id":"RB-D02","version":1,"release_id":"assessment-v1.0.1","form":"B","domain":"reading","difficulty_tier":"developing","item_type":"text_choice","prompt_en":"Read and choose the correct detail.","stimulus":{"text_fr":"La piscine ouvre à dix heures. Le dimanche, elle ferme à seize heures."},"choices":[{"id":"a","label":"It closes at 4:00 on Sunday."},{"id":"b","label":"It opens at 4:00 every day."},{"id":"c","label":"It is closed on Sunday."},{"id":"d","label":"It opens at 9:00."}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["R_DETAILS"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"B-hours","estimated_seconds":45,"audio":null,"author_notes":null},{"id":"RB-D03","version":1,"release_id":"assessment-v1.0.1","form":"B","domain":"reading","difficulty_tier":"developing","item_type":"text_choice","prompt_en":"Read the directions and choose the destination.","stimulus":{"text_fr":"Pars du parc. Passe devant la bibliothèque et tourne à droite. Continue jusqu’au bâtiment où on achète du pain."},"choices":[{"id":"a","label":"bakery"},{"id":"b","label":"library"},{"id":"c","label":"school"},{"id":"d","label":"hospital"}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["R_DETAILS","R_INFERENCE"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"B-route","estimated_seconds":45,"audio":null,"author_notes":null},{"id":"RB-D04","version":1,"release_id":"assessment-v1.0.1","form":"B","domain":"reading","difficulty_tier":"developing","item_type":"text_choice","prompt_en":"Read and choose the sentence that is true.","stimulus":{"text_fr":"Omar prend son parapluie parce qu’il pleut. Il laisse ses mitaines à la maison, car il ne fait pas froid."},"choices":[{"id":"a","label":"It is rainy but not cold."},{"id":"b","label":"It is snowy and cold."},{"id":"c","label":"Omar has no umbrella."},{"id":"d","label":"Omar wears mittens."}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["R_MAIN_IDEA","R_DETAILS"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"B-weather","estimated_seconds":45,"audio":null,"author_notes":null},{"id":"RB-S01","version":1,"release_id":"assessment-v1.0.1","form":"B","domain":"reading","difficulty_tier":"stretch","item_type":"text_choice","prompt_en":"Read the message and choose the main idea.","stimulus":{"text_fr":"Salut Nora, la répétition de musique commence plus tard aujourd’hui. Viens à la salle 8 à 16 h, après ton cours de sciences."},"choices":[{"id":"a","label":"The rehearsal time and room are specified."},{"id":"b","label":"Science class is cancelled."},{"id":"c","label":"Nora should arrive at 8:00."},{"id":"d","label":"The music room is closed."}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["R_MAIN_IDEA","R_CONNECTED"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"B-message","estimated_seconds":75,"audio":null,"author_notes":null},{"id":"RB-S02","version":1,"release_id":"assessment-v1.0.1","form":"B","domain":"reading","difficulty_tier":"stretch","item_type":"text_choice","prompt_en":"Read the text and choose why Lucas changes his plan.","stimulus":{"text_fr":"Lucas veut jouer au hockey dehors. Il voit que la glace est couverte d’eau parce qu’il fait chaud. Il invite donc son ami au centre sportif."},"choices":[{"id":"a","label":"Warm weather makes the outdoor ice unusable."},{"id":"b","label":"His friend dislikes hockey."},{"id":"c","label":"The sports centre is outdoors."},{"id":"d","label":"Lucas lost his skates."}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["R_INFERENCE","R_CONNECTED"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"B-narrative","estimated_seconds":75,"audio":null,"author_notes":null},{"id":"RB-S03","version":1,"release_id":"assessment-v1.0.1","form":"B","domain":"reading","difficulty_tier":"stretch","item_type":"text_choice","prompt_en":"Read both statements and choose what they agree on.","stimulus":{"text_fr":"Message 1: « La lumière du bureau était allumée à huit heures. » Message 2: « À huit heures, j’ai vu de la lumière sous la porte du bureau. »"},"choices":[{"id":"a","label":"There was light in the office at eight."},{"id":"b","label":"Both writers entered the office."},{"id":"c","label":"The door was open."},{"id":"d","label":"The light turned off at eight."}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["R_DETAILS","R_INFERENCE"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"B-evidence","estimated_seconds":75,"audio":null,"author_notes":null},{"id":"RB-S04","version":1,"release_id":"assessment-v1.0.1","form":"B","domain":"reading","difficulty_tier":"stretch","item_type":"text_choice","prompt_en":"Read the short text and choose the best title.","stimulus":{"text_fr":"Le français est parlé dans de nombreuses régions du monde. Les communautés francophones ont des histoires, des expressions et des accents variés. Cette diversité fait partie de la Francophonie."},"choices":[{"id":"a","label":"The diversity of the Francophone world"},{"id":"b","label":"Why every accent is identical"},{"id":"c","label":"One community in one country"},{"id":"d","label":"How to avoid learning expressions"}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["R_MAIN_IDEA","R_CONNECTED"],"outcome_ids":["ABFSL-GEN-COM"],"exposure_group":"B-culture","estimated_seconds":75,"audio":null,"author_notes":null},{"id":"VGA-F01","version":1,"release_id":"assessment-v1.0.1","form":"A","domain":"vocabulary_grammar","difficulty_tier":"foundation","item_type":"text_choice","prompt_en":"Choose the correct article: ___ école","stimulus":null,"choices":[{"id":"a","label":"l’"},{"id":"b","label":"le"},{"id":"c","label":"un"},{"id":"d","label":"des"}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["VG_ARTICLES"],"outcome_ids":["ABFSL-GEN-LANG"],"exposure_group":"A-articles","estimated_seconds":45,"audio":null,"author_notes":null},{"id":"VGA-F02","version":1,"release_id":"assessment-v1.0.1","form":"A","domain":"vocabulary_grammar","difficulty_tier":"foundation","item_type":"text_choice","prompt_en":"Choose the best French phrase for “my sister.”","stimulus":null,"choices":[{"id":"a","label":"ma sœur"},{"id":"b","label":"mon sœur"},{"id":"c","label":"mes sœur"},{"id":"d","label":"sa frère"}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["VG_POSSESSIVES"],"outcome_ids":["ABFSL-GEN-LANG"],"exposure_group":"A-possessive","estimated_seconds":45,"audio":null,"author_notes":null},{"id":"VGA-F03","version":1,"release_id":"assessment-v1.0.1","form":"A","domain":"vocabulary_grammar","difficulty_tier":"foundation","item_type":"text_choice","prompt_en":"Choose the correct sentence.","stimulus":null,"choices":[{"id":"a","label":"Les maisons sont grandes."},{"id":"b","label":"Les maisons est grand."},{"id":"c","label":"La maisons sont grande."},{"id":"d","label":"Le maison est grands."}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["VG_GENDER_NUMBER"],"outcome_ids":["ABFSL-GEN-LANG"],"exposure_group":"A-agreement","estimated_seconds":45,"audio":null,"author_notes":null},{"id":"VGA-F04","version":1,"release_id":"assessment-v1.0.1","form":"A","domain":"vocabulary_grammar","difficulty_tier":"foundation","item_type":"typed_short","prompt_en":"Type the French word that means “where.”","stimulus":null,"choices":null,"answer_key":{"accepted_answers":["où"],"comparison":"normalize_case_spacing_and_curly_apostrophe; preserve accents for spelling credit"},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["VG_QUESTIONS","W_ENCODING"],"outcome_ids":["ABFSL-GEN-LANG"],"exposure_group":"A-question_word","estimated_seconds":45,"audio":null,"author_notes":null},{"id":"VGA-D01","version":1,"release_id":"assessment-v1.0.1","form":"A","domain":"vocabulary_grammar","difficulty_tier":"developing","item_type":"text_choice","prompt_en":"Complete the sentence: Nous ___ au parc. (aller)","stimulus":null,"choices":[{"id":"a","label":"allons"},{"id":"b","label":"allez"},{"id":"c","label":"vais"},{"id":"d","label":"va"}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["VG_PRESENT_CORE"],"outcome_ids":["ABFSL-GEN-LANG"],"exposure_group":"A-verb","estimated_seconds":45,"audio":null,"author_notes":null},{"id":"VGA-D02","version":1,"release_id":"assessment-v1.0.1","form":"A","domain":"vocabulary_grammar","difficulty_tier":"developing","item_type":"text_choice","prompt_en":"Choose the negative sentence.","stimulus":null,"choices":[{"id":"a","label":"Je ne mange pas de viande."},{"id":"b","label":"Je mange ne pas de viande."},{"id":"c","label":"Je pas mange de viande."},{"id":"d","label":"Ne je mange de viande pas."}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["VG_NEGATION"],"outcome_ids":["ABFSL-GEN-LANG"],"exposure_group":"A-negation","estimated_seconds":45,"audio":null,"author_notes":null},{"id":"VGA-D03","version":1,"release_id":"assessment-v1.0.1","form":"A","domain":"vocabulary_grammar","difficulty_tier":"developing","item_type":"typed_short","prompt_en":"Type the missing word: Le livre est ___ la table. (under)","stimulus":null,"choices":null,"answer_key":{"accepted_answers":["sous"],"comparison":"normalize_case_spacing_and_curly_apostrophe; preserve accents for spelling credit"},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["VG_LOCATION","W_ENCODING"],"outcome_ids":["ABFSL-GEN-LANG"],"exposure_group":"A-location","estimated_seconds":45,"audio":null,"author_notes":null},{"id":"VGA-S01","version":1,"release_id":"assessment-v1.0.1","form":"A","domain":"vocabulary_grammar","difficulty_tier":"stretch","item_type":"text_choice","prompt_en":"Choose the correct phrase: Nous allons ___ musée.","stimulus":null,"choices":[{"id":"a","label":"au"},{"id":"b","label":"à le"},{"id":"c","label":"aux"},{"id":"d","label":"du"}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["VG_CONTRACTIONS"],"outcome_ids":["ABFSL-GEN-LANG"],"exposure_group":"A-contraction","estimated_seconds":45,"audio":null,"author_notes":null},{"id":"VGA-S02","version":1,"release_id":"assessment-v1.0.1","form":"A","domain":"vocabulary_grammar","difficulty_tier":"stretch","item_type":"text_choice","prompt_en":"Choose the best question for the answer “Parce que j’aime lire.”","stimulus":null,"choices":[{"id":"a","label":"Pourquoi vas-tu à la bibliothèque?"},{"id":"b","label":"Où habites-tu?"},{"id":"c","label":"Quand est ton anniversaire?"},{"id":"d","label":"Combien de livres as-tu?"}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["VG_QUESTIONS","VG_CONNECTED"],"outcome_ids":["ABFSL-GEN-LANG"],"exposure_group":"A-question","estimated_seconds":45,"audio":null,"author_notes":null},{"id":"VGA-S03","version":1,"release_id":"assessment-v1.0.1","form":"A","domain":"vocabulary_grammar","difficulty_tier":"stretch","item_type":"typed_short","prompt_en":"Type the connector that means “because”: Je reste ici ___ il pleut.","stimulus":null,"choices":null,"answer_key":{"accepted_answers":["parce que"],"comparison":"normalize_case_spacing_and_curly_apostrophe; preserve accents for spelling credit"},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["VG_CONNECTED","W_ENCODING"],"outcome_ids":["ABFSL-GEN-LANG"],"exposure_group":"A-connector","estimated_seconds":45,"audio":null,"author_notes":null},{"id":"VGB-F01","version":1,"release_id":"assessment-v1.0.1","form":"B","domain":"vocabulary_grammar","difficulty_tier":"foundation","item_type":"text_choice","prompt_en":"Choose the correct article: ___ hôpital","stimulus":null,"choices":[{"id":"a","label":"l’"},{"id":"b","label":"la"},{"id":"c","label":"une"},{"id":"d","label":"des"}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["VG_ARTICLES"],"outcome_ids":["ABFSL-GEN-LANG"],"exposure_group":"B-articles","estimated_seconds":45,"audio":null,"author_notes":null},{"id":"VGB-F02","version":1,"release_id":"assessment-v1.0.1","form":"B","domain":"vocabulary_grammar","difficulty_tier":"foundation","item_type":"text_choice","prompt_en":"Choose the best French phrase for “my brother.”","stimulus":null,"choices":[{"id":"a","label":"mon frère"},{"id":"b","label":"ma frère"},{"id":"c","label":"mes frère"},{"id":"d","label":"son sœur"}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["VG_POSSESSIVES"],"outcome_ids":["ABFSL-GEN-LANG"],"exposure_group":"B-possessive","estimated_seconds":45,"audio":null,"author_notes":null},{"id":"VGB-F03","version":1,"release_id":"assessment-v1.0.1","form":"B","domain":"vocabulary_grammar","difficulty_tier":"foundation","item_type":"text_choice","prompt_en":"Choose the correct sentence.","stimulus":null,"choices":[{"id":"a","label":"Les voitures sont rouges."},{"id":"b","label":"Les voitures est rouge."},{"id":"c","label":"La voitures sont rouges."},{"id":"d","label":"Le voiture est rouges."}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["VG_GENDER_NUMBER"],"outcome_ids":["ABFSL-GEN-LANG"],"exposure_group":"B-agreement","estimated_seconds":45,"audio":null,"author_notes":null},{"id":"VGB-F04","version":1,"release_id":"assessment-v1.0.1","form":"B","domain":"vocabulary_grammar","difficulty_tier":"foundation","item_type":"typed_short","prompt_en":"Type the French word that means “when.”","stimulus":null,"choices":null,"answer_key":{"accepted_answers":["quand"],"comparison":"normalize_case_spacing_and_curly_apostrophe; preserve accents for spelling credit"},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["VG_QUESTIONS","W_ENCODING"],"outcome_ids":["ABFSL-GEN-LANG"],"exposure_group":"B-question_word","estimated_seconds":45,"audio":null,"author_notes":null},{"id":"VGB-D01","version":1,"release_id":"assessment-v1.0.1","form":"B","domain":"vocabulary_grammar","difficulty_tier":"developing","item_type":"text_choice","prompt_en":"Complete the sentence: Vous ___ deux chiens. (avoir)","stimulus":null,"choices":[{"id":"a","label":"avez"},{"id":"b","label":"avons"},{"id":"c","label":"ont"},{"id":"d","label":"as"}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["VG_PRESENT_CORE"],"outcome_ids":["ABFSL-GEN-LANG"],"exposure_group":"B-verb","estimated_seconds":45,"audio":null,"author_notes":null},{"id":"VGB-D02","version":1,"release_id":"assessment-v1.0.1","form":"B","domain":"vocabulary_grammar","difficulty_tier":"developing","item_type":"text_choice","prompt_en":"Choose the negative sentence.","stimulus":null,"choices":[{"id":"a","label":"Elle ne joue pas au soccer."},{"id":"b","label":"Elle joue ne pas au soccer."},{"id":"c","label":"Elle pas joue au soccer."},{"id":"d","label":"Ne elle joue au soccer pas."}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["VG_NEGATION"],"outcome_ids":["ABFSL-GEN-LANG"],"exposure_group":"B-negation","estimated_seconds":45,"audio":null,"author_notes":null},{"id":"VGB-D03","version":1,"release_id":"assessment-v1.0.1","form":"B","domain":"vocabulary_grammar","difficulty_tier":"developing","item_type":"typed_short","prompt_en":"Type the missing word: Le sac est ___ la chaise. (behind)","stimulus":null,"choices":null,"answer_key":{"accepted_answers":["derrière"],"comparison":"normalize_case_spacing_and_curly_apostrophe; preserve accents for spelling credit"},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["VG_LOCATION","W_ENCODING"],"outcome_ids":["ABFSL-GEN-LANG"],"exposure_group":"B-location","estimated_seconds":45,"audio":null,"author_notes":null},{"id":"VGB-S01","version":1,"release_id":"assessment-v1.0.1","form":"B","domain":"vocabulary_grammar","difficulty_tier":"stretch","item_type":"text_choice","prompt_en":"Choose the correct phrase: Elle revient ___ école.","stimulus":null,"choices":[{"id":"a","label":"de l’"},{"id":"b","label":"du"},{"id":"c","label":"des"},{"id":"d","label":"de le"}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["VG_CONTRACTIONS"],"outcome_ids":["ABFSL-GEN-LANG"],"exposure_group":"B-contraction","estimated_seconds":45,"audio":null,"author_notes":null},{"id":"VGB-S02","version":1,"release_id":"assessment-v1.0.1","form":"B","domain":"vocabulary_grammar","difficulty_tier":"stretch","item_type":"text_choice","prompt_en":"Choose the best question for the answer “À quinze heures.”","stimulus":null,"choices":[{"id":"a","label":"À quelle heure commence la fête?"},{"id":"b","label":"Pourquoi aimes-tu la fête?"},{"id":"c","label":"Où est la fête?"},{"id":"d","label":"Qui vient à la fête?"}],"answer_key":{"correct_choice_ids":["a"]},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["VG_QUESTIONS","VG_CONNECTED"],"outcome_ids":["ABFSL-GEN-LANG"],"exposure_group":"B-question","estimated_seconds":45,"audio":null,"author_notes":null},{"id":"VGB-S03","version":1,"release_id":"assessment-v1.0.1","form":"B","domain":"vocabulary_grammar","difficulty_tier":"stretch","item_type":"typed_short","prompt_en":"Type the connector that means “but”: J’aime marcher, ___ il pleut.","stimulus":null,"choices":null,"answer_key":{"accepted_answers":["mais"],"comparison":"normalize_case_spacing_and_curly_apostrophe; preserve accents for spelling credit"},"scoring":{"method":"objective","correct_points":1,"incorrect_points":0},"skill_ids":["VG_CONNECTED","W_ENCODING"],"outcome_ids":["ABFSL-GEN-LANG"],"exposure_group":"B-connector","estimated_seconds":45,"audio":null,"author_notes":null},{"id":"WA-F01","version":1,"release_id":"assessment-v1.0.1","form":"A","domain":"writing","difficulty_tier":"foundation","item_type":"open_written","prompt_en":"Write one complete French sentence to introduce yourself. Include your name.","stimulus":null,"choices":null,"answer_key":null,"scoring":{"method":"analytic_rubric","rubric_id":"WRITING-ANALYTIC-V1","model_response":"Je m’appelle Alex."},"skill_ids":["W_SENTENCE","W_ENCODING"],"outcome_ids":["ABFSL-GEN-COM","ABFSL-GEN-LANG"],"exposure_group":"A-writing-foundation","estimated_seconds":90,"audio":null,"author_notes":"The model is one possible successful response, not the only acceptable wording. Do not show it during assessment."},{"id":"WA-F02","version":1,"release_id":"assessment-v1.0.1","form":"A","domain":"writing","difficulty_tier":"foundation","item_type":"open_written","prompt_en":"Write one French sentence saying one thing you like and one thing you do not like.","stimulus":null,"choices":null,"answer_key":null,"scoring":{"method":"analytic_rubric","rubric_id":"WRITING-ANALYTIC-V1","model_response":"J’aime les pommes, mais je n’aime pas le fromage."},"skill_ids":["W_SENTENCE","VG_NEGATION"],"outcome_ids":["ABFSL-GEN-COM","ABFSL-GEN-LANG"],"exposure_group":"A-writing-foundation","estimated_seconds":90,"audio":null,"author_notes":"The model is one possible successful response, not the only acceptable wording. Do not show it during assessment."},{"id":"WA-D01","version":1,"release_id":"assessment-v1.0.1","form":"A","domain":"writing","difficulty_tier":"developing","item_type":"open_written","prompt_en":"Write two French sentences describing where two objects are in a room.","stimulus":null,"choices":null,"answer_key":null,"scoring":{"method":"analytic_rubric","rubric_id":"WRITING-ANALYTIC-V1","model_response":"Le livre est sur la table. Le sac est sous la chaise."},"skill_ids":["W_DESCRIPTION","VG_LOCATION"],"outcome_ids":["ABFSL-GEN-COM","ABFSL-GEN-LANG"],"exposure_group":"A-writing-developing","estimated_seconds":90,"audio":null,"author_notes":"The model is one possible successful response, not the only acceptable wording. Do not show it during assessment."},{"id":"WA-D02","version":1,"release_id":"assessment-v1.0.1","form":"A","domain":"writing","difficulty_tier":"developing","item_type":"open_written","prompt_en":"Write a short French message to a friend. Say where to meet and at what time.","stimulus":null,"choices":null,"answer_key":null,"scoring":{"method":"analytic_rubric","rubric_id":"WRITING-ANALYTIC-V1","model_response":"Salut! Retrouve-moi à la bibliothèque à quinze heures."},"skill_ids":["W_DESCRIPTION","W_CONNECTED"],"outcome_ids":["ABFSL-GEN-COM","ABFSL-GEN-LANG"],"exposure_group":"A-writing-developing","estimated_seconds":90,"audio":null,"author_notes":"The model is one possible successful response, not the only acceptable wording. Do not show it during assessment."},{"id":"WA-S01","version":1,"release_id":"assessment-v1.0.1","form":"A","domain":"writing","difficulty_tier":"stretch","item_type":"open_written","prompt_en":"Write three or four French sentences about a school day. Include one question for a friend.","stimulus":null,"choices":null,"answer_key":null,"scoring":{"method":"analytic_rubric","rubric_id":"WRITING-ANALYTIC-V1","model_response":"Le mardi, j’ai les sciences le matin. Après le dîner, j’ai les arts. J’aime les arts. Quelle matière préfères-tu?"},"skill_ids":["W_CONNECTED","W_QUESTION"],"outcome_ids":["ABFSL-GEN-COM","ABFSL-GEN-LANG"],"exposure_group":"A-writing-stretch","estimated_seconds":150,"audio":null,"author_notes":"The model is one possible successful response, not the only acceptable wording. Do not show it during assessment."},{"id":"WA-S02","version":1,"release_id":"assessment-v1.0.1","form":"A","domain":"writing","difficulty_tier":"stretch","item_type":"open_written","prompt_en":"Write four or five French sentences explaining which activity you prefer and why. Include one contrast using mais.","stimulus":null,"choices":null,"answer_key":null,"scoring":{"method":"analytic_rubric","rubric_id":"WRITING-ANALYTIC-V1","model_response":"Je préfère faire du vélo parce que j’aime être dehors. Je fais du vélo au parc avec mon amie. C’est amusant, mais je ne roule pas quand il pleut."},"skill_ids":["W_REASON","W_CONNECTED"],"outcome_ids":["ABFSL-GEN-COM","ABFSL-GEN-LANG"],"exposure_group":"A-writing-stretch","estimated_seconds":150,"audio":null,"author_notes":"The model is one possible successful response, not the only acceptable wording. Do not show it during assessment."},{"id":"WB-F01","version":1,"release_id":"assessment-v1.0.1","form":"B","domain":"writing","difficulty_tier":"foundation","item_type":"open_written","prompt_en":"Write one complete French sentence saying your age.","stimulus":null,"choices":null,"answer_key":null,"scoring":{"method":"analytic_rubric","rubric_id":"WRITING-ANALYTIC-V1","model_response":"J’ai onze ans."},"skill_ids":["W_SENTENCE","W_ENCODING"],"outcome_ids":["ABFSL-GEN-COM","ABFSL-GEN-LANG"],"exposure_group":"B-writing-foundation","estimated_seconds":90,"audio":null,"author_notes":"The model is one possible successful response, not the only acceptable wording. Do not show it during assessment."},{"id":"WB-F02","version":1,"release_id":"assessment-v1.0.1","form":"B","domain":"writing","difficulty_tier":"foundation","item_type":"open_written","prompt_en":"Write one French sentence saying one food you like and one food you do not like.","stimulus":null,"choices":null,"answer_key":null,"scoring":{"method":"analytic_rubric","rubric_id":"WRITING-ANALYTIC-V1","model_response":"J’aime le pain, mais je n’aime pas les carottes."},"skill_ids":["W_SENTENCE","VG_NEGATION"],"outcome_ids":["ABFSL-GEN-COM","ABFSL-GEN-LANG"],"exposure_group":"B-writing-foundation","estimated_seconds":90,"audio":null,"author_notes":"The model is one possible successful response, not the only acceptable wording. Do not show it during assessment."},{"id":"WB-D01","version":1,"release_id":"assessment-v1.0.1","form":"B","domain":"writing","difficulty_tier":"developing","item_type":"open_written","prompt_en":"Write two French sentences describing two people or animals.","stimulus":null,"choices":null,"answer_key":null,"scoring":{"method":"analytic_rubric","rubric_id":"WRITING-ANALYTIC-V1","model_response":"Le chien est petit et noir. Ma sœur est grande."},"skill_ids":["W_DESCRIPTION","VG_GENDER_NUMBER"],"outcome_ids":["ABFSL-GEN-COM","ABFSL-GEN-LANG"],"exposure_group":"B-writing-developing","estimated_seconds":90,"audio":null,"author_notes":"The model is one possible successful response, not the only acceptable wording. Do not show it during assessment."},{"id":"WB-D02","version":1,"release_id":"assessment-v1.0.1","form":"B","domain":"writing","difficulty_tier":"developing","item_type":"open_written","prompt_en":"Write a short French message to a classmate. Say what to bring and where to go.","stimulus":null,"choices":null,"answer_key":null,"scoring":{"method":"analytic_rubric","rubric_id":"WRITING-ANALYTIC-V1","model_response":"Apporte ton cahier et va au laboratoire de sciences."},"skill_ids":["W_DESCRIPTION","W_CONNECTED"],"outcome_ids":["ABFSL-GEN-COM","ABFSL-GEN-LANG"],"exposure_group":"B-writing-developing","estimated_seconds":90,"audio":null,"author_notes":"The model is one possible successful response, not the only acceptable wording. Do not show it during assessment."},{"id":"WB-S01","version":1,"release_id":"assessment-v1.0.1","form":"B","domain":"writing","difficulty_tier":"stretch","item_type":"open_written","prompt_en":"Write three or four French sentences about your neighbourhood. Include one question for a friend.","stimulus":null,"choices":null,"answer_key":null,"scoring":{"method":"analytic_rubric","rubric_id":"WRITING-ANALYTIC-V1","model_response":"Il y a un parc près de ma maison. Je vais au parc à pied. J’aime mon quartier. Où habites-tu?"},"skill_ids":["W_CONNECTED","W_QUESTION"],"outcome_ids":["ABFSL-GEN-COM","ABFSL-GEN-LANG"],"exposure_group":"B-writing-stretch","estimated_seconds":150,"audio":null,"author_notes":"The model is one possible successful response, not the only acceptable wording. Do not show it during assessment."},{"id":"WB-S02","version":1,"release_id":"assessment-v1.0.1","form":"B","domain":"writing","difficulty_tier":"stretch","item_type":"open_written","prompt_en":"Write four or five French sentences explaining which season you prefer and why. Include one contrast using mais.","stimulus":null,"choices":null,"answer_key":null,"scoring":{"method":"analytic_rubric","rubric_id":"WRITING-ANALYTIC-V1","model_response":"Je préfère l’hiver parce que j’aime patiner. Je joue aussi dans la neige. Il fait froid, mais je porte un manteau et des mitaines."},"skill_ids":["W_REASON","W_CONNECTED"],"outcome_ids":["ABFSL-GEN-COM","ABFSL-GEN-LANG"],"exposure_group":"B-writing-stretch","estimated_seconds":150,"audio":null,"author_notes":"The model is one possible successful response, not the only acceptable wording. Do not show it during assessment."},{"id":"SA-F01","version":1,"release_id":"assessment-v1.0.1","form":"A","domain":"speaking","difficulty_tier":"foundation","item_type":"open_spoken","prompt_en":"In French, say your name and age.","stimulus":null,"choices":null,"answer_key":null,"scoring":{"method":"analytic_rubric","rubric_id":"SPEAKING-ANALYTIC-V1","model_response":"Je m’appelle Alex et j’ai onze ans."},"skill_ids":["S_INTRO","P_COMPREHENSIBILITY"],"outcome_ids":["ABFSL-GEN-COM","ABFSL-GEN-LANG"],"exposure_group":"A-speaking-foundation","estimated_seconds":90,"audio":null,"author_notes":"Record locally for review. A device transcript may be stored as an observation but must not determine the score."},{"id":"SA-F02","version":1,"release_id":"assessment-v1.0.1","form":"A","domain":"speaking","difficulty_tier":"foundation","item_type":"open_spoken","prompt_en":"In French, name two things you can see in the picture and give one colour.","stimulus":{"type":"illustration_brief","required_elements":["red pencil","blue book","green bag","chair","table"],"prohibited_text":["French labels","English object labels"],"learner_view":"illustration only"},"choices":null,"answer_key":null,"scoring":{"method":"analytic_rubric","rubric_id":"SPEAKING-ANALYTIC-V1","model_response":"Je vois un crayon rouge et un livre bleu."},"skill_ids":["S_DESCRIPTION","P_SOUND_SYMBOL"],"outcome_ids":["ABFSL-GEN-COM","ABFSL-GEN-LANG"],"exposure_group":"A-speaking-foundation","estimated_seconds":90,"audio":null,"author_notes":"Record locally for review. A device transcript may be stored as an observation but must not determine the score."},{"id":"SA-D01","version":1,"release_id":"assessment-v1.0.1","form":"A","domain":"speaking","difficulty_tier":"developing","item_type":"open_spoken","prompt_en":"In French, answer: Qu’est-ce que tu aimes faire après l’école? Give at least two details.","stimulus":null,"choices":null,"answer_key":null,"scoring":{"method":"analytic_rubric","rubric_id":"SPEAKING-ANALYTIC-V1","model_response":"Après l’école, j’aime lire et jouer au soccer avec mes amis."},"skill_ids":["S_RESPONSE","S_DESCRIPTION","P_COMPREHENSIBILITY"],"outcome_ids":["ABFSL-GEN-COM","ABFSL-GEN-LANG"],"exposure_group":"A-speaking-developing","estimated_seconds":90,"audio":null,"author_notes":"Record locally for review. A device transcript may be stored as an observation but must not determine the score."},{"id":"SA-D02","version":1,"release_id":"assessment-v1.0.1","form":"A","domain":"speaking","difficulty_tier":"developing","item_type":"open_spoken","prompt_en":"In French, tell someone how to go from the school to the library on the map.","stimulus":{"type":"map_brief","required_route":["start at school","go straight to park","turn left","library beside bank"],"required_labels":["school","park","library","bank"],"learner_view":"map with French place labels; no route arrows"},"choices":null,"answer_key":null,"scoring":{"method":"analytic_rubric","rubric_id":"SPEAKING-ANALYTIC-V1","model_response":"Va tout droit jusqu’au parc. Tourne à gauche. La bibliothèque est à côté de la banque."},"skill_ids":["S_DIRECTIONS","P_RHYTHM_LINKING"],"outcome_ids":["ABFSL-GEN-COM","ABFSL-GEN-LANG"],"exposure_group":"A-speaking-developing","estimated_seconds":90,"audio":null,"author_notes":"Record locally for review. A device transcript may be stored as an observation but must not determine the score."},{"id":"SA-S01","version":1,"release_id":"assessment-v1.0.1","form":"A","domain":"speaking","difficulty_tier":"stretch","item_type":"open_spoken","prompt_en":"Speak in French for about 30–45 seconds. Explain which school subject or activity you prefer and why, and ask one related question.","stimulus":null,"choices":null,"answer_key":null,"scoring":{"method":"analytic_rubric","rubric_id":"SPEAKING-ANALYTIC-V1","model_response":"Je préfère les sciences parce que j’aime faire des expériences. Le mardi, je travaille avec mon groupe au laboratoire. C’est parfois difficile, mais c’est intéressant. Quelle matière préfères-tu?"},"skill_ids":["S_CONNECTED","S_RESPONSE","P_COMPREHENSIBILITY","P_RHYTHM_LINKING"],"outcome_ids":["ABFSL-GEN-COM","ABFSL-GEN-LANG"],"exposure_group":"A-speaking-stretch","estimated_seconds":150,"audio":null,"author_notes":"Record locally for review. A device transcript may be stored as an observation but must not determine the score."},{"id":"SB-F01","version":1,"release_id":"assessment-v1.0.1","form":"B","domain":"speaking","difficulty_tier":"foundation","item_type":"open_spoken","prompt_en":"In French, say where you live and name one person or pet in your family.","stimulus":null,"choices":null,"answer_key":null,"scoring":{"method":"analytic_rubric","rubric_id":"SPEAKING-ANALYTIC-V1","model_response":"J’habite à Edmonton et j’ai un frère."},"skill_ids":["S_INTRO","P_COMPREHENSIBILITY"],"outcome_ids":["ABFSL-GEN-COM","ABFSL-GEN-LANG"],"exposure_group":"B-speaking-foundation","estimated_seconds":90,"audio":null,"author_notes":"Record locally for review. A device transcript may be stored as an observation but must not determine the score."},{"id":"SB-F02","version":1,"release_id":"assessment-v1.0.1","form":"B","domain":"speaking","difficulty_tier":"foundation","item_type":"open_spoken","prompt_en":"In French, name two things you can see in the picture and give one location.","stimulus":{"type":"illustration_brief","required_elements":["bed","lamp on a table","book under a chair","window"],"prohibited_text":["French labels","English object labels"],"learner_view":"illustration only"},"choices":null,"answer_key":null,"scoring":{"method":"analytic_rubric","rubric_id":"SPEAKING-ANALYTIC-V1","model_response":"Je vois un lit. Le livre est sous la chaise."},"skill_ids":["S_DESCRIPTION","P_SOUND_SYMBOL"],"outcome_ids":["ABFSL-GEN-COM","ABFSL-GEN-LANG"],"exposure_group":"B-speaking-foundation","estimated_seconds":90,"audio":null,"author_notes":"Record locally for review. A device transcript may be stored as an observation but must not determine the score."},{"id":"SB-D01","version":1,"release_id":"assessment-v1.0.1","form":"B","domain":"speaking","difficulty_tier":"developing","item_type":"open_spoken","prompt_en":"In French, answer: Quel temps fait-il aujourd’hui et que portes-tu? Give at least two details.","stimulus":null,"choices":null,"answer_key":null,"scoring":{"method":"analytic_rubric","rubric_id":"SPEAKING-ANALYTIC-V1","model_response":"Il fait froid aujourd’hui. Je porte un manteau et des bottes."},"skill_ids":["S_RESPONSE","S_DESCRIPTION","P_COMPREHENSIBILITY"],"outcome_ids":["ABFSL-GEN-COM","ABFSL-GEN-LANG"],"exposure_group":"B-speaking-developing","estimated_seconds":90,"audio":null,"author_notes":"Record locally for review. A device transcript may be stored as an observation but must not determine the score."},{"id":"SB-D02","version":1,"release_id":"assessment-v1.0.1","form":"B","domain":"speaking","difficulty_tier":"developing","item_type":"open_spoken","prompt_en":"In French, tell someone how to go from the park to the bakery on the map.","stimulus":{"type":"map_brief","required_route":["start at park","pass school","turn right at library","bakery across from pool"],"required_labels":["park","school","library","bakery","pool"],"learner_view":"map with French place labels; no route arrows"},"choices":null,"answer_key":null,"scoring":{"method":"analytic_rubric","rubric_id":"SPEAKING-ANALYTIC-V1","model_response":"Passe devant l’école et tourne à droite à la bibliothèque. La boulangerie est en face de la piscine."},"skill_ids":["S_DIRECTIONS","P_RHYTHM_LINKING"],"outcome_ids":["ABFSL-GEN-COM","ABFSL-GEN-LANG"],"exposure_group":"B-speaking-developing","estimated_seconds":90,"audio":null,"author_notes":"Record locally for review. A device transcript may be stored as an observation but must not determine the score."},{"id":"SB-S01","version":1,"release_id":"assessment-v1.0.1","form":"B","domain":"speaking","difficulty_tier":"stretch","item_type":"open_spoken","prompt_en":"Speak in French for about 30–45 seconds. Explain which season or weekend activity you prefer and why, and ask one related question.","stimulus":null,"choices":null,"answer_key":null,"scoring":{"method":"analytic_rubric","rubric_id":"SPEAKING-ANALYTIC-V1","model_response":"Je préfère l’été parce que j’aime faire du vélo. Le samedi, je vais au parc avec ma famille. Il fait parfois très chaud, mais nous apportons de l’eau. Quelle saison préfères-tu?"},"skill_ids":["S_CONNECTED","S_RESPONSE","P_COMPREHENSIBILITY","P_RHYTHM_LINKING"],"outcome_ids":["ABFSL-GEN-COM","ABFSL-GEN-LANG"],"exposure_group":"B-speaking-stretch","estimated_seconds":150,"audio":null,"author_notes":"Record locally for review. A device transcript may be stored as an observation but must not determine the score."}]');
@@ -2130,6 +2244,7 @@ function routingFor(domain) {
 function minimumEvidenceFor(domain) {
   return RULES.scoring.minimum_independent_valid_items?.[domain] ?? null;
 }
+const MAX_LISTENING_PLAYS = RULES.replay.listening_max_plays;
 function needsUnbuiltAsset(item) {
   const s = item?.stimulus;
   return !!(s && typeof s === "object" && typeof s.type === "string" && s.type.endsWith("_brief"));
@@ -2284,6 +2399,121 @@ function nextItem(run, domain) {
   }
   return null;
 }
+function recordExposure(run, itemId, { now: now2 = Date.now() } = {}) {
+  const seen = run.exposure[itemId];
+  run.exposure[itemId] = seen ? { ...seen, shown_count: num(seen.shown_count) + 1 } : { first_shown_at_utc: now2, shown_count: 1 };
+  return run.exposure[itemId];
+}
+function submitResponse(run, itemId, patch = {}, { now: now2 = Date.now(), attemptIndex = 0, deviceId: deviceId2 = null } = {}) {
+  const key = responseKey(itemId, attemptIndex);
+  if (run.responses[key]) return { response: run.responses[key], accepted: false };
+  const item = getItem(itemId);
+  const base = newResponse({
+    itemId,
+    itemVersion: item?.version ?? 1,
+    form: run.form,
+    domain: item?.domain ?? null,
+    difficultyTier: item?.difficulty_tier ?? null,
+    attemptIndex,
+    deviceId: deviceId2
+  });
+  const response = {
+    ...base,
+    ...patch,
+    response_submitted_at_utc: num(patch.response_submitted_at_utc) || now2,
+    written_at_ms: now2
+  };
+  if ((run.previously_exposed || []).includes(itemId)) response.previously_exposed = true;
+  if (item?.scoring?.method === "objective") {
+    const graded = scoreObjective(item, {
+      ...response,
+      // scoreObjective speaks in choice_ids/text; the record speaks in the
+      // release's own field names.
+      choice_ids: response.selected_choice_ids,
+      text: response.raw_response
+    });
+    response.points = graded.points;
+    response.scored_correct = graded.valid ? !graded.incorrect : void 0;
+    response.scored_valid = graded.valid;
+    if (graded.report_flag) response.report_flag = graded.report_flag;
+    if (graded.meaning !== void 0) response.meaning = graded.meaning;
+    if (graded.spelling !== void 0) response.spelling = graded.spelling;
+  }
+  if (response.response_started_at_utc && response.response_time_ms == null) {
+    response.response_time_ms = response.response_submitted_at_utc - response.response_started_at_utc;
+  }
+  run.responses[key] = response;
+  return { response, accepted: true };
+}
+function playsUsed(response) {
+  return (response?.playback_events || []).filter((e) => e.consumed).length;
+}
+function canPlay(item, response) {
+  const max = num(item?.audio?.max_plays) || num(MAX_LISTENING_PLAYS);
+  return playsUsed(response) < max;
+}
+function recordPlayback(response, { now: now2 = Date.now(), consumed = true, resolvedLocale = null } = {}) {
+  response.playback_events = [
+    ...response.playback_events || [],
+    { at_utc: now2, consumed, resolved_locale: resolvedLocale }
+  ];
+  response.audio_play_count = playsUsed(response);
+  if (resolvedLocale) response.voice_resolved_locale = resolvedLocale;
+  return response;
+}
+function entryTally(run, domain) {
+  const section = run.sections[domain];
+  const ids = section.plan.slice(0, section.entry_count || section.plan.length);
+  let correct = 0, valid = 0, answered = 0;
+  for (const id of ids) {
+    const r = run.responses[responseKey(id, 0)];
+    if (!r) continue;
+    answered++;
+    if (r.technical_invalid_reason) continue;
+    valid++;
+    if (r.scored_correct) correct++;
+  }
+  return { ids, correct, valid, answered, complete: answered === ids.length };
+}
+function applyRoutingIfEntryComplete(run, domain, { now: now2 = Date.now() } = {}) {
+  const section = run.sections[domain];
+  const routing = routingFor(domain);
+  if (!section || !routing) return null;
+  if (section.routing_decision) return section.routing_decision;
+  const tally = entryTally(run, domain);
+  if (!tally.complete) return null;
+  const tiers = routeAfterEntry(domain, tally.correct, tally.valid, RULES);
+  for (const tier of tiers) {
+    for (const item of itemsFor({ form: run.form, domain, tier })) {
+      if (!section.plan.includes(item.id)) section.plan.push(item.id);
+    }
+  }
+  section.routing_decision = tiers;
+  section.routed_at_utc = now2;
+  section.administered_tiers = [.../* @__PURE__ */ new Set([section.entry_tier, ...tiers])].filter(Boolean);
+  return tiers;
+}
+function sectionIsAnswered(run, domain) {
+  const section = run.sections[domain];
+  if (!section) return false;
+  return section.plan.every((id) => {
+    const item = getItem(id);
+    if (item && needsUnbuiltAsset(item)) return true;
+    return !!run.responses[responseKey(id, 0)];
+  });
+}
+function completeSection(run, domain, { now: now2 = Date.now() } = {}) {
+  const section = run.sections[domain];
+  if (!section) return null;
+  section.status = SECTION_STATUS.COMPLETE;
+  section.completed_at_utc = now2;
+  return section;
+}
+function completeRun(run, { now: now2 = Date.now() } = {}) {
+  run.status = RUN_STATUS.COMPLETE;
+  run.status_at_utc = now2;
+  return run;
+}
 function resumePoint(run) {
   const domain = nextSection(run);
   if (!domain) return { done: true, domain: null, item: null };
@@ -2304,7 +2534,12 @@ let deps = {
   todayKey: () => null,
   deviceId: () => null,
   onExit: () => {
-  }
+  },
+  speak: () => {
+  },
+  // plays a French string aloud
+  voiceInfo: () => ({})
+  // { resolvedLocale, name } for the record
 };
 let activePlayer = null;
 let activeRunId = null;
@@ -2414,11 +2649,177 @@ function render() {
     if (ok) actions.append(button("Start this part", "assess-begin-section"));
     return;
   }
-  const remaining = section.plan.filter((id) => !run.responses[`${id}#0`]).length;
-  body.append(card(
-    `${DOMAIN_LABEL[at.domain] ?? at.domain} — ${remaining} to go`,
-    "The questions themselves arrive in the next step of the build. Nothing here is scored yet."
+  const item = at.item;
+  if (!item) {
+    body.append(card(
+      `${DOMAIN_LABEL[at.domain] ?? at.domain} — finished`,
+      "Nothing is marked here. You can stop, or carry on with the next part."
+    ));
+    actions.append(button("Done with this part", "assess-finish-section"));
+    return;
+  }
+  if (routingFor(at.domain)) renderObjectiveItem(body, actions, run, item);
+  else body.append(card(
+    `${DOMAIN_LABEL[at.domain] ?? at.domain}`,
+    "This part arrives in the next step of the build."
   ));
+}
+let draft = null;
+function draftFor(run, item) {
+  if (draft && draft.item_id === item.id) return draft;
+  draft = {
+    item_id: item.id,
+    selected_choice_ids: [],
+    raw_response: "",
+    response_started_at_utc: Date.now(),
+    playback_events: [],
+    technical_invalid_reason: null,
+    support_flag: false
+  };
+  return draft;
+}
+function renderObjectiveItem(body, actions, run, item) {
+  const d = draftFor(run, item);
+  const wrap = document.createElement("div");
+  wrap.className = "assess-card";
+  const prompt = document.createElement("div");
+  prompt.className = "assess-prompt";
+  prompt.textContent = item.prompt_en;
+  wrap.append(prompt);
+  if (item.item_type === "audio_choice") wrap.append(audioControls(item, d));
+  if (item.stimulus?.text_fr && item.item_type !== "audio_choice") {
+    const st = document.createElement("div");
+    st.className = "assess-stimulus";
+    st.textContent = item.stimulus.text_fr;
+    wrap.append(st);
+  }
+  if (Array.isArray(item.choices)) wrap.append(choiceList(item, d));
+  else wrap.append(typedInput(d));
+  body.append(wrap);
+  const next = button("Next", "assess-submit-item");
+  next.disabled = !hasAnswer(d);
+  actions.append(next);
+}
+function hasAnswer(d) {
+  return d.technical_invalid_reason ? true : !!(d.selected_choice_ids.length || String(d.raw_response).trim());
+}
+function audioControls(item, d) {
+  const box = document.createElement("div");
+  box.className = "assess-audio";
+  const used = playsUsed(d);
+  const max = item.audio?.max_plays ?? MAX_LISTENING_PLAYS;
+  const play = document.createElement("button");
+  play.type = "button";
+  play.className = "btn-primary";
+  play.setAttribute("data-action", "assess-play");
+  play.textContent = used === 0 ? "▶︎ Play" : "▶︎ Play again";
+  play.disabled = !canPlay(item, d);
+  box.append(play);
+  const left = document.createElement("div");
+  left.className = "assess-note";
+  left.textContent = play.disabled ? "That was the last play for this one." : `${max - used} play${max - used === 1 ? "" : "s"} left`;
+  box.append(left);
+  const nosound = document.createElement("button");
+  nosound.type = "button";
+  nosound.className = "btn-secondary";
+  nosound.setAttribute("data-action", "assess-no-sound");
+  nosound.textContent = "I heard nothing";
+  box.append(nosound);
+  return box;
+}
+function choiceList(item, d) {
+  const list = document.createElement("div");
+  list.className = "assess-choices";
+  for (const c of item.choices) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "assess-choice";
+    b.setAttribute("data-action", "assess-choose");
+    b.setAttribute("data-choice", c.id);
+    b.setAttribute("aria-pressed", String(d.selected_choice_ids.includes(c.id)));
+    if (d.selected_choice_ids.includes(c.id)) b.classList.add("chosen");
+    b.textContent = c.label;
+    list.append(b);
+  }
+  return list;
+}
+function typedInput(d) {
+  const input = document.createElement("input");
+  input.className = "assess-input";
+  input.id = "assess-typed";
+  input.type = "text";
+  input.value = d.raw_response;
+  input.setAttribute("data-action-input", "assess-typed");
+  input.setAttribute("autocomplete", "off");
+  input.setAttribute("autocorrect", "off");
+  input.setAttribute("autocapitalize", "off");
+  input.setAttribute("spellcheck", "false");
+  input.addEventListener("input", () => {
+    d.raw_response = input.value;
+    const next = document.querySelector('[data-action="assess-submit-item"]');
+    if (next) next.disabled = !hasAnswer(d);
+  });
+  return input;
+}
+function chooseOption(choiceId) {
+  if (!draft) return;
+  draft.selected_choice_ids = draft.selected_choice_ids.includes(choiceId) ? [] : [choiceId];
+  render();
+}
+async function playCurrentAudio() {
+  const run = currentRun();
+  if (!run || !draft) return;
+  const item = getItem(draft.item_id);
+  if (!item?.audio || !canPlay(item, draft)) return;
+  const info = deps.voiceInfo() || {};
+  recordPlayback(draft, { consumed: true, resolvedLocale: info.resolvedLocale ?? null });
+  draft.voice_requested_locale = item.audio.locale ?? null;
+  draft.voice_name = info.name ?? null;
+  deps.speak(item.audio.script_fr_ca);
+  render();
+}
+function reportNoSound() {
+  if (!draft) return;
+  draft.technical_invalid_reason = "audio_failed";
+  recordPlayback(draft, { consumed: false });
+  render();
+}
+async function submitCurrentItem() {
+  const run = currentRun();
+  if (!run || !draft) return;
+  const at = resumePoint(run);
+  if (!at.item || at.item.id !== draft.item_id) return;
+  const d = draft;
+  draft = null;
+  await commit((r) => {
+    recordExposure(r, d.item_id, { now: Date.now() });
+    submitResponse(r, d.item_id, {
+      selected_choice_ids: d.selected_choice_ids,
+      raw_response: d.raw_response || null,
+      response_started_at_utc: d.response_started_at_utc,
+      technical_invalid_reason: d.technical_invalid_reason,
+      support_flag: d.support_flag,
+      playback_events: d.playback_events,
+      audio_play_count: playsUsed(d),
+      voice_requested_locale: d.voice_requested_locale ?? null,
+      voice_resolved_locale: d.voice_resolved_locale ?? null,
+      voice_name: d.voice_name ?? null
+    }, { now: Date.now(), deviceId: deps.deviceId() });
+    applyRoutingIfEntryComplete(r, at.domain, { now: Date.now() });
+  });
+  render();
+}
+async function finishSection() {
+  const run = currentRun();
+  if (!run) return;
+  const domain = nextSection(run);
+  if (!domain || !sectionIsAnswered(run, domain)) return;
+  await commit((r) => {
+    completeSection(r, domain, { now: Date.now() });
+    if (!nextSection(r)) completeRun(r, { now: Date.now() });
+  });
+  deps.store.applyPendingRemote(activePlayer);
+  render();
 }
 function card(title, note) {
   const d = document.createElement("div");
@@ -3827,14 +4228,31 @@ document.addEventListener("click", function(e) {
       removeBuilt(Number(el2.getAttribute("data-index")));
       break;
     case "assess-open":
-      if (ensureParentPassword()) void openAssessment(el2.getAttribute("data-player"));
-      else setRecoveryMsg("❌ Enter parent password first");
+      if (ensureParentPassword()) {
+        closeOverlay("parent-overlay");
+        void openAssessment(el2.getAttribute("data-player"));
+      } else setRecoveryMsg("❌ Enter parent password first");
       break;
     case "assess-pause":
       void pauseAssessment();
       break;
     case "assess-begin-section":
       void beginNextSection();
+      break;
+    case "assess-choose":
+      chooseOption(el2.getAttribute("data-choice"));
+      break;
+    case "assess-play":
+      void playCurrentAudio();
+      break;
+    case "assess-no-sound":
+      reportNoSound();
+      break;
+    case "assess-submit-item":
+      void submitCurrentItem();
+      break;
+    case "assess-finish-section":
+      void finishSection();
       break;
   }
 });
@@ -3894,12 +4312,12 @@ function startGame(type) {
     return;
   }
   currentGameType = type;
-  const draft = loadRoundDraftForStart(type);
-  const draftQuestion = draft && draft.questions && draft.questions.length ? draft.questions[draft.qIndex | 0] : null;
-  const isCompletedMatchDraft = !!(draftQuestion && draftQuestion.type === "match" && draft.matchPairs && draft.matchPairs.length && draft.matchMatched && draft.matchMatched.length >= draft.matchPairs.length);
-  const canResume = draft && draft.tk === todayKey() && draft.player === currentPlayer && draft.grade === currentGrade && draft.type === type && draft.questions && draft.questions.length && (draft.qIndex | 0) < draft.questions.length && !isCompletedMatchDraft;
+  const draft2 = loadRoundDraftForStart(type);
+  const draftQuestion = draft2 && draft2.questions && draft2.questions.length ? draft2.questions[draft2.qIndex | 0] : null;
+  const isCompletedMatchDraft = !!(draftQuestion && draftQuestion.type === "match" && draft2.matchPairs && draft2.matchPairs.length && draft2.matchMatched && draft2.matchMatched.length >= draft2.matchPairs.length);
+  const canResume = draft2 && draft2.tk === todayKey() && draft2.player === currentPlayer && draft2.grade === currentGrade && draft2.type === type && draft2.questions && draft2.questions.length && (draft2.qIndex | 0) < draft2.questions.length && !isCompletedMatchDraft;
   if (canResume) {
-    restoreRoundDraft(draft);
+    restoreRoundDraft(draft2);
   } else {
     clearCurrentRoundDraft();
     lives = 3;
@@ -5249,6 +5667,13 @@ configureAssessmentUI({
   minutesRemaining: () => countdownEnd ? Math.max(0, (countdownEnd - Date.now()) / 6e4) : Infinity,
   todayKey,
   deviceId,
+  speak: speakFrench,
+  // Recorded on every listening response, so a whole section that fell back to
+  // a France voice is visible afterwards rather than guessed at.
+  voiceInfo: () => {
+    const v = frenchVoice || resolveFrenchVoice();
+    return { resolvedLocale: v ? v.lang : null, name: v ? v.name : null };
+  },
   // A parent can open the assessment from the parent overlay without a learner
   // being selected, so there may be no hub to return to. updateHub reads
   // state[currentPlayer] and would throw.
@@ -5765,7 +6190,30 @@ button,input{touch-action:manipulation;}
 
 /* Every control the child touches is a real target on an iPad. */
 #screen-assessment button { min-height: 44px; touch-action: manipulation; }
-@media (pointer: coarse) { #screen-assessment button { min-height: 52px; } }</style>
+@media (pointer: coarse) { #screen-assessment button { min-height: 52px; } }
+
+/* Objective items. Plain on purpose: a chosen option is marked as chosen and
+   nothing more. No green, no red, no tick — administration.language bars
+   correctness feedback until the section is submitted, and colour is feedback. */
+.assess-stimulus {
+  font-family: 'Fredoka One', cursive; font-size: 1.15rem; line-height: 1.5;
+  color: var(--french); margin: 4px 0 16px;
+}
+.assess-audio { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 16px; }
+.assess-choices { display: grid; gap: 8px; }
+.assess-choice {
+  text-align: left; padding: 12px 14px; font-size: .92rem;
+  font-family: 'Nunito', sans-serif; font-weight: 700;
+  background: var(--card); color: var(--text);
+  border: 2px solid rgba(0,0,0,.12); border-radius: 12px; cursor: pointer;
+}
+.assess-choice.chosen { border-color: var(--french); background: rgba(37,99,235,.06); }
+.assess-input {
+  width: 100%; padding: 12px 14px; font-size: 1rem;
+  font-family: 'Nunito', sans-serif; border: 2px solid rgba(0,0,0,.12);
+  border-radius: 12px; background: var(--card); color: var(--text);
+}
+.assess-input:focus { outline: none; border-color: var(--french); }</style>
 </head>
 <body>
 <div class="container">

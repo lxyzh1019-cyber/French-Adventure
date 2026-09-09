@@ -13,7 +13,7 @@
 import {
   RUN_STATUS, SECTION_STATUS, newRun, newRunId, responseKey, newResponse,
 } from './run-model.js';
-import { assignFirstForm, alternateForm, routeAfterEntry } from './scoring.js';
+import { assignFirstForm, alternateForm, routeAfterEntry, scoreObjective } from './scoring.js';
 import * as content from './content.js';
 
 const num = v => Number(v) || 0;
@@ -352,11 +352,59 @@ export function submitResponse(run, itemId, patch = {}, { now = Date.now(), atte
   // progress evidence. The response is kept in full — it is still what she did
   // — but it is marked so scoring cannot count it as fresh.
   if ((run.previously_exposed || []).includes(itemId)) response.previously_exposed = true;
+
+  // Objective items are scored here, at submit — routing reads the entry block's
+  // result and cannot wait for the section to end. Scoring and SHOWING are
+  // different things: administration.language bars correctness feedback until
+  // the section is submitted, and nothing in the item renderers reads these
+  // fields. Storing the outcome is what makes the section's own review possible
+  // later without re-deriving it from a bank that may have moved on.
+  if (item?.scoring?.method === 'objective') {
+    const graded = scoreObjective(item, {
+      ...response,
+      // scoreObjective speaks in choice_ids/text; the record speaks in the
+      // release's own field names.
+      choice_ids: response.selected_choice_ids,
+      text: response.raw_response,
+    });
+    response.points = graded.points;
+    response.scored_correct = graded.valid ? !graded.incorrect : undefined;
+    response.scored_valid = graded.valid;
+    if (graded.report_flag) response.report_flag = graded.report_flag;
+    if (graded.meaning !== undefined) response.meaning = graded.meaning;
+    if (graded.spelling !== undefined) response.spelling = graded.spelling;
+  }
   if (response.response_started_at_utc && response.response_time_ms == null) {
     response.response_time_ms = response.response_submitted_at_utc - response.response_started_at_utc;
   }
   run.responses[key] = response;
   return { response, accepted: true };
+}
+
+/**
+ * How many plays this response has consumed, and whether another is allowed.
+ *
+ * replay.play_count_definition counts a playback once it has run past 500 ms;
+ * replay.technical_replay lets a playback that produced no audible output be
+ * repeated without consuming one. A child cannot be expected to notice silence
+ * and report it, so the "no sound" control has to be obvious — but the rule is
+ * that only she can say it, and the app must not guess.
+ */
+export function playsUsed(response) {
+  return (response?.playback_events || []).filter(e => e.consumed).length;
+}
+
+export function canPlay(item, response) {
+  const max = num(item?.audio?.max_plays) || num(content.MAX_LISTENING_PLAYS);
+  return playsUsed(response) < max;
+}
+
+export function recordPlayback(response, { now = Date.now(), consumed = true, resolvedLocale = null } = {}) {
+  response.playback_events = [...(response.playback_events || []),
+    { at_utc: now, consumed, resolved_locale: resolvedLocale }];
+  response.audio_play_count = playsUsed(response);
+  if (resolvedLocale) response.voice_resolved_locale = resolvedLocale;
+  return response;
 }
 
 /** Valid, unsupported answers to the entry block — what routing reads. */

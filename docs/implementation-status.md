@@ -20,7 +20,7 @@ States: `not_started` · `in_progress` · `ready_for_review` · `accepted` · `b
 | Milestone | State | Notes |
 |---|---|---|
 | M1 — Repair foundation | `ready_for_review` | Both audit blockers repaired with regressions; full Match resume matrix; parent iPad smoke checklist and recovery-file confirmation still required for `accepted`. |
-| M2 — Independent assessment | `in_progress` | Steps 0-2 complete (cleanup, data model, assessment shell). Items are not yet rendered — that is Step 3. Nothing learner-facing yet. Step 0 cleanup on `claude/third-party-audit-validation-2oth5n`. Release A imported and validated; scoring rules proven against the content fixtures. No learner-facing assessment exists yet. Per master plan revision 3, M1 cleanup is folded into M2 rather than forming a separate milestone; parent approved building in parallel with the outstanding iPad checklist. |
+| M2 — Independent assessment | `in_progress` | Steps 0-3 complete: cleanup, data model, shell, and the three objective sections. Writing and speaking capture is Step 4. Nothing learner-facing yet. Step 0 cleanup on `claude/third-party-audit-validation-2oth5n`. Release A imported and validated; scoring rules proven against the content fixtures. No learner-facing assessment exists yet. Per master plan revision 3, M1 cleanup is folded into M2 rather than forming a separate milestone; parent approved building in parallel with the outstanding iPad checklist. |
 | M3 — Learning pilot | `not_started` | Release B not yet authored. |
 | M4 — iPad validation | `not_started` | |
 | M5 — Evaluate and release pilot | `not_started` | |
@@ -225,6 +225,53 @@ in [`known-risks.md`](known-risks.md) §1c.
 
 36 new tests — 26 session unit tests, 10 browser. 260 unit and 42 browser tests
 pass.
+
+## M2 Step 3 — the objective sections
+
+Listening, reading and vocabulary/grammar are administered end to end: three
+item types from the bank (`audio_choice`, `text_choice`, `typed_short`),
+adaptive routing, the replay cap, and per-item enforcement of the rules that
+make this an assessment rather than a game.
+
+**Scoring happens at submit; showing does not happen at all.** Routing reads the
+entry block's result and cannot wait for the section to end, so an objective
+answer is graded as it is stored — but no renderer reads that grade, and the
+next item simply appears. Choosing an option marks it as chosen and says nothing
+else; a chosen option is outlined in the app's French blue, never green or red,
+because colour is a verdict.
+
+**Enforced per item, and tested rather than asserted in a comment:**
+
+| Rule | How it is held |
+|---|---|
+| `administration.language` | The screen text is scanned after answering and after submitting. The item's own prompt is excluded first — several prompts legitimately read "choose the correct …", and a blunt word scan would flag the bank's own English. |
+| `audio.transcript_visibility` | Every listening item in a section is checked for its script and any written French, not just the first: one leaked stimulus turns a listening measurement into a reading one. |
+| `replay.listening_max_plays` | Two plays, then the control disables. Asserted as the sequence enabled/enabled/disabled, and by counting what actually reached the speech API. |
+| `replay.technical_replay` | "I heard nothing" does not consume a play. |
+| `invalidity.rule` | That report stores `audio_failed`, `scored_valid: false`, and **no** `scored_correct` — excluded, never converted to wrong. |
+| `pause_resume.resume` | Four items answered in sequence produce four distinct responses; no item returns. |
+| `objective_routing` | Routing fires only once the whole entry block is submitted, then appends its tiers and freezes the decision with a timestamp. |
+
+**iOS autocorrect.** Typed items carry `autocomplete`, `autocorrect`,
+`autocapitalize` and `spellcheck` off, and a test walks all the way to a real
+typed item to check it. This is the only lever a web page has and it is **not
+sufficient** — the QuickType bar cannot be suppressed from a page at all, so the
+iPad checklist must also ask for Auto-Correction to be turned off before the
+words and writing sections. `VGA-F04` accepts `où`, and predictive text supplies
+exactly that accent.
+
+**One defect found by its own test.** Tapping "Start / resume" left the parent
+overlay covering the assessment it had just opened, so nothing on the screen
+responded. The overlay now closes.
+
+**A note on the scan that nearly went wrong.** The first version of the
+no-feedback test searched the whole screen for words like "correct" and failed
+against a legitimate item prompt. A guard that flags the content it is meant to
+protect would have been turned off rather than fixed; it now excludes the prompt
+and checks what surrounds it.
+
+18 new tests — 9 browser plus the session-level routing and playback cases.
+269 unit and 51 browser tests pass. The built page is 375 KB.
 
 ## Speaking cannot produce a band until two illustrations exist
 

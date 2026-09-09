@@ -16,12 +16,26 @@ const freshStore = () => defaultAssessmentStore('jenn');
 const start = (store = freshStore(), learner = 'jenn') =>
   S.startRun(store, learner, { now: NOW, dayKey: '2026-09-09' }).run;
 
+/** Answer an item the way the UI would: with its real choices or text. */
+const answer = (run, itemId, correct, opts = {}) => {
+  const item = content.getItem(itemId);
+  const patch = {};
+  if (Array.isArray(item?.choices)) {
+    const right = item.answer_key.correct_choice_ids;
+    const wrong = item.choices.map(c => c.id).filter(id => !right.includes(id));
+    patch.selected_choice_ids = correct ? [...right] : [wrong[0]];
+  } else if (item?.answer_key?.accepted_answers) {
+    patch.raw_response = correct ? item.answer_key.accepted_answers[0] : 'zzz';
+  }
+  return S.submitResponse(run, itemId, { ...patch, ...opts }, { now: NOW });
+};
+
 /** Answer every planned item of a section. */
 const answerAll = (run, domain, correct = true) => {
   for (const id of [...run.sections[domain].plan]) {
     const item = content.getItem(id);
     if (item && content.needsUnbuiltAsset(item)) continue;
-    S.submitResponse(run, id, { scored_correct: correct }, { now: NOW });
+    answer(run, id, correct);
   }
 };
 
@@ -145,7 +159,7 @@ test('routing waits for the whole entry block', () => {
   const run = start();
   S.beginSection(run, 'listening', { now: NOW });
   const [first] = run.sections.listening.plan;
-  S.submitResponse(run, first, { scored_correct: true }, { now: NOW });
+  answer(run, first, true);
   assert.equal(S.applyRoutingIfEntryComplete(run, 'listening', { now: NOW }), null,
     'routing ran on a partial entry block');
 });
@@ -154,9 +168,7 @@ test('a strong entry routes to stretch, a weak one to foundation', () => {
   for (const [correct, expected] of [[4, ['stretch']], [2, ['foundation', 'stretch']], [0, ['foundation']]]) {
     const run = start();
     S.beginSection(run, 'listening', { now: NOW });
-    run.sections.listening.plan.forEach((id, i) => {
-      S.submitResponse(run, id, { scored_correct: i < correct }, { now: NOW });
-    });
+    run.sections.listening.plan.forEach((id, i) => { answer(run, id, i < correct); });
     const tiers = S.applyRoutingIfEntryComplete(run, 'listening', { now: NOW });
     assert.deepEqual(tiers, expected, `${correct}/4 correct routed wrongly`);
   }
@@ -165,7 +177,7 @@ test('a strong entry routes to stretch, a weak one to foundation', () => {
 test('routing appends the routed tiers in bank order and freezes the decision', () => {
   const run = start();
   S.beginSection(run, 'listening', { now: NOW });
-  run.sections.listening.plan.forEach(id => S.submitResponse(run, id, { scored_correct: true }, { now: NOW }));
+  run.sections.listening.plan.forEach(id => answer(run, id, true));
   S.applyRoutingIfEntryComplete(run, 'listening', { now: NOW });
 
   const s = run.sections.listening;
@@ -185,7 +197,7 @@ test('an invalid entry answer neither helps nor hurts the routing', () => {
   S.beginSection(run, 'listening', { now: NOW });
   const plan = run.sections.listening.plan;
   S.submitResponse(run, plan[0], { technical_invalid_reason: 'audio_failed' }, { now: NOW });
-  plan.slice(1).forEach(id => S.submitResponse(run, id, { scored_correct: true }, { now: NOW }));
+  plan.slice(1).forEach(id => answer(run, id, true));
   const tiers = S.applyRoutingIfEntryComplete(run, 'listening', { now: NOW });
   assert.deepEqual(tiers, ['stretch'], '3 of 3 valid should still route strong');
 });
@@ -196,8 +208,8 @@ test('a submitted item is never replayed as a new scored item', () => {
   const run = start();
   S.beginSection(run, 'listening', { now: NOW });
   const [id] = run.sections.listening.plan;
-  const first = S.submitResponse(run, id, { scored_correct: true }, { now: NOW });
-  const second = S.submitResponse(run, id, { scored_correct: false }, { now: NOW + 1000 });
+  const first = answer(run, id, true);
+  const second = answer(run, id, false);
   assert.equal(first.accepted, true);
   assert.equal(second.accepted, false, 'a second submission overwrote the first');
   assert.equal(run.responses[responseKey(id, 0)].scored_correct, true);
@@ -254,7 +266,7 @@ test('resume points at the first unanswered item, needing no cursor', () => {
   const run = start();
   S.beginSection(run, 'listening', { now: NOW });
   const plan = run.sections.listening.plan;
-  S.submitResponse(run, plan[0], { scored_correct: true }, { now: NOW });
+  answer(run, plan[0], true);
 
   const at = S.resumePoint(run);
   assert.equal(at.domain, 'listening');
@@ -277,7 +289,7 @@ test('a finished run resumes to done rather than to an item', () => {
 test('a parent can void an attempt without deleting it', () => {
   const run = start();
   S.beginSection(run, 'listening', { now: NOW });
-  S.submitResponse(run, run.sections.listening.plan[0], { scored_correct: true }, { now: NOW });
+  answer(run, run.sections.listening.plan[0], true);
   S.invalidateRun(run, { reason: 'interrupted by a sibling', now: NOW + 100 });
   assert.equal(run.status, RUN_STATUS.PARENT_INVALIDATED);
   assert.equal(run.invalidated_reason, 'interrupted by a sibling');
@@ -405,7 +417,7 @@ test('an item seen in an earlier attempt is marked, not counted as fresh', () =>
 
   S.beginSection(run, 'listening', { now: NOW });
   const [firstPlanned] = run.sections.listening.plan;
-  S.submitResponse(run, firstPlanned, { scored_correct: true }, { now: NOW });
+  answer(run, firstPlanned, true);
   const r = run.responses[responseKey(firstPlanned, 0)];
   if (firstPlanned === 'LA-D01') {
     assert.equal(r.previously_exposed, true, 'a re-shown item was not marked');

@@ -52,17 +52,35 @@ async function open({ seedProfile = true, seedAssessment = null, reuse = null } 
   const errors = [];
   page.on('pageerror', e => errors.push(String(e.message)));
   await page.goto(APP, { waitUntil: 'domcontentloaded' });
-  await page.waitForTimeout(900);
+  // Wait for the app to be ready rather than sleeping a fixed amount. A fixed
+  // delay passes on an idle machine and fails on a busy one, which is how a
+  // timing assumption gets mistaken for a flaky test.
+  await page.waitForFunction(
+    () => !!(window.__faDebug && window.__faDebug.assessment && window.showParentSummary),
+    null, { timeout: 15000 });
   return { page, context, errors };
 }
 
 /** Open the assessment the way a parent does: password, then the button. */
 const startAsParent = (page, player = 'jenn', pwd = PARENT_PWD) => page.evaluate(async ({ player, pwd }) => {
   showParentSummary();
-  await new Promise(r => setTimeout(r, 150));
+  const btn = await (async () => {
+    for (let i = 0; i < 100; i++) {
+      const b = document.querySelector(`[data-action="assess-open"][data-player="${player}"]`);
+      if (b) return b;
+      await new Promise(r => setTimeout(r, 50));
+    }
+    throw new Error('the parent entry button never rendered');
+  })();
   document.getElementById('parent-pwd').value = pwd;
-  document.querySelector(`[data-action="assess-open"][data-player="${player}"]`).click();
-  await new Promise(r => setTimeout(r, 400));
+  btn.click();
+  // The click starts an async open; wait for it to settle either way.
+  for (let i = 0; i < 100; i++) {
+    if (window.__faDebug.assessment.runs(player).length
+        || document.getElementById('screen-assessment').style.display === 'block') break;
+    await new Promise(r => setTimeout(r, 50));
+  }
+  await new Promise(r => setTimeout(r, 100));
   return {
     screenShown: document.getElementById('screen-assessment').style.display,
     runs: window.__faDebug.assessment.runs(player).length,
