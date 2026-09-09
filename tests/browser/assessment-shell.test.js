@@ -74,18 +74,37 @@ const startAsParent = (page, player = 'jenn', pwd = PARENT_PWD) => page.evaluate
   })();
   document.getElementById('parent-pwd').value = pwd;
   btn.click();
-  // The click starts an async open; wait for it to settle either way.
-  for (let i = 0; i < 100; i++) {
-    if (window.__faDebug.assessment.runs(player).length
-        || document.getElementById('screen-assessment').style.display === 'block') break;
+
+  // Wait for the LAST thing openAssessment does, not the first.
+  //
+  // It creates the run inside store.update, which makes it visible
+  // synchronously, then awaits the save, and only then calls showScreen. So the
+  // run existing does not mean the open has finished — waiting on it returned
+  // mid-flight with the screen still hidden. The original condition was worse
+  // still: "run OR screen" could return with neither, and the caller then
+  // dereferenced runs[0] and got a TypeError instead of a readable failure.
+  // That is what went red in CI, where a concurrent job made the gap wide
+  // enough to land in.
+  //
+  // A wrong password is a legitimate outcome with no run and no screen, so this
+  // waits, then reports both facts and lets the caller decide.
+  for (let i = 0; i < 200; i++) {
+    if (document.getElementById('screen-assessment').style.display === 'block') break;
     await new Promise(r => setTimeout(r, 50));
   }
-  await new Promise(r => setTimeout(r, 100));
   return {
     screenShown: document.getElementById('screen-assessment').style.display,
     runs: window.__faDebug.assessment.runs(player).length,
   };
 }, { player, pwd });
+
+/** Start as the parent and insist a run was actually created. */
+async function startAsParentOrFail(page, player = 'jenn') {
+  const r = await startAsParent(page, player);
+  assert.equal(r.screenShown, 'block', `the assessment screen never opened for ${player}`);
+  assert.equal(r.runs, 1, `no run was created for ${player}`);
+  return r;
+}
 
 test('the assessment cannot be opened without the parent password', async () => {
   // Exposure is permanent and each form is 45 items. A child who wanders in
@@ -112,14 +131,14 @@ test('a parent can start a run, and the learners get the forms the rules name', 
 
 test('jess sits the other form', async () => {
   const { page } = await open();
-  await startAsParent(page, 'jess');
+  await startAsParentOrFail(page, 'jess');
   const run = await page.evaluate(() => window.__faDebug.assessment.runs('jess')[0]);
   assert.equal(run.form, 'B');
 });
 
 test('opening twice resumes the same run rather than starting a second', async () => {
   const { page } = await open();
-  await startAsParent(page, 'jenn');
+  await startAsParentOrFail(page, 'jenn');
   const first = await page.evaluate(() => window.__faDebug.assessment.runs('jenn')[0].run_id);
   await page.evaluate(() => window.__faDebug.assessment.pause());
   await page.waitForTimeout(200);
@@ -133,7 +152,7 @@ test('a started section survives the page going away', async () => {
   // The real test of resume: not a soft navigation, but the tab closing and
   // the app booting again from what is on the device.
   const { page, context } = await open();
-  await startAsParent(page, 'jenn');
+  await startAsParentOrFail(page, 'jenn');
   const before = await page.evaluate(async () => {
     await window.__faDebug.assessment.beginSection();
     const run = window.__faDebug.assessment.runs('jenn')[0];
@@ -141,9 +160,30 @@ test('a started section survives the page going away', async () => {
              status: run.sections.listening.status };
   });
   assert.ok(before.plan.length > 0, 'no section plan was frozen');
+
+  // Confirm the mirror is actually on disk before the tab goes away.
+  // localStorage.setItem returns synchronously but Chromium persists it on its
+  // own schedule, and closing the page immediately can outrun that — which is
+  // what made this test flake under a loaded runner rather than any bug in
+  // resume. Reading it back is the write's own receipt.
+  const mirrored = await page.evaluate(() => {
+    const raw = localStorage.getItem('french_assessment_local_jenn');
+    if (!raw) return null;
+    const store = JSON.parse(raw);
+    const run = Object.values(store.runs || {})[0];
+    return run ? { runId: run.run_id, plan: run.sections?.listening?.plan ?? [] } : null;
+  });
+  assert.ok(mirrored, 'the run never reached this device\'s storage');
+  assert.equal(mirrored.runId, before.runId);
+  assert.deepEqual(mirrored.plan, before.plan, 'the mirror disagrees with memory');
+
   await page.close();
 
   const { page: page2 } = await open({ reuse: context });
+  // hydrate() runs at boot; wait for it to have adopted the mirror rather than
+  // assuming it has by the time the debug surface exists.
+  await page2.waitForFunction(
+    () => window.__faDebug.assessment.runs('jenn').length === 1, null, { timeout: 20000 });
   const after = await page2.evaluate(() => {
     const run = window.__faDebug.assessment.runs('jenn')[0];
     return { runId: run.run_id, form: run.form, plan: run.sections.listening.plan,
