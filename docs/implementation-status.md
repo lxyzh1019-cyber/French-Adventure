@@ -128,16 +128,62 @@ Edmonton helpers: the weekly played-days strip and the "next reset in N days"
 line. The gate that matters, `isWeekdayPlayAllowed`, correctly uses
 `weekdayIndex()`. Cosmetic on a correctly-set iPad; recorded, not fixed.
 
-## Release A — question for the content owner (ChatGPT)
+## Release A — amended to `assessment-v1.0.1`
 
-`assessment_rules.json` → `scoring.tier_profile` says the band is "the highest
-tier observed at secure, or if none, the highest tier observed at emerging".
-Read literally, developing 3/3 + stretch 2/3 gives `developing_secure`.
-Fixture `FX-STRETCH` expects `stretch_emerging` for exactly that case, and
-every other fixture is consistent with "the highest tier reached at all,
-labelled by how securely". The implementation follows the fixtures. The
-prose should be reworded to match (a wording change, no item or score
-changes), or the fixture corrected if the literal reading was intended.
+Two edits, made under M2 Step 0 with parent approval. No item, answer key,
+rubric, fixture or score changes; every fixture still passes unchanged.
+
+| Field | Before | After |
+|---|---|---|
+| `scoring.tier_profile`, sentence 2 | "The domain band is the highest tier observed at secure, or if none, the highest tier observed at emerging." | "The domain band is the highest administered tier observed at emerging or secure, labelled with that tier's status." |
+| `scoring.secure_threshold` | *(absent — stated only in the prose)* | `0.75` |
+| `scoring.emerging_threshold` | *(absent — stated only in the prose)* | `0.50` |
+| `manifest.compatible_master_plan_revision` | `2` | `3` |
+
+**Why the wording changed.** Read literally, the old sentence gives
+`developing_secure` for developing 3/3 plus stretch 2/3. Fixture `FX-STRETCH`
+requires `stretch_emerging` for exactly that case, and every other fixture
+agrees with the fixture rather than the prose. The implementation followed the
+fixtures; the prose now says what they mean. This was the open question logged
+against `assessment-v1.0.0` and is now closed in the package itself — the
+content owner should confirm the reading was the intended one, because if the
+literal sentence was intended then `FX-STRETCH` is wrong and every stretch-tier
+band in every report flips.
+
+**Why the thresholds became fields.** 0.75 and 0.50 appeared only inside the
+prose, so `src/assessment/scoring.js` carried its own copy as constants. Two
+statements of one rule is one to forget: a later release could change its cut
+scores and the module would go on scoring by the old ones with every fixture
+still green. The module now reads them, and throws if a release omits them
+rather than falling back to a coded-in value.
+
+**Mechanics.** `release_id` occurs 98 times — the top-level field of all six
+JSON documents, `review_notes.md`, and every one of the 90 items — and
+`validate-release-a.mjs` cross-checks the top-level ids against the manifest
+while hashing every file's raw bytes. `scripts/rehash-release.mjs` performs the
+rename and regenerates the manifest so this is repeatable rather than hand-done.
+Per-item `version` fields stay at 1: the items did not change.
+
+**One side effect, checked.** `assignFirstForm` hashes
+`learner_id + "|" + release_id`, so the bump reshuffles form assignment for any
+learner not named in the rules. Jenn and Jess are both named (`jenn`=A,
+`jess`=B) and are unaffected; a test now asserts that against the live release
+id rather than only against the hardcoded 1.0.0 hash vectors.
+
+## Release A — questions for the content owner (ChatGPT)
+
+**1. `tier_profile` wording — resolved in v1.0.1, confirmation wanted.** The
+prose contradicted `FX-STRETCH`; the parent approved restating the prose to
+match the fixtures. See the amendment table above. Confirm the fixtures were
+right; if the literal sentence was intended instead, `FX-STRETCH` is wrong and
+every stretch-tier band flips.
+
+**2. `strength_skill_ids` and `next_need_skill_ids` — undefined. Open.**
+`reporting.required_fields` requires both on every domain report, and no file in
+the release says how to derive them: not `assessment_rules.json`, not
+`rubrics.json`, not `curriculum_map.json`. Claude must not invent a rule that a
+parent will read as authoritative — "next needs: R_MAIN_IDEA" looks like a
+finding, not a guess. Needed before the parent report is built in M2 Step 5.
 
 ## Release A follow-ups that are not code
 

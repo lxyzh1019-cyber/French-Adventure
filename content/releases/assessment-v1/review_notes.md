@@ -1,6 +1,6 @@
 # French Adventure — Release A review notes
 
-**Release:** assessment-v1.0.0  
+**Release:** assessment-v1.0.1  
 **Compatible master plan:** Revision 2  
 **Authored/check date:** 2026-09-08
 

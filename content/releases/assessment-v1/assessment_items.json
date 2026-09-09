@@ -1,5 +1,5 @@
 {
-  "release_id": "assessment-v1.0.0",
+  "release_id": "assessment-v1.0.1",
   "schema_version": 1,
   "forms": [
     "A",
@@ -9,7 +9,7 @@
     {
       "id": "LA-F01",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "A",
       "domain": "listening",
       "difficulty_tier": "foundation",
@@ -65,7 +65,7 @@
     {
       "id": "LA-F02",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "A",
       "domain": "listening",
       "difficulty_tier": "foundation",
@@ -121,7 +121,7 @@
     {
       "id": "LA-F03",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "A",
       "domain": "listening",
       "difficulty_tier": "foundation",
@@ -177,7 +177,7 @@
     {
       "id": "LA-F04",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "A",
       "domain": "listening",
       "difficulty_tier": "foundation",
@@ -234,7 +234,7 @@
     {
       "id": "LA-D01",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "A",
       "domain": "listening",
       "difficulty_tier": "developing",
@@ -291,7 +291,7 @@
     {
       "id": "LA-D02",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "A",
       "domain": "listening",
       "difficulty_tier": "developing",
@@ -347,7 +347,7 @@
     {
       "id": "LA-D03",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "A",
       "domain": "listening",
       "difficulty_tier": "developing",
@@ -404,7 +404,7 @@
     {
       "id": "LA-D04",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "A",
       "domain": "listening",
       "difficulty_tier": "developing",
@@ -461,7 +461,7 @@
     {
       "id": "LA-S01",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "A",
       "domain": "listening",
       "difficulty_tier": "stretch",
@@ -518,7 +518,7 @@
     {
       "id": "LA-S02",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "A",
       "domain": "listening",
       "difficulty_tier": "stretch",
@@ -575,7 +575,7 @@
     {
       "id": "LA-S03",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "A",
       "domain": "listening",
       "difficulty_tier": "stretch",
@@ -632,7 +632,7 @@
     {
       "id": "LA-S04",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "A",
       "domain": "listening",
       "difficulty_tier": "stretch",
@@ -689,7 +689,7 @@
     {
       "id": "LB-F01",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "B",
       "domain": "listening",
       "difficulty_tier": "foundation",
@@ -745,7 +745,7 @@
     {
       "id": "LB-F02",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "B",
       "domain": "listening",
       "difficulty_tier": "foundation",
@@ -801,7 +801,7 @@
     {
       "id": "LB-F03",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "B",
       "domain": "listening",
       "difficulty_tier": "foundation",
@@ -857,7 +857,7 @@
     {
       "id": "LB-F04",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "B",
       "domain": "listening",
       "difficulty_tier": "foundation",
@@ -914,7 +914,7 @@
     {
       "id": "LB-D01",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "B",
       "domain": "listening",
       "difficulty_tier": "developing",
@@ -971,7 +971,7 @@
     {
       "id": "LB-D02",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "B",
       "domain": "listening",
       "difficulty_tier": "developing",
@@ -1027,7 +1027,7 @@
     {
       "id": "LB-D03",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "B",
       "domain": "listening",
       "difficulty_tier": "developing",
@@ -1084,7 +1084,7 @@
     {
       "id": "LB-D04",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "B",
       "domain": "listening",
       "difficulty_tier": "developing",
@@ -1141,7 +1141,7 @@
     {
       "id": "LB-S01",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "B",
       "domain": "listening",
       "difficulty_tier": "stretch",
@@ -1198,7 +1198,7 @@
     {
       "id": "LB-S02",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "B",
       "domain": "listening",
       "difficulty_tier": "stretch",
@@ -1255,7 +1255,7 @@
     {
       "id": "LB-S03",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "B",
       "domain": "listening",
       "difficulty_tier": "stretch",
@@ -1312,7 +1312,7 @@
     {
       "id": "LB-S04",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "B",
       "domain": "listening",
       "difficulty_tier": "stretch",
@@ -1369,7 +1369,7 @@
     {
       "id": "RA-F01",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "A",
       "domain": "reading",
       "difficulty_tier": "foundation",
@@ -1421,7 +1421,7 @@
     {
       "id": "RA-F02",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "A",
       "domain": "reading",
       "difficulty_tier": "foundation",
@@ -1472,7 +1472,7 @@
     {
       "id": "RA-F03",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "A",
       "domain": "reading",
       "difficulty_tier": "foundation",
@@ -1523,7 +1523,7 @@
     {
       "id": "RA-F04",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "A",
       "domain": "reading",
       "difficulty_tier": "foundation",
@@ -1575,7 +1575,7 @@
     {
       "id": "RA-D01",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "A",
       "domain": "reading",
       "difficulty_tier": "developing",
@@ -1626,7 +1626,7 @@
     {
       "id": "RA-D02",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "A",
       "domain": "reading",
       "difficulty_tier": "developing",
@@ -1677,7 +1677,7 @@
     {
       "id": "RA-D03",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "A",
       "domain": "reading",
       "difficulty_tier": "developing",
@@ -1729,7 +1729,7 @@
     {
       "id": "RA-D04",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "A",
       "domain": "reading",
       "difficulty_tier": "developing",
@@ -1781,7 +1781,7 @@
     {
       "id": "RA-S01",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "A",
       "domain": "reading",
       "difficulty_tier": "stretch",
@@ -1833,7 +1833,7 @@
     {
       "id": "RA-S02",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "A",
       "domain": "reading",
       "difficulty_tier": "stretch",
@@ -1885,7 +1885,7 @@
     {
       "id": "RA-S03",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "A",
       "domain": "reading",
       "difficulty_tier": "stretch",
@@ -1937,7 +1937,7 @@
     {
       "id": "RA-S04",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "A",
       "domain": "reading",
       "difficulty_tier": "stretch",
@@ -1989,7 +1989,7 @@
     {
       "id": "RB-F01",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "B",
       "domain": "reading",
       "difficulty_tier": "foundation",
@@ -2041,7 +2041,7 @@
     {
       "id": "RB-F02",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "B",
       "domain": "reading",
       "difficulty_tier": "foundation",
@@ -2092,7 +2092,7 @@
     {
       "id": "RB-F03",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "B",
       "domain": "reading",
       "difficulty_tier": "foundation",
@@ -2143,7 +2143,7 @@
     {
       "id": "RB-F04",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "B",
       "domain": "reading",
       "difficulty_tier": "foundation",
@@ -2195,7 +2195,7 @@
     {
       "id": "RB-D01",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "B",
       "domain": "reading",
       "difficulty_tier": "developing",
@@ -2246,7 +2246,7 @@
     {
       "id": "RB-D02",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "B",
       "domain": "reading",
       "difficulty_tier": "developing",
@@ -2297,7 +2297,7 @@
     {
       "id": "RB-D03",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "B",
       "domain": "reading",
       "difficulty_tier": "developing",
@@ -2349,7 +2349,7 @@
     {
       "id": "RB-D04",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "B",
       "domain": "reading",
       "difficulty_tier": "developing",
@@ -2401,7 +2401,7 @@
     {
       "id": "RB-S01",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "B",
       "domain": "reading",
       "difficulty_tier": "stretch",
@@ -2453,7 +2453,7 @@
     {
       "id": "RB-S02",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "B",
       "domain": "reading",
       "difficulty_tier": "stretch",
@@ -2505,7 +2505,7 @@
     {
       "id": "RB-S03",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "B",
       "domain": "reading",
       "difficulty_tier": "stretch",
@@ -2557,7 +2557,7 @@
     {
       "id": "RB-S04",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "B",
       "domain": "reading",
       "difficulty_tier": "stretch",
@@ -2609,7 +2609,7 @@
     {
       "id": "VGA-F01",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "A",
       "domain": "vocabulary_grammar",
       "difficulty_tier": "foundation",
@@ -2658,7 +2658,7 @@
     {
       "id": "VGA-F02",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "A",
       "domain": "vocabulary_grammar",
       "difficulty_tier": "foundation",
@@ -2707,7 +2707,7 @@
     {
       "id": "VGA-F03",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "A",
       "domain": "vocabulary_grammar",
       "difficulty_tier": "foundation",
@@ -2756,7 +2756,7 @@
     {
       "id": "VGA-F04",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "A",
       "domain": "vocabulary_grammar",
       "difficulty_tier": "foundation",
@@ -2790,7 +2790,7 @@
     {
       "id": "VGA-D01",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "A",
       "domain": "vocabulary_grammar",
       "difficulty_tier": "developing",
@@ -2839,7 +2839,7 @@
     {
       "id": "VGA-D02",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "A",
       "domain": "vocabulary_grammar",
       "difficulty_tier": "developing",
@@ -2888,7 +2888,7 @@
     {
       "id": "VGA-D03",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "A",
       "domain": "vocabulary_grammar",
       "difficulty_tier": "developing",
@@ -2922,7 +2922,7 @@
     {
       "id": "VGA-S01",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "A",
       "domain": "vocabulary_grammar",
       "difficulty_tier": "stretch",
@@ -2971,7 +2971,7 @@
     {
       "id": "VGA-S02",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "A",
       "domain": "vocabulary_grammar",
       "difficulty_tier": "stretch",
@@ -3021,7 +3021,7 @@
     {
       "id": "VGA-S03",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "A",
       "domain": "vocabulary_grammar",
       "difficulty_tier": "stretch",
@@ -3055,7 +3055,7 @@
     {
       "id": "VGB-F01",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "B",
       "domain": "vocabulary_grammar",
       "difficulty_tier": "foundation",
@@ -3104,7 +3104,7 @@
     {
       "id": "VGB-F02",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "B",
       "domain": "vocabulary_grammar",
       "difficulty_tier": "foundation",
@@ -3153,7 +3153,7 @@
     {
       "id": "VGB-F03",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "B",
       "domain": "vocabulary_grammar",
       "difficulty_tier": "foundation",
@@ -3202,7 +3202,7 @@
     {
       "id": "VGB-F04",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "B",
       "domain": "vocabulary_grammar",
       "difficulty_tier": "foundation",
@@ -3236,7 +3236,7 @@
     {
       "id": "VGB-D01",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "B",
       "domain": "vocabulary_grammar",
       "difficulty_tier": "developing",
@@ -3285,7 +3285,7 @@
     {
       "id": "VGB-D02",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "B",
       "domain": "vocabulary_grammar",
       "difficulty_tier": "developing",
@@ -3334,7 +3334,7 @@
     {
       "id": "VGB-D03",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "B",
       "domain": "vocabulary_grammar",
       "difficulty_tier": "developing",
@@ -3368,7 +3368,7 @@
     {
       "id": "VGB-S01",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "B",
       "domain": "vocabulary_grammar",
       "difficulty_tier": "stretch",
@@ -3417,7 +3417,7 @@
     {
       "id": "VGB-S02",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "B",
       "domain": "vocabulary_grammar",
       "difficulty_tier": "stretch",
@@ -3467,7 +3467,7 @@
     {
       "id": "VGB-S03",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "B",
       "domain": "vocabulary_grammar",
       "difficulty_tier": "stretch",
@@ -3501,7 +3501,7 @@
     {
       "id": "WA-F01",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "A",
       "domain": "writing",
       "difficulty_tier": "foundation",
@@ -3531,7 +3531,7 @@
     {
       "id": "WA-F02",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "A",
       "domain": "writing",
       "difficulty_tier": "foundation",
@@ -3561,7 +3561,7 @@
     {
       "id": "WA-D01",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "A",
       "domain": "writing",
       "difficulty_tier": "developing",
@@ -3591,7 +3591,7 @@
     {
       "id": "WA-D02",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "A",
       "domain": "writing",
       "difficulty_tier": "developing",
@@ -3621,7 +3621,7 @@
     {
       "id": "WA-S01",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "A",
       "domain": "writing",
       "difficulty_tier": "stretch",
@@ -3651,7 +3651,7 @@
     {
       "id": "WA-S02",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "A",
       "domain": "writing",
       "difficulty_tier": "stretch",
@@ -3681,7 +3681,7 @@
     {
       "id": "WB-F01",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "B",
       "domain": "writing",
       "difficulty_tier": "foundation",
@@ -3711,7 +3711,7 @@
     {
       "id": "WB-F02",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "B",
       "domain": "writing",
       "difficulty_tier": "foundation",
@@ -3741,7 +3741,7 @@
     {
       "id": "WB-D01",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "B",
       "domain": "writing",
       "difficulty_tier": "developing",
@@ -3771,7 +3771,7 @@
     {
       "id": "WB-D02",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "B",
       "domain": "writing",
       "difficulty_tier": "developing",
@@ -3801,7 +3801,7 @@
     {
       "id": "WB-S01",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "B",
       "domain": "writing",
       "difficulty_tier": "stretch",
@@ -3831,7 +3831,7 @@
     {
       "id": "WB-S02",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "B",
       "domain": "writing",
       "difficulty_tier": "stretch",
@@ -3861,7 +3861,7 @@
     {
       "id": "SA-F01",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "A",
       "domain": "speaking",
       "difficulty_tier": "foundation",
@@ -3891,7 +3891,7 @@
     {
       "id": "SA-F02",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "A",
       "domain": "speaking",
       "difficulty_tier": "foundation",
@@ -3935,7 +3935,7 @@
     {
       "id": "SA-D01",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "A",
       "domain": "speaking",
       "difficulty_tier": "developing",
@@ -3966,7 +3966,7 @@
     {
       "id": "SA-D02",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "A",
       "domain": "speaking",
       "difficulty_tier": "developing",
@@ -4011,7 +4011,7 @@
     {
       "id": "SA-S01",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "A",
       "domain": "speaking",
       "difficulty_tier": "stretch",
@@ -4043,7 +4043,7 @@
     {
       "id": "SB-F01",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "B",
       "domain": "speaking",
       "difficulty_tier": "foundation",
@@ -4073,7 +4073,7 @@
     {
       "id": "SB-F02",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "B",
       "domain": "speaking",
       "difficulty_tier": "foundation",
@@ -4116,7 +4116,7 @@
     {
       "id": "SB-D01",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "B",
       "domain": "speaking",
       "difficulty_tier": "developing",
@@ -4147,7 +4147,7 @@
     {
       "id": "SB-D02",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "B",
       "domain": "speaking",
       "difficulty_tier": "developing",
@@ -4193,7 +4193,7 @@
     {
       "id": "SB-S01",
       "version": 1,
-      "release_id": "assessment-v1.0.0",
+      "release_id": "assessment-v1.0.1",
       "form": "B",
       "domain": "speaking",
       "difficulty_tier": "stretch",

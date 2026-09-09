@@ -140,8 +140,53 @@ test('first form: jenn=A, jess=B, others by FNV-1a low bit; reassessment alterna
   assert.equal(alternateForm('A'), 'B'); assert.equal(alternateForm('B'), 'A');
 });
 
-test('the thresholds coded here are the ones the rules state', () => {
+test('the named learners keep their form when the release id changes', () => {
+  // assignFirstForm hashes learner_id + "|" + release_id, so bumping the
+  // release reshuffles form assignment for anyone not named in the rules. Jenn
+  // and Jess are named, so the bump to 1.0.1 must not move them; the hardcoded
+  // vectors above are reference values for the hash, not for the live release.
+  assert.equal(assignFirstForm('jenn', rules.release_id), 'A');
+  assert.equal(assignFirstForm('jess', rules.release_id), 'B');
+  assert.equal(rules.release_id, 'assessment-v1.0.1', 'the release under test');
+});
+
+test('the thresholds are stated as numbers, and agree with the prose', () => {
+  assert.equal(rules.scoring.secure_threshold, 0.75);
+  assert.equal(rules.scoring.emerging_threshold, 0.50);
   assert.match(rules.scoring.tier_profile, />=75%/);
   assert.match(rules.scoring.tier_profile, />=50%/);
   assert.match(rules.scoring.tier_profile, /at least 3 independent valid items/);
+});
+
+test('the band actually moves when the release changes its thresholds', () => {
+  // Reading a value and using it are different claims. The module used to hold
+  // its own copy of 0.75/0.50, and every fixture passed either way — so
+  // "reads from the rules" needs a case where the two answers differ.
+  // 75% exactly, and enough items to clear minimum_independent_valid_items.
+  const threeOfFour = { developing: { correct: 6, valid: 8 } };
+  const withThresholds = (secure, emerging) => ({
+    ...rules,
+    scoring: { ...rules.scoring, secure_threshold: secure, emerging_threshold: emerging },
+  });
+
+  assert.equal(
+    objectiveBand('listening', threeOfFour, withThresholds(0.75, 0.50)).band,
+    'developing_secure', '75% is secure at the release thresholds');
+
+  assert.equal(
+    objectiveBand('listening', threeOfFour, withThresholds(0.90, 0.50)).band,
+    'developing_emerging', 'a stricter release must lower the band');
+
+  assert.equal(
+    objectiveBand('listening', threeOfFour, withThresholds(0.95, 0.80)).band,
+    'insufficient_evidence', 'below both cut scores the tier is not reached');
+});
+
+test('a release that does not state its thresholds is refused, not guessed at', () => {
+  const stripped = { ...rules, scoring: { ...rules.scoring } };
+  delete stripped.scoring.secure_threshold;
+  assert.throws(
+    () => objectiveBand('listening', { developing: { correct: 6, valid: 8 } }, stripped),
+    /secure_threshold/,
+    'a missing cut score must not fall back to a value coded into the module');
 });
