@@ -210,20 +210,65 @@ learner not named in the rules. Jenn and Jess are both named (`jenn`=A,
 `jess`=B) and are unaffected; a test now asserts that against the live release
 id rather than only against the hardcoded 1.0.0 hash vectors.
 
-## Release A — questions for the content owner (ChatGPT)
+## Release A — content-owner decisions (ChatGPT, 2026-09-09)
 
-**1. `tier_profile` wording — resolved in v1.0.1, confirmation wanted.** The
-prose contradicted `FX-STRETCH`; the parent approved restating the prose to
-match the fixtures. See the amendment table above. Confirm the fixtures were
-right; if the literal sentence was intended instead, `FX-STRETCH` is wrong and
-every stretch-tier band flips.
+Both open questions are answered. Validated against the release before being
+recorded; every skill id, rubric dimension and domain the answer names exists.
 
-**2. `strength_skill_ids` and `next_need_skill_ids` — undefined. Open.**
-`reporting.required_fields` requires both on every domain report, and no file in
-the release says how to derive them: not `assessment_rules.json`, not
-`rubrics.json`, not `curriculum_map.json`. Claude must not invent a rule that a
-parent will read as authoritative — "next needs: R_MAIN_IDEA" looks like a
-finding, not a guess. Needed before the parent report is built in M2 Step 5.
+### 1. Tier band — confirmed, no change
+
+The fixtures were right. The band is "the highest administered tier observed at
+emerging or secure, labelled with that tier's status", so developing secure plus
+stretch emerging reports `stretch_emerging`. Thresholds stay 0.75 / 0.50, read
+from the numeric fields rather than parsed from prose. This is what
+`assessment-v1.0.1` and `src/assessment/scoring.js` already do; the risk that
+`FX-STRETCH` was wrong and every stretch-tier band would flip is now closed.
+
+### 2. `strength_skill_ids` / `next_need_skill_ids` — rule supplied
+
+To be implemented in Step 5. **Current attempt only.** Eligible evidence must be
+technically valid, unsupported, scored, carry a stable `skill_id`, and come from
+a distinct item — invalid, supported, unanswered, duplicated and
+`awaiting_review` responses contribute nothing either way, positive or negative.
+
+- Objective: value = points earned ÷ points possible; an item contributes once
+  to **every** `skill_id` listed on it, and no skill is inferred from wording or
+  topic.
+- Writing (`÷ 3`, all dimensions 0–3): `W_ENCODING` = conventions;
+  `W_SENTENCE`, `W_QUESTION`, `W_CONNECTED` = mean(message, structure);
+  `W_DESCRIPTION`, `W_REASON` = mean(message, vocabulary, structure).
+- Speaking: `S_INTRO`, `S_DESCRIPTION`, `S_RESPONSE`, `S_DIRECTIONS` =
+  mean(message, comprehensibility, vocabulary_structure); `S_CONNECTED` adds
+  fluency; `P_COMPREHENSIBILITY` = comprehensibility;
+  `P_SOUND_SYMBOL` = pronunciation_observation;
+  `P_RHYTHM_LINKING` = mean(pronunciation_observation, fluency).
+
+Aggregate by mean. **At least two distinct items/prompts** are required to
+classify at all; below that the skill goes in neither array. Strength ≥ 0.75,
+next need < 0.75. At most three ids per array — strengths by highest aggregate,
+then more evidence, then id; next needs by lowest aggregate, then more evidence,
+then id. Arrays may be empty, and no skill may appear in both.
+
+Group each skill under the domain `curriculum_map.json` declares for it, **even
+when the evidence came from another section**. This is not hypothetical:
+`W_ENCODING` is declared under Writing and draws evidence from
+`vocabulary_grammar` typed items as well as writing prompts.
+
+Learner-facing wording is **"Observed strengths"** and **"Suggested next
+practice areas"** — never "mastered" or "deficiencies". These are limited
+observations from one sitting, not mastery claims.
+
+**Validated against the release:** all 6 writing and 8 speaking/pronunciation
+skill ids are used by real items; all 34 skills in `curriculum_map.json` are
+declared with a domain and none is used without being declared; every named
+rubric dimension exists and is scored 0–3, so `÷ 3` normalises correctly.
+
+**One implementation note for Step 5.** `curriculum_map.json` labels domains in
+prose — `Vocabulary and grammar`, `Pronunciation observation` — while items and
+`section_order` use `vocabulary_grammar`, `speaking`. Step 5 needs an explicit
+mapping between the two, and there are six declared skill domains against five
+administered sections, because pronunciation is reported separately (master plan
+§2.1) without being a section of its own.
 
 ## Release A follow-ups that are not code
 
