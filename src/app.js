@@ -10,6 +10,7 @@ import { SCHEMA_VERSION, hasAnyProgress, DEFAULT_STATE,
 import { GRADE_KEYS, levelLabel, levelNumber, recommendLevel,
          recommendationText, levelAccuracy, hasMoon } from './learning/levels.js';
 import { pickFrenchVoice, describeVoice, PREFERRED_LOCALE } from './speech/playback.js';
+import { escapeAttr } from './util/html.js';
 import { normalizeForRecognition, compareFrench, scrambleTypeFor,
          buildScrambleTiles, joinScrambleTiles, isScrambleSolvable,
          SCRAMBLE_TYPES } from './util/fr-text.js';
@@ -1493,11 +1494,6 @@ function speakFrench(text){
 // interpolated JavaScript inside an onclick attribute. Apostrophes in words like
 // aujourd'hui / l'ecole / j'ai used to produce syntactically invalid inline JS,
 // leaving the button dead. Clicks are handled by one delegated listener below.
-function escapeAttr(text){
-  return String(text)
-    .replace(/&/g,'&amp;').replace(/"/g,'&quot;')
-    .replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
 function speakButtonHTML(text, cls, style){
   return '<button type="button" class="'+escapeAttr(cls||'')+'"'
     + (style ? ' style="'+escapeAttr(style)+'"' : '')

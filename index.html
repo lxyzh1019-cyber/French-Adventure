@@ -7,7 +7,7 @@
      styles ......... src/styles.css
      game logic ..... src/**/*.js
 
-   Built from 6aa4f18
+   Built from cc76bc1
   ============================================================
 -->
 <!DOCTYPE html>
@@ -1504,6 +1504,9 @@ function describeVoice(voice, requested = PREFERRED_LOCALE) {
     isFrench: resolved.startsWith("fr")
   };
 }
+function escapeAttr(text) {
+  return String(text).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/'/g, "&#39;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
 let state = { jenn: DEFAULT_STATE(), jess: DEFAULT_STATE() };
 let currentPlayer = null;
 let currentGrade = 4;
@@ -2790,9 +2793,6 @@ function speakFrench(text) {
   utt.lang = voice ? voice.lang : PREFERRED_LOCALE;
   utt.rate = 0.85;
   speechSynth.speak(utt);
-}
-function escapeAttr(text) {
-  return String(text).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 function speakButtonHTML(text, cls, style) {
   return '<button type="button" class="' + escapeAttr(cls || "") + '"' + (style ? ' style="' + escapeAttr(style) + '"' : "") + ' data-speak="' + escapeAttr(text) + '">🔊</button>';
