@@ -4,7 +4,9 @@ import { migrateProfile } from './state/migrations.js';
 import { mergeProfiles } from './state/merge.js';
 import { makeRoundLogEntry } from './state/schema.js';
 import { createMicController } from './speech/recorder.js';
-import { SCHEMA_VERSION, hasAnyProgress } from './state/schema.js';
+import { SCHEMA_VERSION, hasAnyProgress, DEFAULT_STATE,
+         defaultParentSettings, defaultGradeUnlocked,
+         defaultGradeParentOpen } from './state/schema.js';
 import { GRADE_KEYS, levelLabel, levelNumber, recommendLevel,
          recommendationText, levelAccuracy, hasMoon } from './learning/levels.js';
 import { pickFrenchVoice, describeVoice, PREFERRED_LOCALE } from './speech/playback.js';
@@ -23,23 +25,10 @@ import { getWeekStart, isSameWeek, todayKey, dateKeyAddDays, getIsoDateRange,
 // ════════════════════════════════════════════════
 // STATE
 // ════════════════════════════════════════════════
-function defaultParentSettings(){
-  return { weekdayOpen:[true,true,true,true,true,true,true] }; // Sun–Sat, false = locked (test day)
-}
-const DEFAULT_STATE = () => ({
-  totalStars:0, weekStars:0, streak:0, lastPlayed:null,
-  weekStart:getWeekStart(), topicStars:{}, dailyRounds:{},
-  moons:{grade4:false,grade5:false,grade6:false,grade7:false,grade8:false,grade9:false,grade10:false,super:false},
-  failedWords:{}, playedDays:{}, todayStats:{},
-  dailyTimeMs:{}, lastDrillComplete:null,
-  parentSettings:defaultParentSettings(),
-  gradeUnlocked:defaultGradeUnlocked(), gradeStats:{}, gradeGameRounds:{}, dailyTopicStats:{},
-  gradeParentOpen:{4:true,5:false,6:false,7:false,8:false,9:false,10:false},
-  tier1Conquered:false, tier2Conquered:false, tier3Conquered:false,
-  tier1ParentOpen:false, tier2ParentOpen:false, tier3ParentOpen:false,
-  seedProfilePatches:{},
-  lastUpdatedAt:0
-});
+// DEFAULT_STATE, and the field defaults it is built from, live in
+// state/schema.js. This file used to declare its own copy, which had drifted:
+// it carried neither schemaVersion nor roundLog, so anything built from it
+// started life shaped like a v0 profile.
 
 let state = {jenn:DEFAULT_STATE(), jess:DEFAULT_STATE()};
 let currentPlayer = null;
@@ -497,17 +486,6 @@ function gradeTier(grade){
   if(grade <= 7) return 2;
   if(grade <= 9) return 3;
   return 4;
-}
-function defaultGradeUnlocked(){
-  const o = {};
-  for(let g = 4; g <= 10; g++) o[g] = (g === 4);
-  return o;
-}
-function defaultGradeParentOpen(){
-  const o = {};
-  for(let g = 4; g <= 10; g++) o[g] = false;
-  o[4] = true;
-  return o;
 }
 function clampGradeUnlocks(o){
   if(!o) return;
@@ -2776,7 +2754,7 @@ async function restoreFromBackup(player, docId){
     setRecoveryMsg('❌ Enter parent password first');
     return;
   }
-  if(!window.confirm(`Restore ${player}'s profile from backup ${docId}?\nThis will overwrite their current data.`)) return;
+  if(!window.confirm(`Restore ${player}'s profile from backup ${docId}?\nThe backup will be merged with what is on this device; nothing earned is lost.`)) return;
   setRecoveryMsg('Restoring…');
   try{
     const backups = await window.fbBackupList(player);
@@ -2784,9 +2762,24 @@ async function restoreFromBackup(player, docId){
     if(!entry){ setRecoveryMsg('❌ Backup not found'); return; }
     // Strip backup metadata fields before restoring
     const { id, backedUpAt, ...restoredData } = entry;
-    restoredData.lastUpdatedAt = Date.now();
-    state[player] = Object.assign({}, DEFAULT_STATE(), restoredData);
-    await saveState(player, {suppressEcho: true});
+    // Migrate before merging. A backup can be any age, so it can be any schema
+    // version; merging an un-migrated profile would compare a v0 shape against
+    // a v2 one. This is the path reconcilePlayerFromBackup already takes for an
+    // imported file — a restore is the same operation from a different source.
+    //
+    // Merge rather than replace. This used to be
+    // Object.assign({}, DEFAULT_STATE(), restoredData), which threw away
+    // everything the device held: restoring last week's backup after playing
+    // today lost today. Whole-profile replacement is the failure mode M1
+    // removed from sync; a restore should add the archived history back, not
+    // trade one loss for another.
+    state[player] = mergeProfiles(migrateProfile(state[player]),
+                                  migrateProfile(restoredData));
+    state[player].lastUpdatedAt = Date.now();
+    // No suppressEcho: the merge is idempotent, so the echo of our own write is
+    // harmless, and suppressing it left the device ignoring inbound snapshots
+    // for six seconds immediately after a recovery.
+    await saveState(player);
     updateLeaderboard();
     if(currentPlayer === player) updateHub();
     renderParentSummary();

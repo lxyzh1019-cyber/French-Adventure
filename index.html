@@ -7,7 +7,7 @@
      styles ......... src/styles.css
      game logic ..... src/**/*.js
 
-   Built from aaf28bd
+   Built from 841eb90
   ============================================================
 -->
 <!DOCTYPE html>
@@ -913,15 +913,15 @@ const SENTENCES = {
 const SCHEMA_VERSION = 2;
 const GRADE_KEYS$1 = [4, 5, 6, 7, 8, 9, 10];
 const MAX_PLAYABLE_GRADE$1 = 10;
-function defaultParentSettings$1() {
+function defaultParentSettings() {
   return { weekdayOpen: [true, true, true, true, true, true, true] };
 }
-function defaultGradeUnlocked$1() {
+function defaultGradeUnlocked() {
   const o = {};
   for (const g of GRADE_KEYS$1) o[g] = g === 4;
   return o;
 }
-function defaultGradeParentOpen$1() {
+function defaultGradeParentOpen() {
   const o = {};
   for (const g of GRADE_KEYS$1) o[g] = false;
   o[4] = true;
@@ -936,7 +936,7 @@ function clampGradeUnlocks(o) {
   if (!o) return;
   for (let g = MAX_PLAYABLE_GRADE$1 + 1; g <= 10; g++) o[g] = false;
 }
-const DEFAULT_STATE$1 = () => ({
+const DEFAULT_STATE = () => ({
   schemaVersion: SCHEMA_VERSION,
   totalStars: 0,
   weekStars: 0,
@@ -951,12 +951,12 @@ const DEFAULT_STATE$1 = () => ({
   todayStats: {},
   dailyTimeMs: {},
   lastDrillComplete: null,
-  parentSettings: defaultParentSettings$1(),
-  gradeUnlocked: defaultGradeUnlocked$1(),
+  parentSettings: defaultParentSettings(),
+  gradeUnlocked: defaultGradeUnlocked(),
   gradeStats: {},
   gradeGameRounds: {},
   dailyTopicStats: {},
-  gradeParentOpen: defaultGradeParentOpen$1(),
+  gradeParentOpen: defaultGradeParentOpen(),
   tier1Conquered: false,
   tier2Conquered: false,
   tier3Conquered: false,
@@ -1035,11 +1035,11 @@ function toV1(profile) {
   if (!Array.isArray(out.weeklyHistory)) out.weeklyHistory = [];
   if (!Number.isFinite(Number(out.lastUpdatedAt))) out.lastUpdatedAt = 0;
   if (!out.gradeUnlocked || typeof out.gradeUnlocked !== "object") {
-    out.gradeUnlocked = defaultGradeUnlocked$1();
+    out.gradeUnlocked = defaultGradeUnlocked();
   }
   clampGradeUnlocks(out.gradeUnlocked);
   if (!out.gradeParentOpen || typeof out.gradeParentOpen !== "object") {
-    out.gradeParentOpen = defaultGradeParentOpen$1();
+    out.gradeParentOpen = defaultGradeParentOpen();
   }
   for (const g of GRADE_KEYS$1) {
     if (out.gradeParentOpen[g] === void 0) out.gradeParentOpen[g] = false;
@@ -1055,9 +1055,9 @@ function toV1(profile) {
   ]) {
     if (out[f] === void 0) out[f] = false;
   }
-  out.parentSettings = Object.assign(defaultParentSettings$1(), out.parentSettings || {});
+  out.parentSettings = Object.assign(defaultParentSettings(), out.parentSettings || {});
   if (!Array.isArray(out.parentSettings.weekdayOpen) || out.parentSettings.weekdayOpen.length !== 7) {
-    out.parentSettings.weekdayOpen = defaultParentSettings$1().weekdayOpen;
+    out.parentSettings.weekdayOpen = defaultParentSettings().weekdayOpen;
   }
   for (const f of RETIRED_FIELDS) {
     if (out[f] !== void 0) {
@@ -1079,8 +1079,8 @@ function toV2(profile) {
 }
 const MIGRATIONS = [toV1, toV2];
 function migrateProfile(raw) {
-  if (!raw || typeof raw !== "object") return DEFAULT_STATE$1();
-  let profile = { ...DEFAULT_STATE$1(), ...raw };
+  if (!raw || typeof raw !== "object") return DEFAULT_STATE();
+  let profile = { ...DEFAULT_STATE(), ...raw };
   let version = Number(raw.schemaVersion) || 0;
   while (version < SCHEMA_VERSION) {
     const step = MIGRATIONS[version];
@@ -1504,38 +1504,6 @@ function describeVoice(voice, requested = PREFERRED_LOCALE) {
     isFrench: resolved.startsWith("fr")
   };
 }
-function defaultParentSettings() {
-  return { weekdayOpen: [true, true, true, true, true, true, true] };
-}
-const DEFAULT_STATE = () => ({
-  totalStars: 0,
-  weekStars: 0,
-  streak: 0,
-  lastPlayed: null,
-  weekStart: getWeekStart(),
-  topicStars: {},
-  dailyRounds: {},
-  moons: { grade4: false, grade5: false, grade6: false, grade7: false, grade8: false, grade9: false, grade10: false, super: false },
-  failedWords: {},
-  playedDays: {},
-  todayStats: {},
-  dailyTimeMs: {},
-  lastDrillComplete: null,
-  parentSettings: defaultParentSettings(),
-  gradeUnlocked: defaultGradeUnlocked(),
-  gradeStats: {},
-  gradeGameRounds: {},
-  dailyTopicStats: {},
-  gradeParentOpen: { 4: true, 5: false, 6: false, 7: false, 8: false, 9: false, 10: false },
-  tier1Conquered: false,
-  tier2Conquered: false,
-  tier3Conquered: false,
-  tier1ParentOpen: false,
-  tier2ParentOpen: false,
-  tier3ParentOpen: false,
-  seedProfilePatches: {},
-  lastUpdatedAt: 0
-});
 let state = { jenn: DEFAULT_STATE(), jess: DEFAULT_STATE() };
 let currentPlayer = null;
 let currentGrade = 4;
@@ -1961,17 +1929,6 @@ function accuracyToTopicStars(acc) {
   if (acc >= 0.8) return 2;
   if (acc >= 0.6) return 1;
   return 0;
-}
-function defaultGradeUnlocked() {
-  const o = {};
-  for (let g = 4; g <= 10; g++) o[g] = g === 4;
-  return o;
-}
-function defaultGradeParentOpen() {
-  const o = {};
-  for (let g = 4; g <= 10; g++) o[g] = false;
-  o[4] = true;
-  return o;
 }
 function ensureGradeParentOpenState(s) {
   if (!s.gradeParentOpen) s.gradeParentOpen = defaultGradeParentOpen();
@@ -3983,7 +3940,7 @@ async function restoreFromBackup(player, docId) {
     return;
   }
   if (!window.confirm(`Restore ${player}'s profile from backup ${docId}?
-This will overwrite their current data.`)) return;
+The backup will be merged with what is on this device; nothing earned is lost.`)) return;
   setRecoveryMsg("Restoring…");
   try {
     const backups = await window.fbBackupList(player);
@@ -3993,9 +3950,12 @@ This will overwrite their current data.`)) return;
       return;
     }
     const { id, backedUpAt, ...restoredData } = entry;
-    restoredData.lastUpdatedAt = Date.now();
-    state[player] = Object.assign({}, DEFAULT_STATE(), restoredData);
-    await saveState(player, { suppressEcho: true });
+    state[player] = mergeProfiles(
+      migrateProfile(state[player]),
+      migrateProfile(restoredData)
+    );
+    state[player].lastUpdatedAt = Date.now();
+    await saveState(player);
     updateLeaderboard();
     if (currentPlayer === player) updateHub();
     renderParentSummary();
