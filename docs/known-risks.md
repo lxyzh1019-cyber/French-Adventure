@@ -153,6 +153,48 @@ project owner.
 
 ---
 
+## 1b. The assessment store widens the unauthenticated exposure
+
+**Status:** deferred by parent decision (M2). Not fixed. Read §1 first.
+
+M2 adds `french_game_assessment/{player}`, alongside the profile and its
+backups in the same rule-less project. It holds, per learner:
+
+- every response to all 45 administered items, including **free-text French
+  writing by a named ten-year-old**;
+- domain bands, confidence labels and the skills flagged as next needs;
+- speaking metadata — durations, resolved voice locale, device transcripts.
+
+Raw speaking audio is **not** in it. Clips stay in IndexedDB on the iPad that
+recorded them and only a reference syncs, per master plan §3.6.
+
+This is a different kind of content from star counts. The decision to defer
+authentication was taken when the database held game scores; it now also holds a
+child's written work and an assessment of her ability. The parent has been told
+and has chosen to proceed. The fix is unchanged and still §1's four steps.
+
+---
+
+## 1c. Both answer keys ship inside the page
+
+**Status:** accepted; no fix exists without a server.
+
+`src/assessment/content.js` imports the release so the assessment works offline,
+as the game does. That puts all 90 items — both parallel forms, with their
+answer keys — into `index.html`, where View Source reveals them.
+
+There is no server to hold them behind, so this cannot be fixed, only known.
+It matters mainly for reassessment: `administration.exposure` already forbids
+treating an exposed item as secure evidence, and a form whose keys have been
+read is exposed whether or not the app recorded showing it. If there is reason
+to think the file was read, the run should be invalidated rather than scored.
+
+Note the bundle is only paid for when the app imports the module. As of this
+commit nothing does, so the built file has not grown; it will by roughly 145 KB
+when the assessment screens land.
+
+---
+
 ## 2. Skills are identified by their French word string
 
 **Status:** recorded, not fixed in M1.

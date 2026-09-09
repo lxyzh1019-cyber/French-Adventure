@@ -93,3 +93,80 @@ All day keys are `YYYY-MM-DD` in `America/Edmonton`, so two devices in different
 timezones agree on what "today" is. Historical keys written under the old
 device-local rule are **not** rewritten: both formats are `YYYY-MM-DD` and all
 comparisons are lexicographic, so old records keep working.
+
+
+---
+
+# Assessment store (v1)
+
+Separate from the learner profile, and deliberately so. `window.fbSave` writes
+the profile with `setDoc`, a full document replace, so folding runs into it
+would rewrite a child's entire history once per autosaved response — 45 replaces
+per run of the record the write barrier exists to protect. The profile schema is
+untouched by M2.
+
+| Where | Key |
+|---|---|
+| Firestore | `french_game_assessment/{player}` |
+| localStorage | `french_assessment_local_{player}` |
+| IndexedDB (later) | `french_assessment_audio` / `clips` — device-local, never synced |
+
+The collection name follows the convention already in the code
+(`french_game`, `french_game_backup`) rather than the camelCase
+`assessmentRuns` / `assessmentResponses` of master plan §9.1, which that section
+labels conceptual: "Final database structure may differ, but it must support
+append-only evidence, independent assessment history, content versions, and
+conflict-safe sync." All four hold here.
+
+## Shape
+
+```js
+{
+  assessmentSchemaVersion: 1,
+  learner_id: 'jenn',
+  runs: { [run_id]: AssessmentRun },   // grow-only
+  lastUpdatedAt: 0,
+}
+```
+
+A run carries `run_id`, the learner, release and form, the `content_sha` frozen
+at start, `status`, `section_order`, a `sections` map, `exposure`, `responses`
+and `review`. It deliberately has **no `report` field**: a report is derived, and
+storing it would make a computed value a merge input that two devices could
+disagree about without either having measured it.
+
+The first thirteen fields of a response record are
+`assessment_rules.json → administration.response_storage`, verbatim and in order.
+A test iterates the release's own list, so a release that adds a field fails
+rather than being quietly unrecorded.
+
+Timestamps are epoch milliseconds from `Date.now()`, matching `lastUpdatedAt`
+and the round ledger's `at`. The `_utc` suffix comes from the release's field
+names; the release does not specify a format, and nothing in the codebase
+produces ISO strings.
+
+## Why the merge is safe
+
+Nothing in this store is a counter. Every value is either an immutable record
+under a unique key or a value from a small ordered set that only moves one way,
+so `mergeAssessmentStores` is a lattice join: commutative, idempotent and
+monotonic by construction rather than by the `base + merged ledger` arithmetic
+`state/merge.js` needs. The whole-profile overwrite that cost this project a
+child's history is not merely avoided here — it is unrepresentable.
+
+The rules that are not obvious:
+
+| Field | Rule | Why |
+|---|---|---|
+| `responses` | union; on conflict the **earliest** submission wins, ties by device id, loser flagged | `pause_resume.resume` — a submitted item is never replayed as a new scored item, so the first answer is the one the assessment elicited |
+| `review` | union; the **later** review wins; `invalidated` ORs | a re-score is an intentional correction, unlike a response; a merge must never un-invalidate |
+| `status` | max by rank: `parent_invalidated > complete > abandoned > in_progress` | a parent's invalidation always wins, and a device that saw the run finish knows more than one that saw it start |
+| `exposure.shown_count` | **max, not sum** | sum is not idempotent under redelivery, and the rule it serves needs only "was it shown". It can under-count two genuinely separate showings. |
+| `sections[d].plan` | longer wins if the shorter is its prefix; otherwise earliest `routed_at_utc`, flagged `routing_conflict` | routing is a pure function of the entry responses, so devices agree unless they hold different subsets |
+
+## Growth
+
+`runs` is grow-only and never pruned, in a single document per learner. At two
+or three assessments a year that is comfortable for many years, but it is the
+same unbounded pattern as `roundLog` and should be watched rather than assumed
+safe. Firestore caps a document at 1 MiB.

@@ -20,7 +20,7 @@ States: `not_started` · `in_progress` · `ready_for_review` · `accepted` · `b
 | Milestone | State | Notes |
 |---|---|---|
 | M1 — Repair foundation | `ready_for_review` | Both audit blockers repaired with regressions; full Match resume matrix; parent iPad smoke checklist and recovery-file confirmation still required for `accepted`. |
-| M2 — Independent assessment | `in_progress` | Step 0 cleanup under way on `claude/third-party-audit-validation-2oth5n`. Release A imported and validated; scoring rules proven against the content fixtures. No learner-facing assessment exists yet. Per master plan revision 3, M1 cleanup is folded into M2 rather than forming a separate milestone; parent approved building in parallel with the outstanding iPad checklist. |
+| M2 — Independent assessment | `in_progress` | Step 0 complete; Step 1 (data model) complete. Nothing learner-facing yet. Step 0 cleanup on `claude/third-party-audit-validation-2oth5n`. Release A imported and validated; scoring rules proven against the content fixtures. No learner-facing assessment exists yet. Per master plan revision 3, M1 cleanup is folded into M2 rather than forming a separate milestone; parent approved building in parallel with the outstanding iPad checklist. |
 | M3 — Learning pilot | `not_started` | Release B not yet authored. |
 | M4 — iPad validation | `not_started` | |
 | M5 — Evaluate and release pilot | `not_started` | |
@@ -127,6 +127,46 @@ Two display-only paths derive day keys from the device clock rather than the
 Edmonton helpers: the weekly played-days strip and the "next reset in N days"
 line. The gate that matters, `isWeekdayPlayAllowed`, correctly uses
 `weekdayIndex()`. Cosmetic on a correctly-set iPad; recorded, not fixed.
+
+## M2 Step 1 — the assessment data model
+
+Storage, model, migration and merge for assessment runs. **No learner-facing
+assessment exists yet** — nothing in `app.js` imports any of it, so the built
+page is unchanged apart from two Firestore functions (+1.7 KB).
+
+| Module | Role |
+|---|---|
+| `src/assessment/run-model.js` | Run, section, response and review constructors; the response record's first thirteen fields are `administration.response_storage` verbatim |
+| `src/assessment/run-migrations.js` | Forward-only, idempotent, never-delete |
+| `src/assessment/run-merge.js` | The lattice join; commutative, idempotent, monotonic |
+| `src/assessment/store.js` | The only assessment module that touches storage; copies `saveState`'s write barrier |
+| `src/assessment/content.js` | Reads the release; nothing else knows its file layout |
+| `firebase-bootstrap.js` | `fbAssessInit` / `fbAssessSave` against `french_game_assessment/{player}` |
+
+Shape and merge rules are documented in [`data-schema-v0.md`](data-schema-v0.md).
+
+**Kept out of the profile.** `fbSave` writes the profile with `setDoc`, a full
+document replace, so a run folded into it would rewrite a child's whole history
+once per autosaved response. The profile schema is untouched by Step 1.
+
+**Its own listener map.** `fbListeners` is keyed by player alone, so an
+assessment listener reusing it would have unsubscribed the profile listener for
+that learner the first time it attached.
+
+**Two findings while reading the contract.**
+
+- `reporting.required_fields` requires `strength_skill_ids` and
+  `next_need_skill_ids` and nothing defines how to derive them — see the
+  content-owner questions below. Still open, still blocking Step 5.
+- **Four items carry an asset brief, not two.** The M1 notes record `SA-D02` and
+  `SB-D02` as needing map images. `SA-F02` and `SB-F02` carry
+  `illustration_brief` stimuli and need artwork on the same terms. All four are
+  speaking prompts, all four are detected by `needsUnbuiltAsset()`, and all four
+  must be **skipped rather than rendered** — printing a brief's
+  `required_elements` hands the child the vocabulary the item tests.
+
+68 new unit tests: 18 model and migration, 14 merge, 10 content parity, 14 store
+barrier, plus the existing suites. 234 unit tests and 32 browser tests pass.
 
 ## Release A — amended to `assessment-v1.0.1`
 
