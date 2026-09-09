@@ -125,7 +125,7 @@ test('a parent can start a run, and the learners get the forms the rules name', 
   const run = await page.evaluate(() => window.__faDebug.assessment.runs('jenn')[0]);
   assert.equal(run.form, 'A', 'jenn should sit form A');
   assert.equal(run.status, 'in_progress');
-  assert.equal(run.release_id, 'assessment-v1.0.1');
+  assert.equal(run.release_id, 'assessment-v1.0.2');
   assert.deepEqual(errors, []);
 });
 

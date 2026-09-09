@@ -22,6 +22,7 @@
 import * as content from './content.js';
 import { scoreObjective, scoreRubric, objectiveBand, openDomainLabel } from './scoring.js';
 import { responseKey } from './run-model.js';
+import { RUBRIC_SKILL_DIMENSIONS, RUBRIC_MAX } from './skill-mapping.js';
 
 const num = v => Number(v) || 0;
 
@@ -75,52 +76,6 @@ export const SKILL_EVIDENCE_RULE = {
   ordering: 'by aggregate, then by more evidence, then by skill id',
   excluded: 'invalid, supported and unreviewed responses',
 };
-
-/**
- * Which rubric dimensions carry which skill.
- *
- * A rubric score is not one number per skill: the conventions dimension is what
- * W_ENCODING is about, and the message dimension is not. Every dimension named
- * here exists in rubrics.json and is scored 0-3, which is what makes the /3
- * below a normalisation rather than a guess.
- */
-export const RUBRIC_SKILL_DIMENSIONS = {
-  W_ENCODING: ['conventions'],
-  W_SENTENCE: ['message', 'structure'],
-  W_QUESTION: ['message', 'structure'],
-  W_CONNECTED: ['message', 'structure'],
-  W_DESCRIPTION: ['message', 'vocabulary', 'structure'],
-  W_REASON: ['message', 'vocabulary', 'structure'],
-  S_INTRO: ['message', 'comprehensibility', 'vocabulary_structure'],
-  S_DESCRIPTION: ['message', 'comprehensibility', 'vocabulary_structure'],
-  S_RESPONSE: ['message', 'comprehensibility', 'vocabulary_structure'],
-  S_DIRECTIONS: ['message', 'comprehensibility', 'vocabulary_structure'],
-  S_CONNECTED: ['message', 'comprehensibility', 'vocabulary_structure', 'fluency'],
-  P_COMPREHENSIBILITY: ['comprehensibility'],
-  P_SOUND_SYMBOL: ['pronunciation_observation'],
-  P_RHYTHM_LINKING: ['pronunciation_observation', 'fluency'],
-};
-
-const RUBRIC_MAX = 3;
-
-/**
- * Skills a rubric-scored item tags that the rule gives no dimensions for.
- *
- * Four writing prompts also carry a vocabulary skill — WA-F02 and WB-F02 carry
- * VG_NEGATION, WA-D01 carries VG_LOCATION, WB-D01 carries VG_GENDER_NUMBER —
- * and the supplied rule says which dimensions each W_ and S_ skill reads but
- * nothing about those. Rather than invent a mapping or drop them silently, the
- * report names them: the writing prompt contributes nothing to that skill, and
- * the skill is still measured by the vocabulary section's own items.
- */
-export function unmappedRubricSkills(items = content.ITEMS) {
-  const out = new Set();
-  for (const item of items) {
-    if (item?.scoring?.method !== 'analytic_rubric') continue;
-    for (const id of item.skill_ids || []) if (!RUBRIC_SKILL_DIMENSIONS[id]) out.add(id);
-  }
-  return [...out].sort();
-}
 
 /**
  * What has to be true before a pronunciation observation may be shown at all.
@@ -518,13 +473,7 @@ export function runReport(run, opts = {}) {
     completed_at_utc: num(run?.completed_at_utc),
     sections,
     rules: {
-      skill_evidence: {
-        ...SKILL_EVIDENCE_RULE,
-        // Named, not hidden: these are tagged on open prompts and the rule does
-        // not say which dimensions carry them, so those prompts contribute
-        // nothing to them.
-        unmapped_on_open_prompts: unmappedRubricSkills(),
-      },
+      skill_evidence: SKILL_EVIDENCE_RULE,
       pronunciation: PRONUNCIATION_RULE,
       thresholds: { secure: rules.scoring.secure_threshold, emerging: rules.scoring.emerging_threshold },
     },
@@ -575,3 +524,4 @@ export function prohibitedClaims(rules = content.RULES) {
 
 // Re-exported so a caller scoring a single item does not reach past this module.
 export { scoreObjective, scoreRubric };
+export { RUBRIC_SKILL_DIMENSIONS } from './skill-mapping.js';

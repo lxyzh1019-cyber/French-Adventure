@@ -54,7 +54,7 @@ States: `not_started` · `in_progress` · `ready_for_review` · `accepted` · `b
 
 | Check | Command | Count | Last result |
 |---|---|---|---|
-| Unit + handler export | `npm test` | 355 tests across 25 files; 37 inline handlers checked | pass |
+| Unit + handler export | `npm test` | 357 tests across 26 files; 37 inline handlers checked | pass |
 | Build parity | `npm run check:drift` | — | pass |
 | Release A contract | `npm run check:release-a` | 90 items, both forms | pass |
 | Content package contract | `npm run check:content -- <dir>` | 3 packages | pass |
@@ -396,16 +396,14 @@ the dimensions named for them and normalise by 3; at least two distinct items
 before a skill is classified; the release's `secure_threshold` is the cut; at
 most three ids per list, ordered by aggregate, then by more evidence, then by id.
 
-**One thing the rule does not cover, found while implementing it.** Four writing
-prompts also carry a vocabulary skill — WA-F02 and WB-F02 carry `VG_NEGATION`,
-WA-D01 carries `VG_LOCATION`, WB-D01 carries `VG_GENDER_NUMBER` — and the rule
-names dimensions for `W_` and `S_`/`P_` skills only. Those prompts therefore
-contribute nothing to those three skills, which are still measured directly by
-the vocabulary and grammar section's own items. Rather than invent a mapping or
-drop it in silence, `report.js` names them (`unmapped_on_open_prompts`) and the
-parent report says so on the page. **A question for the content owner:** should
-a writing prompt contribute to the vocabulary skill it also tests, and if so
-from which dimensions?
+**One thing the rule did not cover, found while implementing it, and since
+decided.** Four writing prompts also carried a vocabulary skill — `VG_NEGATION`
+on WA-F02 and WB-F02, `VG_LOCATION` on WA-D01, `VG_GENDER_NUMBER` on WB-D01 —
+and the rule names dimensions for `W_`, `S_` and `P_` skills only. The content
+owner's answer was that those tags should go rather than be mapped: see
+"Release A — amended to `assessment-v1.0.2`" below. The parent report carries no
+note about any of it, because a parent should read findings, not an
+implementation warning.
 
 ### The parent report screen
 
@@ -457,7 +455,7 @@ child hearing the French correctly, and a person hearing the child, is still a
 person's job. `docs/ipad-test-checklist.md` §5.0b covers running it, and §5.9
 the report.
 
-## Speaking artwork — built, and ready for review
+## Speaking artwork — built (approved 2026-09-09, see below)
 
 **Was:** each form had five speaking prompts of which two carried an asset
 *brief* rather than an asset, leaving three presentable against a minimum of
@@ -608,11 +606,64 @@ administered sections, because pronunciation is reported separately (master plan
 
 ## Release A follow-ups that are not code
 
-- **Open question (Step 5):** four writing prompts also tag `VG_NEGATION`, `VG_LOCATION` or `VG_GENDER_NUMBER`, and the skill-evidence rule maps dimensions for `W_`/`S_`/`P_` skills only. Those prompts currently contribute nothing to those skills; the report says so rather than hiding it.
-- Map images for `SA-D02` and `SB-D02` (asset briefs in the items) must be produced and reviewed before those prompts are used.
+- Map images for `SA-D02` and `SB-D02`, and the two illustrations: **built and approved by the content owner on 2026-09-09**, subject only to confirming the map labels are comfortably readable at actual iPad size (checklist §5.5d).
+- If writing should measure `VG_NEGATION`, `VG_LOCATION` or `VG_GENDER_NUMBER`, Release B needs target-specific scoring criteria and matched prompts on both forms. Generic rubric dimensions are not precise enough, which is why v1.0.2 removed the tags.
 - The 24 listening scripts need listening QA on an actual iPad with the resolved `fr-CA` voice.
 - Someone must be named to score writing and speaking with the rubrics; until then those domains report `awaiting_review`.
 - Independent educator review has not occurred; do not describe the bank as educator-validated.
+
+## Release A — amended to `assessment-v1.0.2`
+
+**Content-owner decision, 2026-09-09.** Four writing prompts stop claiming a
+grammar skill the writing rubric cannot evidence.
+
+| Item | Skill removed | Skill kept |
+|---|---|---|
+| `WA-F02` | `VG_NEGATION` | `W_SENTENCE` |
+| `WB-F02` | `VG_NEGATION` | `W_SENTENCE` |
+| `WA-D01` | `VG_LOCATION` | `W_DESCRIPTION` |
+| `WB-D01` | `VG_GENDER_NUMBER` | `W_DESCRIPTION` |
+
+The reason is a measurement one, and it is worth stating in full because the
+alternative looked reasonable. The generic writing rubric scores message,
+vocabulary, structure, conventions and independence. None of those is about
+negation, location or gender agreement, so a child who writes *"Je déteste le
+fromage"* earns a strong message and structure score while demonstrating no
+negation at all — and the report would have named `VG_NEGATION` as an observed
+strength on the back of it. All three skills remain measured directly by the
+vocabulary and grammar section's own items, so nothing is lost from the
+measurement; what goes is a claim that was never evidence.
+
+The four item `version` fields go to 2, because unlike the v1.0.1 amendment the
+items themselves changed. `release_id` moves to `assessment-v1.0.2` across all
+six JSON documents, `review_notes.md` and every one of the 90 items, with the
+manifest re-hashed by `scripts/rehash-release.mjs`. No rule, rubric, fixture,
+threshold, prompt, answer key or model response changed.
+
+**The guard that keeps it decided.** `src/assessment/skill-mapping.js` holds the
+dimension mapping, and `scripts/validate-release-a.mjs` now fails the build if a
+rubric-scored item names a skill with no mapping. Verified by re-adding
+`VG_NEGATION` to a copy of the release and watching `check:release-a` refuse it.
+The parent-facing note about unmapped skills is gone from the report entirely.
+
+**One defect found while doing this.** `rehash-release.mjs` rewrites every
+occurrence of the old release id, including `manifest.supersedes`, which names
+the *previous* release — so v1.0.1 shipped claiming to supersede itself. The
+script now restores it after the rename, and v1.0.2 correctly supersedes v1.0.1.
+
+`review_notes.md` also said "Compatible master plan: Revision 2" while the
+manifest said 3. Corrected in the same amendment.
+
+## Speaking artwork — reviewed and approved
+
+The content owner reviewed all four assets against their briefs on 2026-09-09
+and approved each: `SA-F02`, `SB-F02`, `SA-D02`, `SB-D02`. The illustrations
+reveal no answer vocabulary and the maps carry their French place labels without
+route arrows; the plain style is appropriate for an assessment.
+
+**The M2 content blocker is closed**, subject only to confirming on the actual
+iPad that the map labels are comfortably readable at real size (checklist
+§5.5d). No automated check can answer that one.
 
 ## Parent acceptance
 

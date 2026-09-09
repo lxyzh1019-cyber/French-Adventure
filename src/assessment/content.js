@@ -57,7 +57,7 @@ export function declaredSha(fileName) {
 /**
  * The secure/emerging cut scores, as numbers.
  *
- * Read from the release rather than coded here — assessment-v1.0.1 states them
+ * Read from the release rather than coded here — the release states them
  * as fields precisely so two places do not have to agree by hand.
  */
 export function thresholds() {

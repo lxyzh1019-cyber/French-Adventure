@@ -174,12 +174,6 @@ export function buildReportElement(run, opts = {}) {
     `Strengths and next practice areas follow the content author's rule (${rule.id}): a skill is `
     + `named only after ${rule.minimum_distinct_items} separate items, at most `
     + `${rule.max_per_list} are listed for each part, and this attempt alone is counted.`));
-  if (rule.unmapped_on_open_prompts?.length) {
-    box.append(div('assess-report-note',
-      `A few writing prompts also touch ${rule.unmapped_on_open_prompts.join(', ')}. The rule does `
-      + 'not say how to read those from a writing score, so those prompts add nothing to them — '
-      + 'they are measured by the vocabulary and grammar part instead.'));
-  }
   return box;
 }
 

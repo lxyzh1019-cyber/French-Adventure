@@ -306,6 +306,11 @@ tell whether the French sounds right and whether a child can be understood.
       French place names. The map has **no arrows** showing the route, and no
       picture has English labels on it. If you see a list of words like
       "school, park, library, bank", stop and tell me.
+- [ ] **5.5e** **Are the French place names on the map comfortably readable** at
+      arm's length on the iPad, without leaning in or pinching to zoom? The
+      artwork is approved on a desktop screen; this is the one thing about it
+      that only the real device can answer. If a label is small or crowded, say
+      which one — the drawing can be changed.
 
 ## 5.6 Writing
 
@@ -350,9 +355,10 @@ Tell me:
 
 1. **Anything in Part 1 that failed** — that is data safety and it comes first.
 2. **What `currentVoiceInfo()` said** — or "no Mac" / "unsure".
-3. **Part 5.2a and 5.5d** — whether any French text appeared during a listening
-   item, and whether the two pictures looked right to you. Those two are the
-   ones a test cannot check for me.
+3. **Part 5.2a, 5.5d and 5.5e** — whether any French text appeared during a
+   listening item, whether the pictures looked right to you, and whether the map
+   labels were comfortably readable at real size. Those are the ones a test
+   cannot check for me.
 4. Anything else that looked wrong, however small.
 
 If something is broken, **stop and tell me before letting the girls use it**.

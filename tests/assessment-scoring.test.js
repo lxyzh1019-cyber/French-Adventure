@@ -143,11 +143,11 @@ test('first form: jenn=A, jess=B, others by FNV-1a low bit; reassessment alterna
 test('the named learners keep their form when the release id changes', () => {
   // assignFirstForm hashes learner_id + "|" + release_id, so bumping the
   // release reshuffles form assignment for anyone not named in the rules. Jenn
-  // and Jess are named, so the bump to 1.0.1 must not move them; the hardcoded
+  // and Jess are named, so a release bump must not move them; the hardcoded
   // vectors above are reference values for the hash, not for the live release.
   assert.equal(assignFirstForm('jenn', rules.release_id), 'A');
   assert.equal(assignFirstForm('jess', rules.release_id), 'B');
-  assert.equal(rules.release_id, 'assessment-v1.0.1', 'the release under test');
+  assert.equal(rules.release_id, 'assessment-v1.0.2', 'the release under test');
 });
 
 test('the thresholds are stated as numbers, and agree with the prose', () => {

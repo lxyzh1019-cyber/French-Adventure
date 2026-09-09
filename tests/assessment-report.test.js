@@ -11,6 +11,7 @@ import * as C from '../src/assessment/content.js';
 import * as R from '../src/assessment/report.js';
 import { responseKey } from '../src/assessment/run-model.js';
 import { administer, humanReview, idsIn, FULL_MARKS, SPEAKING_MARKS } from './helpers/administer.js';
+import { unmappedRubricSkills } from '../src/assessment/skill-mapping.js';
 
 const RULES = C.RULES;
 
@@ -338,42 +339,52 @@ test('a rubric skill reads the dimensions it is about, and no others', () => {
   assert.equal(sentence(poorConventions), sentence(full), 'the conventions dimension moved W_SENTENCE');
 });
 
-test('every rubric dimension the rule names exists in the release', () => {
+test('every rubric-scored skill is mapped, and every mapped dimension exists', () => {
   const dims = new Set(C.RUBRICS.rubrics.flatMap(r => r.dimensions.map(d => d.id)));
   for (const [skill, named] of Object.entries(R.RUBRIC_SKILL_DIMENSIONS)) {
     for (const d of named) {
       assert.ok(dims.has(d), `${skill} is mapped to "${d}", which no rubric has`);
     }
   }
-  // Four writing prompts also carry a vocabulary skill, and the rule says
-  // nothing about those. They are named rather than dropped in silence.
-  assert.deepEqual(R.unmappedRubricSkills(),
-    ['VG_GENDER_NUMBER', 'VG_LOCATION', 'VG_NEGATION']);
-  const report = R.runReport(administer());
-  assert.deepEqual(report.rules.skill_evidence.unmapped_on_open_prompts,
-    R.unmappedRubricSkills(), 'the report does not say which skills it could not derive');
-
-  // Every other skill a rubric item carries is mapped, and each still gets its
-  // evidence from the section that tests it directly.
-  const openSkills = new Set(C.ITEMS
-    .filter(i => i.scoring?.method === 'analytic_rubric')
-    .flatMap(i => i.skill_ids || []));
-  for (const id of openSkills) {
-    assert.ok(R.RUBRIC_SKILL_DIMENSIONS[id] || R.unmappedRubricSkills().includes(id),
-      `${id} is scored by rubric with no dimensions mapped and no note saying so`);
-  }
-  // Each is still measured directly by the vocabulary section, so naming it
-  // here costs the child nothing - and where it does produce evidence, that
-  // evidence comes only from the items the rule can read.
-  const evidence = R.skillEvidence(administer());
-  for (const id of R.unmappedRubricSkills()) {
+  // Nothing may be claimed by a rubric-scored item that the rule cannot read.
+  // Four writing prompts used to claim VG_NEGATION, VG_LOCATION and
+  // VG_GENDER_NUMBER; the generic writing rubric scores message, vocabulary,
+  // structure, conventions and independence, none of which is about negation
+  // or agreement, so a "strength" reported from them would have been evidence
+  // of nothing. Release v1.0.2 removed the tags.
+  assert.deepEqual(unmappedRubricSkills(C.ITEMS), []);
+  for (const id of ['VG_NEGATION', 'VG_LOCATION', 'VG_GENDER_NUMBER']) {
+    const claimants = C.ITEMS.filter(i => i.scoring?.method === 'analytic_rubric'
+      && (i.skill_ids || []).includes(id));
+    assert.deepEqual(claimants.map(i => i.id), [], `${id} is claimed by a rubric-scored prompt again`);
+    // And each is still measured, by the section that tests it directly.
     assert.ok(C.ITEMS.some(i => i.scoring?.method === 'objective' && (i.skill_ids || []).includes(id)),
-      `${id} is only ever tested by a prompt the rule cannot read`);
-    const found = evidence.find(e => e.skill_id === id);
-    if (!found) continue;                       // routing may not have asked it
-    assert.ok(found.items.every(itemId => C.getItem(itemId).scoring.method === 'objective'),
-      `${id} took evidence from a rubric prompt the rule does not map`);
+      `${id} is no longer measured anywhere`);
   }
+  // The report carries no note about any of this: a parent reads findings, not
+  // an implementation warning.
+  const text = JSON.stringify(R.runReport(administer()));
+  assert.equal(/unmapped/i.test(text), false, 'the report still carries an implementation note');
+});
+
+test('the guard is on the release, so a re-added claim fails the build', () => {
+  // The same check the release validator runs. A future item that claims a
+  // skill with no criteria must not reach a parent's report at all.
+  const item = { id: 'WX-F01', scoring: { method: 'analytic_rubric' }, skill_ids: ['W_SENTENCE', 'VG_NEGATION'] };
+  assert.deepEqual(unmappedRubricSkills([item]), ['VG_NEGATION']);
+  // An objective item may carry it: the vocabulary section tests it directly.
+  assert.deepEqual(
+    unmappedRubricSkills([{ id: 'VGX', scoring: { method: 'objective' }, skill_ids: ['VG_NEGATION'] }]), []);
+});
+
+test('the four amended prompts keep their writing skill and nothing else', () => {
+  for (const [id, skill] of [['WA-F02', 'W_SENTENCE'], ['WB-F02', 'W_SENTENCE'],
+    ['WA-D01', 'W_DESCRIPTION'], ['WB-D01', 'W_DESCRIPTION']]) {
+    const item = C.getItem(id);
+    assert.deepEqual(item.skill_ids, [skill], `${id} carries something other than ${skill}`);
+    assert.equal(item.version, 2, `${id}'s version did not move when the item changed`);
+  }
+  assert.equal(C.RELEASE_ID, 'assessment-v1.0.2');
 });
 
 test('a skill is grouped where the curriculum puts it, not where the evidence came from', () => {

@@ -43,6 +43,10 @@ const newVersion = flag('version');
 if (newId) {
   const oldId = manifest.release_id;
   if (!oldId) { console.error('manifest has no release_id to replace'); process.exit(1); }
+  // `supersedes` names the PREVIOUS release, so the blanket replace below
+  // rewrites it to the new id and leaves the package claiming to supersede
+  // itself — which is what happened to 1.0.1. It is restored below, from the id
+  // this package actually had before the rename.
   let touched = 0;
   for (const f of manifest.files) {
     const p = path.join(dir, f.name);
@@ -59,6 +63,7 @@ if (newId) {
 
 // Re-read: the manifest itself may have carried the old id.
 const m = JSON.parse(readFileSync(manifestPath, 'utf8'));
+if (newId) m.supersedes = manifest.release_id;
 if (newVersion) m.version = newVersion;
 
 for (const f of m.files) {

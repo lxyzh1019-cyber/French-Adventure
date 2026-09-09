@@ -8,6 +8,7 @@
 // not educator review and says nothing about validity.
 
 import { readFileSync, existsSync } from 'node:fs';
+import { RUBRIC_SKILL_DIMENSIONS } from '../src/assessment/skill-mapping.js';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 
@@ -102,6 +103,23 @@ for (const it of list) {
     if (it.audio && it.audio.locale !== 'fr-CA') gap(`${id}: listening locale ${it.audio?.locale}, expected fr-CA`);
     if (it.audio && !/hidden/.test(String(it.audio.transcript_visibility))) gap(`${id}: listening transcript not hidden during the item`);
     if (it.stimulus && it.stimulus.text_fr) gap(`${id}: listening item shows written French`);
+  }
+}
+
+// A rubric-scored item may only claim a skill the scoring rule knows how to
+// read. The generic writing rubric scores message, vocabulary, structure,
+// conventions and independence, so a prompt tagged VG_NEGATION would have had
+// its negation "evidence" read off a dimension that is not about negation —
+// which is what v1.0.2 removed. A future release must not re-introduce it
+// silently, and the mapping is content, so the build is where it is caught.
+for (const it of list) {
+  if (it.scoring?.method !== 'analytic_rubric') continue;
+  for (const s of it.skill_ids || []) {
+    if (!RUBRIC_SKILL_DIMENSIONS[s]) {
+      gap(`${it.id}: rubric-scored item claims ${s}, which has no rubric dimensions defined `
+        + '(src/assessment/skill-mapping.js). Either the skill needs target-specific criteria '
+        + 'or the item should not claim it.');
+    }
   }
 }
 
