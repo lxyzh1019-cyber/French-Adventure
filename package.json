@@ -14,10 +14,6 @@
     "deploy": "npm run build && git add index.html src/ && echo 'built - now: git commit && git push'",
     "test:browser": "node --test tests/browser/*.test.js",
     "verify:all": "npm run verify && npm run test:browser",
-    "verify": "npm run test && npm run check:drift && npm run check:release-a",
-    "deploy": "npm run build && git add index.html src/ && echo 'built - now: git commit && git push'",
-    "test:browser": "node --test tests/browser/*.test.js",
-    "verify:all": "npm run verify && npm run test:browser",
     "check:release-a": "node scripts/validate-release-a.mjs",
     "check:content": "node scripts/check-content.mjs"
   },

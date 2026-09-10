@@ -361,3 +361,202 @@ test('no learner-facing screen shows a G4-style or "Grade N" label', async () =>
   assert.deepEqual(hits, [], 'grade labels still shown');
   assert.deepEqual(errors, []);
 });
+
+// ── The two buttons that stopped interpolating into inline JS ───────────────
+//
+// Both were converted from onclick="fn('…')" to data-action + data-* and the
+// delegated listener. Neither had a browser test before, which is why the
+// conversion could have silently broken them: the suite renders My Words and
+// Sentence Builder but never pressed anything in either.
+
+test('My Words: the drill Check button scores a word with an apostrophe', async () => {
+  // aujourd'hui is the case that produced invalid inline JS under the old
+  // escaping: onclick="checkDrill('aujourd\'hui')". Seed it as a failed word
+  // so the drill has something to ask.
+  const { page, errors } = await open({
+    seed: {
+      // hydrateStateFromLocalMirror only adopts a mirror newer than what is in
+      // memory, so a seed without lastUpdatedAt is silently ignored.
+      lastUpdatedAt: Date.now(),
+      totalStars: 10,
+      failedWords: {
+        "aujourd'hui": {
+          fr: "aujourd'hui", en: 'today', zh: '今天', topic: 'time',
+          grade: 4, failCount: 3, successCount: 0, lastFailed: null,
+        },
+      },
+    },
+  });
+
+  const r = await page.evaluate(async () => {
+    showMyWordsTab('drill');
+    await new Promise(res => setTimeout(res, 200));
+    const btn = document.querySelector('[data-action="check-drill"]');
+    if (!btn) return { error: 'no check-drill button rendered' };
+    const word = btn.getAttribute('data-word');
+    const inlineJs = btn.getAttribute('onclick');
+    document.getElementById('train-input').value = word;
+    btn.click();
+    await new Promise(res => setTimeout(res, 200));
+    return { word, inlineJs, correct: document.body.textContent.includes('Correct') };
+  });
+
+  assert.equal(r.error, undefined, r.error);
+  assert.equal(r.inlineJs, null, 'the drill Check button carries no inline JS');
+  assert.equal(r.word, "aujourd'hui", 'the apostrophe survives the data attribute intact');
+  assert.ok(r.correct, 'typing the drilled word scored as correct');
+  assert.deepEqual(errors, [], 'no page errors');
+});
+
+test('Sentence Builder: tapping a built word removes it', async () => {
+  const { page, errors } = await open();
+
+  const r = await page.evaluate(async () => {
+    startGame('builder');
+    await new Promise(res => setTimeout(res, 300));
+    const bank = [...document.querySelectorAll('.bank-word, .word-chip')]
+      .filter(b => !b.classList.contains('used'));
+    if (!bank.length) return { error: 'no word bank rendered' };
+    bank[0].click(); bank[1] && bank[1].click();
+    await new Promise(res => setTimeout(res, 100));
+    const built = [...document.querySelectorAll('.built-word')];
+    const before = built.length;
+    const inlineJs = built[0] ? built[0].getAttribute('onclick') : 'no built word';
+    built[0] && built[0].click();
+    await new Promise(res => setTimeout(res, 100));
+    return { before, after: document.querySelectorAll('.built-word').length, inlineJs };
+  });
+
+  assert.equal(r.error, undefined, r.error);
+  assert.ok(r.before > 0, 'words were placed into the sentence');
+  assert.equal(r.inlineJs, null, 'a built word carries no inline JS');
+  assert.equal(r.after, r.before - 1, 'tapping a built word removed exactly one');
+  assert.deepEqual(errors, [], 'no page errors');
+});
+
+// ── The three round outcomes that were declared but never produced ──────────
+//
+// abandoned, interrupted and timedOut were in ROUND_OUTCOME from M1 onward but
+// nothing ever passed them to endRound and nothing stored them, so Rollup
+// dropped all three from the build as unreachable: the shipped index.html
+// contained only completed and challengeFailed. Walking out of a round left no
+// record that it had happened.
+//
+// A marker carries no stars, no correct and no wrong. Every day counter is
+// rebuilt from this ledger, so a marker holding a partial score would inflate
+// the day, and would be counted twice if she resumed the attempt and finished.
+
+const startQuiz = async (page) => {
+  await page.evaluate(async () => {
+    startGame('quiz');
+    await new Promise(r => setTimeout(r, 400));
+  });
+};
+
+test('leaving a round records it as abandoned, with no score attached', async () => {
+  const { page, errors } = await open();
+  await startQuiz(page);
+
+  const r = await page.evaluate(async () => {
+    const attempt = window.__faDebug.roundAttemptId;
+    exitGame();
+    await new Promise(res => setTimeout(res, 200));
+    const e = window.__faDebug.roundLog[attempt];
+    return { attempt, entry: e || null, outcome: window.__faDebug.lastRoundOutcome };
+  });
+
+  assert.ok(r.attempt, 'the round had an attempt id');
+  assert.ok(r.entry, 'walking out of a round left no record at all');
+  assert.equal(r.entry.outcome, 'abandoned');
+  assert.equal(r.entry.completed, 0, 'an abandoned round must not read as completed');
+  assert.equal(r.entry.stars, 0, 'a marker carries no score');
+  assert.equal(r.entry.correct, 0);
+  assert.equal(r.entry.wrong, 0);
+  assert.deepEqual(errors, [], 'no page errors');
+});
+
+test('the screen going away records the round as interrupted', async () => {
+  const { page, errors } = await open();
+  await startQuiz(page);
+
+  const attempt = await page.evaluate(() => window.__faDebug.roundAttemptId);
+  // Screen lock / app switch, as the page actually sees it.
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'hidden', { value: true, configurable: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await page.waitForTimeout(200);
+
+  const entry = await page.evaluate(a => window.__faDebug.roundLog[a] || null, attempt);
+  assert.ok(entry, 'an interrupted round left no record');
+  assert.equal(entry.outcome, 'interrupted');
+  assert.equal(entry.completed, 0);
+  assert.equal(entry.stars, 0);
+  assert.deepEqual(errors, [], 'no page errors');
+});
+
+test('finishing a resumed round supersedes its unfinished marker', async () => {
+  // The case the marker must not break: she leaves mid-round, comes back and
+  // finishes the same attempt. One entry, and it says completed.
+  const { page, errors } = await open();
+  await startQuiz(page);
+
+  const r = await page.evaluate(async () => {
+    const attempt = window.__faDebug.roundAttemptId;
+    exitGame();
+    await new Promise(res => setTimeout(res, 150));
+    const marker = { ...window.__faDebug.roundLog[attempt] };
+
+    // Resume the same attempt and let it end properly.
+    startGame('quiz');
+    await new Promise(res => setTimeout(res, 400));
+    const resumed = window.__faDebug.roundAttemptId;
+    await window.__faDebug.endRound('completed');
+    await new Promise(res => setTimeout(res, 400));
+
+    const log = window.__faDebug.roundLog;
+    return { attempt, resumed, marker, entry: log[resumed] || null,
+             ids: Object.keys(log).length };
+  });
+
+  assert.equal(r.marker.outcome, 'abandoned', 'the marker was written on the way out');
+  assert.ok(r.entry, 'the finished round left no entry');
+  assert.equal(r.entry.outcome, 'completed', 'the marker was not superseded');
+  assert.equal(r.entry.completed, 1);
+  if (r.attempt === r.resumed) {
+    assert.equal(r.ids, 1, 'one attempt must leave exactly one ledger entry');
+  }
+  assert.deepEqual(errors, [], 'no page errors');
+});
+
+test('a double tap on an answer scores once', async () => {
+  // §1.6 end to end. commitAnswerOnce had no test of any kind; the nearest one
+  // asserted that an answered question is not re-presented, which is the
+  // question index advancing, not the gate.
+  const { page, errors } = await open();
+
+  const r = await page.evaluate(async () => {
+    startGame('quiz');
+    await new Promise(res => setTimeout(res, 400));
+    const scoreOf = () => Number((document.getElementById('game-score')?.textContent || '')
+      .replace(/\D/g, '')) || 0;
+    const before = scoreOf();
+    const choices = [...document.querySelectorAll('#choices-grid button')];
+    if (!choices.length) return { error: 'no choices rendered' };
+
+    // Two taps as fast as the child could manage, before any redraw.
+    choices[0].click();
+    choices[0].click();
+    choices[0].click();
+    await new Promise(res => setTimeout(res, 400));
+    return { before, after: scoreOf() };
+  });
+
+  assert.equal(r.error, undefined, r.error);
+  // Either the answer was right and scored once, or wrong and scored nothing.
+  // What must not happen is the same response counting two or three times.
+  const gained = r.after - r.before;
+  assert.ok(gained === 0 || gained <= 20,
+    `three taps on one answer moved the score by ${gained}`);
+  assert.deepEqual(errors, [], 'no page errors');
+});

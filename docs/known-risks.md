@@ -153,6 +153,48 @@ project owner.
 
 ---
 
+## 1b. The assessment store widens the unauthenticated exposure
+
+**Status:** deferred by parent decision (M2). Not fixed. Read §1 first.
+
+M2 adds `french_game_assessment/{player}`, alongside the profile and its
+backups in the same rule-less project. It holds, per learner:
+
+- every response to all 45 administered items, including **free-text French
+  writing by a named ten-year-old**;
+- domain bands, confidence labels and the skills flagged as next needs;
+- speaking metadata — durations, resolved voice locale, device transcripts.
+
+Raw speaking audio is **not** in it. Clips stay in IndexedDB on the iPad that
+recorded them and only a reference syncs, per master plan §3.6.
+
+This is a different kind of content from star counts. The decision to defer
+authentication was taken when the database held game scores; it now also holds a
+child's written work and an assessment of her ability. The parent has been told
+and has chosen to proceed. The fix is unchanged and still §1's four steps.
+
+---
+
+## 1c. Both answer keys ship inside the page
+
+**Status:** accepted; no fix exists without a server.
+
+`src/assessment/content.js` imports the release so the assessment works offline,
+as the game does. That puts all 90 items — both parallel forms, with their
+answer keys — into `index.html`, where View Source reveals them.
+
+There is no server to hold them behind, so this cannot be fixed, only known.
+It matters mainly for reassessment: `administration.exposure` already forbids
+treating an exposed item as secure evidence, and a form whose keys have been
+read is exposed whether or not the app recorded showing it. If there is reason
+to think the file was read, the run should be invalidated rather than scored.
+
+Note the bundle is only paid for when the app imports the module. As of this
+commit nothing does, so the built file has not grown; it will by roughly 145 KB
+when the assessment screens land.
+
+---
+
 ## 2. Skills are identified by their French word string
 
 **Status:** recorded, not fixed in M1.
@@ -167,13 +209,19 @@ that define the skills, so inventing one now would conflict with them.
 
 ---
 
-## 3. Content packages are not yet delivered
+## 3. Release B is not yet delivered
 
-**Status:** blocking M2 and M3. Nothing to fix in code.
+**Status:** blocking M3. Nothing to fix in code.
 
-The assessment (Release A) and the four-chapter story (Release B) are content,
-not code, and neither exists. M2 cannot start without A; M3 cannot start
-without B.
+**Updated 2026-09-09.** Release A *has* been delivered. `assessment-v1.0.0` was
+imported unchanged to `content/releases/assessment-v1/` and validated: 90 items
+across two complete parallel forms, every skill, outcome, rubric and fixture
+reference resolving, listening items audio-only. M2 is under way. The earlier
+wording here — that neither package existed — was left stale after the import
+and is corrected.
+
+Release B, the four-chapter story, has not been authored. M3 cannot start
+without it.
 
 `npm run check:content -- <dir>` validates a package the day it arrives — the
 day it arrives is much cheaper than three days into implementing against a

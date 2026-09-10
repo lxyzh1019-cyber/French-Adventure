@@ -2,12 +2,27 @@ import { firebaseReady } from './state/firebase-bootstrap.js';
 import { CURRICULUM, SENTENCES } from './content/curriculum-map.js';
 import { migrateProfile } from './state/migrations.js';
 import { mergeProfiles } from './state/merge.js';
-import { makeRoundLogEntry } from './state/schema.js';
+import { makeRoundLogEntry, ROUND_OUTCOME, countsAsCompletion } from './state/schema.js';
 import { createMicController } from './speech/recorder.js';
-import { SCHEMA_VERSION, hasAnyProgress } from './state/schema.js';
+import { SCHEMA_VERSION, hasAnyProgress, DEFAULT_STATE,
+         defaultParentSettings, defaultGradeUnlocked,
+         defaultGradeParentOpen } from './state/schema.js';
 import { GRADE_KEYS, levelLabel, levelNumber, recommendLevel,
          recommendationText, levelAccuracy, hasMoon } from './learning/levels.js';
 import { pickFrenchVoice, describeVoice, PREFERRED_LOCALE } from './speech/playback.js';
+import { escapeAttr } from './util/html.js';
+import { createAttemptLedger } from './state/attempts.js';
+import { createAssessmentStore } from './assessment/store.js';
+import { configureAssessmentUI, openAssessment, pauseAssessment,
+         beginNextSection, renderAssessmentParentPanel, chooseOption,
+         playCurrentAudio, reportNoSound, submitCurrentItem,
+         finishSection, startRecording, stopRecording, playOwnRecording,
+         abandonRecording } from './modes/assessment-ui.js';
+import { renderAssessmentReports } from './modes/assessment-report-ui.js';
+import { createDeviceCheck } from './modes/device-check.js';
+import { mountDeviceCheck } from './modes/device-check-ui.js';
+import { createAudioCapture } from './speech/capture.js';
+import { createAudioStore } from './assessment/audio-store.js';
 import { normalizeForRecognition, compareFrench, scrambleTypeFor,
          buildScrambleTiles, joinScrambleTiles, isScrambleSolvable,
          SCRAMBLE_TYPES } from './util/fr-text.js';
@@ -23,23 +38,10 @@ import { getWeekStart, isSameWeek, todayKey, dateKeyAddDays, getIsoDateRange,
 // ════════════════════════════════════════════════
 // STATE
 // ════════════════════════════════════════════════
-function defaultParentSettings(){
-  return { weekdayOpen:[true,true,true,true,true,true,true] }; // Sun–Sat, false = locked (test day)
-}
-const DEFAULT_STATE = () => ({
-  totalStars:0, weekStars:0, streak:0, lastPlayed:null,
-  weekStart:getWeekStart(), topicStars:{}, dailyRounds:{},
-  moons:{grade4:false,grade5:false,grade6:false,grade7:false,grade8:false,grade9:false,grade10:false,super:false},
-  failedWords:{}, playedDays:{}, todayStats:{},
-  dailyTimeMs:{}, lastDrillComplete:null,
-  parentSettings:defaultParentSettings(),
-  gradeUnlocked:defaultGradeUnlocked(), gradeStats:{}, gradeGameRounds:{}, dailyTopicStats:{},
-  gradeParentOpen:{4:true,5:false,6:false,7:false,8:false,9:false,10:false},
-  tier1Conquered:false, tier2Conquered:false, tier3Conquered:false,
-  tier1ParentOpen:false, tier2ParentOpen:false, tier3ParentOpen:false,
-  seedProfilePatches:{},
-  lastUpdatedAt:0
-});
+// DEFAULT_STATE, and the field defaults it is built from, live in
+// state/schema.js. This file used to declare its own copy, which had drifted:
+// it carried neither schemaVersion nor roundLog, so anything built from it
+// started life shaped like a v0 profile.
 
 let state = {jenn:DEFAULT_STATE(), jess:DEFAULT_STATE()};
 let currentPlayer = null;
@@ -54,7 +56,7 @@ let roundTopicTally={};
 // applied. Reset at round start, carried in the draft across a resume.
 let roundAnswerTally={correct:0,wrong:0};
 let roundGradeTally={};
-function roundIsLive(){ return !!(roundAttemptId && currentGameType && !roundEnded); }
+function roundIsLive(){ return !!(attempts.attemptId && currentGameType && !roundEnded); }
 let builtWords=[], scrambleAnswer=[], scrambleSource=[];
 let matchSelected=null, matchPairs=[], matchMatched=[], matchFrOrder=[], matchEnOrder=[];
 let __roundDraftSnap=null;
@@ -92,21 +94,23 @@ const syncMeta = {
 // profile at round end rather than thrown away.
 const pendingRemoteData = { jenn: null, jess: null };
 
+// The assessment store. A separate document, a separate localStorage key and a
+// separate barrier of its own — see assessment/store.js for why it is not a
+// field on the profile.
+const DEVICE_ID_KEY = 'french_device_id';
+function deviceId(){
+  try{
+    let id = localStorage.getItem(DEVICE_ID_KEY);
+    if(!id){ id = 'dev_' + Math.random().toString(36).slice(2, 10); localStorage.setItem(DEVICE_ID_KEY, id); }
+    return id;
+  }catch(e){ return null; }
+}
+const assessment = createAssessmentStore({ players: ['jenn','jess'] });
+
 let roundDraftTimer = null;
 
-// Explicit round outcomes. Finishing every question and running out of lives
-// used to take the same path, so a knocked-out round was recorded as a
-// completed one — inflating format completion and daily round counts with
-// rounds the learner never finished.
-const ROUND_OUTCOME = {
-  COMPLETED:       'completed',       // every question answered
-  CHALLENGE_FAILED:'challengeFailed', // ran out of lives
-  ABANDONED:       'abandoned',       // learner left deliberately
-  INTERRUPTED:     'interrupted',     // app closed, tab evicted, screen lock
-  TIMED_OUT:       'timedOut',        // session limit reached
-};
-/** Only a genuinely completed round counts towards completion and caps. */
-function countsAsCompletion(outcome){ return outcome === ROUND_OUTCOME.COMPLETED; }
+// Round outcomes and countsAsCompletion live in state/schema.js, next to the
+// ledger entry that stores them.
 
 let roundEnded = false;   // endRound must run once per round, not once per trigger
 let lastRoundOutcome = null;
@@ -114,25 +118,15 @@ let lastRoundOutcome = null;
 // Answers commit exactly once. Resuming a draft that was saved with the
 // feedback overlay open used to re-present the same question, letting the same
 // response score a second time; there was no identity to deduplicate on.
-let roundAttemptId = null;
-const committedAnswers = new Set();
-function newAttemptId(){
-  return (Date.now().toString(36) + Math.random().toString(36).slice(2, 8));
-}
-function questionInstanceId(index){
-  return roundAttemptId + ':' + index;
-}
+const attempts = createAttemptLedger();
 /**
- * Claim the right to score the current question.
- * Returns false if this question instance has already been committed, so a
- * duplicate submit — from a resume, a double tap, or a rebound handler —
- * cannot award points or evidence twice.
+ * Claim the right to score the current response. False means it has already
+ * been scored — from a resume, a double tap, or a rebound handler — and must
+ * not award points or evidence again. `part` separates several scored
+ * responses within one question index; Word Match scores per pair.
  */
-function commitAnswerOnce(index = qIndex){
-  const id = questionInstanceId(index);
-  if(committedAnswers.has(id)) return false;
-  committedAnswers.add(id);
-  return true;
+function commitAnswerOnce(index = qIndex, part){
+  return attempts.commitOnce(index, part);
 }
 let lastWrongPenaltyAt = 0;
 
@@ -197,8 +191,8 @@ function collectRoundDraft(){
   }catch(_){}
   return {
     v: 2,
-    attemptId: roundAttemptId,
-    committed: [...committedAnswers],
+    attemptId: attempts.attemptId,
+    committed: attempts.snapshot(),
     savedAt: Date.now(),
     tk, player: currentPlayer, grade: currentGrade, type: currentGameType,
     qIndex, questions, lives, roundScore, roundBasePoints, roundSpeedPoints, roundTopicTally,
@@ -246,9 +240,7 @@ function restoreRoundDraft(d){
   // Restore the attempt identity first: everything below depends on it to
   // decide what has already been scored.
   roundEnded = false;
-  roundAttemptId = d.attemptId || newAttemptId();
-  committedAnswers.clear();
-  (d.committed || []).forEach(id => committedAnswers.add(id));
+  attempts.restore(d.attemptId, d.committed || []);
   questions = d.questions || [];
   qIndex = Math.min(Math.max(0, d.qIndex|0), Math.max(0, questions.length - 1));
   lives = d.lives != null ? d.lives : 3;
@@ -278,7 +270,7 @@ function restoreRoundDraft(d){
     // response score a second time. Advance past it instead — the answer is
     // committed, and the committed set below makes the guard belt-and-braces.
     try{ document.getElementById('feedback-overlay').classList.remove('show'); }catch(_){}
-    committedAnswers.add(questionInstanceId(qIndex));
+    attempts.markCommitted(qIndex);
     if(qIndex < questions.length) qIndex++;
     currentQ = questions[qIndex] || null;
   }
@@ -349,6 +341,7 @@ async function flushPendingCloudSaves(){
       await saveState(pl);
     }
   }
+  await assessment.flushPending();
 }
 function initConnectivityAndSyncUI(){
   updateConnectionStatusUI();
@@ -497,17 +490,6 @@ function gradeTier(grade){
   if(grade <= 7) return 2;
   if(grade <= 9) return 3;
   return 4;
-}
-function defaultGradeUnlocked(){
-  const o = {};
-  for(let g = 4; g <= 10; g++) o[g] = (g === 4);
-  return o;
-}
-function defaultGradeParentOpen(){
-  const o = {};
-  for(let g = 4; g <= 10; g++) o[g] = false;
-  o[4] = true;
-  return o;
 }
 function clampGradeUnlocks(o){
   if(!o) return;
@@ -783,7 +765,14 @@ function startSessionClock(){
       // Flush the round draft before locking. Drafts save on a short debounce,
       // so without this the last few seconds of a round are lost and the child
       // comes back to an earlier question than the one she was on.
-      if(currentPlayer && currentGameType) persistRoundDraftNow();
+      if(currentPlayer && currentGameType){
+        recordUnfinishedRound(ROUND_OUTCOME.TIMED_OUT);
+        persistRoundDraftNow();
+      }
+      // An assessment in progress is not a game round, so the branch above does
+      // not see it. Every response is already saved as it is submitted; this
+      // pushes anything the barrier or the network was still holding.
+      void assessment.flushPending();
       lockApp();
       return;
     }
@@ -949,7 +938,7 @@ function initListeners(){
 // real wiring — with `if(window.fbInit)` as a fallback for the other ordering. Now
 // that everything is a module the ordering flips, so wait on the promise explicitly.
 // Resolves to null when the CDN is unreachable; initListeners() already no-ops then.
-void firebaseReady.then(initListeners);
+void firebaseReady.then(() => { initListeners(); assessment.listen(); });
 
 /**
  * Record what the cloud read told us about a learner, and release any writes
@@ -1056,7 +1045,19 @@ function flushOnExit(){
 }
 document.addEventListener('visibilitychange',()=>{
   if(document.hidden){
+    // Screen lock, app switch, or the tab going away. The round is not over —
+    // the draft is kept and she resumes where she was — but if this is the last
+    // the app ever sees of the attempt, it should say so rather than leave no
+    // record at all. A later completion of the same attempt supersedes it.
+    recordUnfinishedRound(ROUND_OUTCOME.INTERRUPTED);
+    // A recording in progress when the screen locks is an interruption, not a
+    // wrong answer. Whatever was captured is kept; the response is marked
+    // invalid and excluded rather than scored.
+    abandonRecording();
     flushOnExit();
+    // flushOnExit returns early unless a game round is live, so an assessment
+    // in progress would otherwise be invisible to it.
+    void assessment.flushPending();
     flushPlayTimeTick(true);
   }
 });
@@ -1269,9 +1270,9 @@ function goBack(){
   document.getElementById('session-clock').style.display='none';
   showScreen('select');updateLeaderboard();
 }
-function exitGame(){stopAllMics();if(currentPlayer&&currentGameType){persistRoundDraftNow();applyPendingRemoteData(currentPlayer);saveState(currentPlayer);}currentGameType=null;questions=[];showScreen('hub');document.getElementById('hint-panel').classList.remove('show');updateConnectionStatusUI();}
+function exitGame(){stopAllMics();if(currentPlayer&&currentGameType){recordUnfinishedRound(ROUND_OUTCOME.ABANDONED);persistRoundDraftNow();applyPendingRemoteData(currentPlayer);saveState(currentPlayer);}currentGameType=null;questions=[];showScreen('hub');document.getElementById('hint-panel').classList.remove('show');updateConnectionStatusUI();}
 function showScreen(name){
-  ['select','hub','game'].forEach(n=>document.getElementById(`screen-${n}`).style.display=n===name?'block':'none');
+  ['select','hub','game','assessment'].forEach(n=>document.getElementById(`screen-${n}`).style.display=n===name?'block':'none');
 }
 function setGrade(g){
   if(g < 4 || g > MAX_PLAYABLE_GRADE) return;
@@ -1515,11 +1516,6 @@ function speakFrench(text){
 // interpolated JavaScript inside an onclick attribute. Apostrophes in words like
 // aujourd'hui / l'ecole / j'ai used to produce syntactically invalid inline JS,
 // leaving the button dead. Clicks are handled by one delegated listener below.
-function escapeAttr(text){
-  return String(text)
-    .replace(/&/g,'&amp;').replace(/"/g,'&quot;')
-    .replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
 function speakButtonHTML(text, cls, style){
   return '<button type="button" class="'+escapeAttr(cls||'')+'"'
     + (style ? ' style="'+escapeAttr(style)+'"' : '')
@@ -1532,7 +1528,20 @@ window.__faDebug = {
   get matchPairs(){ return matchPairs; }, get matchMatched(){ return matchMatched; },
   get matchSelected(){ return matchSelected; }, get lives(){ return lives; },
   get roundBasePoints(){ return roundBasePoints; }, get qIndex(){ return qIndex; },
-  get roundAttemptId(){ return roundAttemptId; }, get recognition(){ return recognition; },
+  get roundAttemptId(){ return attempts.attemptId; }, get recognition(){ return recognition; },
+  get lastRoundOutcome(){ return lastRoundOutcome; },
+  // The assessment surface the browser tests drive. Kept here rather than on
+  // window so the app's public globals stay the inline-handler contract that
+  // check-handlers.mjs polices.
+  assessment: {
+    open: p => openAssessment(p),
+    pause: () => pauseAssessment(),
+    beginSection: () => beginNextSection(),
+    store: p => assessment.get(p),
+    meta: p => assessment.meta(p),
+    runs: p => Object.values(assessment.get(p)?.runs || {}),
+  },
+  get roundLog(){ return currentPlayer ? (state[currentPlayer].roundLog || {}) : {}; },
   endRound: (o)=>endRound(o),
 };
 document.addEventListener('click', function(e){
@@ -1554,6 +1563,31 @@ document.addEventListener('click', function(e){
     case 'restore-backup':   void restoreFromBackup(el.getAttribute('data-player'),
                                                     el.getAttribute('data-backup-id')); break;
     case 'check-scramble':   if(currentQ) checkScramble(currentQ.word.fr); break;
+    case 'check-drill':      checkDrill(el.getAttribute('data-word')); break;
+    case 'remove-built':     removeBuilt(Number(el.getAttribute('data-index'))); break;
+    case 'assess-open':      if(ensureParentPassword()){
+                               // The parent overlay is what the button lives in;
+                               // leaving it up would cover the assessment it just
+                               // opened, and nothing on the screen would respond.
+                               closeOverlay('parent-overlay');
+                               void openAssessment(el.getAttribute('data-player'));
+                             } else setRecoveryMsg('❌ Enter parent password first'); break;
+    case 'assess-report':    if(ensureParentPassword()){
+                               renderAssessmentReports(document.getElementById('assess-report-panel'),
+                                                       assessment);
+                             } else setRecoveryMsg('❌ Enter parent password first'); break;
+    case 'assess-device-check': if(ensureParentPassword()){ openDeviceCheck(); }
+                             else setRecoveryMsg('❌ Enter parent password first'); break;
+    case 'assess-pause':     void pauseAssessment(); break;
+    case 'assess-begin-section': void beginNextSection(); break;
+    case 'assess-choose':    chooseOption(el.getAttribute('data-choice')); break;
+    case 'assess-play':      void playCurrentAudio(); break;
+    case 'assess-no-sound':  reportNoSound(); break;
+    case 'assess-submit-item': void submitCurrentItem(); break;
+    case 'assess-finish-section': void finishSection(); break;
+    case 'assess-record':    void startRecording(); break;
+    case 'assess-stop-record': void stopRecording(); break;
+    case 'assess-play-own':  playOwnRecording(); break;
   }
 });
 
@@ -1629,7 +1663,7 @@ function startGame(type){
     clearCurrentRoundDraft();
     lives=3;roundScore=0;roundBasePoints=0;roundSpeedPoints=0;qIndex=0;roundTopicTally={};
     roundAnswerTally={correct:0,wrong:0};roundGradeTally={};
-    roundEnded=false;roundAttemptId=newAttemptId();committedAnswers.clear();
+    roundEnded=false;attempts.begin();
     questions=buildQuestions(type);
     renderLives();renderScore();
     document.getElementById('progress-bar').style.width='0%';
@@ -1815,6 +1849,13 @@ function handleMatchClick(btn,side,word){
   const frW=side==='fr'?word:matchSelected.word,enW=side==='en'?word:matchSelected.word;
   const pair=matchPairs.find(p=>p.fr===frW&&p.en===enW);
   if(pair){
+    // Word Match was the one scoring path that never went through the commit
+    // gate; it relied on the `used` class and matchMatched alone. Those hold
+    // for a redraw, but they are DOM and array state, not a record that
+    // survives in the draft — so the gate is authoritative here too. A pair is
+    // its own instance, since one Word Match round is a single question index
+    // with several scored responses.
+    if(!commitAnswerOnce(qIndex, pair.fr + '|' + pair.en)) return;
     [btn,matchSelected.btn].forEach(b=>{b.classList.add('used');b.style.borderColor='var(--green)';b.style.color='var(--green)';});
     matchMatched.push(pair);
     const fullW=findVocabWord(pair.fr)||pair;
@@ -1963,7 +2004,7 @@ function renderBuilder(q,area,actions){
 function renderBuilderState(q){
   const built=document.getElementById('built-sentence'),bank=document.getElementById('word-bank');
   if(!built||!bank)return;
-  built.innerHTML=builtWords.length?builtWords.map((w,i)=>`<div class="built-word" onclick="removeBuilt(${i})">${w}</div>`).join(''):'<span style="color:var(--text-muted);font-size:.82rem;">Tap words below</span>';
+  built.innerHTML=builtWords.length?builtWords.map((w,i)=>`<div class="built-word" data-action="remove-built" data-index="${i}">${escapeAttr(w)}</div>`).join(''):'<span style="color:var(--text-muted);font-size:.82rem;">Tap words below</span>';
   bank.innerHTML='';
   const usedCount={};builtWords.forEach(w=>{usedCount[w]=(usedCount[w]||0)+1;});
   const seen={};
@@ -2056,6 +2097,33 @@ function nextQuestion(){document.getElementById('feedback-overlay').classList.re
 // ════════════════════════════════════════════════
 // ROUND END
 // ════════════════════════════════════════════════
+// Record that a round ended without being finished.
+//
+// This is deliberately NOT endRound. endRound awards the round's stars, runs the
+// moon checks and renders the round-complete screen; a learner who walks away
+// mid-round has not earned any of that, and her draft is kept so she can come
+// back to the question she was on.
+//
+// The marker carries no evidence — no stars, no correct, no wrong. All three
+// day counters are rebuilt from this ledger, so a marker holding a partial
+// score would either inflate the day or be counted twice when she resumes the
+// same attempt and finishes it. What the marker records is that an attempt
+// happened and how it ended, which is the part that was previously lost: the
+// three outcomes below were declared but never written anywhere, and Rollup
+// dropped them from the build as unreachable.
+function recordUnfinishedRound(outcome){
+  if(roundEnded || !currentPlayer || !currentGameType || !attempts.attemptId) return;
+  const s = state[currentPlayer];
+  if(!s) return;
+  if(!s.roundLog) s.roundLog = {};
+  if(s.roundLog[attempts.attemptId]) return;   // already finished, or already marked
+  s.roundLog[attempts.attemptId] = makeRoundLogEntry({
+    id: attempts.attemptId, day: todayKey(), type: currentGameType, grade: currentGrade,
+    stars: 0, correct: 0, wrong: 0, outcome, at: Date.now()
+  });
+  lastRoundOutcome = outcome;
+}
+
 async function endRound(outcome = ROUND_OUTCOME.COMPLETED){
   if(roundEnded) return;      // a knockout timer and the last question can both fire
   roundEnded = true;
@@ -2125,11 +2193,14 @@ async function endRound(outcome = ROUND_OUTCOME.COMPLETED){
   // when the other iPad's snapshot arrives the merge can tell two same-day
   // rounds apart instead of keeping the larger day. Written once per attempt.
   if(!s.roundLog) s.roundLog={};
-  if(roundAttemptId && !s.roundLog[roundAttemptId]){
-    s.roundLog[roundAttemptId]=makeRoundLogEntry({
-      id: roundAttemptId, day: tk, type: currentGameType, grade: currentGrade,
+  // A marker may already sit under this id from an earlier abandon, interrupt or
+  // time-out of this same attempt. Finishing supersedes it; a second finish does
+  // not overwrite the first.
+  if(attempts.attemptId && !(s.roundLog[attempts.attemptId] || {}).completed){
+    s.roundLog[attempts.attemptId]=makeRoundLogEntry({
+      id: attempts.attemptId, day: tk, type: currentGameType, grade: currentGrade,
       stars: roundScore, correct: roundAnswerTally.correct, wrong: roundAnswerTally.wrong,
-      completed, grades: roundGradeTally, topics: roundTopicTally, at: Date.now()
+      outcome, grades: roundGradeTally, topics: roundTopicTally, at: Date.now()
     });
   }
 
@@ -2264,7 +2335,7 @@ function renderDrillCard(){
     +'</div>'
     +'<div class="action-row" style="margin-top:12px;">'
     +'<button class="btn-secondary" onclick="revealDrill()">Reveal</button>'
-    +'<button class="btn-primary" onclick="checkDrill(\''+w.fr.replace(/'/g,"\\'")+'\')" >Check ✓</button>'
+    +'<button class="btn-primary" data-action="check-drill" data-word="'+escapeAttr(w.fr)+'">Check ✓</button>'
     +speakButtonHTML(w.fr,'btn-speak')
     +'</div>';
   setTimeout(()=>document.getElementById('train-input')?.focus(),100);
@@ -2512,6 +2583,7 @@ async function toggleWeekday(i){
 }
 
 function renderParentSummary(){
+  renderAssessmentParentPanel();
   const grid = document.getElementById('parent-stats-grid');
   const nav = document.getElementById('summary-nav');
   grid.innerHTML = '';
@@ -2776,7 +2848,7 @@ async function restoreFromBackup(player, docId){
     setRecoveryMsg('❌ Enter parent password first');
     return;
   }
-  if(!window.confirm(`Restore ${player}'s profile from backup ${docId}?\nThis will overwrite their current data.`)) return;
+  if(!window.confirm(`Restore ${player}'s profile from backup ${docId}?\nThe backup will be merged with what is on this device; nothing earned is lost.`)) return;
   setRecoveryMsg('Restoring…');
   try{
     const backups = await window.fbBackupList(player);
@@ -2784,9 +2856,24 @@ async function restoreFromBackup(player, docId){
     if(!entry){ setRecoveryMsg('❌ Backup not found'); return; }
     // Strip backup metadata fields before restoring
     const { id, backedUpAt, ...restoredData } = entry;
-    restoredData.lastUpdatedAt = Date.now();
-    state[player] = Object.assign({}, DEFAULT_STATE(), restoredData);
-    await saveState(player, {suppressEcho: true});
+    // Migrate before merging. A backup can be any age, so it can be any schema
+    // version; merging an un-migrated profile would compare a v0 shape against
+    // a v2 one. This is the path reconcilePlayerFromBackup already takes for an
+    // imported file — a restore is the same operation from a different source.
+    //
+    // Merge rather than replace. This used to be
+    // Object.assign({}, DEFAULT_STATE(), restoredData), which threw away
+    // everything the device held: restoring last week's backup after playing
+    // today lost today. Whole-profile replacement is the failure mode M1
+    // removed from sync; a restore should add the archived history back, not
+    // trade one loss for another.
+    state[player] = mergeProfiles(migrateProfile(state[player]),
+                                  migrateProfile(restoredData));
+    state[player].lastUpdatedAt = Date.now();
+    // No suppressEcho: the merge is idempotent, so the echo of our own write is
+    // harmless, and suppressing it left the device ignoring inbound snapshots
+    // for six seconds immediately after a recovery.
+    await saveState(player);
     updateLeaderboard();
     if(currentPlayer === player) updateHub();
     renderParentSummary();
@@ -2821,6 +2908,23 @@ function exportRecoveryBackup(){
     players:{
       jenn:JSON.parse(JSON.stringify(state.jenn)),
       jess:JSON.parse(JSON.stringify(state.jess))
+    },
+    // Assessment runs travel with the backup. They are evidence collected once
+    // under test conditions and not reproducible — a second sitting of the same
+    // form is a different measurement, not a retake — so a recovery file that
+    // omitted them would silently lose more than the game records.
+    //
+    // blocked_by_content_domains and insufficient_domains ride along on each
+    // run: a domain that reported no band has to be able to say afterwards
+    // WHICH shortfall it was, and neither can be recomputed from a file that
+    // dropped them.
+    //
+    // Audio is not here. Clips stay in IndexedDB on the device that recorded
+    // them (§3.6), so a restored file carries the responses and the reference,
+    // and audio_device_id says where the recording actually is.
+    assessment:{
+      jenn:JSON.parse(JSON.stringify(assessment.get('jenn'))),
+      jess:JSON.parse(JSON.stringify(assessment.get('jess')))
     }
   };
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
@@ -2909,6 +3013,16 @@ async function handleRecoveryImport(evt){
     }
     if(reconciledJenn) state.jenn=reconciledJenn;
     if(reconciledJess) state.jess=reconciledJess;
+
+    // Assessment runs come back too, and are MERGED rather than replaced — the
+    // same rule as the profile. A file exported before today's sitting must not
+    // erase today's answers, and the join makes that structurally impossible.
+    // An older backup with no assessment section simply contributes nothing.
+    for(const p of ['jenn','jess']){
+      const incoming = data?.assessment?.[p];
+      if(incoming) assessment.applyRemote(p, incoming);
+    }
+
     renderParentSummary();
     updateLeaderboard();
     if(currentPlayer==='jenn' || currentPlayer==='jess') updateHub();
@@ -3079,6 +3193,79 @@ if(navigator.storage && navigator.storage.persist){
 }
 
 hydrateStateFromLocalMirror();
+// Settle this device's identity at startup rather than whenever something
+// happens to write first. It is local, it is arbitrary, and the same value is
+// reached either way — but a parent opening the Device & Feature Check on a new
+// iPad should not be the thing that mints it, because that check is supposed to
+// leave nothing behind.
+deviceId();
+assessment.hydrate();
+// The pieces the assessment runs on. Named here because the parent-only Device
+// & Feature Check runs the SAME ones — a check written against its own copy of
+// this wiring would prove only that the copy works.
+const assessmentVoiceInfo = () => {
+  const v = frenchVoice || resolveFrenchVoice();
+  return { resolvedLocale: v ? v.lang : null, name: v ? v.name : null };
+};
+const makeAssessmentCapture = () => createAudioCapture({
+  getStream: () => navigator.mediaDevices.getUserMedia({ audio: true }),
+  Recorder: window.MediaRecorder,
+});
+const assessmentAudioStore = createAudioStore({ deviceId });
+
+configureAssessmentUI({
+  store: assessment,
+  showScreen,
+  // The assessment reads the same session clock the games do, so a section is
+  // not begun with less time left than the rules allow.
+  minutesRemaining: () => (countdownEnd ? Math.max(0, (countdownEnd - Date.now()) / 60000) : Infinity),
+  todayKey,
+  deviceId,
+  speak: speakFrench,
+  // Recorded on every listening response, so a whole section that fell back to
+  // a France voice is visible afterwards rather than guessed at.
+  voiceInfo: assessmentVoiceInfo,
+  // Audio capture, and where the clip goes. The recording never leaves this
+  // device: there is no storage bucket, a Firestore document caps at 1 MiB, and
+  // §3.6 forbids keeping raw child audio by default.
+  makeCapture: makeAssessmentCapture,
+  audioStore: assessmentAudioStore,
+  // A parent can open the assessment from the parent overlay without a learner
+  // being selected, so there may be no hub to return to. updateHub reads
+  // state[currentPlayer] and would throw.
+  onExit: () => {
+    if(currentPlayer){ showScreen('hub'); updateHub(); }
+    else { showScreen('select'); }
+    renderAssessmentParentPanel();
+  },
+});
+// ── the parent-only Device & Feature Check ──────────────────────────────────
+//
+// Same speak, same capture, same audio store as the assessment above. It writes
+// nothing but a diagnostic clip under its own key prefix, on this device, and
+// clears those on the way in and on the way out.
+let deviceCheckUnmount = null;
+function openDeviceCheck(){
+  const panel = document.getElementById('assess-device-check-panel');
+  if(!panel) return;
+  if(deviceCheckUnmount){ deviceCheckUnmount(); deviceCheckUnmount = null; }
+  const controller = createDeviceCheck({
+    speak: speakFrench,
+    voiceInfo: assessmentVoiceInfo,
+    makeCapture: makeAssessmentCapture,
+    audioStore: assessmentAudioStore,
+    requestedLocale: PREFERRED_LOCALE,
+    playBlob: async (blob) => {
+      const url = URL.createObjectURL(blob);
+      try { await new Audio(url).play(); }
+      finally { setTimeout(() => URL.revokeObjectURL(url), 30000); }
+    },
+  });
+  deviceCheckUnmount = mountDeviceCheck(panel, controller, {
+    onDone: () => { deviceCheckUnmount = null; },
+  });
+}
+
 initConnectivityAndSyncUI();
 showScreen('select');
 startWallClock();

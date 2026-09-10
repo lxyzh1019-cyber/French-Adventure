@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { migrateProfile, isCurrent } from '../src/state/migrations.js';
-import { SCHEMA_VERSION, DEFAULT_STATE, GRADE_KEYS } from '../src/state/schema.js';
+import { SCHEMA_VERSION, DEFAULT_STATE, GRADE_KEYS, makeRoundLogEntry } from '../src/state/schema.js';
 
 const v0 = () => JSON.parse(readFileSync('tests/fixtures/profile-v0.json', 'utf8'));
 
@@ -110,12 +110,65 @@ test('unknown fields on a v0 profile survive', () => {
 test('v1 -> v2 adds an empty round ledger and nothing else', () => {
   const v1 = { ...v0(), schemaVersion: 1 };
   const after = migrateProfile(v1);
-  assert.equal(after.schemaVersion, 2);
+  assert.equal(after.schemaVersion, SCHEMA_VERSION);
   assert.deepEqual(after.roundLog, {});
   assert.equal(after.totalStars, 1240);
   assert.deepEqual(after.todayStats, v1.todayStats, 'day counters were rewritten');
-  // Twice equals once, and an existing ledger is never cleared.
-  const withLog = { ...after, roundLog: { r1: { id: 'r1', day: '2026-09-05', stars: 30 } } };
-  assert.deepEqual(migrateProfile(withLog).roundLog, withLog.roundLog);
-  assert.deepEqual(migrateProfile(after), after);
+  assert.deepEqual(migrateProfile(after), after, 'twice equals once');
+});
+
+test('v2 -> v3 labels existing ledger entries with how the round ended', () => {
+  // Before v3 a round could end exactly two ways, and `completed` said which.
+  // The backfill is therefore exact, not a guess.
+  const v2 = {
+    ...v0(),
+    schemaVersion: 2,
+    roundLog: {
+      done:  { id: 'done',  day: '2026-09-05', type: 'quiz',  stars: 30, completed: 1 },
+      ko:    { id: 'ko',    day: '2026-09-05', type: 'match', stars: 10, completed: 0 },
+    },
+  };
+  const after = migrateProfile(v2);
+
+  assert.equal(after.schemaVersion, 3);
+  assert.equal(after.roundLog.done.outcome, 'completed');
+  assert.equal(after.roundLog.ko.outcome, 'challengeFailed');
+  assert.equal(after.roundLog.done.stars, 30, 'nothing else about the entry moved');
+  assert.equal(after.roundLog.ko.completed, 0);
+  assert.equal(Object.keys(after.roundLog).length, 2, 'no entry was dropped');
+
+  assert.deepEqual(migrateProfile(after), after, 'twice equals once');
+});
+
+test('an entry that already carries an outcome is left alone', () => {
+  const v3 = {
+    ...v0(),
+    schemaVersion: 3,
+    roundLog: {
+      left: { id: 'left', day: '2026-09-05', type: 'quiz', stars: 0,
+              completed: 0, outcome: 'abandoned' },
+    },
+  };
+  assert.equal(migrateProfile(v3).roundLog.left.outcome, 'abandoned',
+    'a migration must not relabel an abandoned round as a knockout');
+});
+
+test('makeRoundLogEntry derives completed from the outcome, not the caller', () => {
+  const mk = o => makeRoundLogEntry({
+    id: 'x', day: '2026-09-08', type: 'quiz', grade: 4, stars: 5, outcome: o,
+  });
+  assert.equal(mk('completed').completed, 1);
+  for (const o of ['challengeFailed', 'abandoned', 'interrupted', 'timedOut']) {
+    assert.equal(mk(o).completed, 0, `${o} must not read as completed`);
+    assert.equal(mk(o).outcome, o);
+  }
+});
+
+test('an unknown outcome falls back to the completed flag rather than being stored', () => {
+  // Defensive: a newer build could write an outcome this one does not know.
+  const e = makeRoundLogEntry({
+    id: 'x', day: '2026-09-08', type: 'quiz', grade: 4, outcome: 'somethingNew', completed: 1,
+  });
+  assert.equal(e.outcome, 'completed');
+  assert.equal(e.completed, 1);
 });

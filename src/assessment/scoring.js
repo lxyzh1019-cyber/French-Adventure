@@ -114,7 +114,26 @@ export function routeAfterEntry(domain, entryCorrect, entryValid, rules) {
 }
 
 const TIER_ORDER = ['foundation', 'developing', 'stretch'];
-const SECURE = 0.75, EMERGING = 0.5;   // stated in rules.scoring.tier_profile; asserted in tests
+
+/**
+ * The secure and emerging cut scores, from the release.
+ *
+ * These used to be constants here, copied out of the tier_profile prose. Two
+ * places stating the same rule is one place to forget: a release could change
+ * its thresholds and this module would go on scoring by the old ones, silently
+ * and with every fixture still passing. They are read, and their absence is an
+ * error rather than a default — a release that does not state its cut scores
+ * must not be scored by whatever this file last happened to believe.
+ */
+function thresholds(rules) {
+  const secure = Number(rules?.scoring?.secure_threshold);
+  const emerging = Number(rules?.scoring?.emerging_threshold);
+  if (!Number.isFinite(secure) || !Number.isFinite(emerging)) {
+    throw new Error(
+      'assessment_rules.json: scoring.secure_threshold and scoring.emerging_threshold are required');
+  }
+  return { secure, emerging };
+}
 
 /**
  * Domain band for an objective domain from per-tier results
@@ -126,11 +145,12 @@ export function objectiveBand(domain, tierResults, rules, { invalidCount = 0, su
   const minimum = num(rules.scoring.minimum_independent_valid_items[domain]);
   const totalValid = Object.values(tierResults).reduce((t, r) => t + num(r?.valid), 0);
 
+  const { secure, emerging } = thresholds(rules);
   const level = tier => {
     const r = tierResults[tier];
     if (!r || num(r.valid) < 3) return null;                  // not enough to judge this tier
     const acc = num(r.correct) / num(r.valid);
-    return acc >= SECURE ? 'secure' : acc >= EMERGING ? 'emerging' : 'below';
+    return acc >= secure ? 'secure' : acc >= emerging ? 'emerging' : 'below';
   };
   const levels = Object.fromEntries(TIER_ORDER.map(t => [t, level(t)]));
 
@@ -141,12 +161,13 @@ export function objectiveBand(domain, tierResults, rules, { invalidCount = 0, su
     return { ...out, band: 'insufficient_evidence', confidence: 'insufficient' };
   }
 
-  // The band is the highest tier the learner reached at all (emerging or
-  // better), labelled with how securely. Fixture FX-STRETCH fixes this reading:
-  // developing secure + stretch emerging reports stretch_emerging, not
-  // developing_secure. The prose in rules.scoring.tier_profile can be read
-  // either way; the fixtures are the executable contract, and the wording is
-  // flagged for the content owner in docs/implementation-status.md.
+  // The band is the highest administered tier the learner reached at all
+  // (emerging or better), labelled with that tier's status — so developing
+  // secure plus stretch emerging reports stretch_emerging, as fixture
+  // FX-STRETCH requires. assessment-v1.0.0's prose could also be read as
+  // "the highest tier at secure, else the highest at emerging", which gives
+  // developing_secure for the same case and contradicts every fixture in the
+  // release. v1.0.1 restates it; behaviour is unchanged.
   const reached = [...TIER_ORDER].reverse().find(t => levels[t] === 'secure' || levels[t] === 'emerging');
   if (reached) out.band = `${reached}_${levels[reached]}`;
   else if (levels.foundation === 'below') out.band = 'below_assessment_floor';

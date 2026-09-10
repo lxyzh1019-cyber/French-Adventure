@@ -1,14 +1,42 @@
 # French Adventure — Release A review notes
 
-**Release:** assessment-v1.0.0  
-**Compatible master plan:** Revision 2  
-**Authored/check date:** 2026-09-08
+**Release:** assessment-v1.0.2  
+**Compatible master plan:** Revision 3  
+**Authored/check date:** 2026-09-08  
+**Amended:** 2026-09-09 (see "Amendments" below)
 
 ## What this package fixes
 
 This is the complete content and scoring contract for Milestone 2. It contains two parallel forms across listening, reading, vocabulary/grammar, writing, and speaking. It deliberately reports a separate profile for each domain. It does not produce a school grade, a French-immersion equivalence, a percentile, or an overall average.
 
 The design begins with the current Alberta FSL Nine-year Program, which treats French as a subject and organizes outcomes around communication, language, culture, and learning strategies. Grades 4–7 are the core reference. Grade 8 appears only as an enrichment reference for the top tier. The mapping samples outcomes; it is not a claim that this short assessment covers the full program.
+
+## Amendments
+
+**v1.0.1** — two edits to `assessment_rules.json`, no item, key, rubric, fixture or
+score change. `scoring.tier_profile` sentence 2 was restated to say what every
+fixture already required, and `scoring.secure_threshold` (0.75) and
+`scoring.emerging_threshold` (0.50) were added as data, having existed only
+inside that prose.
+
+**v1.0.2** — four writing prompts stop claiming a grammar skill they cannot
+evidence. `WA-F02` and `WB-F02` no longer carry `VG_NEGATION`, `WA-D01` no
+longer carries `VG_LOCATION`, and `WB-D01` no longer carries
+`VG_GENDER_NUMBER`; each keeps its `W_SENTENCE` or `W_DESCRIPTION` skill, and
+the four item `version` fields go to 2 because the items themselves changed.
+
+The reason is a measurement one. Those skills were being read from the generic
+writing rubric, whose dimensions are message, vocabulary, structure,
+conventions and independence — none of which is about negation, location or
+gender agreement. A child who writes *"Je déteste le fromage"* earns a strong
+message and structure score while demonstrating no negation at all, so a
+strength reported for `VG_NEGATION` would not have been evidence of anything.
+All three skills remain measured directly by the vocabulary and grammar
+section's own items.
+
+If writing should measure those grammar skills, Release B should add
+target-specific scoring criteria and equivalent prompts on both forms. Generic
+rubric dimensions are not precise enough to carry a grammar claim.
 
 ## Form and item QA
 

@@ -413,3 +413,132 @@ button,input{touch-action:manipulation;}
 
 /* The suggested next level, replacing the old locked-tab styling. */
 .grade-tab-recommended{border-color:var(--gold)!important;box-shadow:0 0 0 2px rgba(245,158,11,.25);}
+
+/* ── Assessment ──────────────────────────────────────────────────────────────
+   Deliberately unlike the game. administration.language bars translations,
+   hints, correctness feedback, lives, stars, bonuses and leaderboard effects
+   during a section — and a screen that looks like the game invites a child to
+   expect all of them. Calm, plain, and obviously a different activity. */
+#screen-assessment { max-width: 720px; margin: 0 auto; padding: 8px 4px 24px; }
+
+.assess-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; margin-bottom: 10px;
+}
+.assess-title { font-family: 'Fredoka One', cursive; font-size: 1.15rem; color: var(--french); }
+.assess-sub { font-size: .74rem; color: var(--text-muted); margin-top: 2px; }
+
+/* Progress through the planned items — not a score, and never framed as one. */
+.assess-progress {
+  height: 6px; border-radius: 999px; background: rgba(0,0,0,.08);
+  overflow: hidden; margin-bottom: 16px;
+}
+.assess-progress-fill {
+  height: 100%; width: 0; border-radius: 999px;
+  background: var(--french); transition: width .25s ease;
+}
+
+.assess-card {
+  background: var(--card); border: 1px solid rgba(0,0,0,.08); border-radius: 16px;
+  padding: 18px 16px; margin-bottom: 12px;
+}
+.assess-prompt { font-size: .95rem; line-height: 1.5; margin-bottom: 14px; }
+.assess-note { font-size: .74rem; color: var(--text-muted); line-height: 1.45; }
+
+/* Every control the child touches is a real target on an iPad. */
+#screen-assessment button { min-height: 44px; touch-action: manipulation; }
+@media (pointer: coarse) { #screen-assessment button { min-height: 52px; } }
+
+/* Objective items. Plain on purpose: a chosen option is marked as chosen and
+   nothing more. No green, no red, no tick — administration.language bars
+   correctness feedback until the section is submitted, and colour is feedback. */
+.assess-stimulus {
+  font-family: 'Fredoka One', cursive; font-size: 1.15rem; line-height: 1.5;
+  color: var(--french); margin: 4px 0 16px;
+}
+.assess-audio { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 16px; }
+.assess-choices { display: grid; gap: 8px; }
+.assess-choice {
+  text-align: left; padding: 12px 14px; font-size: .92rem;
+  font-family: 'Nunito', sans-serif; font-weight: 700;
+  background: var(--card); color: var(--text);
+  border: 2px solid rgba(0,0,0,.12); border-radius: 12px; cursor: pointer;
+}
+.assess-choice.chosen { border-color: var(--french); background: rgba(37,99,235,.06); }
+.assess-input {
+  width: 100%; padding: 12px 14px; font-size: 1rem;
+  font-family: 'Nunito', sans-serif; border: 2px solid rgba(0,0,0,.12);
+  border-radius: 12px; background: var(--card); color: var(--text);
+}
+.assess-input:focus { outline: none; border-color: var(--french); }
+
+/* Open items: writing and speaking. Capture only — nothing here is marked. */
+.assess-figure {
+  margin: 4px 0 16px; border: 1px solid rgba(0,0,0,.12); border-radius: 12px;
+  overflow: hidden; background: #fdfdfb;
+}
+.assess-figure svg { display: block; width: 100%; height: auto; }
+.assess-textarea {
+  width: 100%; padding: 12px 14px; font-size: 1rem; line-height: 1.5;
+  font-family: 'Nunito', sans-serif; border: 2px solid rgba(0,0,0,.12);
+  border-radius: 12px; background: var(--card); color: var(--text); resize: vertical;
+}
+.assess-textarea:focus { outline: none; border-color: var(--french); }
+.assess-record { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.assess-record .assess-note { flex-basis: 100%; }
+/* Recording is a state, not a verdict: it pulses so it is unmistakably ON,
+   and carries no colour that could read as right or wrong. */
+.assess-record button.recording { animation: assess-pulse 1.2s ease-in-out infinite; }
+@keyframes assess-pulse { 0%,100% { opacity: 1; } 50% { opacity: .55; } }
+
+/* The parent-facing keyboard note. Addressed to the adult, not the child. */
+.assess-parent-note {
+  border: 1px dashed rgba(0,0,0,.25); border-radius: 12px;
+  padding: 12px 14px; margin-bottom: 14px;
+  font-size: .78rem; line-height: 1.5; color: var(--text-muted);
+}
+
+/* The parent report. Plain typography on purpose: nothing here should read as
+   a grade, a ranking or a reward, so there are no medals, no colour scale and
+   nothing bigger than the text around it. */
+.assess-report {
+  text-align: left; border: 1px solid rgba(0,0,0,.12); border-radius: 12px;
+  padding: 12px 14px; margin-bottom: 10px; background: var(--card);
+}
+.assess-report-head { font-weight: 800; font-size: .8rem; margin-bottom: 4px; }
+.assess-report-note { font-size: .68rem; color: var(--text-muted); line-height: 1.45; margin: 6px 0; }
+.assess-report-section { border-top: 1px solid rgba(0,0,0,.08); padding-top: 8px; margin-top: 8px; }
+.assess-report-section-head { font-weight: 800; font-size: .76rem; margin-bottom: 4px; }
+.assess-report-row { display: flex; justify-content: space-between; gap: 10px; font-size: .72rem; }
+.assess-report-label { color: var(--text-muted); }
+.assess-report-value { text-align: right; }
+.assess-report-list { margin-top: 6px; }
+.assess-report-list-head { font-size: .72rem; font-weight: 700; }
+.assess-report-list ul { margin: 2px 0 0; padding-left: 18px; font-size: .72rem; line-height: 1.5; }
+.assess-report-empty { font-size: .7rem; color: var(--text-muted); }
+.assess-report-nested {
+  margin-top: 8px; margin-left: 10px; padding-left: 10px;
+  border-left: 2px solid rgba(0,0,0,.1);
+}
+.assess-report-nested-head { font-size: .72rem; font-weight: 700; }
+.assess-report-nested ul { margin: 2px 0 0; padding-left: 18px; font-size: .72rem; line-height: 1.5; }
+.assess-report-observation { margin-top: 6px; font-size: .72rem; }
+.assess-report-technical { font-size: .66rem; color: var(--text-muted); line-height: 1.4; }
+
+/* The Device & Feature Check. Parent-only, and plainly a test surface: the
+   notice at the top is not decoration, it is the first thing to read. */
+.device-check-notice {
+  font-size: .74rem; font-weight: 800; text-align: center;
+  border: 1px dashed rgba(0,0,0,.3); border-radius: 10px; padding: 8px 10px;
+}
+.device-check-note { font-size: .68rem; color: var(--text-muted); line-height: 1.45; margin: 6px 0 8px; }
+.device-check-item {
+  text-align: left; border: 1px solid rgba(0,0,0,.12); border-radius: 12px;
+  padding: 10px 12px; margin-bottom: 8px; background: var(--card);
+}
+.device-check-head { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.device-check-label { font-weight: 800; font-size: .76rem; }
+.device-check-status { font-size: .7rem; color: var(--text-muted); }
+.device-check-detail { font-size: .7rem; color: var(--text-muted); line-height: 1.45; margin-top: 4px; }
+.device-check-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.device-check-actions button { padding: 8px 12px; font-size: .72rem; min-height: 44px; }

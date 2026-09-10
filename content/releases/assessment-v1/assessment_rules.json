@@ -1,5 +1,5 @@
 {
-  "release_id": "assessment-v1.0.0",
+  "release_id": "assessment-v1.0.2",
   "purpose": "Repeatable domain profile for regular-school Alberta FSL learners; not a school grade, immersion equivalence, diagnosis, or standardized test.",
   "section_order": [
     "listening",
@@ -83,8 +83,10 @@
     "support": "Any hint, translation, coaching, answer reveal, or parent correction before submit sets support_flag=true and excludes the response from independent band calculation. Preserve it as supported evidence."
   },
   "scoring": {
+    "secure_threshold": 0.75,
+    "emerging_threshold": 0.50,
     "objective": "One point per correct objective item; zero per incorrect item. Typed responses receive meaning and spelling flags. The item point requires spelling=true when W_ENCODING is tested; otherwise meaning=true earns the item point and spelling is reported separately.",
-    "tier_profile": "For each administered tier with at least 3 independent valid items, secure means >=75%; emerging means >=50% and <75%. The domain band is the highest tier observed at secure, or if none, the highest tier observed at emerging. If foundation is below 50%, report below_assessment_floor. Do not infer an unadministered tier.",
+    "tier_profile": "For each administered tier with at least 3 independent valid items, secure means >=75%; emerging means >=50% and <75%. The domain band is the highest administered tier observed at emerging or secure, labelled with that tier's status. If foundation is below 50%, report below_assessment_floor. Do not infer an unadministered tier.",
     "objective_labels": [
       "below_assessment_floor",
       "foundation_emerging",

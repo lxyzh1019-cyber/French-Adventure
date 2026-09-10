@@ -1,0 +1,37 @@
+{
+  "_note": "What each speaking asset draws, checked against its brief's required list by tests/assessment-assets.test.js. A drawing cannot be inspected for a chair, so the artwork declares what it depicts and the declaration is verified against the release. This proves nothing was dropped from the list; it does not prove the picture is good. Human review is still required before these are used with a learner.",
+  "SA-F02": {
+    "depicts": [
+      "red pencil",
+      "blue book",
+      "green bag",
+      "chair",
+      "table"
+    ]
+  },
+  "SB-F02": {
+    "depicts": [
+      "bed",
+      "lamp on a table",
+      "book under a chair",
+      "window"
+    ]
+  },
+  "SA-D02": {
+    "depicts": [
+      "school",
+      "park",
+      "library",
+      "bank"
+    ]
+  },
+  "SB-D02": {
+    "depicts": [
+      "park",
+      "school",
+      "library",
+      "bakery",
+      "pool"
+    ]
+  }
+}

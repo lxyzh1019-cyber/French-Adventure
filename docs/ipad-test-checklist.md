@@ -215,13 +215,151 @@ No heart is lost, and no answer is submitted, until you tap **Check ✓**.
 
 ---
 
+# Part 5 — The assessment (new)
+
+The assessment is separate from the games: no points, no hearts, no verdicts.
+It opens from **Parent Summary → Independent check-in**, behind the parent
+password, and never from the girls' hub. Exposure is permanent and each form is
+45 items, so **do not open it to look around** — start it only when you mean to.
+
+## 5.0 Before the words and writing parts — a grown-up job
+
+> **For an accurate placement result, temporarily turn off Auto-Correction and
+> Predictive Text in Settings → General → Keyboard.**
+
+- [ ] **5.0** Done before the check-in, and turned back on afterwards.
+
+This matters more than it sounds. One vocabulary item accepts `où`, and the
+writing rubric scores `conventions` — exactly what predictive text supplies and
+autocorrect erases. The app sets every attribute a web page can set
+(`autocorrect`, `autocapitalize`, `spellcheck`, `autocomplete`), and the app
+also says this on screen before those two parts — **but a web page cannot
+disable the QuickType bar**. Nothing in the app has turned these off for you.
+
+## 5.0b The device & feature check — do this first
+
+Parent Summary → enter password → **🔧 Device & feature check**. It asks this
+iPad whether it can do what the check-in needs, and it **spends no items and
+changes no records**: no answers, no history, no stars, nothing synced. The
+panel says so at the top.
+
+- [ ] **5.0b-1 French voice** — tap *Check the voice*. It names what was asked
+      for (fr-CA) and what this iPad will actually use. `fr-FR` is normal and
+      expected; **no French voice at all** means the listening part cannot be
+      done on this iPad.
+- [ ] **5.0b-2 French audio plays** — tap *Play a French phrase*. If you hear
+      it, tap **I heard it**. If you hear nothing, tap **I heard nothing** and
+      tell me — the listening part depends on this and no test can hear it for
+      you.
+- [ ] **5.0b-3 Microphone** — tap *Ask for the microphone*. Safari asks the
+      first time; allow it.
+- [ ] **5.0b-4 Recording** — record two seconds, stop, play it back, and answer
+      whether you heard it.
+- [ ] **5.0b-5 Storage** — tap *Keep and read back a clip*, then *Delete the
+      test clip*. Both should say Working. "Not working" here usually means a
+      private window or Safari set to block site data, and speaking recordings
+      would not survive.
+- [ ] **5.0b-6** Tap **Done — clear the test clips**. The test recording is
+      deleted.
+
+This is a machine check. It does not replace the rest of Part 5: only you can
+tell whether the French sounds right and whether a child can be understood.
+
+## 5.1 Starting
+
+- [ ] **5.1** Parent Summary → enter password → **Start / resume — Jenn**.
+      The overlay closes and the check-in fills the screen.
+      Jenn gets form A, Jess gets form B.
+
+## 5.2 Listening — the two-play rule
+
+- [ ] **5.2a** Tap **Play**. You hear French; **no French text appears** on
+      screen. If you can read the sentence, stop — that is a reading item now.
+- [ ] **5.2b** Tap **Play again**. After the second play the button greys out.
+- [ ] **5.2c** On one item tap **I heard nothing**. It does not use up a play,
+      and the item is skipped rather than marked wrong.
+
+## 5.3 Answering
+
+- [ ] **5.3** Choose an answer. It is outlined in blue and **nothing tells you
+      whether it is right** — no tick, no colour change, no sound. Tap **Next**
+      and the following question appears. This is deliberate.
+
+## 5.4 Pausing and resuming
+
+- [ ] **5.4a** Tap **Pause** mid-section. Close the tab completely.
+- [ ] **5.4b** Reopen and resume. Same form, same part, same question, and the
+      questions already answered are not asked again.
+- [ ] **5.4c** If you have both iPads: pause on one, resume on the other. The
+      answers from the first are there.
+
+## 5.5 Speaking — the microphone
+
+- [ ] **5.5a** On a speaking prompt tap **Record**. Safari asks for the
+      microphone the first time; allow it. The button becomes **Stop** and
+      pulses.
+- [ ] **5.5b** Tap **Stop**, then **Hear it back**. You hear her answer.
+- [ ] **5.5c** **Refuse the microphone once** (Settings → Safari → Microphone,
+      or deny the prompt). The app says this is *not a wrong answer* and moves
+      on. It must not mark her down.
+- [ ] **5.5d** Two prompts show a **picture** — a room, and a street map with
+      French place names. The map has **no arrows** showing the route, and no
+      picture has English labels on it. If you see a list of words like
+      "school, park, library, bank", stop and tell me.
+- [ ] **5.5e** **Are the French place names on the map comfortably readable** at
+      arm's length on the iPad, without leaning in or pinching to zoom? The
+      artwork is approved on a desktop screen; this is the one thing about it
+      that only the real device can answer. If a label is small or crowded, say
+      which one — the drawing can be changed.
+
+## 5.6 Writing
+
+- [ ] **5.6** Type a sentence and submit. Nothing marks it. The screen says a
+      grown-up reads it later — which is true: writing and speaking wait for a
+      person, and the app never scores them.
+
+## 5.7 What you should NOT see anywhere in the check-in
+
+- [ ] **5.7** No stars, hearts, streaks, points, confetti, leaderboard, hints,
+      translations, or "correct/wrong" messages. Any of these is a defect.
+
+## 5.8 Where the recordings live
+
+- [ ] **5.8** Her recordings stay **on the iPad that recorded them** and are not
+      uploaded. If you record on Jenn's iPad, the review panel on Jess's iPad
+      will show the prompt waiting for review with no audio — that is expected,
+      not a fault. **Review speaking on the day it is recorded**: iPadOS clears
+      unused site storage after about a week.
+
+## 5.9 The report
+
+Parent Summary → enter password → **📊 Show check-in report**.
+
+- [ ] **5.9a** Five parts are listed — Listening, Reading, Vocabulary and
+      grammar, Writing, Speaking — each with where it sits and how much to read
+      into it.
+- [ ] **5.9b** **Pronunciation appears once, inside Speaking**, as observations
+      with no level and no score. Until you have listened to at least two
+      recordings it says so instead.
+- [ ] **5.9c** Writing and Speaking say *waiting for an adult to read or listen*
+      until someone has. That is correct: the app never marks them.
+- [ ] **5.9d** There is **no total, no average and no overall score** anywhere,
+      and nothing that reads like a school grade or a placement. If you see one,
+      that is a defect — tell me.
+
+---
+
 # Reporting back
 
 Tell me:
 
 1. **Anything in Part 1 that failed** — that is data safety and it comes first.
 2. **What `currentVoiceInfo()` said** — or "no Mac" / "unsure".
-3. Anything else that looked wrong, however small.
+3. **Part 5.2a, 5.5d and 5.5e** — whether any French text appeared during a
+   listening item, whether the pictures looked right to you, and whether the map
+   labels were comfortably readable at real size. Those are the ones a test
+   cannot check for me.
+4. Anything else that looked wrong, however small.
 
 If something is broken, **stop and tell me before letting the girls use it**.
 Their backup from the first step means nothing is lost either way.
@@ -233,6 +371,10 @@ Their backup from the first step means nothing is lost either way.
 Date tested: ______________  ·  iPadOS version: ______________
 
 Jenn ⭐ before: ________ after: ________   Jess ⭐ before: ________ after: ________
+
+Auto-Correction / Predictive Text turned off before the check-in?  ☐ yes  ☐ no
+
+The two pictures (room, street map) looked clear?  ☐ yes  ☐ no — what was unclear: ______
 
 `currentVoiceInfo()` said: ________________________________________________
 

@@ -225,7 +225,7 @@ test('running out of lives is not recorded as completing the round', async () =>
 
     // Deliberately pick a wrong answer each time, using only what is on screen:
     // the correct choice is revealed in the feedback panel after a mistake.
-    for (let i = 0; i < 8 && livesShown() > 0; i++) {
+    for (let i = 0; i < 40 && livesShown() > 0; i++) {
       const choices = [...document.querySelectorAll('#choices-grid button')];
       if (!choices.length) break;
       const shown = document.querySelector('.question-main')?.textContent || '';
@@ -237,14 +237,24 @@ test('running out of lives is not recorded as completing the round', async () =>
       if (shown === (document.querySelector('.question-main')?.textContent || '')) break;
     }
     await new Promise(r => setTimeout(r, 2400));   // knockout timer
+    const log = window.__faDebug.roundLog;
+    const entry = Object.values(log).sort((a, b) => b.at - a.at)[0] || null;
     return { before, after: roundsToday(), lives: livesShown(),
+             outcome: window.__faDebug.lastRoundOutcome, entry,
              text: document.getElementById('game-area')?.textContent || '' };
   });
 
-  if (r.lives === 0) {
-    assert.match(r.text, /out of lives|good effort/i, 'knockout was not communicated');
-    assert.equal(r.after, r.before, 'a knocked-out round was counted as completed');
-  }
+  // Assert the precondition rather than hiding behind it. This block used to be
+  // wrapped in `if (r.lives === 0)`, so a run that failed to exhaust lives
+  // passed the test having asserted nothing about outcomes at all.
+  assert.equal(r.lives, 0, 'the test did not manage to run the lives out');
+
+  assert.match(r.text, /out of lives|good effort/i, 'knockout was not communicated');
+  assert.equal(r.after, r.before, 'a knocked-out round was counted as completed');
+  assert.equal(r.outcome, 'challengeFailed', 'the round was recorded under the wrong outcome');
+  assert.ok(r.entry, 'the knocked-out round left no ledger entry');
+  assert.equal(r.entry.outcome, 'challengeFailed');
+  assert.equal(r.entry.completed, 0, 'a knocked-out round must not read as completed');
   assert.deepEqual(errors, []);
 });
 
