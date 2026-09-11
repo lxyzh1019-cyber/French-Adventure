@@ -19,6 +19,7 @@ import { configureAssessmentUI, openAssessment, pauseAssessment,
          finishSection, startRecording, stopRecording, playOwnRecording,
          abandonRecording } from './modes/assessment-ui.js';
 import { renderAssessmentReports } from './modes/assessment-report-ui.js';
+import { mountAssessmentReview } from './modes/assessment-review-ui.js';
 import { createDeviceCheck } from './modes/device-check.js';
 import { mountDeviceCheck } from './modes/device-check-ui.js';
 import { createAudioCapture } from './speech/capture.js';
@@ -1581,6 +1582,8 @@ document.addEventListener('click', function(e){
                                renderAssessmentReports(document.getElementById('assess-report-panel'),
                                                        assessment);
                              } else setRecoveryMsg('❌ Enter parent password first'); break;
+    case 'assess-review':    if(ensureParentPassword()){ openAssessmentReview(); }
+                             else setRecoveryMsg('❌ Enter parent password first'); break;
     case 'assess-device-check': if(ensureParentPassword()){ openDeviceCheck(); }
                              else setRecoveryMsg('❌ Enter parent password first'); break;
     case 'assess-pause':     void pauseAssessment(); break;
@@ -3249,6 +3252,37 @@ configureAssessmentUI({
 // Same speak, same capture, same audio store as the assessment above. It writes
 // nothing but a diagnostic clip under its own key prefix, on this device, and
 // clears those on the way in and on the way out.
+// The screen where a person scores the eleven open prompts, and the file they
+// take away if they are scoring somewhere else. The clip store is the same one
+// the sitting recorded into, so a recording is played from where it already is
+// rather than copied anywhere.
+let reviewUnmount = null;
+function openAssessmentReview(){
+  const panel = document.getElementById('assess-review-panel');
+  if(!panel) return;
+  if(reviewUnmount){ reviewUnmount(); reviewUnmount = null; }
+  reviewUnmount = mountAssessmentReview(panel, {
+    store: assessment,
+    audioStore: assessmentAudioStore,
+    deviceId,
+    playBlob: async (blob) => {
+      const url = URL.createObjectURL(blob);
+      try { await new Audio(url).play(); }
+      finally { setTimeout(() => URL.revokeObjectURL(url), 30000); }
+    },
+    download: (text, player, run) => {
+      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `french-checkin-${player}-form${run.form || 'x'}-to-score.txt`;
+      document.body.append(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 30000);
+    },
+  });
+}
+
 let deviceCheckUnmount = null;
 function openDeviceCheck(){
   const panel = document.getElementById('assess-device-check-panel');

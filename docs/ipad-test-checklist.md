@@ -349,10 +349,53 @@ Parent Summary → enter password → **📊 Show check-in report**.
       with no level and no score. Until you have listened to at least two
       recordings it says so instead.
 - [ ] **5.9c** Writing and Speaking say *waiting for an adult to read or listen*
-      until someone has. That is correct: the app never marks them.
+      until someone has. That is correct: the app never marks them. §5.10 is
+      where a person does.
 - [ ] **5.9d** There is **no total, no average and no overall score** anywhere,
       and nothing that reads like a school grade or a placement. If you see one,
       that is a defect — tell me.
+
+## 5.10 Scoring the written and spoken answers
+
+Parent Summary → enter password → **✍️ Score the written & spoken answers**.
+
+Eleven prompts per check-in have no answer key — six she typed, five she spoke.
+A person scores those against the rubric, and until someone does, Writing and
+Speaking report nothing rather than reporting badly.
+
+- [ ] **5.10a** Every one of the eleven is listed, with **the prompt she saw**,
+      **her own answer**, and for each part of the scale the four sentences you
+      are choosing between. You should not need any other document.
+- [ ] **5.10b** Type a name in **Who is doing the scoring?** — yours, or the
+      teacher's. Try saving without one first: it should refuse, and say so.
+      A score with nobody's name on it is indistinguishable from a machine's,
+      which these two domains do not allow.
+- [ ] **5.10c** **She was helped with this one** is yours to tick. Only you know
+      whether a hint was given. A helped answer is kept and reported, and left
+      out of the independent band.
+- [ ] **5.10d** **Set this one aside** is for a prompt that went *wrong* — the
+      microphone died, the wrong thing appeared — **not** for a poor answer. A
+      set-aside response is kept, and counts neither right nor wrong. You can
+      untick it. You cannot untick one the app set aside itself; that is a
+      record of what happened.
+- [ ] **5.10e** For a spoken prompt, **▶ Play the recording** works on the iPad
+      that recorded it. Score it from what you hear. Scoring a spoken answer
+      from written text is not permitted by the rubric, and the screen says so.
+- [ ] **5.10f** You should **never** see a model answer or a "correct" version
+      anywhere on this screen. The rubric asks whether she communicated, not
+      whether she matched a sample. If you see one, that is a defect — tell me.
+
+### If nobody in the house speaks French
+
+- [ ] **5.10g** **⬇ Save the answers to score** downloads a text file with the
+      prompts, her answers and the whole scale, for someone who is scoring away
+      from this iPad — a French teacher, a tutor. The recordings are **not** in
+      it: they stay on the iPad, and spoken answers have to be listened to.
+- [ ] **5.10h** Whoever scores gives you the numbers; you type them in and your
+      name goes on the record. Whether an AI assistant may stand in for a
+      French-reading adult on the **written** prompts is an open question for
+      the content owner — see `docs/implementation-status.md`. Until it is
+      answered, the honest position is that those prompts are unscored.
 
 ---
 
