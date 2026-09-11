@@ -7,7 +7,7 @@
      styles ......... src/styles.css
      game logic ..... src/**/*.js
 
-   Built from 8ab8ef6
+   Built from abb6b7b
   ============================================================
 -->
 <!DOCTYPE html>
@@ -3956,7 +3956,8 @@ const CHECKS = [
   { id: "microphone_permission", label: "Microphone permission", needsPerson: false },
   { id: "record_replay", label: "Recording and playing it back", needsPerson: true },
   { id: "storage_roundtrip", label: "This device keeps a clip", needsPerson: false },
-  { id: "clip_delete", label: "A clip can be deleted", needsPerson: false }
+  { id: "clip_delete", label: "A clip can be deleted", needsPerson: false },
+  { id: "pictures", label: "Pictures and map labels", needsPerson: true }
 ];
 const blank = () => Object.fromEntries(CHECKS.map((c) => [c.id, { id: c.id, label: c.label, status: "not_run", detail: "", at: 0 }]));
 function createDeviceCheck({
@@ -4020,6 +4021,24 @@ function createDeviceCheck({
         "audio_playback",
         "needs_you",
         `Said: "${CHECK_PHRASE}". Did you hear it?`
+      );
+    },
+    /**
+     * Show the four speaking pictures at the size a child sees them.
+     *
+     * The maps carry French place names, and whether those are readable at
+     * arm's length on this iPad is not something any test can answer — the
+     * artwork was approved on a desktop screen. The alternative was reaching
+     * the speaking section of a real sitting, which spends most of a form on a
+     * question about type size, so the pictures are shown here instead. They
+     * are drawn by the same code the learner's screen uses, at the same width,
+     * and nothing is recorded.
+     */
+    showPictures() {
+      return set(
+        "pictures",
+        "needs_you",
+        "Shown at the size a child sees. Can you read the French place names on the maps without leaning in?"
       );
     },
     /** The person answers for the checks no code can judge. */
@@ -4184,7 +4203,39 @@ function controlsFor(id, result, controller) {
   }
   if (id === "storage_roundtrip") row2.append(button("Keep and read back a clip", "dc-storage"));
   if (id === "clip_delete") row2.append(button("Delete the test clip", "dc-delete"));
+  if (id === "pictures") {
+    row2.append(button("Show the four pictures", "dc-pictures"));
+    if (result.status === "needs_you") {
+      row2.append(
+        button("I can read them", "dc-pictures-yes"),
+        button("Too small to read", "dc-pictures-no")
+      );
+    }
+  }
   return row2;
+}
+function picturePreview() {
+  const layer = div("device-check-preview");
+  const inner = div("device-check-preview-inner");
+  inner.append(div(
+    "device-check-preview-head",
+    "This is the size a child sees. Hold the iPad as she would."
+  ));
+  for (const item of ITEMS.filter((i) => hasAssetFor(i.id))) {
+    const card2 = div("assess-card");
+    card2.append(div("device-check-preview-id", item.id));
+    const figure = div("assess-figure");
+    figure.innerHTML = assetFor(item.id).svg;
+    card2.append(figure);
+    inner.append(card2);
+  }
+  const close = button("Close", "dc-pictures-close");
+  close.addEventListener("click", () => layer.remove());
+  const actions = div("device-check-actions");
+  actions.append(close);
+  inner.append(actions);
+  layer.append(inner);
+  return layer;
 }
 function mountDeviceCheck(container, controller, { onDone = () => {
 } } = {}) {
@@ -4229,7 +4280,14 @@ function mountDeviceCheck(container, controller, { onDone = () => {
     "dc-replay-yes": () => controller.confirm("record_replay", true),
     "dc-replay-no": () => controller.confirm("record_replay", false),
     "dc-storage": () => controller.checkStorage(),
-    "dc-delete": () => controller.checkDelete()
+    "dc-delete": () => controller.checkDelete(),
+    "dc-pictures": () => {
+      document.querySelector(".device-check-preview")?.remove();
+      document.body.append(picturePreview());
+      return controller.showPictures();
+    },
+    "dc-pictures-yes": () => controller.confirm("pictures", true),
+    "dc-pictures-no": () => controller.confirm("pictures", false)
   };
   const onClick = async (event) => {
     const el2 = event.target.closest?.("[data-action]");
@@ -4237,6 +4295,7 @@ function mountDeviceCheck(container, controller, { onDone = () => {
     const action = el2.getAttribute("data-action");
     if (action === "dc-exit") {
       done = true;
+      document.querySelector(".device-check-preview")?.remove();
       container.removeEventListener("click", onClick);
       await controller.exit();
       container.textContent = "";
@@ -7879,7 +7938,25 @@ button,input{touch-action:manipulation;}
 .device-check-status { font-size: .7rem; color: var(--text-muted); }
 .device-check-detail { font-size: .7rem; color: var(--text-muted); line-height: 1.45; margin-top: 4px; }
 .device-check-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-.device-check-actions button { padding: 8px 12px; font-size: .72rem; min-height: 44px; }</style>
+.device-check-actions button { padding: 8px 12px; font-size: .72rem; min-height: 44px; }
+
+/* The picture preview. It sits above the parent overlay and reproduces the
+   learner screen's geometry exactly — the same max width and padding as
+   #screen-assessment — because the question it exists to answer is how big the
+   map labels actually are. Drawn in the parent panel instead, it would be the
+   width of that panel and would answer nothing. */
+.device-check-preview {
+  position: fixed; inset: 0; z-index: 200; overflow-y: auto;
+  background: var(--bg, #fdfdfb);
+}
+.device-check-preview-inner { max-width: 720px; margin: 0 auto; padding: 8px 4px 24px; }
+.device-check-preview-head {
+  font-size: .78rem; line-height: 1.5; text-align: center;
+  padding: 10px 12px; color: var(--text-muted);
+}
+.device-check-preview-id { font-size: .7rem; color: var(--text-muted); margin-bottom: 6px; }
+.device-check-preview button { min-height: 44px; }
+@media (pointer: coarse) { .device-check-preview button { min-height: 52px; } }</style>
 </head>
 <body>
 <div class="container">

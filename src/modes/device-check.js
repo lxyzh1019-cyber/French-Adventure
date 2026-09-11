@@ -43,6 +43,7 @@ export const CHECKS = [
   { id: 'record_replay', label: 'Recording and playing it back', needsPerson: true },
   { id: 'storage_roundtrip', label: 'This device keeps a clip', needsPerson: false },
   { id: 'clip_delete', label: 'A clip can be deleted', needsPerson: false },
+  { id: 'pictures', label: 'Pictures and map labels', needsPerson: true },
 ];
 
 const blank = () => Object.fromEntries(CHECKS.map(c =>
@@ -115,6 +116,23 @@ export function createDeviceCheck({
       }
       return set('audio_playback', 'needs_you',
         `Said: "${CHECK_PHRASE}". Did you hear it?`);
+    },
+
+    /**
+     * Show the four speaking pictures at the size a child sees them.
+     *
+     * The maps carry French place names, and whether those are readable at
+     * arm's length on this iPad is not something any test can answer — the
+     * artwork was approved on a desktop screen. The alternative was reaching
+     * the speaking section of a real sitting, which spends most of a form on a
+     * question about type size, so the pictures are shown here instead. They
+     * are drawn by the same code the learner's screen uses, at the same width,
+     * and nothing is recorded.
+     */
+    showPictures() {
+      return set('pictures', 'needs_you',
+        'Shown at the size a child sees. Can you read the French place names on the maps '
+        + 'without leaning in?');
     },
 
     /** The person answers for the checks no code can judge. */

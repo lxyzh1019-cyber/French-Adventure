@@ -8,6 +8,7 @@
 // and none of it reaches the learner's record.
 
 import { CHECKS, TEST_MODE_NOTICE } from './device-check.js';
+import * as content from '../assessment/content.js';
 
 const STATUS_TEXT = {
   not_run: 'Not run',
@@ -55,7 +56,50 @@ function controlsFor(id, result, controller) {
   }
   if (id === 'storage_roundtrip') row.append(button('Keep and read back a clip', 'dc-storage'));
   if (id === 'clip_delete') row.append(button('Delete the test clip', 'dc-delete'));
+  if (id === 'pictures') {
+    row.append(button('Show the four pictures', 'dc-pictures'));
+    if (result.status === 'needs_you') {
+      row.append(button('I can read them', 'dc-pictures-yes'),
+        button('Too small to read', 'dc-pictures-no'));
+    }
+  }
   return row;
+}
+
+/**
+ * The four pictures, at the size a child sees them.
+ *
+ * Not inside the parent panel: that panel lives in an overlay card of its own
+ * width, so a picture drawn in it would be a different size and the question
+ * being asked is about size. This layer reproduces the learner screen's own
+ * geometry — the same max width, the same padding, the same card and figure
+ * classes — so the drawing comes out at the width it will really have.
+ */
+function picturePreview() {
+  const layer = div('device-check-preview');
+  const inner = div('device-check-preview-inner');
+
+  inner.append(div('device-check-preview-head',
+    'This is the size a child sees. Hold the iPad as she would.'));
+
+  for (const item of content.ITEMS.filter(i => content.hasAssetFor(i.id))) {
+    const card = div('assess-card');
+    card.append(div('device-check-preview-id', item.id));
+    const figure = div('assess-figure');
+    // The learner's own path: the same asset, put on the page the same way.
+    figure.innerHTML = content.assetFor(item.id).svg;
+    card.append(figure);
+    inner.append(card);
+  }
+
+  const close = button('Close', 'dc-pictures-close');
+  close.addEventListener('click', () => layer.remove());
+  const actions = div('device-check-actions');
+  actions.append(close);
+  inner.append(actions);
+
+  layer.append(inner);
+  return layer;
 }
 
 /**
@@ -109,6 +153,13 @@ export function mountDeviceCheck(container, controller, { onDone = () => {} } = 
     'dc-replay-no': () => controller.confirm('record_replay', false),
     'dc-storage': () => controller.checkStorage(),
     'dc-delete': () => controller.checkDelete(),
+    'dc-pictures': () => {
+      document.querySelector('.device-check-preview')?.remove();
+      document.body.append(picturePreview());
+      return controller.showPictures();
+    },
+    'dc-pictures-yes': () => controller.confirm('pictures', true),
+    'dc-pictures-no': () => controller.confirm('pictures', false),
   };
 
   const onClick = async (event) => {
@@ -117,6 +168,7 @@ export function mountDeviceCheck(container, controller, { onDone = () => {} } = 
     const action = el.getAttribute('data-action');
     if (action === 'dc-exit') {
       done = true;
+      document.querySelector('.device-check-preview')?.remove();
       container.removeEventListener('click', onClick);
       await controller.exit();
       container.textContent = '';

@@ -54,11 +54,11 @@ States: `not_started` · `in_progress` · `ready_for_review` · `accepted` · `b
 
 | Check | Command | Count | Last result |
 |---|---|---|---|
-| Unit + handler export | `npm test` | 357 tests across 26 files; 37 inline handlers checked | pass |
+| Unit + handler export | `npm test` | 361 tests across 26 files; 37 inline handlers checked | pass |
 | Build parity | `npm run check:drift` | — | pass |
 | Release A contract | `npm run check:release-a` | 90 items, both forms | pass |
 | Content package contract | `npm run check:content -- <dir>` | 3 packages | pass |
-| Browser (Chromium) | `npm run test:browser` | 76 tests across 8 files | pass (`CHROMIUM_PATH=/opt/pw-browsers/chromium` in the sandbox) |
+| Browser (Chromium) | `npm run test:browser` | 80 tests across 8 files | pass (`CHROMIUM_PATH=/opt/pw-browsers/chromium` in the sandbox) |
 
 Counts verified by running the suites at the head of the M2 branch, not copied
 from a previous report.
@@ -455,6 +455,24 @@ child hearing the French correctly, and a person hearing the child, is still a
 person's job. `docs/ipad-test-checklist.md` §5.0b covers running it, and §5.9
 the report.
 
+**A seventh check, added after the first real run of the six.** The parent ran
+the check on the iPad, everything reported working — and then reasonably asked
+where the pictures were. They were not there: the artwork renders in exactly one
+place, `assessment-ui.js`, while a speaking prompt is on screen. Confirming the
+map labels were readable therefore meant reaching the speaking section of a real
+sitting, which spends most of a form on a question about type size.
+
+So the check now shows them. *Show the four pictures* draws the same four SVGs
+through the same figure markup and CSS as the learner's screen, in a layer that
+reproduces that screen's geometry — `max-width: 720px` and the same padding.
+That last part is the whole point: the parent overlay card is 480px, so a
+picture drawn inside the panel would have been a quarter smaller than the real
+thing and would have answered nothing. A browser test measures the rendered SVG
+in both places at one iPad-sized viewport and requires the two to be equal;
+setting the preview to the panel's width makes that test fail, which is how it
+was checked. The verdict is the person's, like the two audio checks — it cannot
+pass itself — and the layer is cleared when the check is left.
+
 ## Speaking artwork — built (approved 2026-09-09, see below)
 
 **Was:** each form had five speaking prompts of which two carried an asset
@@ -664,6 +682,39 @@ route arrows; the plain style is appropriate for an assessment.
 **The M2 content blocker is closed**, subject only to confirming on the actual
 iPad that the map labels are comfortably readable at real size (checklist
 §5.5d). No automated check can answer that one.
+
+## M2 acceptance — the iPad run
+
+**Device & Feature Check, run on the family iPad, 2026-09-10: all six checks
+reported working.** Resolved French voice, audible playback, microphone
+permission, record / stop / replay / delete, local audio storage, and the
+"Done — clear the test clips" control.
+
+Microphone-denial recovery (§5.5c) and the picture readability question remain
+for the parent. The second is why the seventh check exists: see "A seventh
+check" above.
+
+## One more test that could not fail
+
+Found while running the full suite for the picture preview, on code this branch
+does not touch.
+
+`a double tap on an answer scores once` allowed the score to move by at most 20.
+A correct answer at full lives is worth 15 base plus a speed bonus of up to 10,
+so **one** answer can be worth 25 — and the test failed whenever the machine
+got to the click quickly enough to earn a large bonus. It was timing, not
+scoring: a real guard failing for a reason that had nothing to do with the gate
+it guards. It now asserts base points, which do not move with the clock: one
+question answered once is worth 15 or nothing, and three times would be 45.
+
+The deeper problem was the one underneath. Forcing `commitAnswerOnce` to return
+true did **not** fail that test — because `handleQuizAnswer` disables every
+choice button after the first tap, and a disabled button never fires. The DOM
+was doing the work, and §1.6 was still untested end to end after all. A second
+test now re-enables the buttons between taps, which is what any stray redraw
+would do, and requires the same question to count once. That one does fail
+against the broken gate, while the first still passes — so the two protections
+are now told apart.
 
 ## Parent acceptance
 

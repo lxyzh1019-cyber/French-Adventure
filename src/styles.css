@@ -542,3 +542,21 @@ button,input{touch-action:manipulation;}
 .device-check-detail { font-size: .7rem; color: var(--text-muted); line-height: 1.45; margin-top: 4px; }
 .device-check-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .device-check-actions button { padding: 8px 12px; font-size: .72rem; min-height: 44px; }
+
+/* The picture preview. It sits above the parent overlay and reproduces the
+   learner screen's geometry exactly — the same max width and padding as
+   #screen-assessment — because the question it exists to answer is how big the
+   map labels actually are. Drawn in the parent panel instead, it would be the
+   width of that panel and would answer nothing. */
+.device-check-preview {
+  position: fixed; inset: 0; z-index: 200; overflow-y: auto;
+  background: var(--bg, #fdfdfb);
+}
+.device-check-preview-inner { max-width: 720px; margin: 0 auto; padding: 8px 4px 24px; }
+.device-check-preview-head {
+  font-size: .78rem; line-height: 1.5; text-align: center;
+  padding: 10px 12px; color: var(--text-muted);
+}
+.device-check-preview-id { font-size: .7rem; color: var(--text-muted); margin-bottom: 6px; }
+.device-check-preview button { min-height: 44px; }
+@media (pointer: coarse) { .device-check-preview button { min-height: 52px; } }

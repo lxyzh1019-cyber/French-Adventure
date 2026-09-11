@@ -259,8 +259,13 @@ panel says so at the top.
       test clip*. Both should say Working. "Not working" here usually means a
       private window or Safari set to block site data, and speaking recordings
       would not survive.
-- [ ] **5.0b-6** Tap **Done — clear the test clips**. The test recording is
-      deleted.
+- [ ] **5.0b-6 Pictures** — tap *Show the four pictures*. Four drawings fill the
+      screen at **the size a child sees them**: two room scenes and two street
+      maps with French place names. Hold the iPad the way she would and answer
+      **I can read them** or **Too small to read**. If a label is cramped, say
+      which one — the drawing can be changed.
+- [ ] **5.0b-7** Tap **Done — clear the test clips**. The test recording is
+      deleted and the pictures close.
 
 This is a machine check. It does not replace the rest of Part 5: only you can
 tell whether the French sounds right and whether a child can be understood.
@@ -306,11 +311,10 @@ tell whether the French sounds right and whether a child can be understood.
       French place names. The map has **no arrows** showing the route, and no
       picture has English labels on it. If you see a list of words like
       "school, park, library, bank", stop and tell me.
-- [ ] **5.5e** **Are the French place names on the map comfortably readable** at
-      arm's length on the iPad, without leaning in or pinching to zoom? The
-      artwork is approved on a desktop screen; this is the one thing about it
-      that only the real device can answer. If a label is small or crowded, say
-      which one — the drawing can be changed.
+- [ ] **5.5e** The same pictures you saw in §5.0b-6, now in the check-in
+      itself. They should look the same size. This is only a confirmation —
+      §5.0b-6 is where the question is really asked, because looking there
+      costs no items.
 
 ## 5.6 Writing
 
