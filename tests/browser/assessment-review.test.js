@@ -249,6 +249,19 @@ test('the screen carries the release\'s own sentence about having no scorer', as
     'the parent is not told what the release says to do when nobody can score');
 });
 
+test('the screen asks for a qualified reader, not whoever holds the iPad', async () => {
+  // Content owner, 2026-09-11: a named qualified human must read the writing or
+  // listen to the audio. A parent who cannot read French is not that person,
+  // and the screen has to say so where they are about to type a name.
+  const { page } = await open(administer({ learner: 'jenn' }));
+  await askForReview(page);
+  const text = await panelText(page);
+
+  assert.match(text, /read the writing or listened to the recording/);
+  assert.match(text, /judge French at this level/);
+  assert.match(text, /cannot produce the score/);
+});
+
 test('scoring writes nothing to the game profile', async () => {
   // The same barrier every other assessment path is held to.
   const { page } = await open(administer({ learner: 'jenn' }));

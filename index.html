@@ -7,7 +7,7 @@
      styles ......... src/styles.css
      game logic ..... src/**/*.js
 
-   Built from 9af1bff
+   Built from 69c13b6
   ============================================================
 -->
 <!DOCTYPE html>
@@ -4123,8 +4123,16 @@ function exportText(run, { learnerName = null, now: now2 = /* @__PURE__ */ new D
   say("");
   for (const l of wrap(UNRESOLVED_RULE, 66)) say(`    ${l}`);
   say("");
-  say("Return the numbers to the parent, who enters them and is recorded as");
-  say("the scorer. Please also give your name for the record.");
+  say("Your name goes on the record as the scorer, whoever types the numbers");
+  say("in. The person recorded is the one who read the writing or listened to");
+  say("the audio — not whoever operated the iPad afterwards.");
+  say("");
+  say("An AI assistant may be used for a draft or a second opinion on these");
+  say("written answers. It cannot produce the score. A qualified person still");
+  say("has to read the writing, or listen to the recording, and confirm each");
+  say("dimension; without that the domain stays unscored. Device transcripts");
+  say("and automated pronunciation figures are practice aids and are not");
+  say("evidence for any of these numbers.");
   say("");
   for (const domain of REVIEWED_DOMAINS) {
     const group = entries.filter((e) => e.domain === domain);
@@ -4418,7 +4426,7 @@ function mountAssessmentReview(container, {
     input.type = "text";
     input.className = "assess-review-name";
     input.id = "assess-review-scorer";
-    input.placeholder = "A name goes on the record";
+    input.placeholder = "The name of whoever read or listened";
     input.value = scorerName;
     input.addEventListener("input", () => {
       scorerName = input.value;
@@ -4426,7 +4434,7 @@ function mountAssessmentReview(container, {
     who.append(input);
     who.append(div$1(
       "assess-review-flag-note",
-      "A rubric score with nobody's name on it cannot be told apart from one a machine produced, which these two domains do not allow."
+      "Name the person who actually read the writing or listened to the recording and can judge French at this level — not whoever is holding the iPad. An AI assistant may give you a draft or a second opinion, but it cannot produce the score, and a score with nobody's name on it cannot be told apart from one a machine produced."
     ));
     container.append(who);
     if (download) {

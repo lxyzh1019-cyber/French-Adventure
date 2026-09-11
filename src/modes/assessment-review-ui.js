@@ -227,13 +227,16 @@ export function mountAssessmentReview(container, {
     input.type = 'text';
     input.className = 'assess-review-name';
     input.id = 'assess-review-scorer';
-    input.placeholder = 'A name goes on the record';
+    input.placeholder = 'The name of whoever read or listened';
     input.value = scorerName;
     input.addEventListener('input', () => { scorerName = input.value; });
     who.append(input);
     who.append(div('assess-review-flag-note',
-      'A rubric score with nobody\'s name on it cannot be told apart from one a '
-      + 'machine produced, which these two domains do not allow.'));
+      'Name the person who actually read the writing or listened to the recording '
+      + 'and can judge French at this level — not whoever is holding the iPad. An AI '
+      + 'assistant may give you a draft or a second opinion, but it cannot produce '
+      + 'the score, and a score with nobody\'s name on it cannot be told apart from '
+      + 'one a machine produced.'));
     container.append(who);
 
     if (download) {

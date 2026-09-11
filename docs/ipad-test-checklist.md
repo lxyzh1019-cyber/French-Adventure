@@ -366,10 +366,10 @@ Speaking report nothing rather than reporting badly.
 - [ ] **5.10a** Every one of the eleven is listed, with **the prompt she saw**,
       **her own answer**, and for each part of the scale the four sentences you
       are choosing between. You should not need any other document.
-- [ ] **5.10b** Type a name in **Who is doing the scoring?** — yours, or the
-      teacher's. Try saving without one first: it should refuse, and say so.
-      A score with nobody's name on it is indistinguishable from a machine's,
-      which these two domains do not allow.
+- [ ] **5.10b** Type a name in **Who is doing the scoring?** — the person who
+      actually read the writing or listened to the recording **and can judge
+      French at this level**, not whoever is holding the iPad. Try saving
+      without one first: it should refuse, and say so.
 - [ ] **5.10c** **She was helped with this one** is yours to tick. Only you know
       whether a hint was given. A helped answer is kept and reported, and left
       out of the independent band.
@@ -387,15 +387,24 @@ Speaking report nothing rather than reporting badly.
 
 ### If nobody in the house speaks French
 
+**This is us.** The content owner ruled on 2026-09-11: an AI may give advisory
+or draft feedback, but it **cannot** produce a band, and a named **qualified**
+person must read the writing or listen to the audio and confirm each dimension.
+Until we find that person, Writing and Speaking stay unscored — which is the
+honest answer, not a fault.
+
 - [ ] **5.10g** **⬇ Save the answers to score** downloads a text file with the
-      prompts, her answers and the whole scale, for someone who is scoring away
-      from this iPad — a French teacher, a tutor. The recordings are **not** in
-      it: they stay on the iPad, and spoken answers have to be listened to.
-- [ ] **5.10h** Whoever scores gives you the numbers; you type them in and your
-      name goes on the record. Whether an AI assistant may stand in for a
-      French-reading adult on the **written** prompts is an open question for
-      the content owner — see `docs/implementation-status.md`. Until it is
-      answered, the honest position is that those prompts are unscored.
+      prompts, her answers and the whole scale, for someone scoring away from
+      this iPad — a school French teacher, a tutor. One sitting covers both
+      girls. The recordings are **not** in it: they stay on the iPad, and spoken
+      answers have to be listened to.
+- [ ] **5.10h** You may take that file to an AI for a first pass, and hand the
+      draft to the teacher as a starting point rather than a blank rubric. The
+      teacher still reads the answers and decides, and **their** name goes on
+      the record — not yours, even though you type the numbers in.
+- [ ] **5.10i** Device transcripts and any automatic pronunciation figure are
+      practice aids only. They are never evidence for these numbers, and none of
+      them appears on the scoring screen.
 
 ---
 

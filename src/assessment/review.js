@@ -261,8 +261,16 @@ export function exportText(run, { learnerName = null, now = new Date() } = {}) {
   say('');
   for (const l of wrap(UNRESOLVED_RULE, 66)) say(`    ${l}`);
   say('');
-  say('Return the numbers to the parent, who enters them and is recorded as');
-  say('the scorer. Please also give your name for the record.');
+  say('Your name goes on the record as the scorer, whoever types the numbers');
+  say('in. The person recorded is the one who read the writing or listened to');
+  say('the audio — not whoever operated the iPad afterwards.');
+  say('');
+  say('An AI assistant may be used for a draft or a second opinion on these');
+  say('written answers. It cannot produce the score. A qualified person still');
+  say('has to read the writing, or listen to the recording, and confirm each');
+  say('dimension; without that the domain stays unscored. Device transcripts');
+  say('and automated pronunciation figures are practice aids and are not');
+  say('evidence for any of these numbers.');
   say('');
 
   for (const domain of REVIEWED_DOMAINS) {

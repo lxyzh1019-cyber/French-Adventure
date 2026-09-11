@@ -627,7 +627,7 @@ administered sections, because pronunciation is reported separately (master plan
 - Map images for `SA-D02` and `SB-D02`, and the two illustrations: **built and approved by the content owner on 2026-09-09**, subject only to confirming the map labels are comfortably readable at actual iPad size (checklist §5.5d).
 - If writing should measure `VG_NEGATION`, `VG_LOCATION` or `VG_GENDER_NUMBER`, Release B needs target-specific scoring criteria and matched prompts on both forms. Generic rubric dimensions are not precise enough, which is why v1.0.2 removed the tags.
 - The 24 listening scripts need listening QA on an actual iPad with the resolved `fr-CA` voice.
-- Someone must be named to score writing and speaking with the rubrics; until then those domains report `awaiting_review`. No adult in the family reads or speaks French, so whether writing may be scored with AI assistance is now an open question for the content owner — see "Open content-owner question" below. Speaking is not part of that question and needs a French-speaking adult.
+- Someone must be named to score writing and speaking with the rubrics; until then those domains report `awaiting_review`. No adult in this family reads or speaks French. The content owner ruled on 2026-09-11 that an AI may give advisory or draft feedback but cannot produce a band, and that a named **qualified** human must read the writing or listen to the audio and confirm each dimension — so both domains stay `awaiting_review` until a French-capable person is found. See "Content-owner decision, 2026-09-11" below.
 - Independent educator review has not occurred; do not describe the bank as educator-validated.
 
 ## Release A — amended to `assessment-v1.0.2`
@@ -797,81 +797,59 @@ response is set aside.
 `docs/ipad-test-checklist.md` §5.10 is the parent's walkthrough, including
 §5.10g–h for the case where nobody in the house speaks French.
 
-## Open content-owner question — may writing be scored with AI assistance?
+## Content-owner decision, 2026-09-11 — AI scoring
 
-**Raised 2026-09-11 by the parent. Nothing in `content/` has been changed.** The
-package still says what it said; this records the question and what the code and
-the contract actually permit, so the content owner can answer with the facts in
-front of them.
+**Answered. Release A is unchanged: no version bump, no edit to any file under
+`content/`.** The question logged against this release is closed.
 
-### The situation
+> Release A remains unchanged. AI-only scoring is prohibited. An external AI
+> service may provide advisory or draft rubric feedback, but it cannot produce
+> an official Release A band. A named qualified human must directly read the
+> writing or listen to the original audio and confirm the rubric dimensions.
+> Without that confirmation, the domain remains `awaiting_review`. Device
+> transcripts and automated pronunciation measurements are practice aids, not
+> scoring evidence.
 
-There is no adult in the family who reads or speaks French. Under the package as
-written that means all 11 open prompts per form — 6 writing, 5 speaking —
-report `awaiting_review` forever, and those two domains never get a band.
+### What this means for this family, plainly
 
-### What the package says now
+**It does not unlock writing.** The permission is for *advisory* feedback, and
+the confirming person must be **qualified** — someone who can read French at
+this level and judge it. No adult in this household can. So writing and
+speaking both stay `awaiting_review` until a French-capable person is found:
+a school French teacher, a tutor, one sitting for both girls. An AI draft plus
+a parent who cannot read the answer is not the human confirmation the decision
+requires, and entering numbers on that basis would put a name against a
+judgement nobody made.
 
-Three statements, all in `rubrics.json` at `assessment-v1.0.2`:
+**What it does permit** is taking the export to an AI for a first pass or a
+second opinion, and handing that to the qualified person as a starting point
+rather than a blank rubric. That is a convenience for them, not a substitute
+for them.
 
-| Where | Text |
-|---|---|
-| `unresolved_review_handling` | "If no eligible human scorer is available, retain the response and report `awaiting_review`. **Do not assign a band or substitute speech-to-text/AI-only scoring.**" |
-| `WRITING-ANALYTIC-V1.scorer_requirement` | "**Adult with functional French literacy**; educator review preferred before decisions. Preserve the original response." |
-| `SPEAKING-ANALYTIC-V1.scorer_requirement` | "Adult who can understand spoken French **must listen to the original recording. Transcript-only scoring is prohibited**; educator review preferred." |
+### What changed in the code
 
-### The question
+Nothing structural — the module already refused everything the decision
+forbids, because it was written against the release rather than against the
+hoped-for answer. Two pieces of wording were wrong and are corrected:
 
-**Writing only.** May a parent who cannot read French score the six written
-prompts with the help of a general-purpose AI assistant *outside* the app —
-pasting the child's response and the rubric into their own session, reading what
-it returns, and entering the five dimension scores themselves as the named
-scorer?
+- The export said *"return the numbers to the parent, who enters them and is
+  recorded as the scorer."* Under the decision the recorded scorer is the
+  person who **read or listened**, whoever later types the numbers in. It now
+  says so, and states the advisory rule and the transcript exclusion in the
+  content owner's own terms.
+- The scoring screen asked *"Who is doing the scoring?"* with a note about
+  attribution. It now names the requirement: the person who read or listened
+  **and can judge French at this level**, not whoever is holding the iPad.
 
-If yes, three things follow and each needs the content owner's wording:
+**No `scoring_method` field was added.** It was floated when the question was
+open; the decision defines no such vocabulary and leaves Release A untouched,
+so inventing one would be inventing a rule the content owner did not write —
+the mistake this project has already made once with the skill-evidence rule.
+The review record names a human scorer, and that remains the whole contract.
 
-1. **`WRITING-ANALYTIC-V1.scorer_requirement`** — the replacement sentence.
-   Who is eligible, and what the adult is still accountable for.
-2. **`unresolved_review_handling`** — the carve-out. It currently forbids this
-   in general terms; it needs to say precisely what is permitted and what stays
-   forbidden.
-3. **How the report must describe it.** A band derived this way is not a band an
-   educator assigned, and the report must not let a reader think it is. A
-   `scoring_method` field on the review record is the obvious mechanism, but its
-   permitted values and the parent-facing wording are the content owner's to
-   set, not the implementer's.
-
-### Three constraints the answer cannot design around
-
-**Nothing in the app will call an AI.** The app is client-only and offline by
-design; its only network is Firebase. An AI API key would have to sit in the
-committed, unminified `index.html` — the same file whose View Source exposure is
-recorded in `known-risks.md` §3 — where it is a billable credential anyone can
-take. This is unlike the Firebase `apiKey`, which is a public client identifier
-by design. So any permitted AI assistance happens in the parent's own session,
-on text they paste, and the app's part is to export the responses and to record
-who scored and how.
-
-**Speaking is not being asked about, and the recommendation is to leave it.**
-Two reasons beyond the prohibition. The rubric asks a listener to judge whether
-a message was *understood*, which no transcript reproduces; and the audio never
-leaves the device — IndexedDB only, no Firebase Storage — so AI scoring would
-mean uploading two named children's voice recordings. The recommendation is that
-speaking stays `awaiting_review` until a French-speaking adult is found. One
-sitting with a school French teacher or a tutor clears both girls.
-
-**This changes nothing about the five objective sections.** Listening, reading
-and vocabulary/grammar are machine-scored against answer keys and are unaffected
-either way.
-
-### What is being built while this is open
-
-The parent review screen, and a text export of the open responses with their
-rubrics. Both are needed under every possible answer — a French-speaking teacher
-needs the same export and the same screen — so neither waits on this. No
-`scoring_method` field and no change to `content/` until the answer arrives:
-inventing the rule and then discovering the content owner already had one is a
-mistake this project has made once already.
+**No AI integration was built, and none can be.** The app is client-only with
+no server; its only network is Firebase. Any AI use happens in the parent's own
+session, on text the export gives them.
 
 ## Parent acceptance
 

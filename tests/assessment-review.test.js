@@ -264,3 +264,49 @@ test('a worked example that is a prompt\'s model answer is held back, and said s
   assert.ok(textB.includes(model), 'an example was withheld from a form that does not use that prompt');
   assert.ok(!/held back/.test(textB));
 });
+
+// -- the content owner's decision of 2026-09-11 -------------------------------
+//
+// "AI-only scoring is prohibited. An external AI service may provide advisory
+// or draft rubric feedback, but it cannot produce an official Release A band.
+// A named qualified human must directly read the writing or listen to the
+// original audio and confirm the rubric dimensions."
+//
+// Release A was left unchanged by that decision, so nothing in content/ moved.
+// What these pin is that the two places the app speaks to a scorer say the
+// same thing the decision does.
+
+test('the export names the reader as the scorer, not whoever types it in', () => {
+  const text = R.exportText(run());
+  assert.match(text, /Your name goes on the record as the scorer/);
+  assert.match(text, /read the writing or listened to/);
+  assert.ok(!/recorded as\s+the scorer\. Please also give your name/.test(text),
+    'the export still tells the teacher to hand their judgement to the parent');
+});
+
+test('the export states the advisory rule in the decision\'s own terms', () => {
+  const text = R.exportText(run());
+  assert.match(text, /AI assistant may be used for a draft or a second opinion/);
+  assert.match(text, /It cannot produce the score/);
+  assert.match(text, /qualified person still/i);
+  assert.match(text, /transcripts/i);
+  assert.match(text, /practice aids/i);
+});
+
+test('a transcript is never an input to a rubric score', () => {
+  // scoring.pronunciation and the 2026-09-11 decision agree: an observation is
+  // not evidence. The queue carries the response, so the check is that nothing
+  // derived from the transcript can reach a review.
+  const r = run();
+  const spoken = R.queue(r).find(e => e.domain === 'speaking');
+  const stored = r.responses[spoken.key];
+  assert.equal(stored.transcript_observation, 'bonjour je parle', 'the fixture lost its transcript');
+
+  R.recordReview(r, { itemId: spoken.item_id, scorerId: 'Mme Tremblay', scores: SPEAKING_MARKS });
+  const review = r.review[spoken.key];
+  assert.deepEqual(Object.keys(review.scores).sort(),
+    spoken.rubric.dimensions.map(d => d.id).sort(),
+    'a review carries something other than the rubric\'s own dimensions');
+  assert.ok(!JSON.stringify(review).includes('bonjour'),
+    'the device transcript reached the scoring record');
+});
