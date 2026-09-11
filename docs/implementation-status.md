@@ -716,6 +716,23 @@ would do, and requires the same question to count once. That one does fail
 against the broken gate, while the first still passes — so the two protections
 are now told apart.
 
+## Two things the iPad found
+
+**The French was too quick.** `speakFrench` set `rate = 0.85`; it is `0.80` now,
+named as `SPEECH_RATE` rather than a number buried in the utterance, with a
+browser test that taps a real speak button and pins it. One setting governs the
+games and the check-in, because both speak through the same function. The rate
+reads back as 0.800000011920929 — the platform keeps it as a 32-bit float — so
+the test compares with a tolerance.
+
+**A finished check-in had no way out.** `render()` appended the "All done" card
+and returned without adding an action, so the only exit was the bar's **Pause**
+button: the wrong word for a run with nothing left in it, and easy to miss at
+the top of the screen. The finished screen now offers *Done — back to the
+start*, and the bar says **Close** once the run is complete. Both leave the same
+way a pause does, which changes nothing about a run that is already complete —
+asserted by a test that compares the run before and after leaving.
+
 ## Parent acceptance
 
 | Milestone | Accepted by | Date | Note |

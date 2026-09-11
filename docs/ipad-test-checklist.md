@@ -250,7 +250,10 @@ panel says so at the top.
 - [ ] **5.0b-2 French audio plays** — tap *Play a French phrase*. If you hear
       it, tap **I heard it**. If you hear nothing, tap **I heard nothing** and
       tell me — the listening part depends on this and no test can hear it for
-      you.
+      you. **Also listen to the pace.** It is set to 0.80 — slower than the
+      platform's normal speed — and one setting governs the games and the
+      check-in alike. If it is still quick for the girls, say so and it can go
+      lower.
 - [ ] **5.0b-3 Microphone** — tap *Ask for the microphone*. Safari asks the
       first time; allow it.
 - [ ] **5.0b-4 Recording** — record two seconds, stop, play it back, and answer

@@ -294,3 +294,36 @@ test('an answered question is never re-presented after a resume', async () => {
     'resume re-presented the question that was already answered and scored');
   assert.deepEqual(errors, []);
 });
+
+test('French is spoken slower than the platform default', async () => {
+  // The rate is a deliberate setting, not a leftover: 1 is the platform's
+  // normal pace and it is quick for a child assembling the language. It was
+  // lowered to 0.80 after hearing it on the iPad, and one number governs the
+  // games and the check-in alike, since both speak through speakFrench.
+  const { page } = await open();
+
+  const rates = await page.evaluate(async () => {
+    const seen = [];
+    const real = window.speechSynthesis.speak.bind(window.speechSynthesis);
+    window.speechSynthesis.speak = u => seen.push(u.rate);
+    try {
+      // The same 🔊 button a child taps, driven the way the page drives it.
+      const host = document.createElement('div');
+      host.innerHTML = '<button data-speak="aujourd\'hui">S</button>';
+      document.body.appendChild(host);
+      host.querySelector('button').click();
+      await new Promise(r => setTimeout(r, 200));
+      host.remove();
+    } finally { window.speechSynthesis.speak = real; }
+    return seen;
+  });
+
+  assert.ok(rates.length > 0, 'nothing was spoken, so the rate was never set');
+  for (const r of rates) {
+    // The platform keeps rate as a 32-bit float, so 0.8 reads back as
+    // 0.800000011920929. Compared with a tolerance rather than rounded here,
+    // because the thing being pinned is the setting, not the float.
+    assert.ok(Math.abs(r - 0.8) < 0.001, `French was spoken at ${r}, not 0.80`);
+    assert.ok(r < 1, 'French is being spoken at the platform default pace');
+  }
+});

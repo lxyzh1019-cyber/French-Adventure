@@ -7,7 +7,7 @@
      styles ......... src/styles.css
      game logic ..... src/**/*.js
 
-   Built from abb6b7b
+   Built from ab72d2d
   ============================================================
 -->
 <!DOCTYPE html>
@@ -3009,6 +3009,8 @@ function render() {
   el("assess-title").textContent = at.done ? "All done" : DOMAIN_LABEL[at.domain] ?? at.domain;
   el("assess-sub").textContent = at.done ? "Nothing left to do today." : `Form ${run.form} · ${answered} of ${planned} answered so far`;
   el("assess-progress-fill").style.width = planned ? `${Math.round(answered / planned * 100)}%` : "0%";
+  const leave = document.querySelector('#screen-assessment [data-action="assess-pause"]');
+  if (leave) leave.textContent = at.done ? "Close" : "Pause";
   const body = el("assess-body");
   const actions = el("assess-actions");
   body.innerHTML = "";
@@ -3018,6 +3020,7 @@ function render() {
       "That is everything for this check-in.",
       "Nothing is scored on this screen. A grown-up reads the results later, and the writing and speaking parts wait for a person to listen to them."
     ));
+    actions.append(button$1("Done — back to the start", "assess-pause"));
     return;
   }
   const section = run.sections[at.domain];
@@ -5692,6 +5695,7 @@ function updateStarMap() {
     grid.appendChild(div2);
   });
 }
+const SPEECH_RATE = 0.8;
 let frenchVoice = null, frenchVoiceInfo = null;
 function resolveFrenchVoice() {
   if (!speechSynth) return null;
@@ -5718,7 +5722,7 @@ function speakFrench(text) {
   const voice = frenchVoice || resolveFrenchVoice();
   if (voice) utt.voice = voice;
   utt.lang = voice ? voice.lang : PREFERRED_LOCALE;
-  utt.rate = 0.85;
+  utt.rate = SPEECH_RATE;
   speechSynth.speak(utt);
 }
 function speakButtonHTML(text, cls, style) {

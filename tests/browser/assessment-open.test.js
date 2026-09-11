@@ -406,3 +406,49 @@ test('no part of the game reward system is on the open sections', async () => {
     /star|life|lives|heart|moon|streak|score|trophy|leaderboard|badge|reward|hint/i.test(t)), [],
     'game chrome is inside the assessment screen');
 });
+
+// ── the end of a check-in ──────────────────────────────────────────────────
+
+test('a finished check-in offers its own way out, and says the run is over', async () => {
+  // It used to offer none: the "All done" screen appended a card and stopped,
+  // so the only exit was the bar's Pause button — the wrong word for a run
+  // with nothing left in it, and easy to miss at the top of the screen.
+  const { page, errors } = await openApp();
+  await openAsParent(page);
+
+  for (let n = 0; n < 250; n++) {
+    if (!(await positionOf(page)).next) break;
+    await advance(page);
+  }
+  assert.equal((await positionOf(page)).next, null, 'never reached the end of the check-in');
+
+  const before = await page.evaluate(() => {
+    const r = window.__faDebug.assessment.runs('jenn')[0];
+    return { status: r.status, responses: Object.keys(r.responses).length };
+  });
+  assert.equal(before.status, 'complete', 'the run did not finish');
+
+  const bar = await page.textContent('#screen-assessment [data-action="assess-pause"]');
+  assert.equal(bar, 'Close', 'the bar still offers to pause a finished run');
+
+  const leave = await page.$('#assess-actions [data-action="assess-pause"]');
+  assert.ok(leave, 'the finished screen offers no way out of its own');
+  assert.match(await leave.textContent(), /Done/);
+
+  await leave.click();
+  await page.waitForTimeout(300);
+
+  // Back where a parent started, with the run untouched by leaving it.
+  const after = await page.evaluate(() => {
+    const r = window.__faDebug.assessment.runs('jenn')[0];
+    return {
+      onScreen: ['select', 'hub', 'assessment'].find(n =>
+        document.getElementById(`screen-${n}`).style.display === 'block') ?? null,
+      status: r.status, responses: Object.keys(r.responses).length,
+    };
+  });
+  assert.notEqual(after.onScreen, 'assessment', 'leaving did not leave the check-in');
+  assert.equal(after.status, before.status, 'leaving changed the run');
+  assert.equal(after.responses, before.responses, 'leaving changed the answers');
+  assert.deepEqual(errors, []);
+});

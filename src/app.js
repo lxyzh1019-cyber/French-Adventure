@@ -1480,6 +1480,11 @@ function updateStarMap(){
 // ════════════════════════════════════════════════
 // Voices load asynchronously on some platforms, so resolve lazily and re-resolve
 // once the list arrives rather than caching an empty first answer.
+// How fast the French is spoken, everywhere: the games and the check-in both
+// go through speakFrench. 1 is the platform's normal pace, which is quick for a
+// ten-year-old hearing a language she is still assembling. Lowered from 0.85 on
+// 2026-09-11 after listening on the iPad.
+const SPEECH_RATE = 0.80;
 let frenchVoice=null, frenchVoiceInfo=null;
 function resolveFrenchVoice(){
   if(!speechSynth) return null;
@@ -1509,7 +1514,7 @@ function speakFrench(text){
   // Set lang even when a voice is chosen: it is the hint the platform uses when
   // no French voice is installed at all.
   utt.lang=voice ? voice.lang : PREFERRED_LOCALE;
-  utt.rate=0.85;
+  utt.rate=SPEECH_RATE;
   speechSynth.speak(utt);
 }
 // Build a 🔊 button that carries its French text as data rather than as
