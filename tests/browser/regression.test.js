@@ -9,7 +9,10 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { chromium } from 'playwright';
 
-const APP = 'file://' + path.resolve('index.html');
+// APP_FILE lets a run be pointed at a deliberately broken copy of the built
+// page, which is how a guard here is shown to be capable of failing. Without
+// it every "verified by breaking it" run silently re-tests the fixed build.
+const APP = 'file://' + path.resolve(process.env.APP_FILE || 'index.html');
 const CHROME = process.env.CHROMIUM_PATH || undefined;
 
 let browser;
@@ -125,6 +128,53 @@ test('French apostrophes and oe reach the speech API intact', async () => {
     return out;
   });
   for (const r of results) assert.equal(r.delivered, r.word);
+  assert.deepEqual(errors, []);
+});
+
+test('the first tap does not cancel an idle synthesiser, but a second tap cuts the first off', async () => {
+  // WebKit loses the first utterance after a page load when cancel() is called
+  // on an already-idle synthesiser: the child taps 🔊, hears nothing, taps
+  // again and it works. The cancel is still wanted when a word IS playing —
+  // moving on should cut the previous one off rather than queue behind it — so
+  // the fix is a guard, not a deletion, and this pins both halves.
+  const { page, errors } = await open();
+
+  const log = await page.evaluate(async () => {
+    const calls = [];
+    const synth = window.speechSynthesis;
+    const realSpeak = synth.speak.bind(synth);
+    const realCancel = synth.cancel.bind(synth);
+
+    // A synthesiser whose busy state the test controls, so "is something
+    // playing?" is a fact rather than a race with the platform.
+    let busy = false;
+    Object.defineProperty(synth, 'speaking', { get: () => busy, configurable: true });
+    Object.defineProperty(synth, 'pending', { get: () => false, configurable: true });
+    synth.cancel = () => { calls.push('cancel'); };
+    synth.speak = () => { calls.push('speak'); };
+
+    const host = document.createElement('div');
+    host.innerHTML = '<button data-speak="bonjour">S</button>';
+    document.body.append(host);
+    const tap = () => host.querySelector('button').click();
+
+    tap();                                   // first tap: nothing was playing
+    const first = calls.splice(0);
+
+    busy = true;                             // now a word is mid-sentence
+    tap();                                   // tapping the next one must cut it off
+    const second = calls.splice(0);
+
+    host.remove();
+    delete synth.speaking; delete synth.pending;
+    synth.speak = realSpeak; synth.cancel = realCancel;
+    return { first, second };
+  });
+
+  assert.deepEqual(log.first, ['speak'],
+    'the first tap cancelled an idle synthesiser, which is how WebKit swallows it');
+  assert.deepEqual(log.second, ['cancel', 'speak'],
+    'a word already playing was not cut off when the next one was tapped');
   assert.deepEqual(errors, []);
 });
 

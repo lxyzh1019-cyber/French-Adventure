@@ -851,6 +851,70 @@ The review record names a human scorer, and that remains the whole contract.
 no server; its only network is Firebase. Any AI use happens in the parent's own
 session, on text the export gives them.
 
+## A work order that was partly about another app
+
+**2026-09-11.** A list of required fixes arrived. Checked item by item against
+this repository before anything was changed, because acting on a misaddressed
+work order is how a codebase acquires features nobody wanted.
+
+| Asked for | Found here |
+|---|---|
+| Fix first-tap audio without weakening route/item cancellation | **Real mechanism, different name.** There is no router, but `speakFrench` did call `cancel()` before every `speak()`. Fixed. |
+| An isolated microphone panel: permission, record, stop, play, delete, handle denial and silence, write no learner record | **Already built and shipped** as the Device & Feature Check, including the no-record guarantee, proven byte-for-byte. |
+| Confirm the Firebase project `chore-tracker-a461b` | **Correct and confirmed intentional** — the owner shares it across their repositories. Already recorded in `known-risks.md` §1. |
+| Deploy the repository's Firestore rules | **There are none** — no `firestore.rules`, `firebase.json` or `.firebaserc` exists. See the warning below. |
+| Make the configuration failure identifiable | **Real.** Every failure was a `console.warn` plus a generic `'error'`. Fixed. |
+| Re-test 16 dictation words, 16 contrast utterances, 12 decoding recordings | **No such content.** Release A is 90 items — per form 12 listening, 12 reading, 10 vocabulary/grammar, 6 writing, 5 speaking. Dictation here is a game mode over a dynamic word list, not 16 fixed words. |
+| Create no Jenn/Jess attempt or **mastery** record | Records are attempts, stars and rounds. This project deliberately makes no mastery claim (`prohibited_claims`). |
+
+### A warning that matters more than any of the fixes
+
+**Firestore security rules are per-project, not per-app.** The Firebase project
+is shared with the owner's other repositories. Deploying a rules file authored
+for French Adventure to `chore-tracker-a461b` would replace the rules the other
+applications are running under. No rules file was added here for that reason:
+one cannot be written correctly from inside this repository alone.
+
+## The first tap, and a harness that could not fail
+
+`speakFrench` called `speechSynth.cancel()` unconditionally before every
+`speak()`. The cancel is wanted — moving to the next word should cut the
+previous one off rather than queue behind it — but calling it on an **idle**
+synthesiser is the documented WebKit way to lose the first utterance after a
+page loads: the child taps 🔊, hears nothing, taps again and it works. It is now
+guarded on `speaking || pending`, which removes the no-op call and keeps the one
+that does work.
+
+**The more serious finding is how nearly this went in unverified.** The new test
+passed against a build with the defect restored *and* against a build with the
+cancel deleted entirely — it could not fail. The cause was not the test:
+`tests/browser/regression.test.js` and `tests/browser/data-loss.test.js`
+hard-coded `path.resolve('index.html')` and ignored `APP_FILE`, so every
+"verified by breaking it" run against those two files silently re-tested the
+fixed page. The other seven browser files honour it. Both now do, and with the
+harness repaired the test fails against both breaks and passes on the fix.
+
+Any earlier claim of break-verification that ran through those two files was
+worth less than it sounded.
+
+## Naming what is wrong with the cloud
+
+Every Firestore failure landed in `console.warn` and became a generic
+`'error'`, so "we are offline", "the security rules refuse this" and "that
+project does not exist" were indistinguishable from the screen — and the one a
+parent can act on was the hardest to see.
+
+`describeCloudFailure` now maps the Firestore code to a sentence that names the
+project and says what to change, and marks whether it is a *configuration*
+problem at all. That last flag is the point: telling a parent to go and change
+settings because the wifi dropped is worse than saying nothing, so `unavailable`
+and `resource-exhausted` are explicitly not configuration failures. The sync
+line shows the text only when the failure is one a person can act on.
+
+Seven unit tests, verified against three breaks: marking everything a
+configuration problem, collapsing every code to one sentence, and dropping the
+project name.
+
 ## Parent acceptance
 
 | Milestone | Accepted by | Date | Note |

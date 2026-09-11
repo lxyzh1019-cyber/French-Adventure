@@ -1,4 +1,4 @@
-import { firebaseReady } from './state/firebase-bootstrap.js';
+import { firebaseReady, lastCloudFailure } from './state/firebase-bootstrap.js';
 import { CURRICULUM, SENTENCES } from './content/curriculum-map.js';
 import { migrateProfile } from './state/migrations.js';
 import { mergeProfiles } from './state/merge.js';
@@ -316,7 +316,13 @@ function updateConnectionStatusUI(){
     }else if(!online){
       syncTxt = m.lastLocalSave ? 'Saved on this iPad · cloud when online' : 'Not saved yet';
     }else if(m.pendingCloud){
-      syncTxt = 'Waiting to sync to cloud…';
+      // Online and still not synced. Either the network is flaky, or something
+      // about the Firebase project is refusing us — and those two need
+      // different actions from a parent, so they must not read the same.
+      const why = lastCloudFailure();
+      syncTxt = why?.configuration
+        ? `Cloud setting problem — ${why.text}`
+        : 'Waiting to sync to cloud…';
     }else{
       syncTxt = m.lastCloudOk ? 'Synced to cloud' : 'Ready';
     }
@@ -1508,7 +1514,17 @@ function currentVoiceInfo(){ if(!frenchVoiceInfo) resolveFrenchVoice(); return f
 
 function speakFrench(text){
   if(!speechSynth)return;
-  speechSynth.cancel();
+  // Stop what is playing, but only if something is. The cancel exists so that
+  // moving to the next word cuts the previous one off mid-sentence rather than
+  // queueing behind it — that behaviour is kept exactly.
+  //
+  // What is not kept is calling cancel() when the queue is already empty. On
+  // WebKit that is the documented way to lose the first utterance after a page
+  // loads: cancel() on an idle synthesiser can leave it in a state where the
+  // speak() that follows produces nothing, so the child's first tap is silent
+  // and the second works. Guarding on speaking||pending removes the no-op call
+  // without touching the one that does work.
+  if(speechSynth.speaking || speechSynth.pending) speechSynth.cancel();
   const utt=new SpeechSynthesisUtterance(text);
   const voice = frenchVoice || resolveFrenchVoice();
   if(voice) utt.voice = voice;

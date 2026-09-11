@@ -7,7 +7,7 @@
      styles ......... src/styles.css
      game logic ..... src/**/*.js
 
-   Built from 69c13b6
+   Built from eb5fc40
   ============================================================
 -->
 <!DOCTYPE html>
@@ -152,6 +152,35 @@ const firebaseConfig = {
   messagingSenderId: "282740057913",
   appId: "1:282740057913:web:72defcf2e53ae13237eae8"
 };
+const FAILURE_TEXT = {
+  "permission-denied": `The cloud refused this ("permission-denied"). The security rules on Firebase project ${firebaseConfig.projectId} do not allow this read or write. The app itself is working; the rules are the thing to change.`,
+  unauthenticated: `The cloud wants a signed-in user ("unauthenticated"), and this app has no sign-in. Either the rules on project ${firebaseConfig.projectId} were changed to require one, or this app needs authentication adding.`,
+  "not-found": `The cloud says that location does not exist ("not-found"). Check that project ${firebaseConfig.projectId} is the right one and has a Firestore database.`,
+  unavailable: "The cloud could not be reached. This is normally the network, not a setting. Work carries on being saved on this iPad.",
+  "failed-precondition": 'Firestore refused the request as not ready ("failed-precondition"). This is usually a database that has not finished being created, or a missing index.',
+  "resource-exhausted": `Project ${firebaseConfig.projectId} is over its Firebase quota ("resource-exhausted"). Nothing will sync until the quota resets or the plan changes.`,
+  "invalid-argument": 'Firestore rejected the data as invalid ("invalid-argument"). This is a defect in the app, not a setting — worth reporting.'
+};
+let lastFailure = null;
+function describeCloudFailure(e) {
+  const code = String(e?.code || "").replace(/^firestore\//, "") || null;
+  return {
+    code,
+    configuration: code === "permission-denied" || code === "unauthenticated" || code === "not-found" || code === "failed-precondition",
+    text: FAILURE_TEXT[code] || `The cloud failed for a reason the app does not recognise${code ? ` ("${code}")` : ""}: ${e?.message || e}`
+  };
+}
+function lastCloudFailure() {
+  return lastFailure;
+}
+function noteFailure(where, e) {
+  lastFailure = { ...describeCloudFailure(e), where, at: Date.now() };
+  console.warn(`Firebase — ${where}: ${lastFailure.text}`, e);
+  return lastFailure;
+}
+function noteSuccess() {
+  lastFailure = null;
+}
 const firebaseReady = (async () => {
   let initializeApp, getFirestore, doc, getDoc, getDocs, onSnapshot, setDoc, collection, query, where, orderBy, limit;
   try {
@@ -192,7 +221,7 @@ const firebaseReady = (async () => {
         onStatus("loaded");
       } else onStatus("absent");
     } catch (e) {
-      console.warn("FB baseline read failed", e);
+      noteFailure("reading saved progress", e);
       onStatus("error");
     }
     try {
@@ -203,11 +232,11 @@ const firebaseReady = (async () => {
           onStatus("loaded");
         } else onStatus("absent");
       }, (e) => {
-        console.warn("FB listen err", e);
+        noteFailure("watching for changes", e);
         onStatus("error");
       });
     } catch (e) {
-      console.warn("FB listen attach failed", e);
+      noteFailure("watching for changes", e);
       onStatus("error");
     }
   };
@@ -224,9 +253,10 @@ const firebaseReady = (async () => {
         }
       }
       await setDoc(ref, data);
+      noteSuccess();
       return true;
     } catch (e) {
-      console.warn("FB save err", e);
+      noteFailure("saving progress", e);
       return false;
     }
   };
@@ -241,7 +271,7 @@ const firebaseReady = (async () => {
         onStatus("loaded");
       } else onStatus("absent");
     } catch (e) {
-      console.warn("FB assessment baseline read failed", e);
+      noteFailure("reading the check-in", e);
       onStatus("error");
     }
     try {
@@ -256,7 +286,7 @@ const firebaseReady = (async () => {
         onStatus("error");
       });
     } catch (e) {
-      console.warn("FB assessment listen attach failed", e);
+      noteFailure("watching the check-in", e);
       onStatus("error");
     }
   };
@@ -277,9 +307,10 @@ const firebaseReady = (async () => {
         return true;
       }
       await setDoc(ref, data);
+      noteSuccess();
       return true;
     } catch (e) {
-      console.warn("FB assessment save err", e);
+      noteFailure("saving the check-in", e);
       return false;
     }
   };
@@ -292,7 +323,7 @@ const firebaseReady = (async () => {
       if (!data || !Number(data.totalStars)) return;
       await setDoc(ref, { ...data, backedUpAt: dateKey, player });
     } catch (e) {
-      console.warn("FB backup err", e);
+      noteFailure("writing the daily backup", e);
     }
   };
   window.fbBackupList = async (player) => {
@@ -5297,7 +5328,8 @@ function updateConnectionStatusUI() {
     } else if (!online) {
       syncTxt = m.lastLocalSave ? "Saved on this iPad · cloud when online" : "Not saved yet";
     } else if (m.pendingCloud) {
-      syncTxt = "Waiting to sync to cloud…";
+      const why = lastCloudFailure();
+      syncTxt = why?.configuration ? `Cloud setting problem — ${why.text}` : "Waiting to sync to cloud…";
     } else {
       syncTxt = m.lastCloudOk ? "Synced to cloud" : "Ready";
     }
@@ -6316,7 +6348,7 @@ function currentVoiceInfo() {
 }
 function speakFrench(text) {
   if (!speechSynth) return;
-  speechSynth.cancel();
+  if (speechSynth.speaking || speechSynth.pending) speechSynth.cancel();
   const utt = new SpeechSynthesisUtterance(text);
   const voice = frenchVoice || resolveFrenchVoice();
   if (voice) utt.voice = voice;
