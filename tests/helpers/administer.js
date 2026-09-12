@@ -21,9 +21,10 @@ export const SPEAKING_MARKS = {
  */
 export function administer({
   learner = 'jenn', answer = () => true, open = () => 'Je parle français.', now = Date.now(),
+  sections = C.SECTION_ORDER,
 } = {}) {
   const { run } = S.startRun({ runs: {} }, learner, { now });
-  for (const domain of C.SECTION_ORDER) {
+  for (const domain of sections) {
     S.beginSection(run, domain, { now });
     for (let i = 0; i < 60; i++) {
       const item = S.nextItem(run, domain);
@@ -50,7 +51,10 @@ export function administer({
     }
     S.completeSection(run, domain, { now });
   }
-  S.completeRun(run, { now });
+  // A run stopped part-way is left in progress, so the next section can be
+  // begun in a page — which is how a test reaches speaking without answering
+  // its way through four sections first.
+  if (sections === C.SECTION_ORDER) S.completeRun(run, { now });
   return run;
 }
 

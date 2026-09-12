@@ -542,3 +542,89 @@ button,input{touch-action:manipulation;}
 .device-check-detail { font-size: .7rem; color: var(--text-muted); line-height: 1.45; margin-top: 4px; }
 .device-check-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .device-check-actions button { padding: 8px 12px; font-size: .72rem; min-height: 44px; }
+
+/* The picture preview. It sits above the parent overlay and reproduces the
+   learner screen's geometry exactly — the same max width and padding as
+   #screen-assessment — because the question it exists to answer is how big the
+   map labels actually are. Drawn in the parent panel instead, it would be the
+   width of that panel and would answer nothing. */
+.device-check-preview {
+  position: fixed; inset: 0; z-index: 200; overflow-y: auto;
+  background: var(--bg, #fdfdfb);
+}
+.device-check-preview-inner { max-width: 720px; margin: 0 auto; padding: 8px 4px 24px; }
+.device-check-preview-head {
+  font-size: .78rem; line-height: 1.5; text-align: center;
+  padding: 10px 12px; color: var(--text-muted);
+}
+.device-check-preview-id { font-size: .7rem; color: var(--text-muted); margin-bottom: 6px; }
+.device-check-preview button { min-height: 44px; }
+@media (pointer: coarse) { .device-check-preview button { min-height: 52px; } }
+
+/* -- scoring the open prompts ---------------------------------------------- */
+/* A parent reads and taps through this on an iPad, so every target is at least
+   a finger wide and the anchor wording sits beside its own button rather than
+   in a legend somewhere else. */
+.assess-review-tabs { display: flex; gap: 8px; justify-content: center; margin-bottom: 8px; }
+.assess-review-tabs .active { border-color: var(--gold); color: var(--gold); }
+.assess-review-count { text-align: center; font-size: .78rem; font-weight: 800; margin-bottom: 6px; }
+.assess-review-rule {
+  font-size: .68rem; color: var(--text-muted); line-height: 1.45;
+  border-left: 3px solid rgba(148, 163, 184, .5); padding: 6px 10px; margin-bottom: 10px;
+}
+.assess-review-empty { color: var(--text-muted); font-size: .74rem; text-align: center; padding: 10px; }
+.assess-review-domain {
+  font-size: .78rem; font-weight: 800; margin: 14px 0 6px; text-align: center; color: var(--gold);
+}
+.assess-review-item {
+  border: 1px solid rgba(148, 163, 184, .3); border-radius: 12px;
+  padding: 10px 12px; margin-bottom: 10px;
+}
+.assess-review-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.assess-review-id { font-size: .7rem; color: var(--text-muted); }
+.assess-review-status { font-size: .68rem; font-weight: 800; }
+.assess-review-status[data-status="reviewed"] { color: var(--green); }
+.assess-review-status[data-status="invalid"] { color: var(--text-muted); }
+.assess-review-prompt-label {
+  font-size: .66rem; color: var(--text-muted); text-transform: uppercase;
+  letter-spacing: .04em; margin-top: 8px;
+}
+.assess-review-prompt { font-size: .8rem; line-height: 1.4; }
+.assess-review-answer {
+  font-size: .86rem; line-height: 1.5; white-space: pre-wrap;
+  background: rgba(148, 163, 184, .1); border-radius: 8px; padding: 8px 10px; margin-top: 4px;
+}
+.assess-review-figure { max-width: 100%; margin: 8px auto; }
+.assess-review-figure svg { max-width: 100%; height: auto; }
+.assess-review-note { font-size: .68rem; color: var(--text-muted); line-height: 1.4; margin-top: 6px; }
+.assess-review-flags { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.assess-review-flag { display: flex; gap: 8px; align-items: flex-start; cursor: pointer; }
+.assess-review-flag input { min-width: 22px; min-height: 22px; margin-top: 2px; }
+.assess-review-flag-label { font-size: .74rem; font-weight: 700; }
+.assess-review-flag-note { font-size: .66rem; color: var(--text-muted); line-height: 1.4; }
+.assess-review-dim { margin-top: 12px; }
+.assess-review-dim-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.assess-review-dim-name { font-size: .76rem; font-weight: 800; text-transform: capitalize; }
+.assess-review-dim-weight { font-size: .66rem; color: var(--text-muted); }
+.assess-review-anchor {
+  display: flex; gap: 8px; align-items: flex-start; cursor: pointer;
+  padding: 6px 4px; border-radius: 8px; min-height: 44px;
+}
+.assess-review-anchor input { min-width: 22px; min-height: 22px; margin-top: 2px; }
+.assess-review-anchor-n { font-size: .74rem; font-weight: 800; min-width: 12px; }
+.assess-review-anchor-text { font-size: .7rem; line-height: 1.4; color: var(--text-muted); }
+.assess-review-anchor:has(input:checked) { background: rgba(245, 158, 11, .12); }
+.assess-review-anchor:has(input:checked) .assess-review-anchor-text { color: inherit; }
+.assess-review-actions {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px;
+}
+.assess-review-actions button { min-height: 44px; }
+@media (pointer: coarse) { .assess-review-actions button { min-height: 52px; } }
+.assess-review-msg { font-size: .7rem; color: var(--jenn); }
+.assess-review-msg[data-ok="true"] { color: var(--green); }
+.assess-review-scorer { margin: 10px 0; }
+.assess-review-name {
+  width: 100%; box-sizing: border-box; min-height: 44px; padding: 8px 10px; margin: 4px 0;
+  border: 2px solid rgba(148, 163, 184, .4); border-radius: 10px;
+  font-family: 'Nunito', sans-serif; font-size: .82rem;
+}

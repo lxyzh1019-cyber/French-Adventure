@@ -20,6 +20,72 @@ const firebaseConfig = {
   appId: "1:282740057913:web:72defcf2e53ae13237eae8"
 };
 
+// ── Why the cloud is not working ────────────────────────────────────────────
+//
+// Every failure below used to land in console.warn and become a generic
+// 'error', so "we are offline", "the security rules refuse this" and "that
+// project does not exist" all looked identical from the screen: sync simply
+// never completed and nothing said why. The one a person actually needs to act
+// on is a configuration failure, and it is the one that was hardest to see.
+//
+// This names the failure in a sentence a parent can act on, and remembers the
+// most recent one so the sync line can show it.
+
+const FAILURE_TEXT = {
+  'permission-denied':
+    `The cloud refused this ("permission-denied"). The security rules on Firebase `
+    + `project ${firebaseConfig.projectId} do not allow this read or write. The app `
+    + `itself is working; the rules are the thing to change.`,
+  unauthenticated:
+    `The cloud wants a signed-in user ("unauthenticated"), and this app has no `
+    + `sign-in. Either the rules on project ${firebaseConfig.projectId} were changed `
+    + `to require one, or this app needs authentication adding.`,
+  'not-found':
+    `The cloud says that location does not exist ("not-found"). Check that project `
+    + `${firebaseConfig.projectId} is the right one and has a Firestore database.`,
+  unavailable:
+    'The cloud could not be reached. This is normally the network, not a setting. '
+    + 'Work carries on being saved on this iPad.',
+  'failed-precondition':
+    'Firestore refused the request as not ready ("failed-precondition"). This is '
+    + 'usually a database that has not finished being created, or a missing index.',
+  'resource-exhausted':
+    `Project ${firebaseConfig.projectId} is over its Firebase quota `
+    + `("resource-exhausted"). Nothing will sync until the quota resets or the plan `
+    + `changes.`,
+  'invalid-argument':
+    'Firestore rejected the data as invalid ("invalid-argument"). This is a defect '
+    + 'in the app, not a setting — worth reporting.',
+};
+
+let lastFailure = null;
+
+/** A plain sentence for one Firestore error, and the code it came from. */
+export function describeCloudFailure(e) {
+  const code = String(e?.code || '').replace(/^firestore\//, '') || null;
+  return {
+    code,
+    configuration: code === 'permission-denied' || code === 'unauthenticated'
+      || code === 'not-found' || code === 'failed-precondition',
+    text: FAILURE_TEXT[code]
+      || `The cloud failed for a reason the app does not recognise`
+         + `${code ? ` ("${code}")` : ''}: ${e?.message || e}`,
+  };
+}
+
+/** The most recent cloud failure, or null if the last thing tried worked. */
+export function lastCloudFailure() { return lastFailure; }
+
+/** Record a failure and say so once, with the reason rather than the object. */
+function noteFailure(where, e) {
+  lastFailure = { ...describeCloudFailure(e), where, at: Date.now() };
+  console.warn(`Firebase — ${where}: ${lastFailure.text}`, e);
+  return lastFailure;
+}
+
+/** Something worked, so an earlier failure is no longer the current truth. */
+function noteSuccess() { lastFailure = null; }
+
 // Resolves once the SDK is loaded and window.fbInit/fbSave/... are installed.
 // Resolves to null (never rejects) when the CDN is unreachable, so an offline
 // launch degrades to the local-storage mirror exactly as it did before.
@@ -38,6 +104,8 @@ export const firebaseReady = (async () => {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 window.fbListeners = {};
+
+
 
 // #14 — Load baseline immediately on open (getDoc), then attach live listener
 // Reports the OUTCOME of the read, not just data. Previously a missing document
@@ -59,7 +127,7 @@ window.fbInit = async (player, onData, onStatus = () => {}) => {
     if (snap.exists()) { onData(snap.data()); onStatus('loaded'); }
     else onStatus('absent');
   } catch (e) {
-    console.warn("FB baseline read failed", e);
+    noteFailure('reading saved progress', e);
     onStatus('error');
     // Fall through: the live listener may still succeed and resolve the status.
   }
@@ -69,9 +137,9 @@ window.fbInit = async (player, onData, onStatus = () => {}) => {
     window.fbListeners[player] = onSnapshot(ref, s => {
       if (s.exists()) { onData(s.data()); onStatus('loaded'); }
       else onStatus('absent');
-    }, e => { console.warn("FB listen err", e); onStatus('error'); });
+    }, e => { noteFailure('watching for changes', e); onStatus('error'); });
   } catch (e) {
-    console.warn("FB listen attach failed", e);
+    noteFailure('watching for changes', e);
     onStatus('error');
   }
 };
@@ -98,8 +166,9 @@ window.fbSave = async (player, data) => {
     }
 
     await setDoc(ref, data);
+    noteSuccess();
     return true;
-  } catch(e) { console.warn("FB save err", e); return false; }
+  } catch(e) { noteFailure('saving progress', e); return false; }
 };
 
 // ── Assessment store ────────────────────────────────────────────────────────
@@ -126,7 +195,7 @@ window.fbAssessInit = async (player, onData, onStatus = () => {}) => {
     if (snap.exists()) { onData(snap.data()); onStatus('loaded'); }
     else onStatus('absent');
   } catch (e) {
-    console.warn("FB assessment baseline read failed", e);
+    noteFailure('reading the check-in', e);
     onStatus('error');
   }
 
@@ -137,7 +206,7 @@ window.fbAssessInit = async (player, onData, onStatus = () => {}) => {
       else onStatus('absent');
     }, e => { console.warn("FB assessment listen err", e); onStatus('error'); });
   } catch (e) {
-    console.warn("FB assessment listen attach failed", e);
+    noteFailure('watching the check-in', e);
     onStatus('error');
   }
 };
@@ -168,8 +237,9 @@ window.fbAssessSave = async (player, data) => {
     }
 
     await setDoc(ref, data);
+    noteSuccess();
     return true;
-  } catch(e) { console.warn("FB assessment save err", e); return false; }
+  } catch(e) { noteFailure('saving the check-in', e); return false; }
 };
 
 // Daily backup — writes to french_game_backup/{player}_{date} once per day.
@@ -185,7 +255,7 @@ window.fbBackupSave = async (player, data) => {
     if (existing.exists()) return; // already backed up today
     if (!data || !Number(data.totalStars)) return; // never write a blank
     await setDoc(ref, { ...data, backedUpAt: dateKey, player });
-  } catch(e) { console.warn("FB backup err", e); }
+  } catch(e) { noteFailure('writing the daily backup', e); }
 };
 
 // Returns up to 7 most recent backup docs for a player.

@@ -1,4 +1,4 @@
-import { firebaseReady } from './state/firebase-bootstrap.js';
+import { firebaseReady, lastCloudFailure } from './state/firebase-bootstrap.js';
 import { CURRICULUM, SENTENCES } from './content/curriculum-map.js';
 import { migrateProfile } from './state/migrations.js';
 import { mergeProfiles } from './state/merge.js';
@@ -19,6 +19,7 @@ import { configureAssessmentUI, openAssessment, pauseAssessment,
          finishSection, startRecording, stopRecording, playOwnRecording,
          abandonRecording } from './modes/assessment-ui.js';
 import { renderAssessmentReports } from './modes/assessment-report-ui.js';
+import { mountAssessmentReview } from './modes/assessment-review-ui.js';
 import { createDeviceCheck } from './modes/device-check.js';
 import { mountDeviceCheck } from './modes/device-check-ui.js';
 import { createAudioCapture } from './speech/capture.js';
@@ -315,7 +316,13 @@ function updateConnectionStatusUI(){
     }else if(!online){
       syncTxt = m.lastLocalSave ? 'Saved on this iPad · cloud when online' : 'Not saved yet';
     }else if(m.pendingCloud){
-      syncTxt = 'Waiting to sync to cloud…';
+      // Online and still not synced. Either the network is flaky, or something
+      // about the Firebase project is refusing us — and those two need
+      // different actions from a parent, so they must not read the same.
+      const why = lastCloudFailure();
+      syncTxt = why?.configuration
+        ? `Cloud setting problem — ${why.text}`
+        : 'Waiting to sync to cloud…';
     }else{
       syncTxt = m.lastCloudOk ? 'Synced to cloud' : 'Ready';
     }
@@ -1480,6 +1487,11 @@ function updateStarMap(){
 // ════════════════════════════════════════════════
 // Voices load asynchronously on some platforms, so resolve lazily and re-resolve
 // once the list arrives rather than caching an empty first answer.
+// How fast the French is spoken, everywhere: the games and the check-in both
+// go through speakFrench. 1 is the platform's normal pace, which is quick for a
+// ten-year-old hearing a language she is still assembling. Lowered from 0.85 on
+// 2026-09-11 after listening on the iPad.
+const SPEECH_RATE = 0.80;
 let frenchVoice=null, frenchVoiceInfo=null;
 function resolveFrenchVoice(){
   if(!speechSynth) return null;
@@ -1502,14 +1514,24 @@ function currentVoiceInfo(){ if(!frenchVoiceInfo) resolveFrenchVoice(); return f
 
 function speakFrench(text){
   if(!speechSynth)return;
-  speechSynth.cancel();
+  // Stop what is playing, but only if something is. The cancel exists so that
+  // moving to the next word cuts the previous one off mid-sentence rather than
+  // queueing behind it — that behaviour is kept exactly.
+  //
+  // What is not kept is calling cancel() when the queue is already empty. On
+  // WebKit that is the documented way to lose the first utterance after a page
+  // loads: cancel() on an idle synthesiser can leave it in a state where the
+  // speak() that follows produces nothing, so the child's first tap is silent
+  // and the second works. Guarding on speaking||pending removes the no-op call
+  // without touching the one that does work.
+  if(speechSynth.speaking || speechSynth.pending) speechSynth.cancel();
   const utt=new SpeechSynthesisUtterance(text);
   const voice = frenchVoice || resolveFrenchVoice();
   if(voice) utt.voice = voice;
   // Set lang even when a voice is chosen: it is the hint the platform uses when
   // no French voice is installed at all.
   utt.lang=voice ? voice.lang : PREFERRED_LOCALE;
-  utt.rate=0.85;
+  utt.rate=SPEECH_RATE;
   speechSynth.speak(utt);
 }
 // Build a 🔊 button that carries its French text as data rather than as
@@ -1576,6 +1598,8 @@ document.addEventListener('click', function(e){
                                renderAssessmentReports(document.getElementById('assess-report-panel'),
                                                        assessment);
                              } else setRecoveryMsg('❌ Enter parent password first'); break;
+    case 'assess-review':    if(ensureParentPassword()){ openAssessmentReview(); }
+                             else setRecoveryMsg('❌ Enter parent password first'); break;
     case 'assess-device-check': if(ensureParentPassword()){ openDeviceCheck(); }
                              else setRecoveryMsg('❌ Enter parent password first'); break;
     case 'assess-pause':     void pauseAssessment(); break;
@@ -3244,6 +3268,37 @@ configureAssessmentUI({
 // Same speak, same capture, same audio store as the assessment above. It writes
 // nothing but a diagnostic clip under its own key prefix, on this device, and
 // clears those on the way in and on the way out.
+// The screen where a person scores the eleven open prompts, and the file they
+// take away if they are scoring somewhere else. The clip store is the same one
+// the sitting recorded into, so a recording is played from where it already is
+// rather than copied anywhere.
+let reviewUnmount = null;
+function openAssessmentReview(){
+  const panel = document.getElementById('assess-review-panel');
+  if(!panel) return;
+  if(reviewUnmount){ reviewUnmount(); reviewUnmount = null; }
+  reviewUnmount = mountAssessmentReview(panel, {
+    store: assessment,
+    audioStore: assessmentAudioStore,
+    deviceId,
+    playBlob: async (blob) => {
+      const url = URL.createObjectURL(blob);
+      try { await new Audio(url).play(); }
+      finally { setTimeout(() => URL.revokeObjectURL(url), 30000); }
+    },
+    download: (text, player, run) => {
+      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `french-checkin-${player}-form${run.form || 'x'}-to-score.txt`;
+      document.body.append(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 30000);
+    },
+  });
+}
+
 let deviceCheckUnmount = null;
 function openDeviceCheck(){
   const panel = document.getElementById('assess-device-check-panel');

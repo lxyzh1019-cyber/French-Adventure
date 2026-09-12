@@ -7,7 +7,7 @@
      styles ......... src/styles.css
      game logic ..... src/**/*.js
 
-   Built from 8ab8ef6
+   Built from eb5fc40
   ============================================================
 -->
 <!DOCTYPE html>
@@ -152,6 +152,35 @@ const firebaseConfig = {
   messagingSenderId: "282740057913",
   appId: "1:282740057913:web:72defcf2e53ae13237eae8"
 };
+const FAILURE_TEXT = {
+  "permission-denied": `The cloud refused this ("permission-denied"). The security rules on Firebase project ${firebaseConfig.projectId} do not allow this read or write. The app itself is working; the rules are the thing to change.`,
+  unauthenticated: `The cloud wants a signed-in user ("unauthenticated"), and this app has no sign-in. Either the rules on project ${firebaseConfig.projectId} were changed to require one, or this app needs authentication adding.`,
+  "not-found": `The cloud says that location does not exist ("not-found"). Check that project ${firebaseConfig.projectId} is the right one and has a Firestore database.`,
+  unavailable: "The cloud could not be reached. This is normally the network, not a setting. Work carries on being saved on this iPad.",
+  "failed-precondition": 'Firestore refused the request as not ready ("failed-precondition"). This is usually a database that has not finished being created, or a missing index.',
+  "resource-exhausted": `Project ${firebaseConfig.projectId} is over its Firebase quota ("resource-exhausted"). Nothing will sync until the quota resets or the plan changes.`,
+  "invalid-argument": 'Firestore rejected the data as invalid ("invalid-argument"). This is a defect in the app, not a setting — worth reporting.'
+};
+let lastFailure = null;
+function describeCloudFailure(e) {
+  const code = String(e?.code || "").replace(/^firestore\//, "") || null;
+  return {
+    code,
+    configuration: code === "permission-denied" || code === "unauthenticated" || code === "not-found" || code === "failed-precondition",
+    text: FAILURE_TEXT[code] || `The cloud failed for a reason the app does not recognise${code ? ` ("${code}")` : ""}: ${e?.message || e}`
+  };
+}
+function lastCloudFailure() {
+  return lastFailure;
+}
+function noteFailure(where, e) {
+  lastFailure = { ...describeCloudFailure(e), where, at: Date.now() };
+  console.warn(`Firebase — ${where}: ${lastFailure.text}`, e);
+  return lastFailure;
+}
+function noteSuccess() {
+  lastFailure = null;
+}
 const firebaseReady = (async () => {
   let initializeApp, getFirestore, doc, getDoc, getDocs, onSnapshot, setDoc, collection, query, where, orderBy, limit;
   try {
@@ -192,7 +221,7 @@ const firebaseReady = (async () => {
         onStatus("loaded");
       } else onStatus("absent");
     } catch (e) {
-      console.warn("FB baseline read failed", e);
+      noteFailure("reading saved progress", e);
       onStatus("error");
     }
     try {
@@ -203,11 +232,11 @@ const firebaseReady = (async () => {
           onStatus("loaded");
         } else onStatus("absent");
       }, (e) => {
-        console.warn("FB listen err", e);
+        noteFailure("watching for changes", e);
         onStatus("error");
       });
     } catch (e) {
-      console.warn("FB listen attach failed", e);
+      noteFailure("watching for changes", e);
       onStatus("error");
     }
   };
@@ -224,9 +253,10 @@ const firebaseReady = (async () => {
         }
       }
       await setDoc(ref, data);
+      noteSuccess();
       return true;
     } catch (e) {
-      console.warn("FB save err", e);
+      noteFailure("saving progress", e);
       return false;
     }
   };
@@ -241,7 +271,7 @@ const firebaseReady = (async () => {
         onStatus("loaded");
       } else onStatus("absent");
     } catch (e) {
-      console.warn("FB assessment baseline read failed", e);
+      noteFailure("reading the check-in", e);
       onStatus("error");
     }
     try {
@@ -256,7 +286,7 @@ const firebaseReady = (async () => {
         onStatus("error");
       });
     } catch (e) {
-      console.warn("FB assessment listen attach failed", e);
+      noteFailure("watching the check-in", e);
       onStatus("error");
     }
   };
@@ -277,9 +307,10 @@ const firebaseReady = (async () => {
         return true;
       }
       await setDoc(ref, data);
+      noteSuccess();
       return true;
     } catch (e) {
-      console.warn("FB assessment save err", e);
+      noteFailure("saving the check-in", e);
       return false;
     }
   };
@@ -292,7 +323,7 @@ const firebaseReady = (async () => {
       if (!data || !Number(data.totalStars)) return;
       await setDoc(ref, { ...data, backedUpAt: dateKey, player });
     } catch (e) {
-      console.warn("FB backup err", e);
+      noteFailure("writing the daily backup", e);
     }
   };
   window.fbBackupList = async (player) => {
@@ -1796,6 +1827,31 @@ function newResponse({
     written_at_ms: 0
   };
 }
+function newReview({
+  itemId,
+  attemptIndex = 0,
+  scorerId,
+  rubricId,
+  rubricVersion = 1,
+  scores = {},
+  reviewedAtUtc = Date.now(),
+  deviceId: deviceId2 = null,
+  note = null
+} = {}) {
+  return {
+    item_id: str(itemId),
+    attempt_index: num$4(attemptIndex),
+    scorer_id: str(scorerId),
+    rubric_id: str(rubricId),
+    rubric_version: num$4(rubricVersion),
+    scores: { ...scores },
+    reviewed_at_utc: num$4(reviewedAtUtc),
+    reviewed_by_device_id: str(deviceId2),
+    note: str(note),
+    invalidated: false,
+    invalidated_reason: null
+  };
+}
 const MIGRATIONS = [];
 const isObj$1 = (v) => v && typeof v === "object" && !Array.isArray(v);
 function normaliseRun(raw) {
@@ -2329,8 +2385,10 @@ const ITEMS_DOC = {
   items
 };
 const rubrics = [{ "id": "WRITING-ANALYTIC-V1", "version": 1, "applies_to": "open_written", "scorer_requirement": "Adult with functional French literacy; educator review preferred before decisions. Preserve the original response.", "dimensions": [{ "id": "message", "weight": 3, "anchors": { "0": "No relevant French message.", "1": "A few relevant words; requested message is mostly missing.", "2": "Main message is understandable; one requested element may be missing.", "3": "All requested elements are communicated clearly." } }, { "id": "vocabulary", "weight": 2, "anchors": { "0": "No usable French vocabulary.", "1": "Very limited or frequently inappropriate vocabulary.", "2": "Familiar vocabulary is generally appropriate.", "3": "Appropriate range for the prompt, including useful detail." } }, { "id": "structure", "weight": 2, "anchors": { "0": "No interpretable sentence structure.", "1": "Fragments or persistent word-order/verb problems obscure meaning.", "2": "Simple sentences mostly work; errors do not block the message.", "3": "Sentences are controlled and connected appropriately for the prompt." } }, { "id": "conventions", "weight": 2, "anchors": { "0": "Writing cannot be interpreted.", "1": "Frequent spelling/article/accent errors interfere.", "2": "Mostly readable; some errors in spelling, articles, accents, or punctuation.", "3": "Conventions are accurate enough that errors are minor." } }, { "id": "independence", "weight": 1, "anchors": { "0": "Response was supplied or corrected by another person.", "1": "Substantial unplanned support was used.", "2": "Only allowed interface support was used.", "3": "Completed independently without coaching." } }], "calculation": "Sum score*weight. Divide by maximum weighted score (30) and multiply by 100.", "examples": [{ "prompt_id": "WA-D02", "response": "Salut. bibliothèque 3 heure.", "scores": { "message": 2, "vocabulary": 1, "structure": 1, "conventions": 1, "independence": 3 }, "comment": "Place and time are present, but the message needs sentence structure and conventions." }, { "prompt_id": "WA-D02", "response": "Salut! Retrouve-moi à la bibliothèque à quinze heures.", "scores": { "message": 3, "vocabulary": 3, "structure": 3, "conventions": 3, "independence": 3 }, "comment": "All requested information is clear and controlled." }, { "prompt_id": "WB-S02", "response": "J’aime hiver parce que patiner. Il froid mais manteau.", "scores": { "message": 2, "vocabulary": 2, "structure": 1, "conventions": 1, "independence": 3 }, "comment": "The preference and reason are understandable; sentence control is still emerging." }] }, { "id": "SPEAKING-ANALYTIC-V1", "version": 1, "applies_to": "open_spoken", "scorer_requirement": "Adult who can understand spoken French must listen to the original recording. Transcript-only scoring is prohibited; educator review preferred.", "dimensions": [{ "id": "message", "weight": 3, "anchors": { "0": "No relevant French message.", "1": "A few relevant words; requested message is mostly missing.", "2": "Main message is understandable; one requested element may be missing.", "3": "All requested elements are communicated clearly." } }, { "id": "comprehensibility", "weight": 3, "anchors": { "0": "No French speech can be understood.", "1": "A patient listener understands isolated parts.", "2": "A patient listener understands the main message despite repetitions or errors.", "3": "The whole message is readily understandable to a patient listener." } }, { "id": "vocabulary_structure", "weight": 2, "anchors": { "0": "No usable French forms.", "1": "Limited words or fragments; frequent form problems.", "2": "Familiar words and simple structures usually carry the message.", "3": "Appropriate range and structure for the prompt." } }, { "id": "fluency", "weight": 1, "anchors": { "0": "No sustained response.", "1": "Long pauses prevent a connected message.", "2": "Some pauses or restarts, but the message continues.", "3": "Pacing supports the message for this task." } }, { "id": "pronunciation_observation", "weight": 1, "anchors": { "0": "No scorable audio.", "1": "Sound patterns often make familiar words hard to recognize.", "2": "Most familiar words are recognizable; a few sound patterns need attention.", "3": "Sound patterns and rhythm consistently support understanding." } }], "calculation": "Sum score*weight. Divide by maximum weighted score (30) and multiply by 100.", "examples": [{ "prompt_id": "SA-F01", "audio_description": "Name is clear; age phrase requires one replay; response is independent.", "scores": { "message": 3, "comprehensibility": 2, "vocabulary_structure": 2, "fluency": 2, "pronunciation_observation": 2 }, "comment": "Main message is clear. One sound target can be chosen later for teaching." }, { "prompt_id": "SA-D02", "audio_description": "Directions contain all map steps and are readily understood with natural pauses.", "scores": { "message": 3, "comprehensibility": 3, "vocabulary_structure": 3, "fluency": 3, "pronunciation_observation": 3 }, "comment": "Complete, controlled response for the task." }, { "prompt_id": "SB-S01", "audio_description": "Transcript captured several words, but the recording is too noisy to judge the child’s speech.", "scores": null, "technical_invalid_reason": "microphone_failed", "comment": "Preserve as invalid evidence; do not infer pronunciation from the transcript." }] }];
+const unresolved_review_handling = "If no eligible human scorer is available, retain the response and report awaiting_review. Do not assign a band or substitute speech-to-text/AI-only scoring.";
 const rubrics_default = {
-  rubrics
+  rubrics,
+  unresolved_review_handling
 };
 const release_id = "assessment-v1.0.2";
 const retrieval_date = "2026-09-08";
@@ -2554,7 +2612,7 @@ function verdict(form, priorRuns) {
     blockedByContent
   };
 }
-function entryBlock(form, domain) {
+function entryBlock$1(form, domain) {
   const routing = routingFor(domain);
   if (!routing) return [];
   return itemsFor({ form, domain, tier: routing.entry_tier }).slice(0, routing.entry_count).map((i) => i.id);
@@ -2597,7 +2655,7 @@ function beginSection(run, domain, { now: now2 = Date.now(), sittingId: sittingI
   if (section.status === SECTION_STATUS.COMPLETE) return section;
   if (!section.plan.length) {
     const routing = routingFor(domain);
-    section.plan = routing ? entryBlock(run.form, domain) : itemsFor({ form: run.form, domain }).map((i) => i.id);
+    section.plan = routing ? entryBlock$1(run.form, domain) : itemsFor({ form: run.form, domain }).map((i) => i.id);
     if (routing) {
       section.entry_tier = routing.entry_tier;
       section.entry_count = routing.entry_count;
@@ -3009,6 +3067,8 @@ function render() {
   el("assess-title").textContent = at.done ? "All done" : DOMAIN_LABEL[at.domain] ?? at.domain;
   el("assess-sub").textContent = at.done ? "Nothing left to do today." : `Form ${run.form} · ${answered} of ${planned} answered so far`;
   el("assess-progress-fill").style.width = planned ? `${Math.round(answered / planned * 100)}%` : "0%";
+  const leave = document.querySelector('#screen-assessment [data-action="assess-pause"]');
+  if (leave) leave.textContent = at.done ? "Close" : "Pause";
   const body = el("assess-body");
   const actions = el("assess-actions");
   body.innerHTML = "";
@@ -3018,6 +3078,7 @@ function render() {
       "That is everything for this check-in.",
       "Nothing is scored on this screen. A grown-up reads the results later, and the writing and speaking parts wait for a person to listen to them."
     ));
+    actions.append(button$2("Done — back to the start", "assess-pause"));
     return;
   }
   const section = run.sections[at.domain];
@@ -3030,7 +3091,7 @@ function render() {
       `Next: ${DOMAIN_LABEL[at.domain] ?? at.domain}`,
       ok ? "You can stop after any part and pick it up later, on either iPad." : `Not enough time left for a new part today — it needs about ${need} minutes. Come back next time and it will be here.`
     ));
-    if (ok) actions.append(button$1("Start this part", "assess-begin-section"));
+    if (ok) actions.append(button$2("Start this part", "assess-begin-section"));
     return;
   }
   const item = at.item;
@@ -3039,7 +3100,7 @@ function render() {
       `${DOMAIN_LABEL[at.domain] ?? at.domain} — finished`,
       "Nothing is marked here. You can stop, or carry on with the next part."
     ));
-    actions.append(button$1("Done with this part", "assess-finish-section"));
+    actions.append(button$2("Done with this part", "assess-finish-section"));
     return;
   }
   if (routingFor(at.domain)) renderObjectiveItem(body, actions, run, item);
@@ -3063,23 +3124,23 @@ function resetCapture() {
 }
 function renderOpenItem(body, actions, run, item) {
   const d = draftFor(run, item);
-  const wrap = document.createElement("div");
-  wrap.className = "assess-card";
+  const wrap2 = document.createElement("div");
+  wrap2.className = "assess-card";
   const prompt = document.createElement("div");
   prompt.className = "assess-prompt";
   prompt.textContent = item.prompt_en;
-  wrap.append(prompt);
+  wrap2.append(prompt);
   const asset = assetFor(item.id);
   if (asset) {
     const figure = document.createElement("div");
     figure.className = "assess-figure";
     figure.innerHTML = asset.svg;
-    wrap.append(figure);
+    wrap2.append(figure);
   }
-  if (item.item_type === "open_written") wrap.append(writtenInput(d));
-  else wrap.append(speakingControls(d));
-  body.append(wrap);
-  const next = button$1(item.item_type === "open_written" ? "Next" : "Next", "assess-submit-item");
+  if (item.item_type === "open_written") wrap2.append(writtenInput(d));
+  else wrap2.append(speakingControls(d));
+  body.append(wrap2);
+  const next = button$2(item.item_type === "open_written" ? "Next" : "Next", "assess-submit-item");
   next.disabled = !hasOpenAnswer(item, d);
   actions.append(next);
 }
@@ -3227,23 +3288,23 @@ function draftFor(run, item) {
 }
 function renderObjectiveItem(body, actions, run, item) {
   const d = draftFor(run, item);
-  const wrap = document.createElement("div");
-  wrap.className = "assess-card";
+  const wrap2 = document.createElement("div");
+  wrap2.className = "assess-card";
   const prompt = document.createElement("div");
   prompt.className = "assess-prompt";
   prompt.textContent = item.prompt_en;
-  wrap.append(prompt);
-  if (item.item_type === "audio_choice") wrap.append(audioControls(item, d));
+  wrap2.append(prompt);
+  if (item.item_type === "audio_choice") wrap2.append(audioControls(item, d));
   if (item.stimulus?.text_fr && item.item_type !== "audio_choice") {
     const st = document.createElement("div");
     st.className = "assess-stimulus";
     st.textContent = item.stimulus.text_fr;
-    wrap.append(st);
+    wrap2.append(st);
   }
-  if (Array.isArray(item.choices)) wrap.append(choiceList(item, d));
-  else wrap.append(typedInput(d));
-  body.append(wrap);
-  const next = button$1("Next", "assess-submit-item");
+  if (Array.isArray(item.choices)) wrap2.append(choiceList(item, d));
+  else wrap2.append(typedInput(d));
+  body.append(wrap2);
+  const next = button$2("Next", "assess-submit-item");
   next.disabled = !hasAnswer(d);
   actions.append(next);
 }
@@ -3395,7 +3456,7 @@ function card(title, note) {
   d.append(h, p);
   return d;
 }
-function button$1(label, action) {
+function button$2(label, action) {
   const b = document.createElement("button");
   b.type = "button";
   b.className = "btn-primary";
@@ -3787,22 +3848,22 @@ const PRONUNCIATION_REASON = {
   awaiting_human_review: "Nobody has listened to the recordings yet, so there is nothing to report.",
   not_enough_prompts: "Only one prompt has been listened to. Two are needed before anything is said."
 };
-const div$1 = (className, text) => {
+const div$2 = (className, text) => {
   const d = document.createElement("div");
   if (className) d.className = className;
   if (text != null) d.textContent = String(text);
   return d;
 };
 function row(label, value) {
-  const r = div$1("assess-report-row");
-  r.append(div$1("assess-report-label", label), div$1("assess-report-value", value));
+  const r = div$2("assess-report-row");
+  r.append(div$2("assess-report-label", label), div$2("assess-report-value", value));
   return r;
 }
 function skillList(title, skillIds, evidence, emptyText) {
-  const box = div$1("assess-report-list");
-  box.append(div$1("assess-report-list-head", title));
+  const box = div$2("assess-report-list");
+  box.append(div$2("assess-report-list-head", title));
   if (!skillIds.length) {
-    box.append(div$1("assess-report-empty", emptyText));
+    box.append(div$2("assess-report-empty", emptyText));
     return box;
   }
   const ul = document.createElement("ul");
@@ -3816,10 +3877,10 @@ function skillList(title, skillIds, evidence, emptyText) {
   return box;
 }
 function pronunciationBlock(observations) {
-  const box = div$1("assess-report-nested");
-  box.append(div$1("assess-report-nested-head", observations.label));
+  const box = div$2("assess-report-nested");
+  box.append(div$2("assess-report-nested-head", observations.label));
   if (!observations.available) {
-    box.append(div$1(
+    box.append(div$2(
       "assess-report-empty",
       PRONUNCIATION_REASON[observations.reason] || "Nothing to report yet."
     ));
@@ -3846,25 +3907,25 @@ function pronunciationBlock(observations) {
     "Nothing here stands out as a next practice area."
   ));
   for (const p of observations.prompts) {
-    const line = div$1("assess-report-observation");
-    line.append(div$1(null, `${p.item_id}: ${p.anchor ?? "observed"}`));
+    const line = div$2("assess-report-observation");
+    line.append(div$2(null, `${p.item_id}: ${p.anchor ?? "observed"}`));
     const heard = p.transcript_observation ? `The device heard: "${p.transcript_observation}".` : "The device recorded no transcript.";
     const voice = p.voice_resolved_locale && p.voice_requested_locale && p.voice_resolved_locale !== p.voice_requested_locale ? ` The voice asked for was ${p.voice_requested_locale} and the device used ${p.voice_resolved_locale}.` : "";
-    line.append(div$1("assess-report-technical", `${heard}${voice} This is technical information only and is not part of the observation.`));
+    line.append(div$2("assess-report-technical", `${heard}${voice} This is technical information only and is not part of the observation.`));
     if (!p.audio_available_on_this_device) {
-      line.append(div$1(
+      line.append(div$2(
         "assess-report-technical",
         "The recording is on the other iPad. Speaking is best reviewed on the device that recorded it."
       ));
     }
     box.append(line);
   }
-  box.append(div$1("assess-report-note", observations.note));
+  box.append(div$2("assess-report-note", observations.note));
   return box;
 }
 function sectionBlock(section) {
-  const box = div$1("assess-report-section");
-  box.append(div$1("assess-report-section-head", section.label));
+  const box = div$2("assess-report-section");
+  box.append(div$2("assess-report-section-head", section.label));
   box.append(row("Where this sits", BAND_TEXT[section.domain_band] ?? section.domain_band));
   box.append(row("How much to read into it", CONFIDENCE_TEXT[section.confidence] ?? section.confidence));
   box.append(row("Independent answers counted", String(section.valid_independent_evidence_count)));
@@ -3877,7 +3938,7 @@ function sectionBlock(section) {
     box.append(row("Waiting for an adult", String(section.awaiting_review_count)));
   }
   if (section.upper_limit_not_measured) {
-    box.append(div$1(
+    box.append(div$2(
       "assess-report-note",
       "The hardest items here were secure, so the top of this is not measured."
     ));
@@ -3899,20 +3960,20 @@ function sectionBlock(section) {
 }
 function buildReportElement(run, opts = {}) {
   const data = runReport(run, opts);
-  const box = div$1("assess-report");
+  const box = div$2("assess-report");
   const when = data.completed_at_utc || data.started_at_utc;
-  box.append(div$1(
+  box.append(div$2(
     "assess-report-head",
     `${data.learner_id} · form ${data.form} · ${when ? new Date(when).toLocaleDateString() : "not dated"}`
   ));
-  box.append(div$1(
+  box.append(div$2(
     "assess-report-note",
     "One measurement, on one day, of what this check-in asks. It is not a school placement and it is not compared with anyone else."
   ));
   for (const section of data.sections) box.append(sectionBlock(section));
-  box.append(div$1("assess-report-note", data.overall_note));
+  box.append(div$2("assess-report-note", data.overall_note));
   const rule = data.rules.skill_evidence;
-  box.append(div$1(
+  box.append(div$2(
     "assess-report-note",
     `Strengths and next practice areas follow the content author's rule (${rule.id}): a skill is named only after ${rule.minimum_distinct_items} separate items, at most ${rule.max_per_list} are listed for each part, and this attempt alone is counted.`
   ));
@@ -3927,19 +3988,591 @@ function renderAssessmentReports(container, store, { players = ["jenn", "jess"] 
   }
   runs.sort((a, b) => (b.started_at_utc || 0) - (a.started_at_utc || 0));
   if (!runs.length) {
-    container.append(div$1("assess-report-empty", "No check-in has been done yet."));
+    container.append(div$2("assess-report-empty", "No check-in has been done yet."));
     return;
   }
   for (const run of runs) {
-    const wrap = buildReportElement(run);
+    const wrap2 = buildReportElement(run);
     if (run.status === "parent_invalidated") {
-      wrap.prepend(div$1(
+      wrap2.prepend(div$2(
         "assess-report-note",
         "This attempt was set aside by a parent. It is kept, and it is not used as a measurement."
       ));
     }
-    container.append(wrap);
+    container.append(wrap2);
   }
+}
+const REVIEWED_DOMAINS = ["writing", "speaking"];
+const PARENT_INVALID_REASON = "parent_invalidated";
+const MIN_SCORE = 0;
+const MAX_SCORE = 3;
+class ReviewRefused extends Error {
+}
+const refuse = (message) => {
+  throw new ReviewRefused(message);
+};
+function rubricFor(item) {
+  const id = item?.scoring?.rubric_id;
+  if (!id) return null;
+  return (rubrics_default.rubrics || []).find((r) => r.id === id) || null;
+}
+const UNRESOLVED_RULE = rubrics_default.unresolved_review_handling;
+function responseAt(run, itemId, attemptIndex = 0) {
+  return run?.responses?.[responseKey(itemId, attemptIndex)] || null;
+}
+function queue(run) {
+  const out = [];
+  for (const domain of REVIEWED_DOMAINS) {
+    const responses = Object.values(run?.responses || {}).filter((r) => r.domain === domain).sort((a, b) => (a.response_submitted_at_utc || 0) - (b.response_submitted_at_utc || 0));
+    for (const response of responses) {
+      const item = getItem(response.item_id);
+      const rubric = rubricFor(item);
+      if (!rubric) continue;
+      const key = responseKey(response.item_id, response.attempt_index);
+      const review = run?.review?.[key] || null;
+      const scored = review && !review.invalidated && review.scorer_id ? review : null;
+      out.push({
+        key,
+        item_id: response.item_id,
+        attempt_index: response.attempt_index || 0,
+        domain,
+        prompt_en: item.prompt_en,
+        item_type: item.item_type,
+        has_asset: hasAssetFor(item.id),
+        raw_response: response.raw_response || "",
+        audio_ref: response.audio_ref || null,
+        support_flag: response.support_flag === true,
+        technical_invalid_reason: response.technical_invalid_reason || null,
+        rubric,
+        review: scored,
+        status: statusOf(response, scored),
+        result: scoreRubric(rubric, scored ? scored.scores : null, response)
+      });
+    }
+  }
+  return out;
+}
+function statusOf(response, review) {
+  if (response.technical_invalid_reason) return "invalid";
+  return review ? "reviewed" : "awaiting_review";
+}
+function validateScores(rubric, scores) {
+  if (!rubric) refuse("this prompt has no rubric");
+  if (!scores || typeof scores !== "object") refuse("no scores were given");
+  const dimensions = rubric.dimensions || [];
+  const wanted = new Set(dimensions.map((d) => d.id));
+  for (const id of Object.keys(scores)) {
+    if (!wanted.has(id)) refuse(`${rubric.id} has no dimension "${id}"`);
+  }
+  for (const d of dimensions) {
+    const raw = scores[d.id];
+    if (raw == null || raw === "") refuse(`${d.id} has not been scored`);
+    const n = Number(raw);
+    if (!Number.isInteger(n) || n < MIN_SCORE || n > MAX_SCORE) {
+      refuse(`${d.id} must be a whole number from ${MIN_SCORE} to ${MAX_SCORE}`);
+    }
+  }
+  return Object.fromEntries(dimensions.map((d) => [d.id, Number(scores[d.id])]));
+}
+function recordReview(run, {
+  itemId,
+  attemptIndex = 0,
+  scorerId,
+  scores,
+  note = null,
+  deviceId: deviceId2 = null,
+  now: now2 = Date.now()
+} = {}) {
+  const response = responseAt(run, itemId, attemptIndex);
+  if (!response) refuse(`${itemId} was never answered`);
+  if (response.technical_invalid_reason) {
+    refuse("this response is marked invalid, so it is not scored");
+  }
+  const name = String(scorerId ?? "").trim();
+  if (!name) refuse("a review needs the name of whoever did the scoring");
+  const item = getItem(itemId);
+  const rubric = rubricFor(item);
+  const checked = validateScores(rubric, scores);
+  run.review = run.review || {};
+  run.review[responseKey(itemId, attemptIndex)] = newReview({
+    itemId,
+    attemptIndex,
+    scorerId: name,
+    rubricId: rubric.id,
+    rubricVersion: rubric.version || 1,
+    scores: checked,
+    reviewedAtUtc: now2,
+    deviceId: deviceId2,
+    note
+  });
+  return run.review[responseKey(itemId, attemptIndex)];
+}
+function setSupport(run, itemId, attemptIndex = 0, supported = true) {
+  const response = responseAt(run, itemId, attemptIndex);
+  if (!response) refuse(`${itemId} was never answered`);
+  response.support_flag = !!supported;
+  return response;
+}
+function invalidate(run, itemId, attemptIndex = 0) {
+  const response = responseAt(run, itemId, attemptIndex);
+  if (!response) refuse(`${itemId} was never answered`);
+  response.technical_invalid_reason = PARENT_INVALID_REASON;
+  return response;
+}
+function clearInvalidation(run, itemId, attemptIndex = 0) {
+  const response = responseAt(run, itemId, attemptIndex);
+  if (!response) refuse(`${itemId} was never answered`);
+  if (response.technical_invalid_reason !== PARENT_INVALID_REASON) {
+    refuse("only a response a parent set aside can be put back");
+  }
+  response.technical_invalid_reason = null;
+  return response;
+}
+const RULE = "=".repeat(70);
+const THIN = "-".repeat(70);
+function exportText(run, { learnerName = null, now: now2 = /* @__PURE__ */ new Date() } = {}) {
+  const entries = queue(run);
+  const lines = [];
+  const say = (...l) => lines.push(...l);
+  say(RULE);
+  say("FRENCH CHECK-IN — WRITTEN AND SPOKEN ANSWERS TO SCORE");
+  say(RULE);
+  say(`Learner:      ${learnerName || run.learner_id || "unknown"}`);
+  say(`Form:         ${run.form || "unknown"}`);
+  say(`Check-in:     ${run.run_id || "unknown"}`);
+  say(`Content:      ${RELEASE_ID}`);
+  say(`Exported:     ${now2.toISOString()}`);
+  say("");
+  say("HOW TO SCORE");
+  say(THIN);
+  say("Give each dimension a whole number from 0 to 3, using the wording under");
+  say("it. There is no half mark. Score what is there, not what you hoped for.");
+  say("");
+  say("If you cannot score one — it is blank, or the recording is unusable —");
+  say("say so instead of guessing. The release is explicit about the case where");
+  say("nobody eligible is available:");
+  say("");
+  for (const l of wrap(UNRESOLVED_RULE, 66)) say(`    ${l}`);
+  say("");
+  say("Your name goes on the record as the scorer, whoever types the numbers");
+  say("in. The person recorded is the one who read the writing or listened to");
+  say("the audio — not whoever operated the iPad afterwards.");
+  say("");
+  say("An AI assistant may be used for a draft or a second opinion on these");
+  say("written answers. It cannot produce the score. A qualified person still");
+  say("has to read the writing, or listen to the recording, and confirm each");
+  say("dimension; without that the domain stays unscored. Device transcripts");
+  say("and automated pronunciation figures are practice aids and are not");
+  say("evidence for any of these numbers.");
+  say("");
+  for (const domain of REVIEWED_DOMAINS) {
+    const group = entries.filter((e) => e.domain === domain);
+    if (!group.length) continue;
+    say("");
+    say(RULE);
+    say(domain === "writing" ? "WRITING — the child typed these" : "SPEAKING — listen to each recording");
+    say(RULE);
+    if (domain === "speaking") {
+      say("The recordings stay on the iPad they were made on and are not in this");
+      say("file. Play each one from the check-in screen. Scoring a spoken answer");
+      say("from a transcript is not permitted by the rubric.");
+      say("");
+    }
+    for (const e of group) say(...promptBlock(e));
+    say(...rubricBlock(group[0].rubric, modelAnswersIn(entries)));
+  }
+  return lines.join("\n");
+}
+function promptBlock(e) {
+  const lines = [THIN, `${e.item_id}`, ""];
+  lines.push("Prompt shown to the child:");
+  for (const l of wrap(e.prompt_en, 66)) lines.push(`    ${l}`);
+  if (e.has_asset) lines.push("    (a picture was shown with this prompt — see the iPad)");
+  lines.push("");
+  if (e.technical_invalid_reason) {
+    lines.push(`NOT FOR SCORING — set aside: ${e.technical_invalid_reason}`, "");
+    return lines;
+  }
+  if (e.support_flag) {
+    lines.push("MARKED AS HELPED — score it anyway; it is reported separately.", "");
+  }
+  if (e.item_type === "open_written") {
+    lines.push("Her answer, exactly as she typed it:");
+    const text = e.raw_response.trim();
+    if (!text) lines.push("    (nothing was written)");
+    else for (const l of String(text).split("\n")) lines.push(`    ${l}`);
+  } else {
+    lines.push("Her answer: spoken.");
+    lines.push(e.audio_ref ? `    recording: ${e.audio_ref}` : "    (no recording was kept)");
+  }
+  lines.push("");
+  for (const d of e.rubric.dimensions || []) lines.push(`    ${pad(d.id)} ___`);
+  lines.push("");
+  return lines;
+}
+function modelAnswersIn(entries) {
+  const out = /* @__PURE__ */ new Set();
+  for (const e of entries) {
+    const model = getItem(e.item_id)?.scoring?.model_response;
+    if (model) out.add(String(model).trim());
+  }
+  return out;
+}
+function rubricBlock(rubric, modelAnswers = /* @__PURE__ */ new Set()) {
+  const lines = ["", RULE, `THE SCALE — ${rubric.id}`, RULE];
+  lines.push("Who may score this:");
+  for (const l of wrap(rubric.scorer_requirement, 66)) lines.push(`    ${l}`);
+  lines.push("");
+  for (const d of rubric.dimensions || []) {
+    lines.push(`${d.id}  (counts ${d.weight}×)`);
+    for (const n of ["0", "1", "2", "3"]) {
+      for (const [i, l] of wrap(d.anchors?.[n] ?? "", 62).entries()) {
+        lines.push(i === 0 ? `    ${n}  ${l}` : `       ${l}`);
+      }
+    }
+    lines.push("");
+  }
+  const all = rubric.examples || [];
+  const shown = all.filter((ex) => !modelAnswers.has(String(ex.response ?? "").trim()));
+  const withheld = all.length - shown.length;
+  if (shown.length) {
+    lines.push("WORKED EXAMPLES — what these numbers look like in practice", THIN);
+    for (const ex of shown) {
+      lines.push(`${ex.prompt_id}`);
+      const text = ex.response ?? ex.audio_description ?? "";
+      for (const l of wrap(text, 64)) lines.push(`    ${l}`);
+      lines.push(`    scored: ${Object.entries(ex.scores || {}).map(([k, v]) => `${k} ${v}`).join(", ")}`);
+      for (const l of wrap(ex.comment || "", 64)) lines.push(`    → ${l}`);
+      lines.push("");
+    }
+  }
+  if (withheld) {
+    lines.push(`(${withheld} worked example${withheld === 1 ? " is" : "s are"} held back: the`);
+    lines.push("wording is also the model answer to a prompt you are scoring, and");
+    lines.push("reading it first turns the question into a comparison.)");
+    lines.push("");
+  }
+  return lines;
+}
+const pad = (s) => String(s).padEnd(22, ".");
+function wrap(text, width) {
+  const words = String(text ?? "").split(/\s+/).filter(Boolean);
+  if (!words.length) return [""];
+  const out = [];
+  let line = "";
+  for (const w of words) {
+    if (line && line.length + 1 + w.length > width) {
+      out.push(line);
+      line = w;
+    } else line = line ? `${line} ${w}` : w;
+  }
+  if (line) out.push(line);
+  return out;
+}
+const div$1 = (className, text) => {
+  const d = document.createElement("div");
+  if (className) d.className = className;
+  if (text != null) d.textContent = String(text);
+  return d;
+};
+function button$1(label, action, { className = "btn-secondary", data = {} } = {}) {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = className;
+  b.setAttribute("data-action", action);
+  for (const [k, v] of Object.entries(data)) b.setAttribute(`data-${k}`, v);
+  b.textContent = label;
+  return b;
+}
+const STATUS_TEXT$1 = {
+  awaiting_review: "Not scored yet",
+  reviewed: "Scored",
+  invalid: "Set aside — not scored"
+};
+const DOMAIN_TEXT = {
+  writing: "Writing — read what she typed",
+  speaking: "Speaking — listen to each recording"
+};
+function dimensionBlock(entry, dimension, chosen) {
+  const box = div$1("assess-review-dim");
+  const head = div$1("assess-review-dim-head");
+  head.append(div$1("assess-review-dim-name", dimension.id.replace(/_/g, " ")));
+  head.append(div$1("assess-review-dim-weight", `counts ${dimension.weight}×`));
+  box.append(head);
+  for (const n of [0, 1, 2, 3]) {
+    const label = document.createElement("label");
+    label.className = "assess-review-anchor";
+    const radio = document.createElement("input");
+    radio.type = "radio";
+    radio.name = `${entry.key}:${dimension.id}`;
+    radio.value = String(n);
+    radio.setAttribute("data-dim", dimension.id);
+    radio.setAttribute("data-key", entry.key);
+    if (chosen === n) radio.checked = true;
+    label.append(radio);
+    label.append(div$1("assess-review-anchor-n", n));
+    label.append(div$1("assess-review-anchor-text", dimension.anchors?.[String(n)] ?? ""));
+    box.append(label);
+  }
+  return box;
+}
+function entryBlock(entry) {
+  const card2 = div$1("assess-review-item");
+  card2.setAttribute("data-key", entry.key);
+  const head = div$1("assess-review-head");
+  head.append(div$1("assess-review-id", entry.item_id));
+  const status = div$1("assess-review-status", STATUS_TEXT$1[entry.status] ?? entry.status);
+  status.setAttribute("data-status", entry.status);
+  head.append(status);
+  card2.append(head);
+  card2.append(div$1("assess-review-prompt-label", "She was asked:"));
+  card2.append(div$1("assess-review-prompt", entry.prompt_en));
+  if (entry.has_asset) {
+    const figure = div$1("assess-review-figure");
+    figure.innerHTML = assetFor(entry.item_id).svg;
+    card2.append(figure);
+  }
+  card2.append(div$1("assess-review-prompt-label", "She answered:"));
+  if (entry.item_type === "open_written") {
+    const text = entry.raw_response.trim();
+    card2.append(text ? div$1("assess-review-answer", text) : div$1("assess-review-answer assess-review-empty", "Nothing was written."));
+  } else {
+    const row2 = div$1("assess-review-actions");
+    if (entry.audio_ref) {
+      row2.append(button$1("▶ Play the recording", "rev-play", { data: { key: entry.key } }));
+    } else {
+      row2.append(div$1("assess-review-empty", "No recording was kept on this device."));
+    }
+    card2.append(row2);
+    card2.append(div$1(
+      "assess-review-note",
+      "The recording lives on the iPad it was made on. Scoring a spoken answer from written text is not permitted by the rubric — listen to it."
+    ));
+  }
+  const flags = div$1("assess-review-flags");
+  flags.append(checkbox(
+    entry,
+    "rev-support",
+    "She was helped with this one",
+    entry.support_flag,
+    "Kept and reported, but left out of the independent band."
+  ));
+  flags.append(checkbox(
+    entry,
+    "rev-invalid",
+    "Set this one aside",
+    entry.status === "invalid",
+    "For a prompt that went wrong — not for a poor answer. The response is kept either way."
+  ));
+  card2.append(flags);
+  if (entry.status === "invalid") {
+    card2.append(div$1(
+      "assess-review-note",
+      "A response that has been set aside is not scored. It counts neither right nor wrong."
+    ));
+    return card2;
+  }
+  for (const d of entry.rubric.dimensions || []) {
+    card2.append(dimensionBlock(entry, d, entry.review?.scores?.[d.id] ?? null));
+  }
+  if (entry.review) {
+    card2.append(div$1(
+      "assess-review-note",
+      `Scored by ${entry.review.scorer_id}. Choosing again replaces it.`
+    ));
+  }
+  const actions = div$1("assess-review-actions");
+  actions.append(button$1(
+    entry.review ? "Save the change" : "Save these scores",
+    "rev-save",
+    { data: { key: entry.key } }
+  ));
+  actions.append(div$1("assess-review-msg", ""));
+  card2.append(actions);
+  return card2;
+}
+function checkbox(entry, action, label, checked, note) {
+  const wrap2 = document.createElement("label");
+  wrap2.className = "assess-review-flag";
+  const input = document.createElement("input");
+  input.type = "checkbox";
+  input.checked = !!checked;
+  input.setAttribute("data-action", action);
+  input.setAttribute("data-key", entry.key);
+  wrap2.append(input);
+  const text = div$1("assess-review-flag-text");
+  text.append(div$1("assess-review-flag-label", label));
+  text.append(div$1("assess-review-flag-note", note));
+  wrap2.append(text);
+  return wrap2;
+}
+function mountAssessmentReview(container, {
+  store,
+  audioStore,
+  playBlob,
+  players = ["jenn", "jess"],
+  deviceId: deviceId2 = () => null,
+  now: now2 = () => Date.now(),
+  download = null
+} = {}) {
+  if (!container) return () => {
+  };
+  let player = players[0];
+  let scorerName = "";
+  const runFor = (p) => {
+    const runs = Object.values(store?.get(p)?.runs || {});
+    runs.sort((a, b) => (b.started_at_utc || 0) - (a.started_at_utc || 0));
+    return runs[0] || null;
+  };
+  async function commit2(mutate) {
+    const run = runFor(player);
+    if (!run) return;
+    await store.update(player, (prev) => {
+      const next = structuredClone(prev.runs[run.run_id]);
+      mutate(next);
+      return { ...prev, runs: { ...prev.runs, [run.run_id]: next } };
+    });
+  }
+  const draw = () => {
+    container.textContent = "";
+    const tabs = div$1("assess-review-tabs");
+    for (const p of players) {
+      const b = button$1(p === "jenn" ? "Jenn" : "Jess", "rev-player", { data: { player: p } });
+      if (p === player) b.classList.add("active");
+      tabs.append(b);
+    }
+    container.append(tabs);
+    const run = runFor(player);
+    if (!run) {
+      container.append(div$1("assess-review-empty", "This learner has not done a check-in yet."));
+      return;
+    }
+    const entries = queue(run);
+    const left = entries.filter((e) => e.status === "awaiting_review").length;
+    container.append(div$1("assess-review-count", left ? `${left} of ${entries.length} still need a person.` : `All ${entries.length} have been scored.`));
+    container.append(div$1("assess-review-rule", UNRESOLVED_RULE));
+    const who = div$1("assess-review-scorer");
+    who.append(div$1("assess-review-prompt-label", "Who is doing the scoring?"));
+    const input = document.createElement("input");
+    input.type = "text";
+    input.className = "assess-review-name";
+    input.id = "assess-review-scorer";
+    input.placeholder = "The name of whoever read or listened";
+    input.value = scorerName;
+    input.addEventListener("input", () => {
+      scorerName = input.value;
+    });
+    who.append(input);
+    who.append(div$1(
+      "assess-review-flag-note",
+      "Name the person who actually read the writing or listened to the recording and can judge French at this level — not whoever is holding the iPad. An AI assistant may give you a draft or a second opinion, but it cannot produce the score, and a score with nobody's name on it cannot be told apart from one a machine produced."
+    ));
+    container.append(who);
+    if (download) {
+      const row2 = div$1("assess-review-actions");
+      row2.append(button$1("⬇ Save the answers to score", "rev-export"));
+      row2.append(div$1(
+        "assess-review-flag-note",
+        "A text file with the prompts, her answers and the whole scale — for whoever is scoring and is not at this iPad."
+      ));
+      container.append(row2);
+    }
+    for (const domain of REVIEWED_DOMAINS) {
+      const group = entries.filter((e) => e.domain === domain);
+      if (!group.length) continue;
+      container.append(div$1("assess-review-domain", DOMAIN_TEXT[domain]));
+      for (const e of group) container.append(entryBlock(e));
+    }
+  };
+  const entryFor = (key) => queue(runFor(player)).find((e) => e.key === key) || null;
+  const say = (key, text, ok = false) => {
+    const card2 = container.querySelector(`.assess-review-item[data-key="${CSS.escape(key)}"]`);
+    const msg = card2?.querySelector(".assess-review-msg");
+    if (!msg) return;
+    msg.textContent = text;
+    msg.setAttribute("data-ok", String(!!ok));
+  };
+  async function save(key) {
+    const entry = entryFor(key);
+    if (!entry) return;
+    const scores = {};
+    for (const d of entry.rubric.dimensions || []) {
+      const picked = container.querySelector(
+        `input[type="radio"][name="${CSS.escape(`${key}:${d.id}`)}"]:checked`
+      );
+      if (picked) scores[d.id] = Number(picked.value);
+    }
+    try {
+      validateScores(entry.rubric, scores);
+      if (!scorerName.trim()) throw new ReviewRefused("a name is needed before saving");
+      await commit2((run) => recordReview(run, {
+        itemId: entry.item_id,
+        attemptIndex: entry.attempt_index,
+        scorerId: scorerName,
+        scores,
+        deviceId: deviceId2(),
+        now: now2()
+      }));
+      draw();
+    } catch (e) {
+      if (!(e instanceof ReviewRefused)) throw e;
+      say(key, e.message);
+    }
+  }
+  async function play(key) {
+    const entry = entryFor(key);
+    const run = runFor(player);
+    if (!entry || !run || !audioStore) return;
+    const clip = await audioStore.get(run.run_id, entry.item_id, entry.attempt_index);
+    if (!clip?.blob) return say(key, "That recording is not on this iPad.");
+    try {
+      await playBlob(clip.blob);
+    } catch {
+      say(key, "This device would not play it back.");
+    }
+  }
+  const onClick = async (event) => {
+    const el2 = event.target.closest?.("[data-action]");
+    if (!el2 || !container.contains(el2)) return;
+    const action = el2.getAttribute("data-action");
+    const key = el2.getAttribute("data-key");
+    if (action === "rev-player") {
+      player = el2.getAttribute("data-player");
+      draw();
+      return;
+    }
+    if (action === "rev-save") {
+      await save(key);
+      return;
+    }
+    if (action === "rev-play") {
+      await play(key);
+      return;
+    }
+    if (action === "rev-export") {
+      const run = runFor(player);
+      if (run && download) download(exportText(run, { learnerName: player }), player, run);
+      return;
+    }
+    if (action === "rev-support") {
+      const on = el2.checked;
+      await commit2((run) => setSupport(run, ...splitKey(key), on));
+      draw();
+      return;
+    }
+    if (action === "rev-invalid") {
+      const on = el2.checked;
+      await commit2((run) => on ? invalidate(run, ...splitKey(key)) : clearInvalidation(run, ...splitKey(key)));
+      draw();
+    }
+  };
+  container.addEventListener("click", onClick);
+  draw();
+  return () => container.removeEventListener("click", onClick);
+}
+function splitKey(key) {
+  const at = String(key).lastIndexOf("#");
+  return [key.slice(0, at), Number(key.slice(at + 1))];
 }
 const DIAGNOSTIC_PREFIX = "devicecheck_";
 const TEST_MODE_NOTICE = "Test mode — nothing here affects the learner's record.";
@@ -3956,7 +4589,8 @@ const CHECKS = [
   { id: "microphone_permission", label: "Microphone permission", needsPerson: false },
   { id: "record_replay", label: "Recording and playing it back", needsPerson: true },
   { id: "storage_roundtrip", label: "This device keeps a clip", needsPerson: false },
-  { id: "clip_delete", label: "A clip can be deleted", needsPerson: false }
+  { id: "clip_delete", label: "A clip can be deleted", needsPerson: false },
+  { id: "pictures", label: "Pictures and map labels", needsPerson: true }
 ];
 const blank = () => Object.fromEntries(CHECKS.map((c) => [c.id, { id: c.id, label: c.label, status: "not_run", detail: "", at: 0 }]));
 function createDeviceCheck({
@@ -4020,6 +4654,24 @@ function createDeviceCheck({
         "audio_playback",
         "needs_you",
         `Said: "${CHECK_PHRASE}". Did you hear it?`
+      );
+    },
+    /**
+     * Show the four speaking pictures at the size a child sees them.
+     *
+     * The maps carry French place names, and whether those are readable at
+     * arm's length on this iPad is not something any test can answer — the
+     * artwork was approved on a desktop screen. The alternative was reaching
+     * the speaking section of a real sitting, which spends most of a form on a
+     * question about type size, so the pictures are shown here instead. They
+     * are drawn by the same code the learner's screen uses, at the same width,
+     * and nothing is recorded.
+     */
+    showPictures() {
+      return set(
+        "pictures",
+        "needs_you",
+        "Shown at the size a child sees. Can you read the French place names on the maps without leaning in?"
       );
     },
     /** The person answers for the checks no code can judge. */
@@ -4184,7 +4836,39 @@ function controlsFor(id, result, controller) {
   }
   if (id === "storage_roundtrip") row2.append(button("Keep and read back a clip", "dc-storage"));
   if (id === "clip_delete") row2.append(button("Delete the test clip", "dc-delete"));
+  if (id === "pictures") {
+    row2.append(button("Show the four pictures", "dc-pictures"));
+    if (result.status === "needs_you") {
+      row2.append(
+        button("I can read them", "dc-pictures-yes"),
+        button("Too small to read", "dc-pictures-no")
+      );
+    }
+  }
   return row2;
+}
+function picturePreview() {
+  const layer = div("device-check-preview");
+  const inner = div("device-check-preview-inner");
+  inner.append(div(
+    "device-check-preview-head",
+    "This is the size a child sees. Hold the iPad as she would."
+  ));
+  for (const item of ITEMS.filter((i) => hasAssetFor(i.id))) {
+    const card2 = div("assess-card");
+    card2.append(div("device-check-preview-id", item.id));
+    const figure = div("assess-figure");
+    figure.innerHTML = assetFor(item.id).svg;
+    card2.append(figure);
+    inner.append(card2);
+  }
+  const close = button("Close", "dc-pictures-close");
+  close.addEventListener("click", () => layer.remove());
+  const actions = div("device-check-actions");
+  actions.append(close);
+  inner.append(actions);
+  layer.append(inner);
+  return layer;
 }
 function mountDeviceCheck(container, controller, { onDone = () => {
 } } = {}) {
@@ -4229,7 +4913,14 @@ function mountDeviceCheck(container, controller, { onDone = () => {
     "dc-replay-yes": () => controller.confirm("record_replay", true),
     "dc-replay-no": () => controller.confirm("record_replay", false),
     "dc-storage": () => controller.checkStorage(),
-    "dc-delete": () => controller.checkDelete()
+    "dc-delete": () => controller.checkDelete(),
+    "dc-pictures": () => {
+      document.querySelector(".device-check-preview")?.remove();
+      document.body.append(picturePreview());
+      return controller.showPictures();
+    },
+    "dc-pictures-yes": () => controller.confirm("pictures", true),
+    "dc-pictures-no": () => controller.confirm("pictures", false)
   };
   const onClick = async (event) => {
     const el2 = event.target.closest?.("[data-action]");
@@ -4237,6 +4928,7 @@ function mountDeviceCheck(container, controller, { onDone = () => {
     const action = el2.getAttribute("data-action");
     if (action === "dc-exit") {
       done = true;
+      document.querySelector(".device-check-preview")?.remove();
       container.removeEventListener("click", onClick);
       await controller.exit();
       container.textContent = "";
@@ -4636,7 +5328,8 @@ function updateConnectionStatusUI() {
     } else if (!online) {
       syncTxt = m.lastLocalSave ? "Saved on this iPad · cloud when online" : "Not saved yet";
     } else if (m.pendingCloud) {
-      syncTxt = "Waiting to sync to cloud…";
+      const why = lastCloudFailure();
+      syncTxt = why?.configuration ? `Cloud setting problem — ${why.text}` : "Waiting to sync to cloud…";
     } else {
       syncTxt = m.lastCloudOk ? "Synced to cloud" : "Ready";
     }
@@ -5633,6 +6326,7 @@ function updateStarMap() {
     grid.appendChild(div2);
   });
 }
+const SPEECH_RATE = 0.8;
 let frenchVoice = null, frenchVoiceInfo = null;
 function resolveFrenchVoice() {
   if (!speechSynth) return null;
@@ -5654,12 +6348,12 @@ function currentVoiceInfo() {
 }
 function speakFrench(text) {
   if (!speechSynth) return;
-  speechSynth.cancel();
+  if (speechSynth.speaking || speechSynth.pending) speechSynth.cancel();
   const utt = new SpeechSynthesisUtterance(text);
   const voice = frenchVoice || resolveFrenchVoice();
   if (voice) utt.voice = voice;
   utt.lang = voice ? voice.lang : PREFERRED_LOCALE;
-  utt.rate = 0.85;
+  utt.rate = SPEECH_RATE;
   speechSynth.speak(utt);
 }
 function speakButtonHTML(text, cls, style) {
@@ -5750,6 +6444,11 @@ document.addEventListener("click", function(e) {
           document.getElementById("assess-report-panel"),
           assessment
         );
+      } else setRecoveryMsg("❌ Enter parent password first");
+      break;
+    case "assess-review":
+      if (ensureParentPassword()) {
+        openAssessmentReview();
       } else setRecoveryMsg("❌ Enter parent password first");
       break;
     case "assess-device-check":
@@ -6462,13 +7161,13 @@ function showMyWordsTab(tab) {
   else renderMyWordsDrill();
 }
 function renderMyWordsList() {
-  const queue = getRequeueWords();
+  const queue2 = getRequeueWords();
   const el2 = document.getElementById("mywords-content");
-  if (queue.length === 0) {
+  if (queue2.length === 0) {
     el2.innerHTML = `<div class="empty-state">🌟 No words in your queue — you're crushing it!</div>`;
     return;
   }
-  el2.innerHTML = queue.slice(0, 15).map((w) => {
+  el2.innerHTML = queue2.slice(0, 15).map((w) => {
     const prog = Math.min(w.successCount / 2, 1);
     return '<div class="conquer-word"><div class="conquer-fr">' + w.fr + '</div><div class="conquer-right"><div class="conquer-en">' + w.en + '</div><div class="conquer-zh">' + w.zh + '</div></div><div><div class="conquer-prog"><div class="conquer-prog-fill" style="width:' + Math.round(prog * 100) + '%"></div></div></div>' + speakButtonHTML(w.fr, "speak-inline") + "</div>";
   }).join("") + `<div style="text-align:center;margin-top:14px;"><button class="btn-primary" onclick="showMyWordsTab('drill')">Start Drill 🏋️</button></div>`;
@@ -6578,12 +7277,12 @@ function renderStudySet(n) {
         ${speakButtonHTML(s.parts.join(" "), "speak-inline", "margin-top:8px;")}
       </div>`).join("");
   } else {
-    const queue = getRequeueWords().slice(0, 8);
-    if (queue.length === 0) {
+    const queue2 = getRequeueWords().slice(0, 8);
+    if (queue2.length === 0) {
       const vocab = seededShuffle(getAllVocabCumulative(currentGrade), seed + 2).slice(0, 6);
       content.innerHTML = `<div style="text-align:center;color:var(--green);font-size:.85rem;margin-bottom:10px;">✅ No words in your practice queue — great work!</div><div class="study-grid">${vocab.map((w) => `<div class="study-mini"><div class="study-mini-fr">${w.fr}</div><div class="study-mini-en">${w.en}</div><div class="study-mini-zh">${w.zh}</div></div>`).join("")}</div>`;
     } else {
-      content.innerHTML = `<div style="text-align:center;color:var(--purple);font-size:.82rem;margin-bottom:10px;">💪 Your personal practice words — let's review them!</div>` + queue.map((w) => `<div class="study-card" style="padding:14px;">
+      content.innerHTML = `<div style="text-align:center;color:var(--purple);font-size:.82rem;margin-bottom:10px;">💪 Your personal practice words — let's review them!</div>` + queue2.map((w) => `<div class="study-card" style="padding:14px;">
           <div class="study-card-fr">${w.fr}</div>
           <div class="study-card-en">${w.en}</div>
           <div class="study-card-zh">${w.zh}</div>
@@ -6701,9 +7400,9 @@ function renderWeekdayGrid() {
   ).join("");
 }
 function renderParentGradeReopenControls() {
-  const wrap = document.getElementById("parent-grade-reopen-controls");
-  if (!wrap) return;
-  wrap.innerHTML = '<div style="font-size:.68rem;color:var(--text-muted);line-height:1.5;">Every level is open to both girls, all the time. The app suggests where to work next from how they are actually doing, not from how many days in a row they have played.</div>';
+  const wrap2 = document.getElementById("parent-grade-reopen-controls");
+  if (!wrap2) return;
+  wrap2.innerHTML = '<div style="font-size:.68rem;color:var(--text-muted);line-height:1.5;">Every level is open to both girls, all the time. The app suggests where to work next from how they are actually doing, not from how many days in a row they have played.</div>';
 }
 async function toggleWeekday(i) {
   const ps = Object.assign({}, getParentSettings());
@@ -6739,13 +7438,13 @@ function renderParentSummary() {
       const timeStr = formatPlayTime(rawMs) + (sessionFullTimeReveal ? "" : " (capped 30m)");
       const total = correct + wrong;
       const acc = total > 0 ? Math.round(correct / total * 100) : null;
-      const queue = Object.values(s.failedWords || {}).length;
+      const queue2 = Object.values(s.failedWords || {}).length;
       const color = p === "jenn" ? "var(--jenn)" : "var(--jess)";
       const avatar = p === "jenn" ? "🐥" : "🦊";
       const name = p.charAt(0).toUpperCase() + p.slice(1);
       const dayWrong = Object.values(s.failedWords || {}).filter((w) => w.lastFailed === dKey).sort((a, b) => b.failCount - a.failCount);
       const practiceInner = dayWrong.length > 0 ? parentPracticeRowsHtml(dayWrong) : '<div class="empty-state" style="padding:8px;font-size:.75rem;">✅ No misses logged that day</div>';
-      grid.innerHTML += '<div class="parent-player-card"><div class="parent-player-title" style="color:' + color + ';">' + avatar + " " + name + '</div><div class="parent-stat-row"><span class="parent-stat-label">⭐ All-time star pts</span><span class="parent-stat-val">' + s.totalStars + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">📅 Week star pts (so far)</span><span class="parent-stat-val" style="color:var(--gold);">' + s.weekStars + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">☀️ Day star pts (' + dKey + ')</span><span class="parent-stat-val" style="color:var(--green);">' + dayStars + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">✅ Correct / tries</span><span class="parent-stat-val">' + (total > 0 ? correct + " / " + total : "—") + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">📊 Accuracy</span><span class="parent-stat-val">' + (acc !== null ? acc + "%" : "—") + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">🎮 Game rounds</span><span class="parent-stat-val">' + rounds + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">🏋️ My Words drill</span><span class="parent-stat-val">' + (drillDone ? "✅ Done" : "—") + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">⏱ Active time</span><span class="parent-stat-val">' + timeStr + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">💪 Queue (now)</span><span class="parent-stat-val">' + queue + '</span></div><div class="parent-practice-sub"><div class="parent-practice-head" style="color:' + color + ';">🎯 Practice targets</div>' + practiceInner + "</div></div>";
+      grid.innerHTML += '<div class="parent-player-card"><div class="parent-player-title" style="color:' + color + ';">' + avatar + " " + name + '</div><div class="parent-stat-row"><span class="parent-stat-label">⭐ All-time star pts</span><span class="parent-stat-val">' + s.totalStars + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">📅 Week star pts (so far)</span><span class="parent-stat-val" style="color:var(--gold);">' + s.weekStars + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">☀️ Day star pts (' + dKey + ')</span><span class="parent-stat-val" style="color:var(--green);">' + dayStars + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">✅ Correct / tries</span><span class="parent-stat-val">' + (total > 0 ? correct + " / " + total : "—") + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">📊 Accuracy</span><span class="parent-stat-val">' + (acc !== null ? acc + "%" : "—") + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">🎮 Game rounds</span><span class="parent-stat-val">' + rounds + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">🏋️ My Words drill</span><span class="parent-stat-val">' + (drillDone ? "✅ Done" : "—") + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">⏱ Active time</span><span class="parent-stat-val">' + timeStr + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">💪 Queue (now)</span><span class="parent-stat-val">' + queue2 + '</span></div><div class="parent-practice-sub"><div class="parent-practice-head" style="color:' + color + ';">🎯 Practice targets</div>' + practiceInner + "</div></div>";
     });
     return;
   }
@@ -6786,7 +7485,7 @@ function renderParentSummary() {
     const weekTime = formatPlayTime(weekTimeMs) + (sessionFullTimeReveal ? "" : " (cap 30m/day)");
     const total = correct + wrong;
     const acc = total > 0 ? Math.round(correct / total * 100) : null;
-    const queue = Object.values(s.failedWords || {}).length;
+    const queue2 = Object.values(s.failedWords || {}).length;
     const color = p === "jenn" ? "var(--jenn)" : "var(--jess)";
     const avatar = p === "jenn" ? "🐥" : "🦊";
     const name = p.charAt(0).toUpperCase() + p.slice(1);
@@ -6797,7 +7496,7 @@ function renderParentSummary() {
     } else {
       practiceBlock = '<div class="parent-practice-sub"><div class="parent-practice-head" style="color:' + color + ';">🎯 Practice targets</div><div class="empty-state" style="padding:8px;font-size:.72rem;">Switch to <strong>Daily</strong> view to see words for a specific day.</div></div>';
     }
-    grid.innerHTML += '<div class="parent-player-card"><div class="parent-player-title" style="color:' + color + ';">' + avatar + " " + name + '</div><div class="parent-stat-row"><span class="parent-stat-label">⭐ All-time star pts</span><span class="parent-stat-val">' + s.totalStars + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">📅 Weekly star pts (' + weekLabel + ')</span><span class="parent-stat-val" style="color:var(--gold);">' + wkStars + "</span></div>" + (isThisWeek ? '<div class="parent-stat-row"><span class="parent-stat-label">✅ Correct (week)</span><span class="parent-stat-val" style="color:var(--green);">' + (total > 0 ? correct + " / " + total : "—") + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">📊 Accuracy (week)</span><span class="parent-stat-val">' + (acc !== null ? acc + "%" : "—") + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">🎮 Rounds (week)</span><span class="parent-stat-val">' + rounds + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">🏋️ Drill rounds (week)</span><span class="parent-stat-val">' + weekDrills + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">⏱ Time this week</span><span class="parent-stat-val">' + weekTime + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">📆 Days played (week)</span><span class="parent-stat-val">' + weekDaysPlayed + ' / 7</span></div><div class="parent-stat-row"><span class="parent-stat-label">🔥 Streak</span><span class="parent-stat-val">' + s.streak + ' days</span></div><div class="parent-stat-row"><span class="parent-stat-label">💪 Queue</span><span class="parent-stat-val">' + queue + " words</span></div>" : '<div class="parent-stat-row"><span class="parent-stat-label">✅ Correct (saved week)</span><span class="parent-stat-val">' + (total > 0 ? correct + " / " + total : "—") + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">📊 Accuracy</span><span class="parent-stat-val">' + (acc !== null ? acc + "%" : "—") + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">🎮 Rounds</span><span class="parent-stat-val">' + rounds + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">🏋️ Drill rounds</span><span class="parent-stat-val">' + weekDrills + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">⏱ Time played</span><span class="parent-stat-val">' + weekTime + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">📆 Days played</span><span class="parent-stat-val">' + weekDaysPlayed + " / 7</span></div>") + practiceBlock + "</div>";
+    grid.innerHTML += '<div class="parent-player-card"><div class="parent-player-title" style="color:' + color + ';">' + avatar + " " + name + '</div><div class="parent-stat-row"><span class="parent-stat-label">⭐ All-time star pts</span><span class="parent-stat-val">' + s.totalStars + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">📅 Weekly star pts (' + weekLabel + ')</span><span class="parent-stat-val" style="color:var(--gold);">' + wkStars + "</span></div>" + (isThisWeek ? '<div class="parent-stat-row"><span class="parent-stat-label">✅ Correct (week)</span><span class="parent-stat-val" style="color:var(--green);">' + (total > 0 ? correct + " / " + total : "—") + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">📊 Accuracy (week)</span><span class="parent-stat-val">' + (acc !== null ? acc + "%" : "—") + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">🎮 Rounds (week)</span><span class="parent-stat-val">' + rounds + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">🏋️ Drill rounds (week)</span><span class="parent-stat-val">' + weekDrills + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">⏱ Time this week</span><span class="parent-stat-val">' + weekTime + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">📆 Days played (week)</span><span class="parent-stat-val">' + weekDaysPlayed + ' / 7</span></div><div class="parent-stat-row"><span class="parent-stat-label">🔥 Streak</span><span class="parent-stat-val">' + s.streak + ' days</span></div><div class="parent-stat-row"><span class="parent-stat-label">💪 Queue</span><span class="parent-stat-val">' + queue2 + " words</span></div>" : '<div class="parent-stat-row"><span class="parent-stat-label">✅ Correct (saved week)</span><span class="parent-stat-val">' + (total > 0 ? correct + " / " + total : "—") + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">📊 Accuracy</span><span class="parent-stat-val">' + (acc !== null ? acc + "%" : "—") + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">🎮 Rounds</span><span class="parent-stat-val">' + rounds + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">🏋️ Drill rounds</span><span class="parent-stat-val">' + weekDrills + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">⏱ Time played</span><span class="parent-stat-val">' + weekTime + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">📆 Days played</span><span class="parent-stat-val">' + weekDaysPlayed + " / 7</span></div>") + practiceBlock + "</div>";
   });
 }
 const PARENT_PASSWORD = "1234";
@@ -7253,6 +7952,38 @@ configureAssessmentUI({
     renderAssessmentParentPanel();
   }
 });
+let reviewUnmount = null;
+function openAssessmentReview() {
+  const panel = document.getElementById("assess-review-panel");
+  if (!panel) return;
+  if (reviewUnmount) {
+    reviewUnmount();
+    reviewUnmount = null;
+  }
+  reviewUnmount = mountAssessmentReview(panel, {
+    store: assessment,
+    audioStore: assessmentAudioStore,
+    deviceId,
+    playBlob: async (blob) => {
+      const url = URL.createObjectURL(blob);
+      try {
+        await new Audio(url).play();
+      } finally {
+        setTimeout(() => URL.revokeObjectURL(url), 3e4);
+      }
+    },
+    download: (text, player, run) => {
+      const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `french-checkin-${player}-form${run.form || "x"}-to-score.txt`;
+      document.body.append(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 3e4);
+    }
+  });
+}
 let deviceCheckUnmount = null;
 function openDeviceCheck() {
   const panel = document.getElementById("assess-device-check-panel");
@@ -7879,7 +8610,93 @@ button,input{touch-action:manipulation;}
 .device-check-status { font-size: .7rem; color: var(--text-muted); }
 .device-check-detail { font-size: .7rem; color: var(--text-muted); line-height: 1.45; margin-top: 4px; }
 .device-check-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-.device-check-actions button { padding: 8px 12px; font-size: .72rem; min-height: 44px; }</style>
+.device-check-actions button { padding: 8px 12px; font-size: .72rem; min-height: 44px; }
+
+/* The picture preview. It sits above the parent overlay and reproduces the
+   learner screen's geometry exactly — the same max width and padding as
+   #screen-assessment — because the question it exists to answer is how big the
+   map labels actually are. Drawn in the parent panel instead, it would be the
+   width of that panel and would answer nothing. */
+.device-check-preview {
+  position: fixed; inset: 0; z-index: 200; overflow-y: auto;
+  background: var(--bg, #fdfdfb);
+}
+.device-check-preview-inner { max-width: 720px; margin: 0 auto; padding: 8px 4px 24px; }
+.device-check-preview-head {
+  font-size: .78rem; line-height: 1.5; text-align: center;
+  padding: 10px 12px; color: var(--text-muted);
+}
+.device-check-preview-id { font-size: .7rem; color: var(--text-muted); margin-bottom: 6px; }
+.device-check-preview button { min-height: 44px; }
+@media (pointer: coarse) { .device-check-preview button { min-height: 52px; } }
+
+/* -- scoring the open prompts ---------------------------------------------- */
+/* A parent reads and taps through this on an iPad, so every target is at least
+   a finger wide and the anchor wording sits beside its own button rather than
+   in a legend somewhere else. */
+.assess-review-tabs { display: flex; gap: 8px; justify-content: center; margin-bottom: 8px; }
+.assess-review-tabs .active { border-color: var(--gold); color: var(--gold); }
+.assess-review-count { text-align: center; font-size: .78rem; font-weight: 800; margin-bottom: 6px; }
+.assess-review-rule {
+  font-size: .68rem; color: var(--text-muted); line-height: 1.45;
+  border-left: 3px solid rgba(148, 163, 184, .5); padding: 6px 10px; margin-bottom: 10px;
+}
+.assess-review-empty { color: var(--text-muted); font-size: .74rem; text-align: center; padding: 10px; }
+.assess-review-domain {
+  font-size: .78rem; font-weight: 800; margin: 14px 0 6px; text-align: center; color: var(--gold);
+}
+.assess-review-item {
+  border: 1px solid rgba(148, 163, 184, .3); border-radius: 12px;
+  padding: 10px 12px; margin-bottom: 10px;
+}
+.assess-review-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.assess-review-id { font-size: .7rem; color: var(--text-muted); }
+.assess-review-status { font-size: .68rem; font-weight: 800; }
+.assess-review-status[data-status="reviewed"] { color: var(--green); }
+.assess-review-status[data-status="invalid"] { color: var(--text-muted); }
+.assess-review-prompt-label {
+  font-size: .66rem; color: var(--text-muted); text-transform: uppercase;
+  letter-spacing: .04em; margin-top: 8px;
+}
+.assess-review-prompt { font-size: .8rem; line-height: 1.4; }
+.assess-review-answer {
+  font-size: .86rem; line-height: 1.5; white-space: pre-wrap;
+  background: rgba(148, 163, 184, .1); border-radius: 8px; padding: 8px 10px; margin-top: 4px;
+}
+.assess-review-figure { max-width: 100%; margin: 8px auto; }
+.assess-review-figure svg { max-width: 100%; height: auto; }
+.assess-review-note { font-size: .68rem; color: var(--text-muted); line-height: 1.4; margin-top: 6px; }
+.assess-review-flags { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.assess-review-flag { display: flex; gap: 8px; align-items: flex-start; cursor: pointer; }
+.assess-review-flag input { min-width: 22px; min-height: 22px; margin-top: 2px; }
+.assess-review-flag-label { font-size: .74rem; font-weight: 700; }
+.assess-review-flag-note { font-size: .66rem; color: var(--text-muted); line-height: 1.4; }
+.assess-review-dim { margin-top: 12px; }
+.assess-review-dim-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.assess-review-dim-name { font-size: .76rem; font-weight: 800; text-transform: capitalize; }
+.assess-review-dim-weight { font-size: .66rem; color: var(--text-muted); }
+.assess-review-anchor {
+  display: flex; gap: 8px; align-items: flex-start; cursor: pointer;
+  padding: 6px 4px; border-radius: 8px; min-height: 44px;
+}
+.assess-review-anchor input { min-width: 22px; min-height: 22px; margin-top: 2px; }
+.assess-review-anchor-n { font-size: .74rem; font-weight: 800; min-width: 12px; }
+.assess-review-anchor-text { font-size: .7rem; line-height: 1.4; color: var(--text-muted); }
+.assess-review-anchor:has(input:checked) { background: rgba(245, 158, 11, .12); }
+.assess-review-anchor:has(input:checked) .assess-review-anchor-text { color: inherit; }
+.assess-review-actions {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px;
+}
+.assess-review-actions button { min-height: 44px; }
+@media (pointer: coarse) { .assess-review-actions button { min-height: 52px; } }
+.assess-review-msg { font-size: .7rem; color: var(--jenn); }
+.assess-review-msg[data-ok="true"] { color: var(--green); }
+.assess-review-scorer { margin: 10px 0; }
+.assess-review-name {
+  width: 100%; box-sizing: border-box; min-height: 44px; padding: 8px 10px; margin: 4px 0;
+  border: 2px solid rgba(148, 163, 184, .4); border-radius: 10px;
+  font-family: 'Nunito', sans-serif; font-size: .82rem;
+}</style>
 </head>
 <body>
 <div class="container">
@@ -8195,6 +9012,11 @@ button,input{touch-action:manipulation;}
                 style="padding:8px 14px;font-size:.74rem;">📊 Show check-in report</button>
       </div>
       <div id="assess-report-panel" style="margin-top:8px;"></div>
+      <div style="text-align:center;margin-top:6px;">
+        <button type="button" class="btn-secondary" data-action="assess-review"
+                style="padding:8px 14px;font-size:.74rem;">✍️ Score the written &amp; spoken answers</button>
+      </div>
+      <div id="assess-review-panel" style="margin-top:8px;"></div>
       <div style="text-align:center;margin-top:6px;">
         <button type="button" class="btn-secondary" data-action="assess-device-check"
                 style="padding:8px 14px;font-size:.74rem;">🔧 Device &amp; feature check</button>

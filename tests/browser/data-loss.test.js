@@ -18,7 +18,10 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { chromium } from 'playwright';
 
-const APP = 'file://' + path.resolve('index.html');
+// APP_FILE lets a run be pointed at a deliberately broken copy of the built
+// page, which is how a guard here is shown to be capable of failing. Without
+// it every "verified by breaking it" run silently re-tests the fixed build.
+const APP = 'file://' + path.resolve(process.env.APP_FILE || 'index.html');
 const CHROME = process.env.CHROMIUM_PATH || undefined;
 
 let browser;

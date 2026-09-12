@@ -250,7 +250,10 @@ panel says so at the top.
 - [ ] **5.0b-2 French audio plays** — tap *Play a French phrase*. If you hear
       it, tap **I heard it**. If you hear nothing, tap **I heard nothing** and
       tell me — the listening part depends on this and no test can hear it for
-      you.
+      you. **Also listen to the pace.** It is set to 0.80 — slower than the
+      platform's normal speed — and one setting governs the games and the
+      check-in alike. If it is still quick for the girls, say so and it can go
+      lower.
 - [ ] **5.0b-3 Microphone** — tap *Ask for the microphone*. Safari asks the
       first time; allow it.
 - [ ] **5.0b-4 Recording** — record two seconds, stop, play it back, and answer
@@ -259,8 +262,13 @@ panel says so at the top.
       test clip*. Both should say Working. "Not working" here usually means a
       private window or Safari set to block site data, and speaking recordings
       would not survive.
-- [ ] **5.0b-6** Tap **Done — clear the test clips**. The test recording is
-      deleted.
+- [ ] **5.0b-6 Pictures** — tap *Show the four pictures*. Four drawings fill the
+      screen at **the size a child sees them**: two room scenes and two street
+      maps with French place names. Hold the iPad the way she would and answer
+      **I can read them** or **Too small to read**. If a label is cramped, say
+      which one — the drawing can be changed.
+- [ ] **5.0b-7** Tap **Done — clear the test clips**. The test recording is
+      deleted and the pictures close.
 
 This is a machine check. It does not replace the rest of Part 5: only you can
 tell whether the French sounds right and whether a child can be understood.
@@ -306,11 +314,10 @@ tell whether the French sounds right and whether a child can be understood.
       French place names. The map has **no arrows** showing the route, and no
       picture has English labels on it. If you see a list of words like
       "school, park, library, bank", stop and tell me.
-- [ ] **5.5e** **Are the French place names on the map comfortably readable** at
-      arm's length on the iPad, without leaning in or pinching to zoom? The
-      artwork is approved on a desktop screen; this is the one thing about it
-      that only the real device can answer. If a label is small or crowded, say
-      which one — the drawing can be changed.
+- [ ] **5.5e** The same pictures you saw in §5.0b-6, now in the check-in
+      itself. They should look the same size. This is only a confirmation —
+      §5.0b-6 is where the question is really asked, because looking there
+      costs no items.
 
 ## 5.6 Writing
 
@@ -342,10 +349,62 @@ Parent Summary → enter password → **📊 Show check-in report**.
       with no level and no score. Until you have listened to at least two
       recordings it says so instead.
 - [ ] **5.9c** Writing and Speaking say *waiting for an adult to read or listen*
-      until someone has. That is correct: the app never marks them.
+      until someone has. That is correct: the app never marks them. §5.10 is
+      where a person does.
 - [ ] **5.9d** There is **no total, no average and no overall score** anywhere,
       and nothing that reads like a school grade or a placement. If you see one,
       that is a defect — tell me.
+
+## 5.10 Scoring the written and spoken answers
+
+Parent Summary → enter password → **✍️ Score the written & spoken answers**.
+
+Eleven prompts per check-in have no answer key — six she typed, five she spoke.
+A person scores those against the rubric, and until someone does, Writing and
+Speaking report nothing rather than reporting badly.
+
+- [ ] **5.10a** Every one of the eleven is listed, with **the prompt she saw**,
+      **her own answer**, and for each part of the scale the four sentences you
+      are choosing between. You should not need any other document.
+- [ ] **5.10b** Type a name in **Who is doing the scoring?** — the person who
+      actually read the writing or listened to the recording **and can judge
+      French at this level**, not whoever is holding the iPad. Try saving
+      without one first: it should refuse, and say so.
+- [ ] **5.10c** **She was helped with this one** is yours to tick. Only you know
+      whether a hint was given. A helped answer is kept and reported, and left
+      out of the independent band.
+- [ ] **5.10d** **Set this one aside** is for a prompt that went *wrong* — the
+      microphone died, the wrong thing appeared — **not** for a poor answer. A
+      set-aside response is kept, and counts neither right nor wrong. You can
+      untick it. You cannot untick one the app set aside itself; that is a
+      record of what happened.
+- [ ] **5.10e** For a spoken prompt, **▶ Play the recording** works on the iPad
+      that recorded it. Score it from what you hear. Scoring a spoken answer
+      from written text is not permitted by the rubric, and the screen says so.
+- [ ] **5.10f** You should **never** see a model answer or a "correct" version
+      anywhere on this screen. The rubric asks whether she communicated, not
+      whether she matched a sample. If you see one, that is a defect — tell me.
+
+### If nobody in the house speaks French
+
+**This is us.** The content owner ruled on 2026-09-11: an AI may give advisory
+or draft feedback, but it **cannot** produce a band, and a named **qualified**
+person must read the writing or listen to the audio and confirm each dimension.
+Until we find that person, Writing and Speaking stay unscored — which is the
+honest answer, not a fault.
+
+- [ ] **5.10g** **⬇ Save the answers to score** downloads a text file with the
+      prompts, her answers and the whole scale, for someone scoring away from
+      this iPad — a school French teacher, a tutor. One sitting covers both
+      girls. The recordings are **not** in it: they stay on the iPad, and spoken
+      answers have to be listened to.
+- [ ] **5.10h** You may take that file to an AI for a first pass, and hand the
+      draft to the teacher as a starting point rather than a blank rubric. The
+      teacher still reads the answers and decides, and **their** name goes on
+      the record — not yours, even though you type the numbers in.
+- [ ] **5.10i** Device transcripts and any automatic pronunciation figure are
+      practice aids only. They are never evidence for these numbers, and none of
+      them appears on the scoring screen.
 
 ---
 

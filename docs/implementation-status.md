@@ -54,11 +54,11 @@ States: `not_started` · `in_progress` · `ready_for_review` · `accepted` · `b
 
 | Check | Command | Count | Last result |
 |---|---|---|---|
-| Unit + handler export | `npm test` | 357 tests across 26 files; 37 inline handlers checked | pass |
+| Unit + handler export | `npm test` | 361 tests across 26 files; 37 inline handlers checked | pass |
 | Build parity | `npm run check:drift` | — | pass |
 | Release A contract | `npm run check:release-a` | 90 items, both forms | pass |
 | Content package contract | `npm run check:content -- <dir>` | 3 packages | pass |
-| Browser (Chromium) | `npm run test:browser` | 76 tests across 8 files | pass (`CHROMIUM_PATH=/opt/pw-browsers/chromium` in the sandbox) |
+| Browser (Chromium) | `npm run test:browser` | 80 tests across 8 files | pass (`CHROMIUM_PATH=/opt/pw-browsers/chromium` in the sandbox) |
 
 Counts verified by running the suites at the head of the M2 branch, not copied
 from a previous report.
@@ -455,6 +455,24 @@ child hearing the French correctly, and a person hearing the child, is still a
 person's job. `docs/ipad-test-checklist.md` §5.0b covers running it, and §5.9
 the report.
 
+**A seventh check, added after the first real run of the six.** The parent ran
+the check on the iPad, everything reported working — and then reasonably asked
+where the pictures were. They were not there: the artwork renders in exactly one
+place, `assessment-ui.js`, while a speaking prompt is on screen. Confirming the
+map labels were readable therefore meant reaching the speaking section of a real
+sitting, which spends most of a form on a question about type size.
+
+So the check now shows them. *Show the four pictures* draws the same four SVGs
+through the same figure markup and CSS as the learner's screen, in a layer that
+reproduces that screen's geometry — `max-width: 720px` and the same padding.
+That last part is the whole point: the parent overlay card is 480px, so a
+picture drawn inside the panel would have been a quarter smaller than the real
+thing and would have answered nothing. A browser test measures the rendered SVG
+in both places at one iPad-sized viewport and requires the two to be equal;
+setting the preview to the panel's width makes that test fail, which is how it
+was checked. The verdict is the person's, like the two audio checks — it cannot
+pass itself — and the layer is cleared when the check is left.
+
 ## Speaking artwork — built (approved 2026-09-09, see below)
 
 **Was:** each form had five speaking prompts of which two carried an asset
@@ -609,7 +627,7 @@ administered sections, because pronunciation is reported separately (master plan
 - Map images for `SA-D02` and `SB-D02`, and the two illustrations: **built and approved by the content owner on 2026-09-09**, subject only to confirming the map labels are comfortably readable at actual iPad size (checklist §5.5d).
 - If writing should measure `VG_NEGATION`, `VG_LOCATION` or `VG_GENDER_NUMBER`, Release B needs target-specific scoring criteria and matched prompts on both forms. Generic rubric dimensions are not precise enough, which is why v1.0.2 removed the tags.
 - The 24 listening scripts need listening QA on an actual iPad with the resolved `fr-CA` voice.
-- Someone must be named to score writing and speaking with the rubrics; until then those domains report `awaiting_review`.
+- Someone must be named to score writing and speaking with the rubrics; until then those domains report `awaiting_review`. No adult in this family reads or speaks French. The content owner ruled on 2026-09-11 that an AI may give advisory or draft feedback but cannot produce a band, and that a named **qualified** human must read the writing or listen to the audio and confirm each dimension — so both domains stay `awaiting_review` until a French-capable person is found. See "Content-owner decision, 2026-09-11" below.
 - Independent educator review has not occurred; do not describe the bank as educator-validated.
 
 ## Release A — amended to `assessment-v1.0.2`
@@ -664,6 +682,238 @@ route arrows; the plain style is appropriate for an assessment.
 **The M2 content blocker is closed**, subject only to confirming on the actual
 iPad that the map labels are comfortably readable at real size (checklist
 §5.5d). No automated check can answer that one.
+
+## M2 acceptance — the iPad run
+
+**Device & Feature Check, run on the family iPad, 2026-09-10: all six checks
+reported working.** Resolved French voice, audible playback, microphone
+permission, record / stop / replay / delete, local audio storage, and the
+"Done — clear the test clips" control.
+
+Microphone-denial recovery (§5.5c) and the picture readability question remain
+for the parent. The second is why the seventh check exists: see "A seventh
+check" above.
+
+## One more test that could not fail
+
+Found while running the full suite for the picture preview, on code this branch
+does not touch.
+
+`a double tap on an answer scores once` allowed the score to move by at most 20.
+A correct answer at full lives is worth 15 base plus a speed bonus of up to 10,
+so **one** answer can be worth 25 — and the test failed whenever the machine
+got to the click quickly enough to earn a large bonus. It was timing, not
+scoring: a real guard failing for a reason that had nothing to do with the gate
+it guards. It now asserts base points, which do not move with the clock: one
+question answered once is worth 15 or nothing, and three times would be 45.
+
+The deeper problem was the one underneath. Forcing `commitAnswerOnce` to return
+true did **not** fail that test — because `handleQuizAnswer` disables every
+choice button after the first tap, and a disabled button never fires. The DOM
+was doing the work, and §1.6 was still untested end to end after all. A second
+test now re-enables the buttons between taps, which is what any stray redraw
+would do, and requires the same question to count once. That one does fail
+against the broken gate, while the first still passes — so the two protections
+are now told apart.
+
+## Two things the iPad found
+
+**The French was too quick.** `speakFrench` set `rate = 0.85`; it is `0.80` now,
+named as `SPEECH_RATE` rather than a number buried in the utterance, with a
+browser test that taps a real speak button and pins it. One setting governs the
+games and the check-in, because both speak through the same function. The rate
+reads back as 0.800000011920929 — the platform keeps it as a 32-bit float — so
+the test compares with a tolerance.
+
+**A finished check-in had no way out.** `render()` appended the "All done" card
+and returned without adding an action, so the only exit was the bar's **Pause**
+button: the wrong word for a run with nothing left in it, and easy to miss at
+the top of the screen. The finished screen now offers *Done — back to the
+start*, and the bar says **Close** once the run is complete. Both leave the same
+way a pause does, which changes nothing about a run that is already complete —
+asserted by a test that compares the run before and after leaving.
+
+## Scoring the open prompts — the screen and the export
+
+Built alongside the question above rather than after it, because both are needed
+whoever ends up scoring: a French teacher wants the same screen and the same
+file. Nothing here depends on the answer, and nothing in `content/` changed.
+
+`src/assessment/review.js` is the queue, the rubric application and the
+invalidation; `src/modes/assessment-review-ui.js` is the screen, reached from
+the parent panel behind the password. Three rules from the release are what the
+module exists to hold.
+
+**A review without a named scorer is refused.** `rubrics.json` requires an
+eligible person, and an unattributed rubric score cannot be told apart from a
+machine-generated one — which these two domains forbid outright. The refusal is
+in `recordReview`, and again in the screen so the message can name what is
+missing rather than throwing.
+
+**An invalid response is preserved, never converted to incorrect**
+(`invalidity.rule`). The parent can set a response aside and put it back, but
+only their own: a `microphone_failed` or `app_interrupted_before_submit` that
+the app recorded is a record of what happened, and not a parent's to erase.
+
+**`support_flag` is the adult's to set.** Master plan §6 item 8 — only the
+person in the room knows whether a hint was given. It had nowhere to be set
+until now; capture always wrote `false`. A supported response is kept and
+reported as supported evidence, and left out of the independent band.
+
+Scores are chosen as radio buttons against the four anchor sentences, not typed
+as a digit. A scorer choosing between sentences is doing the rubric's work; a
+scorer typing a number is doing arithmetic, and can type 7. `validateScores`
+refuses anything that is not a whole 0–3 for exactly the dimensions the rubric
+declares, which `scoreRubric` would not have caught until it was computing a
+percent — too late to say which box is empty, and it would have reported 233%.
+
+### A collision found while building the export
+
+`WRITING-ANALYTIC-V1`'s 3/3 worked example is, word for word, `WA-D02`'s
+`model_response` — and `WA-D02` is a form-A written prompt, which is Jenn's
+form. Both are the content owner's and both are right where they are; what
+cannot happen is a scorer reading the second while marking the first.
+
+The export therefore withholds a worked example whose text is the model answer
+to a prompt in that same export, and says that it has done so rather than
+silently printing less. The filter is by model-answer text, not by `prompt_id`:
+the *weak* `WA-D02` example scored 2/1/1/1/3 gives nothing away and stays, and
+the speaking examples are descriptions of a performance rather than utterances,
+so they are unaffected. On form B, where `WA-D02` is not administered, nothing
+is withheld.
+
+The model answers are absent from the screen for the same reason, which is the
+rule the parent report already held (`tests/browser/assessment-report.test.js`).
+
+### Verified by breaking it
+
+Four unit breaks and three browser breaks, each against the built page, each
+failing exactly the test that guards it and nothing else: accepting a review
+with no scorer; printing the withheld worked example; letting a parent erase
+the app's own invalidity finding; accepting an out-of-range anchor; showing the
+model answer on the scoring screen; and destroying the child's words when a
+response is set aside.
+
+`docs/ipad-test-checklist.md` §5.10 is the parent's walkthrough, including
+§5.10g–h for the case where nobody in the house speaks French.
+
+## Content-owner decision, 2026-09-11 — AI scoring
+
+**Answered. Release A is unchanged: no version bump, no edit to any file under
+`content/`.** The question logged against this release is closed.
+
+> Release A remains unchanged. AI-only scoring is prohibited. An external AI
+> service may provide advisory or draft rubric feedback, but it cannot produce
+> an official Release A band. A named qualified human must directly read the
+> writing or listen to the original audio and confirm the rubric dimensions.
+> Without that confirmation, the domain remains `awaiting_review`. Device
+> transcripts and automated pronunciation measurements are practice aids, not
+> scoring evidence.
+
+### What this means for this family, plainly
+
+**It does not unlock writing.** The permission is for *advisory* feedback, and
+the confirming person must be **qualified** — someone who can read French at
+this level and judge it. No adult in this household can. So writing and
+speaking both stay `awaiting_review` until a French-capable person is found:
+a school French teacher, a tutor, one sitting for both girls. An AI draft plus
+a parent who cannot read the answer is not the human confirmation the decision
+requires, and entering numbers on that basis would put a name against a
+judgement nobody made.
+
+**What it does permit** is taking the export to an AI for a first pass or a
+second opinion, and handing that to the qualified person as a starting point
+rather than a blank rubric. That is a convenience for them, not a substitute
+for them.
+
+### What changed in the code
+
+Nothing structural — the module already refused everything the decision
+forbids, because it was written against the release rather than against the
+hoped-for answer. Two pieces of wording were wrong and are corrected:
+
+- The export said *"return the numbers to the parent, who enters them and is
+  recorded as the scorer."* Under the decision the recorded scorer is the
+  person who **read or listened**, whoever later types the numbers in. It now
+  says so, and states the advisory rule and the transcript exclusion in the
+  content owner's own terms.
+- The scoring screen asked *"Who is doing the scoring?"* with a note about
+  attribution. It now names the requirement: the person who read or listened
+  **and can judge French at this level**, not whoever is holding the iPad.
+
+**No `scoring_method` field was added.** It was floated when the question was
+open; the decision defines no such vocabulary and leaves Release A untouched,
+so inventing one would be inventing a rule the content owner did not write —
+the mistake this project has already made once with the skill-evidence rule.
+The review record names a human scorer, and that remains the whole contract.
+
+**No AI integration was built, and none can be.** The app is client-only with
+no server; its only network is Firebase. Any AI use happens in the parent's own
+session, on text the export gives them.
+
+## A work order that was partly about another app
+
+**2026-09-11.** A list of required fixes arrived. Checked item by item against
+this repository before anything was changed, because acting on a misaddressed
+work order is how a codebase acquires features nobody wanted.
+
+| Asked for | Found here |
+|---|---|
+| Fix first-tap audio without weakening route/item cancellation | **Real mechanism, different name.** There is no router, but `speakFrench` did call `cancel()` before every `speak()`. Fixed. |
+| An isolated microphone panel: permission, record, stop, play, delete, handle denial and silence, write no learner record | **Already built and shipped** as the Device & Feature Check, including the no-record guarantee, proven byte-for-byte. |
+| Confirm the Firebase project `chore-tracker-a461b` | **Correct and confirmed intentional** — the owner shares it across their repositories. Already recorded in `known-risks.md` §1. |
+| Deploy the repository's Firestore rules | **There are none** — no `firestore.rules`, `firebase.json` or `.firebaserc` exists. See the warning below. |
+| Make the configuration failure identifiable | **Real.** Every failure was a `console.warn` plus a generic `'error'`. Fixed. |
+| Re-test 16 dictation words, 16 contrast utterances, 12 decoding recordings | **No such content.** Release A is 90 items — per form 12 listening, 12 reading, 10 vocabulary/grammar, 6 writing, 5 speaking. Dictation here is a game mode over a dynamic word list, not 16 fixed words. |
+| Create no Jenn/Jess attempt or **mastery** record | Records are attempts, stars and rounds. This project deliberately makes no mastery claim (`prohibited_claims`). |
+
+### A warning that matters more than any of the fixes
+
+**Firestore security rules are per-project, not per-app.** The Firebase project
+is shared with the owner's other repositories. Deploying a rules file authored
+for French Adventure to `chore-tracker-a461b` would replace the rules the other
+applications are running under. No rules file was added here for that reason:
+one cannot be written correctly from inside this repository alone.
+
+## The first tap, and a harness that could not fail
+
+`speakFrench` called `speechSynth.cancel()` unconditionally before every
+`speak()`. The cancel is wanted — moving to the next word should cut the
+previous one off rather than queue behind it — but calling it on an **idle**
+synthesiser is the documented WebKit way to lose the first utterance after a
+page loads: the child taps 🔊, hears nothing, taps again and it works. It is now
+guarded on `speaking || pending`, which removes the no-op call and keeps the one
+that does work.
+
+**The more serious finding is how nearly this went in unverified.** The new test
+passed against a build with the defect restored *and* against a build with the
+cancel deleted entirely — it could not fail. The cause was not the test:
+`tests/browser/regression.test.js` and `tests/browser/data-loss.test.js`
+hard-coded `path.resolve('index.html')` and ignored `APP_FILE`, so every
+"verified by breaking it" run against those two files silently re-tested the
+fixed page. The other seven browser files honour it. Both now do, and with the
+harness repaired the test fails against both breaks and passes on the fix.
+
+Any earlier claim of break-verification that ran through those two files was
+worth less than it sounded.
+
+## Naming what is wrong with the cloud
+
+Every Firestore failure landed in `console.warn` and became a generic
+`'error'`, so "we are offline", "the security rules refuse this" and "that
+project does not exist" were indistinguishable from the screen — and the one a
+parent can act on was the hardest to see.
+
+`describeCloudFailure` now maps the Firestore code to a sentence that names the
+project and says what to change, and marks whether it is a *configuration*
+problem at all. That last flag is the point: telling a parent to go and change
+settings because the wifi dropped is worse than saying nothing, so `unavailable`
+and `resource-exhausted` are explicitly not configuration failures. The sync
+line shows the text only when the failure is one a person can act on.
+
+Seven unit tests, verified against three breaks: marking everything a
+configuration problem, collapsing every code to one sentence, and dropping the
+project name.
 
 ## Parent acceptance
 

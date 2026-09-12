@@ -244,3 +244,41 @@ test('a recording that produced no audio is a failure, not a silent pass', async
   assert.equal(stopped.status, 'fail');
   assert.equal(controller.hasRecording(), false);
 });
+
+// -- the pictures, judged by the person in the room --------------------------
+
+test('the picture check waits for the person, and takes their answer', async () => {
+  const { controller } = make();
+  assert.equal(controller.results().pictures.status, 'not_run');
+
+  const shown = controller.showPictures();
+  assert.equal(shown.status, 'needs_you');
+  assert.match(shown.detail, /size a child sees/i);
+  assert.match(shown.detail, /place names/i);
+
+  assert.equal(controller.confirm('pictures', false).status, 'fail');
+});
+
+test('the picture check cannot pass itself', () => {
+  const { controller } = make();
+  assert.equal(controller.confirm('pictures', true).status, 'not_run',
+    'a picture was called readable before anyone looked');
+});
+
+test('leaving the check clears the picture verdict too', async () => {
+  const { controller } = make();
+  controller.showPictures();
+  controller.confirm('pictures', true);
+  assert.equal(controller.results().pictures.status, 'pass');
+
+  await controller.exit();
+  assert.equal(controller.results().pictures.status, 'not_run');
+});
+
+test('the six machine checks and the three judged ones are all declared', () => {
+  // Six of these answer themselves; three need the adult. A check that claims
+  // to need nobody but cannot actually decide would pass silently.
+  const judged = DC.CHECKS.filter(c => c.needsPerson).map(c => c.id);
+  assert.deepEqual(judged, ['audio_playback', 'record_replay', 'pictures']);
+  assert.equal(DC.CHECKS.length, 7);
+});

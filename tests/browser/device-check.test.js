@@ -11,6 +11,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { chromium } from 'playwright';
 import { administer, storeFor } from '../helpers/administer.js';
+import * as C from '../../src/assessment/content.js';
 
 const APP = 'file://' + path.resolve(process.env.APP_FILE || 'index.html');
 const CHROME = process.env.CHROMIUM_PATH || undefined;
@@ -32,8 +33,8 @@ test.afterEach(async () => {
 });
 test.after(async () => { await browser?.close(); });
 
-async function open({ micAllowed = true, run = null } = {}) {
-  const context = await browser.newContext();
+async function open({ micAllowed = true, run = null, viewport = null } = {}) {
+  const context = await browser.newContext(viewport ? { viewport } : {});
   openContexts.push(context);
   await context.route('**://*/**', route =>
     route.request().url().startsWith('file://') ? route.continue() : route.abort());
@@ -181,6 +182,8 @@ async function runEverything(page) {
   await press(page, 'dc-replay-yes');
   await press(page, 'dc-storage');
   await press(page, 'dc-delete');
+  await press(page, 'dc-pictures');
+  await press(page, 'dc-pictures-yes');
 }
 
 test('the check is behind the parent password, and says it is test mode', async () => {
@@ -206,6 +209,7 @@ test('every check runs, and reports what this device can do', async () => {
     'Recording and playing it back': 'pass',
     'This device keeps a clip': 'pass',
     'A clip can be deleted': 'pass',
+    'Pictures and map labels': 'pass',
   });
 
   // The voice check names both locales, and the playback check spoke its own
@@ -306,4 +310,120 @@ test('a refused microphone is reported as this device not working, not as a cras
     document.getElementById('assess-device-check-panel').textContent);
   assert.match(text, /Settings/);
   assert.deepEqual(errors, []);
+});
+
+// -- the pictures, at the size a child sees them -----------------------------
+
+/** The width the artwork is actually drawn at, wherever it is on screen. */
+const figureWidth = (page, scope) => page.evaluate(sel => {
+  const svg = document.querySelector(sel);
+  return svg ? Math.round(svg.getBoundingClientRect().width) : null;
+}, scope);
+
+test('the preview shows all four pictures, and none of their briefs', async () => {
+  const { page, errors } = await open();
+  await openCheck(page);
+  await press(page, 'dc-pictures');
+
+  const shown = await page.evaluate(() =>
+    [...document.querySelectorAll('.device-check-preview .assess-figure svg')].length);
+  const briefed = C.ITEMS.filter(i => C.hasAssetFor(i.id));
+  assert.equal(briefed.length, 4, 'the release no longer has four built pictures');
+  assert.equal(shown, 4, 'the preview did not show every picture');
+
+  // The same rule as the learner's screen: the brief is the illustrator's
+  // instruction and is not shown to anyone as a caption.
+  const text = await page.evaluate(() =>
+    document.querySelector('.device-check-preview').textContent);
+  for (const item of briefed) {
+    for (const key of ['required_elements', 'required_labels', 'required_route', 'prohibited_text']) {
+      for (const phrase of item.stimulus?.[key] || []) {
+        assert.equal(text.toLowerCase().includes(String(phrase).toLowerCase()), false,
+          `${item.id}'s brief is printed under its picture: "${phrase}"`);
+      }
+    }
+    assert.ok(text.includes(item.id), `${item.id} is not named, so a report cannot say which`);
+  }
+  assert.deepEqual(errors, []);
+});
+
+test('a picture in the preview is the same size as on the learner screen', async () => {
+  // The whole point of the preview. If it were drawn in the parent panel it
+  // would be that panel's width — the overlay card is 480px, the learner screen
+  // is 720px — and the answer to "can you read this" would be about the wrong
+  // thing. Both are measured here at one iPad-sized viewport.
+  const viewport = { width: 820, height: 1180 };
+  const run = administer({ sections: C.SECTION_ORDER.filter(d => d !== 'speaking') });
+  const { page, errors } = await open({ run, viewport });
+
+  // Into the speaking section of the seeded run, the way the app gets there.
+  await page.evaluate(async (pwd) => {
+    showParentSummary();
+    for (let i = 0; i < 100; i++) {
+      const b = document.querySelector('[data-action="assess-open"][data-player="jenn"]');
+      if (b) { document.getElementById('parent-pwd').value = pwd; b.click(); break; }
+      await new Promise(r => setTimeout(r, 50));
+    }
+    for (let i = 0; i < 100; i++) {
+      if (document.getElementById('screen-assessment').style.display === 'block') break;
+      await new Promise(r => setTimeout(r, 50));
+    }
+    await window.__faDebug.assessment.beginSection();
+  }, PARENT_PWD);
+
+  // Walk to the first prompt that has a picture.
+  let learnerWidth = null, learnerItem = null;
+  for (let n = 0; n < 8; n++) {
+    const current = await page.evaluate(() => {
+      const r = window.__faDebug.assessment.runs('jenn')[0];
+      return r.sections.speaking.plan.find(id => !r.responses[`${id}#0`]) || null;
+    });
+    if (!current) break;
+    if (await page.$('#screen-assessment .assess-figure svg')) {
+      learnerItem = current;
+      learnerWidth = await figureWidth(page, '#screen-assessment .assess-figure svg');
+      break;
+    }
+    const rec = await page.$('[data-action="assess-record"]');
+    if (rec) {
+      await rec.click(); await page.waitForTimeout(120);
+      const stop = await page.$('[data-action="assess-stop-record"]');
+      if (stop) { await stop.click(); await page.waitForTimeout(150); }
+    }
+    const submit = await page.$('[data-action="assess-submit-item"]:not([disabled])');
+    if (submit) { await submit.click(); await page.waitForTimeout(200); }
+  }
+  assert.ok(learnerItem, 'never reached a speaking prompt with a picture');
+  assert.ok(learnerWidth > 0, 'the learner picture has no width');
+
+  // Now the same picture in the parent's preview, at the same viewport.
+  await page.evaluate(() => window.__faDebug.assessment.pause?.());
+  await openCheck(page);
+  await press(page, 'dc-pictures');
+  const previewWidth = await page.evaluate(id => {
+    const cards = [...document.querySelectorAll('.device-check-preview .assess-card')];
+    const card = cards.find(c => c.textContent.includes(id));
+    const svg = card?.querySelector('.assess-figure svg');
+    return svg ? Math.round(svg.getBoundingClientRect().width) : null;
+  }, learnerItem);
+
+  assert.equal(previewWidth, learnerWidth,
+    `the preview draws ${learnerItem} at ${previewWidth}px and the learner sees ${learnerWidth}px`);
+  assert.deepEqual(errors, []);
+});
+
+test('the preview closes, and leaving the check takes it away', async () => {
+  const { page } = await open();
+  await openCheck(page);
+  await press(page, 'dc-pictures');
+  assert.ok(await page.$('.device-check-preview'));
+
+  await page.click('.device-check-preview [data-action="dc-pictures-close"]');
+  await page.waitForTimeout(120);
+  assert.equal(await page.$('.device-check-preview'), null, 'the preview would not close');
+
+  await press(page, 'dc-pictures');
+  assert.ok(await page.$('.device-check-preview'));
+  await press(page, 'dc-exit');
+  assert.equal(await page.$('.device-check-preview'), null, 'the preview outlived the check');
 });

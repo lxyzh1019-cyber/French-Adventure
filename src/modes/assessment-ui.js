@@ -162,6 +162,9 @@ export function render() {
     : `Form ${run.form} · ${answered} of ${planned} answered so far`;
   el('assess-progress-fill').style.width = planned ? `${Math.round((answered / planned) * 100)}%` : '0%';
 
+  const leave = document.querySelector('#screen-assessment [data-action="assess-pause"]');
+  if (leave) leave.textContent = at.done ? 'Close' : 'Pause';
+
   const body = el('assess-body');
   const actions = el('assess-actions');
   body.innerHTML = '';
@@ -171,6 +174,12 @@ export function render() {
     body.append(card(
       'That is everything for this check-in.',
       'Nothing is scored on this screen. A grown-up reads the results later, and the writing and speaking parts wait for a person to listen to them.'));
+    // A finished run needs a way out that says so. Without this the only exit
+    // was the bar's Pause button, which is both hidden in plain sight at the
+    // top of the screen and the wrong word: there is nothing left to pause.
+    // It leaves the same way a pause does — the run is already complete, so
+    // leaving changes nothing about it.
+    actions.append(button('Done — back to the start', 'assess-pause'));
     return;
   }
 

@@ -544,19 +544,73 @@ test('a double tap on an answer scores once', async () => {
     const choices = [...document.querySelectorAll('#choices-grid button')];
     if (!choices.length) return { error: 'no choices rendered' };
 
-    // Two taps as fast as the child could manage, before any redraw.
+    // Three taps as fast as the child could manage, before any redraw.
     choices[0].click();
     choices[0].click();
     choices[0].click();
     await new Promise(res => setTimeout(res, 400));
-    return { before, after: scoreOf() };
+    return { before, after: scoreOf(), base: window.__faDebug.roundBasePoints };
   });
 
   assert.equal(r.error, undefined, r.error);
-  // Either the answer was right and scored once, or wrong and scored nothing.
-  // What must not happen is the same response counting two or three times.
+
+  // Base points are the honest signal, and this test used to miss that. A
+  // correct answer at full lives awards exactly 15 base, plus a speed bonus of
+  // up to 10 that depends on how fast the machine got there — so one answer can
+  // be worth 25, and the old ceiling of 20 failed whenever the run was quick.
+  // That made a real guard fail for a reason that had nothing to do with the
+  // gate it guards. Base points do not move with the clock: one question
+  // answered once is worth 15 or nothing, and counting it three times is 45.
+  assert.ok(r.base === 0 || r.base === 15,
+    `three taps awarded ${r.base} base points, which is not one answer`);
+
+  // And the visible score is that one award plus its own speed bonus, never a
+  // multiple of it.
   const gained = r.after - r.before;
-  assert.ok(gained === 0 || gained <= 20,
-    `three taps on one answer moved the score by ${gained}`);
+  assert.ok(gained >= r.base && gained <= r.base + 10,
+    `the score moved by ${gained}, which is not ${r.base} base plus one speed bonus`);
+  assert.deepEqual(errors, [], 'no page errors');
+});
+
+test('a question cannot score twice even if its buttons come back', async () => {
+  // The test above proves the buttons are disabled after a tap. That is a real
+  // protection, but it is not the gate: with commitAnswerOnce forced to return
+  // true, three taps still score once, because a disabled button never fires.
+  // So the DOM was doing the work and §1.6 was still untested end to end.
+  //
+  // This re-enables the buttons between taps, which is what any stray redraw
+  // would do, and asks the question the gate exists to answer: the same
+  // question, answered twice, counts once.
+  const { page, errors } = await open();
+
+  const r = await page.evaluate(async () => {
+    startGame('quiz');
+    await new Promise(res => setTimeout(res, 400));
+    const choices = () => [...document.querySelectorAll('#choices-grid button')];
+    if (!choices().length) return { error: 'no choices rendered' };
+
+    const first = choices()[0];
+    const label = first.textContent;
+    const index = window.__faDebug.qIndex;
+    first.click();
+    const afterOne = window.__faDebug.roundBasePoints;
+
+    // A redraw that restores the buttons, then the same answer again — fast,
+    // so the next question has not arrived and this is still question `index`.
+    for (const b of choices()) b.disabled = false;
+    const again = choices().find(b => b.textContent === label);
+    again?.click();
+    again?.click();
+
+    return {
+      index, movedOn: window.__faDebug.qIndex !== index,
+      afterOne, afterMore: window.__faDebug.roundBasePoints,
+    };
+  });
+
+  assert.equal(r.error, undefined, r.error);
+  assert.equal(r.movedOn, false, 'the question advanced, so this measured two questions');
+  assert.equal(r.afterMore, r.afterOne,
+    `answering one question again moved base points from ${r.afterOne} to ${r.afterMore}`);
   assert.deepEqual(errors, [], 'no page errors');
 });
