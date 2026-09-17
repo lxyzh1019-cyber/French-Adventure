@@ -15,6 +15,7 @@ import { chromium } from 'playwright';
 import * as C from '../../src/assessment/content.js';
 import * as R from '../../src/assessment/review.js';
 import { administer, idsIn, storeFor, FULL_MARKS } from '../helpers/administer.js';
+import { clipKey } from '../../src/assessment/audio-store.js';
 import * as G from '../helpers/content-guards.js';
 
 const APP = 'file://' + path.resolve(process.env.APP_FILE || 'index.html');
@@ -260,6 +261,75 @@ test('the screen asks for a qualified reader, not whoever holds the iPad', async
   assert.match(text, /read the writing or listened to the recording/);
   assert.match(text, /judge French at this level/);
   assert.match(text, /cannot produce the score/);
+});
+
+test('the export carries the recordings out of the iPad', async () => {
+  // The whole point. The clips live only in IndexedDB on the device that made
+  // them, and WebKit clears unused site data after about a week — so if the
+  // export cannot get them out, "I'll have someone score it later" loses the
+  // spoken half of the check-in without ever reporting a failure.
+  const run = administer({ learner: 'jenn' });
+  const { page, errors } = await open(run);
+
+  // Seed this device's clip store the way a real sitting would have.
+  const spoken = R.queue(run).filter(e => e.domain === 'speaking');
+  assert.equal(spoken.length, 5);
+  await page.evaluate(async (refs) => {
+    await new Promise((resolve, reject) => {
+      const req = indexedDB.open('french_assessment_audio', 1);
+      req.onupgradeneeded = () => {
+        if (!req.result.objectStoreNames.contains('clips')) {
+          req.result.createObjectStore('clips', { keyPath: 'key' });
+        }
+      };
+      req.onsuccess = () => {
+        const db = req.result;
+        const tx = db.transaction('clips', 'readwrite');
+        const store = tx.objectStore('clips');
+        for (const key of refs) {
+          store.put({ key, blob: new Blob([new Uint8Array([1, 2, 3, 4])],
+            { type: 'audio/webm' }), mime_type: 'audio/webm' });
+        }
+        tx.oncomplete = () => { db.close(); resolve(); };
+        tx.onerror = () => { db.close(); reject(tx.error); };
+      };
+      req.onerror = () => reject(req.error);
+    });
+  // The real storage key, not the fixture's placeholder audio_ref: the store
+  // files a clip under `${runId}/${itemId}#${attempt}`, and seeding anything
+  // else would prove only that the export ignores what it cannot find.
+  }, spoken.map(e => clipKey(run.run_id, e.item_id, e.attempt_index)));
+
+  await askForReview(page);
+
+  // Capture what the download would have contained, and the filename.
+  const saved = await page.evaluate(async () => {
+    const out = {};
+    const realCreate = URL.createObjectURL.bind(URL);
+    URL.createObjectURL = (blob) => { out.type = blob.type; out.blob = blob; return realCreate(blob); };
+    const realClick = HTMLAnchorElement.prototype.click;
+    HTMLAnchorElement.prototype.click = function () { out.name = this.download; };
+    document.querySelector('[data-action="rev-export-html"]').click();
+    for (let i = 0; i < 100 && !out.blob; i++) await new Promise(r => setTimeout(r, 50));
+    HTMLAnchorElement.prototype.click = realClick;
+    URL.createObjectURL = realCreate;
+    return { name: out.name, type: out.type, text: out.blob ? await out.blob.text() : null };
+  });
+
+  assert.deepEqual(errors, []);
+  assert.ok(saved.text, 'the export produced no file');
+  assert.match(saved.type, /text\/html/);
+  assert.match(saved.name, /^french-checkin-jenn-formA-\d{4}-\d{2}-\d{2}\.html$/);
+
+  const players = saved.text.match(/<audio[^>]*src="data:audio[^"]+"/g) || [];
+  assert.equal(players.length, 5, 'the recordings did not come out of IndexedDB');
+  assert.ok(!/The recording is not in this file/.test(saved.text),
+    'a clip that is on this device was reported missing');
+
+  // And her written answers came too, so it is one file and not half of one.
+  for (const e of R.queue(run).filter(x => x.domain === 'writing')) {
+    assert.ok(saved.text.includes(e.item_id), `${e.item_id} is missing from the export`);
+  }
 });
 
 test('scoring writes nothing to the game profile', async () => {

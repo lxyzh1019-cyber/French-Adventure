@@ -393,11 +393,14 @@ person must read the writing or listen to the audio and confirm each dimension.
 Until we find that person, Writing and Speaking stay unscored — which is the
 honest answer, not a fault.
 
-- [ ] **5.10g** **⬇ Save the answers to score** downloads a text file with the
-      prompts, her answers and the whole scale, for someone scoring away from
-      this iPad — a school French teacher, a tutor. One sitting covers both
-      girls. The recordings are **not** in it: they stay on the iPad, and spoken
-      answers have to be listened to.
+- [ ] **5.10g** **⬇ Save everything, with the recordings** downloads a single
+      HTML file holding the prompts, her answers, the whole scale **and the
+      spoken recordings**, which play in any browser with no network. This is
+      the one to use. **Save it somewhere backed up the same day**: the clips
+      live only on the iPad that recorded them, and Safari clears unused site
+      data after about a week. Once the file exists, the sitting is safe even if
+      the iPad forgets it. (**⬇ Text only** is the older, smaller file that
+      leaves the audio behind.)
 - [ ] **5.10h** You may take that file to an AI for a first pass, and hand the
       draft to the teacher as a starting point rather than a blank rubric. The
       teacher still reads the answers and decides, and **their** name goes on
