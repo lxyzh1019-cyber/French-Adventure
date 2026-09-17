@@ -966,6 +966,40 @@ map labels are readable at actual size.** This was the last open item on the
 artwork, and it closes checklist §5.5d and §5.0b-6. The assets stand as
 approved; no redraw is needed before the speaking section is administered.
 
+## Jess has sat Form B in full
+
+**Reported by the parent, 2026-09-17: Jess completed all of Form B** on the
+family iPad. Form B is the form `administration.first_form` assigns her, so the
+assignment was correct and the sitting is valid.
+
+Three consequences, all of them permanent or time-bound.
+
+**Form B is spent for Jess.** `administration.exposure` records every item shown
+and forbids treating an exposed item as secure evidence, so those 45 items can
+never measure her again. `administration.reassessment` says to use the other
+form, and Form A is untouched for her — a future check-in has somewhere to go.
+This is the system working, not a problem, but it is a one-way door and it has
+now closed.
+
+**Her 11 open prompts are unscored and will stay that way.** Six written, five
+spoken, all at `awaiting_review`, per the parent decision that no French-capable
+scorer is available. Writing and Speaking therefore report no band. The three
+objective domains — listening, reading, vocabulary and grammar — are machine
+scored and complete, so her report is real for those and honestly silent for the
+rest.
+
+**Her five recordings are on a clock.** They exist only in IndexedDB on the iPad
+that recorded them. WebKit clears unused site data after roughly a week, and the
+audio export that would rescue them was not deployed when she sat the check-in —
+the live build at that moment carried the text-only export, which leaves audio
+behind by design. Until the file is made, her spoken answers are the least safe
+data this project holds.
+
+This is the first real sitting the assessment has produced, and it arrived one
+build ahead of the feature that preserves half of it. Worth recording plainly:
+the gap between "the code is merged" and "the iPad is running it" is where this
+nearly cost a child's work.
+
 ## Parent acceptance
 
 | Milestone | Accepted by | Date | Note |
