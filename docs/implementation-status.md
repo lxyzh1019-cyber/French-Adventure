@@ -915,6 +915,57 @@ Seven unit tests, verified against three breaks: marking everything a
 configuration problem, collapsing every code to one sentence, and dropping the
 project name.
 
+## Scoring will not happen soon — the export had to change
+
+**Parent decision, 2026-09-17.** No French-capable scorer will be found in the
+near future. The speaking and writing sections are still to be administered;
+the answers are to be exported and reviewed later, with other people or with an
+AI's help.
+
+Administering them needs no change — capture already stores the response and
+leaves it at `awaiting_review`, and the content owner's 2026-09-11 ruling still
+holds: an AI may draft, only a named qualified human can confirm a band.
+
+**What did need changing is the export, and urgently.** `exportText` leaves the
+recordings behind by design, which is right when the scorer arrives this week
+and wrong when they do not. The clips live only in IndexedDB on the iPad that
+made them, and WebKit clears unused site data after about a week
+(`known-risks.md` §2). "Review it later" plus "audio only in IndexedDB" means
+the spoken half of a check-in stops existing, silently, without any failure
+being reported — the exact shape of the data loss this project exists to
+prevent.
+
+`exportHtml` carries it out: one self-contained HTML file per sitting, holding
+the prompts, her typed answers, the whole rubric with every anchor, and each
+recording embedded as a `data:` URI behind an ordinary `<audio>` element. It
+plays in any browser with no network, no app and nothing to unpack — mail it,
+archive it, hand it to a teacher, or give it to an AI for a draft. A realistic
+sitting is about half a megabyte.
+
+A prompt whose clip is **not** on this device says so where the player would
+have been, naming the reference the run holds. A scorer has to be able to tell
+"she said nothing" from "the recording is gone", and a player that does nothing
+tells them neither.
+
+The text-only export stays, for when the audio is not wanted.
+
+**One rule, stated once.** Both exports withhold a worked example whose text is
+the model answer to a prompt in that same export. That filter had been written
+out twice, once per export, which is one copy to forget; `partitionExamples`
+now holds it alone. Breaking it fails three tests across both files.
+
+Verified by breaking it: the escaper neutered (her French reaching the page as
+markup), a missing clip rendering silently, the withholding rule disabled, and —
+in the browser, against the built page — clip collection returning nothing,
+which is the silent-loss failure itself.
+
+## M2 iPad gate — picture readability confirmed
+
+**2026-09-17, on the family iPad: the four speaking pictures and their French
+map labels are readable at actual size.** This was the last open item on the
+artwork, and it closes checklist §5.5d and §5.0b-6. The assets stand as
+approved; no redraw is needed before the speaking section is administered.
+
 ## Parent acceptance
 
 | Milestone | Accepted by | Date | Note |

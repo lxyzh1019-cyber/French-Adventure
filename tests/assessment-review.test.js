@@ -310,3 +310,120 @@ test('a transcript is never an input to a rubric score', () => {
   assert.ok(!JSON.stringify(review).includes('bonjour'),
     'the device transcript reached the scoring record');
 });
+
+// -- the whole sitting in one file -------------------------------------------
+//
+// exportText leaves the recordings on the iPad, which is right when the scorer
+// arrives this week and wrong when they do not: WebKit clears unused site data
+// after about a week, so "I'll find someone later" plus "audio only in
+// IndexedDB" means the spoken half quietly stops existing. exportHtml carries
+// it out.
+
+const CLIP = 'data:audio/webm;base64,AAAAAA==';
+
+function clipsFor(r) {
+  return Object.fromEntries(R.queue(r)
+    .filter(e => e.domain === 'speaking')
+    .map(e => [e.key, { dataUrl: CLIP, mimeType: 'audio/webm' }]));
+}
+
+test('the recordings travel inside the file, as players that need no network', () => {
+  const r = run();
+  const html = R.exportHtml(r, { learnerName: 'Jess', clips: clipsFor(r) });
+  const spoken = R.queue(r).filter(e => e.domain === 'speaking');
+  assert.equal(spoken.length, 5);
+
+  const players = html.match(/<audio[^>]*>/g) || [];
+  assert.equal(players.length, 5, 'not every spoken prompt got a player');
+  for (const p of players) assert.match(p, /src="data:audio/, 'a player points somewhere else');
+  assert.ok(!/src="https?:|src="\.\//.test(html), 'the file reaches outside itself');
+});
+
+test('a missing recording is named as missing, not left as a dead player', () => {
+  // She answered, the run says a clip exists, but this iPad does not have it —
+  // the other device recorded it, or the browser cleared it. A scorer must be
+  // able to tell that from "she said nothing".
+  const r = run();
+  const html = R.exportHtml(r, { clips: {} });
+  assert.equal((html.match(/<audio/g) || []).length, 0);
+  assert.match(html, /The recording is not in this file/);
+  assert.match(html, /cleared it/);
+  const spoken = R.queue(r).find(e => e.domain === 'speaking');
+  assert.ok(html.includes(spoken.audio_ref), 'the missing clip is not even named');
+});
+
+test('her French is escaped on the way into the page', () => {
+  // A ten-year-old typing <, & or a quote must not be able to change the file
+  // a teacher opens.
+  const r = administer({ learner: 'jenn', open: () => `J'ai <script>alert(1)</script> & "ça"` });
+  const html = R.exportHtml(r, { clips: {} });
+  assert.ok(!html.includes('<script>alert(1)</script>'), 'her text reached the page as markup');
+  assert.match(html, /&lt;script&gt;/);
+  assert.match(html, /&amp;/);
+  assert.match(html, /&quot;ça&quot;|&#39;/);
+});
+
+test('the file carries the rule and the advisory limit, in the owner\'s terms', () => {
+  // Read as a person reads it: tags stripped, whitespace collapsed. A sentence
+  // that happens to wrap around a <b> is still the sentence.
+  const html = R.exportHtml(run(), { clips: {} });
+  const prose = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+  const plain = t => String(t).replace(/\s+/g, ' ');
+
+  assert.ok(prose.includes(plain(R.UNRESOLVED_RULE)), 'the unresolved-review rule is missing');
+  assert.match(prose, /cannot produce the score/);
+  assert.match(prose, /qualified person still has to read the writing/);
+  assert.match(prose, /practice aids and are not evidence/);
+  assert.match(prose, /read the writing or listened to the audio/);
+  assert.match(prose, /not whoever operated the iPad/);
+});
+
+test('the file never hands the scorer a model answer', () => {
+  const r = administer({ learner: 'jenn' });
+  const html = R.exportHtml(r, { clips: clipsFor(r) });
+  const scorerFacing = C.ITEMS
+    .flatMap(i => [i.scoring?.model_response, i.author_notes]).filter(Boolean);
+  assert.deepEqual(G.leakedStrings([html], scorerFacing), [],
+    'a model answer or author note reached the exported file');
+  assert.match(html, /held back/);
+});
+
+test('every prompt, every anchor and a box for each score', () => {
+  const r = run();
+  const html = R.exportHtml(r, { clips: clipsFor(r) });
+  for (const e of R.queue(r)) {
+    assert.ok(html.includes(e.item_id), `${e.item_id} is not in the file`);
+  }
+  for (const rubric of C.RUBRICS.rubrics) {
+    for (const d of rubric.dimensions) {
+      for (const n of ['0', '1', '2', '3']) {
+        assert.ok(html.includes(esc(d.anchors[n])), `${d.id} anchor ${n} is missing`);
+      }
+    }
+  }
+  assert.ok(html.includes('Her answer'), 'the child\'s answers are not labelled');
+});
+
+test('a set-aside prompt is marked not-for-scoring and gets no player', () => {
+  const r = run();
+  const spoken = R.queue(r).find(e => e.domain === 'speaking');
+  R.invalidate(r, spoken.item_id, spoken.attempt_index);
+  const html = R.exportHtml(r, { clips: clipsFor(r) });
+  assert.match(html, /Not for scoring/);
+  assert.equal((html.match(/<audio/g) || []).length, 4, 'a set-aside prompt kept its player');
+});
+
+test('the file says whose it is, which form, and which content built it', () => {
+  const r = run();
+  const html = R.exportHtml(r, { learnerName: 'Jess', clips: {} });
+  assert.match(html, /Jess/);
+  assert.ok(html.includes(C.RELEASE_ID), 'nothing says which content version this came from');
+  assert.ok(html.includes(r.run_id), 'the sitting is not identified');
+  assert.match(html, /<!doctype html>/i);
+});
+
+/** The same escaping the export uses, for asserting against. */
+function esc(s) {
+  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}

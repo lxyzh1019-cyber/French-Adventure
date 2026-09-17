@@ -3286,11 +3286,15 @@ function openAssessmentReview(){
       try { await new Audio(url).play(); }
       finally { setTimeout(() => URL.revokeObjectURL(url), 30000); }
     },
-    download: (text, player, run) => {
-      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    download: (text, player, run, ext = 'txt') => {
+      const mime = ext === 'html' ? 'text/html' : 'text/plain';
+      const blob = new Blob([text], { type: `${mime};charset=utf-8` });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = `french-checkin-${player}-form${run.form || 'x'}-to-score.txt`;
+      // Dated, because a second sitting produces a second file and the two must
+      // not be told apart by which folder they landed in.
+      const day = new Date().toISOString().slice(0, 10);
+      a.download = `french-checkin-${player}-form${run.form || 'x'}-${day}.${ext}`;
       document.body.append(a);
       a.click();
       a.remove();

@@ -241,10 +241,14 @@ export function mountAssessmentReview(container, {
 
     if (download) {
       const row = div('assess-review-actions');
-      row.append(button('⬇ Save the answers to score', 'rev-export'));
+      row.append(button('⬇ Save everything, with the recordings', 'rev-export-html'));
+      row.append(button('⬇ Text only', 'rev-export'));
       row.append(div('assess-review-flag-note',
-        'A text file with the prompts, her answers and the whole scale — for '
-        + 'whoever is scoring and is not at this iPad.'));
+        'One file holding the prompts, her answers, the whole scale and the '
+        + 'spoken recordings, which play in any browser with no network. Save it '
+        + 'somewhere that is backed up: the recordings live only on this iPad, and '
+        + 'Safari clears unused site data after about a week. The text-only file '
+        + 'is smaller and leaves the audio behind.'));
       container.append(row);
     }
 
@@ -255,6 +259,32 @@ export function mountAssessmentReview(container, {
       for (const e of group) container.append(entryBlock(e));
     }
   };
+
+  /**
+   * Every recording this device holds for the run, as data: URIs.
+   *
+   * A clip that is not here is not an error — it was recorded on the other
+   * iPad, or the browser has already cleared it — so it is simply absent and
+   * the export says so where the player would have been.
+   */
+  async function collectClips(run) {
+    if (!audioStore) return {};
+    const out = {};
+    for (const e of review.queue(run)) {
+      if (e.domain !== 'speaking' || !e.audio_ref) continue;
+      const clip = await audioStore.get(run.run_id, e.item_id, e.attempt_index);
+      if (!clip?.blob) continue;
+      out[e.key] = { dataUrl: await toDataUrl(clip.blob), mimeType: clip.mime_type || null };
+    }
+    return out;
+  }
+
+  const toDataUrl = blob => new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = () => reject(r.error);
+    r.readAsDataURL(blob);
+  });
 
   const entryFor = (key) => review.queue(runFor(player)).find(e => e.key === key) || null;
 
@@ -310,7 +340,19 @@ export function mountAssessmentReview(container, {
     if (action === 'rev-play') { await play(key); return; }
     if (action === 'rev-export') {
       const run = runFor(player);
-      if (run && download) download(review.exportText(run, { learnerName: player }), player, run);
+      if (run && download) {
+        download(review.exportText(run, { learnerName: player }), player, run, 'txt');
+      }
+      return;
+    }
+    if (action === 'rev-export-html') {
+      const run = runFor(player);
+      if (!run || !download) return;
+      el.disabled = true;
+      try {
+        download(review.exportHtml(run, { learnerName: player, clips: await collectClips(run) }),
+          player, run, 'html');
+      } finally { el.disabled = false; }
       return;
     }
     if (action === 'rev-support') {
