@@ -1,2 +1,7 @@
 node_modules/
 .drift-check/
+
+# Working rules: .claude/ is tracked and committed, except local hook state.
+!.claude/
+.claude/state/
+__pycache__/
