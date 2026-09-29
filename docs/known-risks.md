@@ -189,9 +189,14 @@ treating an exposed item as secure evidence, and a form whose keys have been
 read is exposed whether or not the app recorded showing it. If there is reason
 to think the file was read, the run should be invalidated rather than scored.
 
-Note the bundle is only paid for when the app imports the module. As of this
-commit nothing does, so the built file has not grown; it will by roughly 145 KB
-when the assessment screens land.
+Note the bundle is only paid for when the app imports the module, and it now
+does: `src/app.js` (lines 15–26) imports the assessment screens, which pull in
+`content.js` and the release with it. So the keys above are in the live page
+today, not in a future one. The built `index.html` at `4a16357` is 511,715 bytes
+(about 500 KB). M2 Step 2 recorded the jump when the release first came in,
+246 KB → 355 KB; the rest of the growth is the later assessment screens.
+*(Corrected 2026-09-29: this paragraph used to say nothing imported the module
+yet.)*
 
 ---
 
