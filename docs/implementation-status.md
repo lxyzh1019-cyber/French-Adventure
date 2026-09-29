@@ -20,7 +20,7 @@ States: `not_started` · `in_progress` · `ready_for_review` · `accepted` · `b
 | Milestone | State | Notes |
 |---|---|---|
 | M1 — Repair foundation | `ready_for_review` | Both audit blockers repaired with regressions; full Match resume matrix; parent iPad smoke checklist and recovery-file confirmation still required for `accepted`. |
-| M2 — Independent assessment | `in_progress` | Steps 0–5 complete: cleanup, data model, shell, objective sections, writing/speaking capture, and Step 5 — domain scoring, reports, parent review and the Device & Feature Check, wired behind the parent password (`src/app.js` ~1591–1614). Reassessment comparison is implemented and unit-tested (`compareRuns`) but not yet shown on the parent screen. The assessment is learner-facing: Jess sat Form B in full on 2026-09-17. Step 6 is **partial and parent-blocked** — see "M2 Step 6 — technical suite and handoff". Per master plan revision 3, M1 cleanup is folded into M2 rather than forming a separate milestone; parent approved building in parallel with the outstanding iPad checklist. |
+| M2 — Independent assessment | `in_progress` | Steps 0–5 complete: cleanup, data model, shell, objective sections, writing/speaking capture, and Step 5 — domain scoring, reports, parent review and the Device & Feature Check, wired behind the parent password (`src/app.js` ~1591–1614). Reassessment comparison is implemented and unit-tested (`compareRuns`) but not yet shown on the parent screen. The assessment is learner-facing: Jess sat Form B in full on 2026-09-10, and on 2026-09-29 Jenn and Jess each sat Form A. Step 6 is **partial and parent-blocked** — see "M2 Step 6 — technical suite and handoff". Per master plan revision 3, M1 cleanup is folded into M2 rather than forming a separate milestone; parent approved building in parallel with the outstanding iPad checklist. |
 | M3 — Learning pilot | `not_started` | Release B not yet authored. |
 | M4 — iPad validation | `not_started` | |
 | M5 — Evaluate and release pilot | `not_started` | |
@@ -29,7 +29,7 @@ States: `not_started` · `in_progress` · `ready_for_review` · `accepted` · `b
 
 | Package | Version | Location | State |
 |---|---|---|---|
-| Release A — assessment content | `assessment-v1.0.2` | `content/releases/assessment-v1/` | Imported as `assessment-v1.0.0`; amended to v1.0.1 and v1.0.2 (see below). `npm run check:release-a` passes: hashes, 90 items, both forms complete, every skill/outcome/rubric/fixture reference resolves, listening audio-only. The assessment is learner-facing — Jess sat Form B in full on 2026-09-17 — and parent approval of the learner-facing experience is still pending. |
+| Release A — assessment content | `assessment-v1.0.2` | `content/releases/assessment-v1/` | Imported as `assessment-v1.0.0`; amended to v1.0.1 and v1.0.2 (see below). `npm run check:release-a` passes: hashes, 90 items, both forms complete, every skill/outcome/rubric/fixture reference resolves, listening audio-only. The assessment is learner-facing — Jess sat Form B in full on 2026-09-10; Jenn and Jess each sat Form A on 2026-09-29 — and parent approval of the learner-facing experience is still pending. |
 | Release B — pilot learning content | — | — | Not delivered. |
 
 ## M1 repair round — what the audit asked for
@@ -970,9 +970,11 @@ approved; no redraw is needed before the speaking section is administered.
 
 ## Jess has sat Form B in full
 
-**Reported by the parent, 2026-09-17: Jess completed all of Form B** on the
-family iPad. Form B is the form `administration.first_form` assigns her, so the
-assignment was correct and the sitting is valid.
+**Jess completed all of Form B on 2026-09-10** on the family iPad. The parent
+reported it on 2026-09-17; the date of the sitting comes from the parent report
+screen ("jess · form B · 2026-09-10", screenshots sent 2026-09-29). Form B is
+the form `administration.first_form` assigns her, so the assignment was correct
+and the sitting is valid.
 
 Three consequences, all of them permanent or time-bound.
 
@@ -981,7 +983,8 @@ and forbids treating an exposed item as secure evidence, so those 45 items can
 never measure her again. `administration.reassessment` says to use the other
 form, and Form A is untouched for her — a future check-in has somewhere to go.
 This is the system working, not a problem, but it is a one-way door and it has
-now closed.
+now closed. (No longer true as of 2026-09-29: she has since sat Form A as well —
+see "2026-09-29 — iPad results received".)
 
 **Her 11 open prompts are unscored and will stay that way.** Six written, five
 spoken, all at `awaiting_review`, per the parent decision that no French-capable
@@ -1079,23 +1082,26 @@ plan stay unticked: acceptance is the parent's.
 | Listening contains items without written French clues | evidenced | `check:release-a` (listening audio-only); `tests/browser/assessment-items.test.js` ("no listening item shows written French anywhere on screen") |
 | Reading contains connected text comprehension | evidenced | Release A reading items carry multi-sentence `text_fr` passages tagged `R_CONNECTED` / `R_MAIN_IDEA`, administered by Step 3 |
 | Writing includes independent production | evidenced | Six `open_written` prompts per form; `tests/browser/assessment-open.test.js` ("a written answer is captured, unmarked, and left awaiting review") |
-| Speaking preserves original audio locally; transcript is observation only | evidenced in code, **open on the device** | `src/assessment/audio-store.js`; `tests/browser/assessment-open.test.js`; pronunciation rule in `src/assessment/report.js`. Jess's five real clips are not yet confirmed exported — see open items. |
+| Speaking preserves original audio locally; transcript is observation only | evidenced in code, **open on the device** | `src/assessment/audio-store.js`; `tests/browser/assessment-open.test.js`; pronunciation rule in `src/assessment/report.js`. On 2026-09-29 Jenn's and Jess's Form A clips were exported with "⬇ Save everything, with the recordings", 5 of 5 embedded in each file. Jess's five Form B clips (2026-09-10) are still not exported — see open items. |
 | Interrupted or technically invalid responses are not scored as wrong | evidenced | `tests/browser/assessment-items.test.js` ("reporting silence … is not a wrong answer"); `tests/browser/assessment-open.test.js` ("a refused microphone is not a wrong answer"); invalid-case scoring fixtures |
 | Jenn and Jess can pause between sections and resume on another device | partial — parent | Chromium: `tests/browser/assessment-shell.test.js` (page closed; other device). On the iPad: checklist §5.4 is not recorded. |
 | Parent report shows domain evidence and uncertainty without false grade equivalence | evidenced | `tests/browser/assessment-report.test.js` (five sections, no total or average, no prohibited claim, unreviewed says so) |
 | All 90 items, both forms, every rubric and every scoring fixture valid and traceable | evidenced | `check:release-a` (90 items, v1.0.2); `tests/assessment-scoring.test.js` (16 fixtures) |
-| Actual-iPad data, resume, microphone, audio and installed-voice results recorded | **not met — parent** | Recorded so far: Device & Feature Check on 2026-09-10, all six passed; pictures readable on 2026-09-17; Jess's full Form B on 2026-09-17. Not recorded: M1 Parts 1–4 (data, resume, audio), §5.5c microphone denial, §4.5 audio after silence, and the voice name as a written result. |
+| Actual-iPad data, resume, microphone, audio and installed-voice results recorded | **not met — parent** | Recorded so far: Device & Feature Check on 2026-09-10, all six passed; pictures readable on 2026-09-17; Jess's full Form B on 2026-09-10; Device & Feature Check saved as a file on 2026-09-29, 7 of 7 working, including the voice as a written result — fr-CA, Amélie — in Chrome for iOS on iPadOS 26.7; Jenn's and Jess's Form A on 2026-09-29, recordings exported. Not recorded: M1 Parts 1–4 (data, resume, audio), §5.5c microphone denial, and §4.5 audio after silence. |
 
 ### Open items
 
 | Item | Owner | State |
 |---|---|---|
-| Jenn has not sat a form. Form A is hers (`administration.first_form`). | parent | open |
-| Jess's 11 open prompts (6 written, 5 spoken) are unscored. No French-capable scorer is available (parent decision, 2026-09-17), and an AI may only draft (content-owner ruling, 2026-09-11). | parent | open, by decision |
-| Jess's 5 recordings exist only in IndexedDB on one iPad. WebKit clears unused site data after about a week (`known-risks.md` §2). Rescue is the "⬇ Save everything, with the recordings" export (PR #22, checklist §5.10g). That the file was made and backed up is **not confirmed**. | parent | open — time-bound |
+| Jenn has not sat a form. Form A is hers (`administration.first_form`). | parent | **closed 2026-09-29** — Jenn sat Form A (run `run_mumqd5tz_cgs5r2`, content `assessment-v1.0.2`); exported as `french-checkin-jenn-formA-2026-09-29.html`: 6 written answers, 5 of 5 recordings embedded. Form B is her re-check form; she must not sit it now. |
+| Device & Feature Check result | parent | **recorded 2026-09-29** — `device-check-2026-09-29.txt`: 7 of 7 working; voice fr-CA, Amélie; Chrome for iOS (CriOS 154) on iPadOS 26.7. |
+| Jess sat Form A on 2026-09-29 (run `run_mumqznlp_gd5o7h`), her second sitting; exported as `.html` (5 of 5 recordings embedded) and `.txt`. Both forms are now exposed for her: Form B reusable from 2026-11-09, Form A from 2026-11-28 (`administration.reassessment`, 60 days), and exposed items cannot be secure progress evidence (`administration.exposure`). Not an app defect. | parent | recorded — constrains her next re-check |
+| Writing and speaking are unscored for both children: Jess Form B (6 written, 5 spoken), Jess Form A, Jenn Form A — all `awaiting_review`. No French-capable scorer is available (parent decision, 2026-09-17), and an AI may only draft; a named qualified human must confirm (content-owner ruling, 2026-09-11). Claude cannot reach the iPad and cannot listen to audio in this environment. | parent | open, by decision |
+| Jess's 5 Form B recordings (sat 2026-09-10, about 19 days old on 2026-09-29) exist only in IndexedDB in the browser that recorded them. WebKit clears unused site data after about a week (`known-risks.md` §2). The Form B report still opens, so the data is probably not wiped — unconfirmed; the report does not prove the clips survive. Rescue is the "⬇ Save everything, with the recordings" export (PR #22, checklist §5.10g), made in the same browser where the Form B report opens. **Not done** as of 2026-09-29. | parent | open — time-bound |
+| Finding: the Device & Feature Check file says "Opened from: Safari tab" for a check run in Chrome for iOS. `formatDeviceCheckReport` (`src/modes/device-check.js:93`) has only two labels, Home Screen icon or Safari tab, so any other browser tab reads as Safari. Not fixed. | Claude | open |
 | Firestore assessment-store exposure: no auth, and the store holds a child's writing (`known-risks.md` §1b). | parent | deferred by decision |
 | **Audio first tap — OPEN, not fixed; needs a design pass.** The parent reported it again on 2026-09-28. The `d8edc24` fix (`src/app.js:1527`) removes only one cause: `cancel()` on an idle `speechSynthesis`. Nothing unlocks audio on a user gesture. Nothing waits for voices to load. Listen & Speak speaks its first word from a `setTimeout`, outside any gesture (`src/app.js:2479`). The `new Audio().play()` paths do not handle a refused play: `src/modes/assessment-ui.js:404` discards the promise, and the review and device-check players (`src/app.js:3286`, `3319`) have no catch. The guard test (`tests/browser/regression.test.js:134-179`) stubs `speak`/`cancel` and checks the call order in Chromium. It cannot detect this defect on an iPad. | Claude (design), parent (device) | open |
-| iPad §5.5c, microphone-denial recovery, not walked | parent | open |
+| iPad §5.5c, microphone-denial recovery, not walked. No check-in is available: both children have used theirs. Defer to the next re-check. | parent | open |
 | M1 smoke checklist (`docs/ipad-test-checklist.md` Parts 1–4) and recovery-file confirmation not walked. M1 is still `ready_for_review` for the same reason. | parent | open |
 
 Checked and **not** open: the tier-band reading. The paragraph under "Release
@@ -1104,6 +1110,77 @@ content owner did, on 2026-09-09 ("Release A — content-owner decisions", §1).
 
 The parent's handoff is `docs/ipad-test-checklist.md`: the "Still open for M2"
 preface at the top, and the Result page at the end.
+
+## 2026-09-29 — iPad results received
+
+The parent sent files saved from Chrome on the family iPad to Google Drive,
+folder "Saved from Chrome" (the parent's Drive, which is backed up). That folder
+is where these files are kept. Written results only; no code changed. M2 stays
+`in_progress`.
+
+**Device & Feature Check, `device-check-2026-09-29.txt`, 16:41 UTC-06:00.**
+Chrome for iOS (CriOS 154) on iPadOS 26.7. All seven checks working: the voice
+(asked for fr-CA, uses fr-CA Amélie), audio playback (the adult heard it),
+microphone permission, record and replay (the adult heard it), storage round
+trip, clip delete, and the pictures (readable). This is the first time the voice
+is recorded as a written result.
+
+One finding in the file itself: it says "Opened from: Safari tab". The parent
+confirmed the check-ins ran in Chrome. The label has only two values, Home
+Screen icon or Safari tab, so a Chrome tab reads as Safari. Logged as an open
+item; not fixed.
+
+**Jenn, Form A.** Run `run_mumqd5tz_cgs5r2`, started about 07:47 Edmonton time,
+content `assessment-v1.0.2`. Exported 2026-09-29T22:42:49Z as
+`french-checkin-jenn-formA-2026-09-29.html`: 6 written answers, 5 of 5
+recordings embedded, no "recording is gone" boxes. Writing and speaking are
+`awaiting_review`. This closes "Jenn has not sat a form". Form B is her re-check
+form, and she must not sit it now.
+
+**Jess, Form A — her second sitting.** Run `run_mumqznlp_gd5o7h`, started about
+08:04 Edmonton time. Exported 22:43:08Z as `.html` (5 of 5 recordings embedded)
+and as `.txt`. The parent believed both forms had to be completed. They did
+not have to be: each check-in uses one form, and the other is kept for the
+re-check.
+
+The consequence is permanent for this window. Both forms are now exposed for
+Jess. `administration.reassessment` says to use the other form and not to reuse
+a form within 60 days, so her next re-check has no unseen form: Form B can be
+reused from 2026-11-09 and Form A from 2026-11-28. Under
+`administration.exposure`, items she has seen cannot count as secure progress
+evidence. The app did what the rules say; this is not a defect.
+
+**Jess, Form B — the date is 2026-09-10, not 2026-09-17.** The parent sent
+screenshots of the report screen showing "jess · form B · 2026-09-10". 2026-09-17
+is the day the parent reported the sitting. Every statement above that dated the
+sitting 2026-09-17 has been corrected. The report reads:
+
+| Section | Band | Clear enough to act on | Evidence | Next practice |
+|---|---|---|---|---|
+| Listening | Foundation — secure | yes | 8 independent answers; difficulty foundation and developing | L_DETAILS, L_DIRECTIONS, L_KEYWORDS |
+| Reading | Foundation — secure | yes | 8 independent answers | R_MAIN_IDEA, R_DETAILS, R_SENTENCE |
+| Vocabulary and grammar | Below what this check-in can measure | yes | 7 independent answers | none listed; no strengths listed |
+| Writing | awaiting an adult | — | 6 waiting, 0 counted | W_ENCODING |
+| Speaking | awaiting an adult | — | 5 waiting | — |
+
+Pronunciation: nobody has listened.
+
+Her Form B recordings are **still not exported** — the parent has not used "⬇
+Save everything, with the recordings" for that sitting. They are about 19 days
+old. That the report still opens suggests the data has not been wiped, but the
+report does not prove the clips survive. The export has to be made in the same
+browser where the Form B report opens. Open and time-bound.
+
+**Scoring.** The parent expected Claude to export and score. Claude cannot
+reach the iPad, and cannot listen to audio in this environment. Under the
+content owner's 2026-09-11 ruling an AI may only draft; a named qualified human
+must confirm. Writing and speaking are unscored for both children.
+
+**§5.5c microphone refusal.** Not walked. No check-in is available — both
+children have used theirs. Deferred to the next re-check.
+
+Still open, unchanged: the first-tap audio defect, M1 Parts 1–4, §4.5, and the
+recovery file.
 
 ## Parent acceptance
 

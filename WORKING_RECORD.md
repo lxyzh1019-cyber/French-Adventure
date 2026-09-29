@@ -25,6 +25,8 @@ Single working record for this repository. Updated by the main session at the en
 | 12 | 2026-09-28 | "For M2 the only thing missing is Jenn's assess?" | done | No — Step 5 was already built; Step 6, parent iPad evidence and parent acceptance were outstanding |
 | 13 | 2026-09-28 | Plan v1 "Close out M2 Step 6" (approved) | partial | Items 1–7 done on `claude/m2-step6-closeout` (`1c2172d`, PR #25). Plan v2 approved 2026-09-29: `origin/main` merged into the branch, conflict resolved by keeping both sides |
 | 14 | 2026-09-29 | "Can you export the diagnose report", Plan v1 "Save the Device & feature check as a file" (approved) | done (uncommitted) | ⬇ Save these results in the device check → `device-check-YYYY-MM-DD.txt`; shared `saveTextFile` in `src/app.js`; results gain an `answer` field. Does not unblock the iPad row: a person still has to run it |
+| 15 | 2026-09-29 | "Here are the results, how to move on" (device check `.txt`, Jenn Form A `.html`, Jess Form A `.html` + `.txt`) | done | Plan v2 (approved). Recorded in `implementation-status.md` ("2026-09-29 — iPad results received", open items, Phase 2 rows) and `ipad-test-checklist.md`. Docs only; no code. Jess sat both forms — recorded, not an app defect |
+| 16 | 2026-09-29 | Jess Form B report screenshots ("jess · form B · 2026-09-10") | done | Sitting date corrected 2026-09-17 → 2026-09-10 in both docs; 2026-09-17 is the report date. Her Form B recordings still not exported |
 
 ## Hotspot counter
 | Area / feature | Fix rounds | Recurrences | Last symptom | Rewrite-vs-repair reviewed? |
@@ -41,14 +43,15 @@ Rule: 3 fix rounds, or 2 recurrences, or a fix causing a nearby regression → n
 | `tests/` verification harness | COMPLETE | `replay-hooks.sh` → `passed=14 failed=0`; `test-routing-hook.md` present for the manual cloud pass |
 | `docs/HZ-skill-trigger-tuning.md` | COMPLETE | Committed; `CLAUDE.review-rev2.md` removed as the bundle directs |
 | `.gitignore` rules | COMPLETE | `git check-ignore`: `.claude/settings.json` not ignored, `.claude/state/foo` ignored |
-| `FEATURES.md` app manifest | COMPLETE (uncommitted) | Manifest v2, 2026-09-29: 73 features in 5 groups, read from `src/` at `4a16357` |
+| `FEATURES.md` app manifest | COMPLETE | Manifest v2, 2026-09-29: 73 features in 5 groups, read from `src/` at `4a16357`. v3, 2026-09-29: device-check "Opened from" defect pointer added; no feature changed |
 | M2 Step 6 — suite run at HEAD | COMPLETE | LF copy of `4a16357`: `npm test` 398/398, handlers 37, drift pass, Release A 90 items, browser 95/95, content 3/3; CI run 35669857016 success |
 | M2 Step 6 — data regression | COMPLETE | migrations 15, merge 22, assessment-merge 14, backup-restore 4, assessment-store 14, assessment-model 18 → 87/87 |
 | M2 Step 6 — stale status claims corrected | COMPLETE (uncommitted) | `implementation-status.md` rows 16/23/31 and Checks table; `known-risks.md` §1c |
 | M2 Step 6 — review summary | COMPLETE (uncommitted) | `implementation-status.md:1005`; M2 row added to Parent acceptance |
 | M2 Step 6 — parent iPad handoff checklist | COMPLETE (uncommitted) | `ipad-test-checklist.md:16` preface, Result page at line 481 |
-| M2 Step 6 — actual-iPad device results | BLOCKED | Parent only: §5.5c, §4.5 plus the first-tap observation, M1 Parts 1–4, recovery file |
-| Device check "⬇ Save these results" | COMPLETE (uncommitted; iPad untested) | opus-worker: LF copy `npm test` 401/401, drift and release-a pass; Windows `test:browser` 95/95 (system Chrome); Windows `npm test` 400/401, the one failure the known CRLF manifest hash |
+| M2 Step 6 — actual-iPad device results | PARTIAL | 2026-09-29: device check 7/7 (voice fr-CA Amélie), Jenn and Jess Form A exported with 5/5 clips each. Still parent only: §5.5c (no check-in available; next re-check), §4.5 plus the first-tap observation, M1 Parts 1–4, recovery file, Jess Form B clip export |
+| Device check "⬇ Save these results" | COMPLETE | opus-worker: LF copy `npm test` 401/401, drift and release-a pass; Windows `test:browser` 95/95 (system Chrome); Windows `npm test` 400/401, the one failure the known CRLF manifest hash. Used on the iPad 2026-09-29 (Chrome for iOS): file produced; its "Opened from" label is wrong under Chrome (open question) |
+| Record 2026-09-29 iPad results (docs) | COMPLETE | Branch `claude/record-ipad-results-2026-09-29`; `implementation-status.md`, `ipad-test-checklist.md`, this file, `FEATURES.md` |
 | M2 Step 6 overall | PARTIAL | Claude-side evidence complete; device results outstanding; M2 cannot be accepted until they are recorded |
 | Branch up to date with `origin/main` | COMPLETE | Plan v2 6b, 2026-09-29: `bd53ca6` merged; only `WORKING_RECORD.md` conflicted (resolved by keeping both sides); `FEATURES.md` auto-merged |
 | Rules live for this repo | BLOCKED | Needs PR #23 merged to `main` — cloud sessions branch from `main`, so nothing is governed until then |
@@ -60,10 +63,14 @@ Rule: 3 fix rounds, or 2 recurrences, or a fix causing a nearby regression → n
 - 2026-09-21 record-guard hook fired live on the install turn itself, forcing this record — the Stop hook is working from disk before merge
 - 2026-09-29 `opus-worker` self-reported model `claude-opus-5-5` (effort: configured high, not observable)
 - 2026-09-29 M2 Step 6 suite: see the deliverable ledger. `bash tests/replay-hooks.sh` → `passed=12 failed=2` on Windows: the harness hands `/tmp` paths to Windows Python, so this is an environment failure, not a hook defect. Not re-run on Linux; the script is deleted upstream by PR #24
+- 2026-09-29 record iPad results (docs only): Windows `npm test` 400/401 (the known CRLF manifest-hash failure); LF export of `98d679d` with the four edited files overlaid: `npm test` 401/401, `check:drift` and `check:release-a` pass. Grep: no remaining claim that Jess sat Form B on 2026-09-17; no claim that writing or speaking is scored. opus-worker self-reported model `claude-opus-5-5`
 
 ## Open questions / blockers
 - PR #23 must merge into `main` before any of this governs a session. Verify in a **new** session: first reply should report "rules v2.1 (2026-09-21)".
 - Superseded 2026-09-27: the repo copy of `.claude/skills/hz-guarantee-audit/`, `routing_guard_mode` and `tests/test-routing-hook.md` were removed by the stub install; skill and routing-guard mode are now maintained in `hz-claude-config`.
 - 2026-09-29: the local `main` had been stale (PR #24 was never pulled), so this session ran on the in-repo v2.1 rules. `origin/main` (`bd53ca6`) is now merged into `claude/m2-step6-closeout`; from here the central `hz-claude-config` rules apply.
 - `.claude/hooks/config.json` had line-ending-only changes left behind by the hook replay. They were resolved by taking PR #24's deletion of the file during the merge (Plan v2, 6b).
+- 2026-09-29 device check defect, not fixed: `formatDeviceCheckReport` (`src/modes/device-check.js:93`) labels any non-standalone page "Safari tab", so a check run in Chrome for iOS says "Opened from: Safari tab". Needs a plan before any change.
+- 2026-09-29 Jess's Form B recordings (sat 2026-09-10, ~19 days old) are still not exported. Only the parent can do it, in the browser where the Form B report opens. Time-bound: WebKit clears unused site data after about a week.
+- 2026-09-29 Jess has sat both forms. Her next re-check has no unseen form: Form B reusable from 2026-11-09, Form A from 2026-11-28 (`administration.reassessment`). Jenn's re-check form is B.
 - On this Windows checkout (`core.autocrlf=true`), `npm run verify` fails `check:drift`, `check:release-a` and one unit test because of CRLF line endings, not code. Structural fix (not done): a `.gitattributes` that pins LF.

@@ -1,4 +1,4 @@
-# FEATURES — French Adventure — manifest v2 — 2026-09-29
+# FEATURES — French Adventure — manifest v3 — 2026-09-29
 
 Locked features of the current version. Every edit is checked against this list and ends with a regression table. Update this file in the same change that alters a feature. Over-list rather than under-list.
 
@@ -103,7 +103,7 @@ This section lists only what the code does today. Where a feature has a known de
 - 🔧 Device & feature check (`src/modes/device-check.js`, `device-check-ui.js`):
   - Seven parent-started checks: voice, audio plays, microphone permission, record and replay, storage round-trip, delete, and the four pictures shown at learner size.
   - A test-mode notice at the top.
-  - ⬇ Save these results: downloads `device-check-YYYY-MM-DD.txt` — each check's status, detail and the parent's answer, plus date, browser and Home Screen icon vs Safari tab. No learner data; writes nothing on the device.
+  - ⬇ Save these results: downloads `device-check-YYYY-MM-DD.txt` — each check's status, detail and the parent's answer, plus date, browser and Home Screen icon vs Safari tab. No learner data; writes nothing on the device. **Known defect:** any non-Home-Screen page is labelled "Safari tab", including Chrome for iOS (seen 2026-09-29; implementation-status "M2 Step 6", open items).
   - Writes no learner record. Diagnostic clips use the `devicecheck_` prefix and are deleted on the way in and on the way out.
 
 ### Data and sync
