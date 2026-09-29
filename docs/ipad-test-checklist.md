@@ -42,18 +42,22 @@ session.
       worked".
 - [ ] **§5.5c Refusing the microphone.** This one can only be walked inside a
       real check-in. The refused prompt is skipped and kept as a microphone
-      failure. It is **not** marked wrong, but it is used up. Decide before
-      Jenn's check-in whether to spend one of her five speaking prompts on
-      this.
-- [ ] **Jess's recordings (§5.10g), if not already done.** Her five spoken
-      answers exist only on the iPad she recorded on, and Safari clears unused
-      site data after about a week. On **that** iPad, use **⬇ Save everything,
-      with the recordings** for her Form B check-in, and put the file
-      somewhere backed up. Write the date you did it on the Result page.
-- [ ] **Save the device check results.** After running the **🔧 Device &
-      feature check**, tap **⬇ Save these results** and send the file
-      (`device-check-` and the date, `.txt`) back with the Result page. It
-      holds no learner data.
+      failure. It is **not** marked wrong, but it is used up. **No check-in is
+      available now** — both girls have used theirs — so this waits for the
+      next re-check.
+- [ ] **Jess's Form B recordings (§5.10g) — still not done.** She sat Form B
+      on **2026-09-10**. Her five spoken answers exist only in the browser she
+      recorded in, and the iPad clears unused site data after about a week.
+      Open the app in the **same browser where her Form B report opens**, use
+      **⬇ Save everything, with the recordings** for that check-in, and put
+      the file somewhere backed up. Write the date you did it on the Result
+      page.
+- [x] **Save the device check results.** Done **2026-09-29**:
+      `device-check-2026-09-29.txt`, 7 of 7 working.
+
+**Do not start another check-in.** Jenn's check-in is done (Form A,
+2026-09-29). Jess has now sat both forms. Neither girl should start another
+check-in until her re-check is due. Jenn's re-check uses Form B.
 
 **Already done — do not repeat**
 
@@ -62,8 +66,15 @@ session.
   passed** on the family iPad on **2026-09-10**.
 - Pictures readable at real size (§5.0b-6, §5.5d): confirmed on
   **2026-09-17**.
-- Jess sat all of Form B on **2026-09-17**. This was not a check, but it means
-  Form B can never be used for her again. Her next check-in uses Form A.
+- Jess sat all of Form B on **2026-09-10** (you told us on 2026-09-17). This
+  was not a check.
+- Device & feature check saved as a file on **2026-09-29**: all seven checks
+  working; the voice is fr-CA, Amélie.
+- Jenn sat Form A on **2026-09-29**; the file with her recordings is saved.
+- Jess sat Form A on **2026-09-29**; the file with her recordings is saved.
+  Both forms are now used for her: Form B can be used again from
+  **2026-11-09**, Form A from **2026-11-28**, but questions she has already
+  seen will not count as secure progress.
 
 ---
 
@@ -510,3 +521,23 @@ voice*, or write what `currentVoiceInfo()` said if a Mac was used:
 ________________________________________________
 
 Problems found:
+
+### Results received 2026-09-29
+
+Files kept in: Google Drive, folder **"Saved from Chrome"** (the parent's Drive,
+backed up).
+
+- **Device & feature check** — `device-check-2026-09-29.txt`, 16:41. Chrome on
+  the iPad, iPadOS 26.7. All seven checks working. French voice: fr-CA,
+  Amélie. The adult heard the audio and the replayed recording; the pictures
+  were readable. The file says "Opened from: Safari tab", but it was run in
+  Chrome — that label is wrong, and it is logged as a defect.
+- **Jenn, Form A** — sat 2026-09-29 in the morning. Saved as
+  `french-checkin-jenn-formA-2026-09-29.html`: 6 written answers, 5 of 5
+  recordings inside the file.
+- **Jess, Form A** — sat 2026-09-29 in the morning. Saved as `.html` (5 of 5
+  recordings inside the file) and `.txt`.
+- **Jess, Form B** — sat 2026-09-10. Report seen. The file with her recordings
+  is **not saved yet** (see "Still to do" at the top).
+- §5.5c refused microphone: not walked — no check-in available.
+- Writing and speaking: not scored, for either girl.
