@@ -50,6 +50,10 @@ session.
       site data after about a week. On **that** iPad, use **⬇ Save everything,
       with the recordings** for her Form B check-in, and put the file
       somewhere backed up. Write the date you did it on the Result page.
+- [ ] **Save the device check results.** After running the **🔧 Device &
+      feature check**, tap **⬇ Save these results** and send the file
+      (`device-check-` and the date, `.txt`) back with the Result page. It
+      holds no learner data.
 
 **Already done — do not repeat**
 

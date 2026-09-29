@@ -282,3 +282,55 @@ test('the six machine checks and the three judged ones are all declared', () => 
   assert.deepEqual(judged, ['audio_playback', 'record_replay', 'pictures']);
   assert.equal(DC.CHECKS.length, 7);
 });
+
+// ── the saved results ───────────────────────────────────────────────────────
+
+test('the saved results name every check, its status and what it found', async () => {
+  const { controller } = make();
+  controller.checkSpeechLocale();
+  controller.playSample();
+  controller.confirm('audio_playback', true);
+  await controller.checkMicrophone();
+  await controller.checkStorage();
+  controller.showPictures();
+  controller.confirm('pictures', false);
+
+  const text = DC.formatDeviceCheckReport(controller.results(), {
+    now: Date.UTC(2026, 8, 29, 12, 0), userAgent: 'Mozilla/5.0 (iPad) TestAgent', standalone: true,
+  });
+  assert.ok(text.includes(DC.TEST_MODE_NOTICE), 'the test-mode notice is missing');
+  assert.match(text, /Browser: Mozilla\/5\.0 \(iPad\) TestAgent/);
+  assert.match(text, /Opened from: Home Screen icon/);
+  assert.match(text, /Date: 2026-09-(28|29|30) \d\d:\d\d \(UTC[+-]\d\d:\d\d\)/);
+
+  const results = controller.results();
+  for (const check of DC.CHECKS) {
+    const r = results[check.id];
+    assert.ok(text.includes(`(${check.id})`), `${check.id} is missing`);
+    assert.ok(text.includes(`Status: ${DC.STATUS_TEXT[r.status]}`), `${check.id} has no status`);
+    if (r.detail) assert.ok(text.includes(r.detail), `${check.id}'s detail is missing`);
+  }
+  // The voice sentence the checklist tells the parent to read out (§2.1).
+  assert.match(text, /Asked for fr-CA, this device will use fr-FR \(Amelie\)/);
+  // The adult's answers, in the words of the buttons they pressed.
+  assert.match(text, /French audio plays \(audio_playback\)[\s\S]*?Your answer: I heard it/);
+  assert.match(text, /\(record_replay\)[\s\S]*?Your answer: Not answered/);
+  assert.match(text, /\(pictures\)[\s\S]*?Your answer: Too small to read/);
+  // No learner in it.
+  assert.equal(/jenn|jess/i.test(text), false, 'a learner name is in the saved results');
+});
+
+test('the saved results say when the app was opened in a Safari tab', () => {
+  const text = DC.formatDeviceCheckReport(make().controller.results(), { now: 0, standalone: false });
+  assert.match(text, /Opened from: Safari tab/);
+  assert.match(text, /Status: Not run/);
+});
+
+test('re-running a judged check forgets the earlier answer', () => {
+  const { controller } = make();
+  controller.playSample();
+  controller.confirm('audio_playback', true);
+  assert.equal(controller.results().audio_playback.answer, 'yes');
+  controller.playSample();
+  assert.equal(controller.results().audio_playback.answer, null);
+});

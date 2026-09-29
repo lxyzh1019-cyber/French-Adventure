@@ -24,6 +24,7 @@ Single working record for this repository. Updated by the main session at the en
 | 11 | 2026-09-28 | "M1 same problems, you have to press play again" | open | Audit only, no fix. `d8edc24` covered one WebKit cause (idle `cancel()`); no gesture unlock, no voices-loaded wait, non-gesture auto-play at `src/app.js:2479`, `new Audio().play()` paths unhandled; guard test is a Chromium stub. Needs a design pass before any patch |
 | 12 | 2026-09-28 | "For M2 the only thing missing is Jenn's assess?" | done | No — Step 5 was already built; Step 6, parent iPad evidence and parent acceptance were outstanding |
 | 13 | 2026-09-28 | Plan v1 "Close out M2 Step 6" (approved) | partial | Items 1–7 done on `claude/m2-step6-closeout` (`1c2172d`, PR #25). Plan v2 approved 2026-09-29: `origin/main` merged into the branch, conflict resolved by keeping both sides |
+| 14 | 2026-09-29 | "Can you export the diagnose report", Plan v1 "Save the Device & feature check as a file" (approved) | done (uncommitted) | ⬇ Save these results in the device check → `device-check-YYYY-MM-DD.txt`; shared `saveTextFile` in `src/app.js`; results gain an `answer` field. Does not unblock the iPad row: a person still has to run it |
 
 ## Hotspot counter
 | Area / feature | Fix rounds | Recurrences | Last symptom | Rewrite-vs-repair reviewed? |
@@ -47,6 +48,7 @@ Rule: 3 fix rounds, or 2 recurrences, or a fix causing a nearby regression → n
 | M2 Step 6 — review summary | COMPLETE (uncommitted) | `implementation-status.md:1005`; M2 row added to Parent acceptance |
 | M2 Step 6 — parent iPad handoff checklist | COMPLETE (uncommitted) | `ipad-test-checklist.md:16` preface, Result page at line 481 |
 | M2 Step 6 — actual-iPad device results | BLOCKED | Parent only: §5.5c, §4.5 plus the first-tap observation, M1 Parts 1–4, recovery file |
+| Device check "⬇ Save these results" | COMPLETE (uncommitted; iPad untested) | opus-worker: LF copy `npm test` 401/401, drift and release-a pass; Windows `test:browser` 95/95 (system Chrome); Windows `npm test` 400/401, the one failure the known CRLF manifest hash |
 | M2 Step 6 overall | PARTIAL | Claude-side evidence complete; device results outstanding; M2 cannot be accepted until they are recorded |
 | Branch up to date with `origin/main` | COMPLETE | Plan v2 6b, 2026-09-29: `bd53ca6` merged; only `WORKING_RECORD.md` conflicted (resolved by keeping both sides); `FEATURES.md` auto-merged |
 | Rules live for this repo | BLOCKED | Needs PR #23 merged to `main` — cloud sessions branch from `main`, so nothing is governed until then |

@@ -3273,6 +3273,17 @@ configureAssessmentUI({
 // the sitting recorded into, so a recording is played from where it already is
 // rather than copied anywhere.
 let reviewUnmount = null;
+/** Hand the parent a file to keep. Nothing is written to this device's storage. */
+function saveTextFile(text, filename, mime = 'text/plain'){
+  const blob = new Blob([text], { type: `${mime};charset=utf-8` });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 30000);
+}
 function openAssessmentReview(){
   const panel = document.getElementById('assess-review-panel');
   if(!panel) return;
@@ -3287,18 +3298,11 @@ function openAssessmentReview(){
       finally { setTimeout(() => URL.revokeObjectURL(url), 30000); }
     },
     download: (text, player, run, ext = 'txt') => {
-      const mime = ext === 'html' ? 'text/html' : 'text/plain';
-      const blob = new Blob([text], { type: `${mime};charset=utf-8` });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
       // Dated, because a second sitting produces a second file and the two must
       // not be told apart by which folder they landed in.
       const day = new Date().toISOString().slice(0, 10);
-      a.download = `french-checkin-${player}-form${run.form || 'x'}-${day}.${ext}`;
-      document.body.append(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(a.href), 30000);
+      saveTextFile(text, `french-checkin-${player}-form${run.form || 'x'}-${day}.${ext}`,
+        ext === 'html' ? 'text/html' : 'text/plain');
     },
   });
 }
@@ -3322,6 +3326,7 @@ function openDeviceCheck(){
   });
   deviceCheckUnmount = mountDeviceCheck(panel, controller, {
     onDone: () => { deviceCheckUnmount = null; },
+    download: (text, filename) => saveTextFile(text, filename),
   });
 }
 
