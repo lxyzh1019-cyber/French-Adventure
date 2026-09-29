@@ -7,16 +7,20 @@
 // The panel says what it is at the top and keeps saying it: this is test mode,
 // and none of it reaches the learner's record.
 
-import { CHECKS, TEST_MODE_NOTICE } from './device-check.js';
+import {
+  CHECKS, TEST_MODE_NOTICE, STATUS_TEXT, formatDeviceCheckReport, localDay,
+} from './device-check.js';
 import * as content from '../assessment/content.js';
 
-const STATUS_TEXT = {
-  not_run: 'Not run',
-  pass: 'Working',
-  fail: 'Not working',
-  needs_you: 'Waiting for you',
-  recording: 'Recording…',
-};
+/** Whether the app was opened from the Home Screen icon rather than a tab. */
+function isStandalone() {
+  try {
+    return navigator.standalone === true
+      || !!window.matchMedia?.('(display-mode: standalone)')?.matches;
+  } catch {
+    return false;
+  }
+}
 
 const div = (className, text) => {
   const d = document.createElement('div');
@@ -109,7 +113,7 @@ function picturePreview() {
  * parent-only and short-lived, and its actions have nothing to do with the
  * app's own delegate.
  */
-export function mountDeviceCheck(container, controller, { onDone = () => {} } = {}) {
+export function mountDeviceCheck(container, controller, { onDone = () => {}, download = null } = {}) {
   if (!container) return () => {};
   let done = false;
 
@@ -137,6 +141,7 @@ export function mountDeviceCheck(container, controller, { onDone = () => {} } = 
     }
     const foot = div('device-check-actions');
     foot.append(button('Done — clear the test clips', 'dc-exit'));
+    if (download) foot.append(button('⬇ Save these results', 'dc-save'));
     container.append(foot);
   };
 
@@ -160,6 +165,13 @@ export function mountDeviceCheck(container, controller, { onDone = () => {} } = 
     },
     'dc-pictures-yes': () => controller.confirm('pictures', true),
     'dc-pictures-no': () => controller.confirm('pictures', false),
+    // A file for the parent to send back. Nothing is written on this device.
+    'dc-save': () => {
+      const now = Date.now();
+      download(formatDeviceCheckReport(controller.results(), {
+        now, userAgent: navigator.userAgent, standalone: isStandalone(),
+      }), `device-check-${localDay(now)}.txt`);
+    },
   };
 
   const onClick = async (event) => {

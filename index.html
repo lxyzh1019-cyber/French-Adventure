@@ -7,7 +7,7 @@
      styles ......... src/styles.css
      game logic ..... src/**/*.js
 
-   Built from 6e62ad7
+   Built from 1a80c35
   ============================================================
 -->
 <!DOCTYPE html>
@@ -4763,7 +4763,51 @@ const CHECKS = [
   { id: "clip_delete", label: "A clip can be deleted", needsPerson: false },
   { id: "pictures", label: "Pictures and map labels", needsPerson: true }
 ];
-const blank = () => Object.fromEntries(CHECKS.map((c) => [c.id, { id: c.id, label: c.label, status: "not_run", detail: "", at: 0 }]));
+const STATUS_TEXT = {
+  not_run: "Not run",
+  pass: "Working",
+  fail: "Not working",
+  needs_you: "Waiting for you",
+  recording: "Recording…"
+};
+const ANSWER_TEXT = {
+  audio_playback: { yes: "I heard it", no: "I heard nothing" },
+  record_replay: { yes: "I heard it", no: "I heard nothing" },
+  pictures: { yes: "I can read them", no: "Too small to read" }
+};
+const blank = () => Object.fromEntries(CHECKS.map((c) => [c.id, { id: c.id, label: c.label, status: "not_run", detail: "", answer: null, at: 0 }]));
+const twoDigits = (n) => String(n).padStart(2, "0");
+function localDay(ms) {
+  const d = new Date(ms);
+  return `${d.getFullYear()}-${twoDigits(d.getMonth() + 1)}-${twoDigits(d.getDate())}`;
+}
+function formatDeviceCheckReport(results, { now: now2 = Date.now(), userAgent = "", standalone = false } = {}) {
+  const d = new Date(now2);
+  const offset = -d.getTimezoneOffset();
+  const zone = `UTC${offset >= 0 ? "+" : "-"}${twoDigits(Math.floor(Math.abs(offset) / 60))}:${twoDigits(Math.abs(offset) % 60)}`;
+  const lines = [
+    "French Adventure — Device & feature check",
+    TEST_MODE_NOTICE,
+    "",
+    `Date: ${localDay(now2)} ${twoDigits(d.getHours())}:${twoDigits(d.getMinutes())} (${zone})`,
+    `Browser: ${userAgent || "unknown"}`,
+    `Opened from: ${standalone ? "Home Screen icon" : "Safari tab"}`
+  ];
+  CHECKS.forEach((check, i) => {
+    const r = results?.[check.id] || {};
+    const status = r.status || "not_run";
+    lines.push(
+      "",
+      `${i + 1}. ${check.label} (${check.id})`,
+      `   Status: ${STATUS_TEXT[status] ?? status}`,
+      `   Detail: ${r.detail || "—"}`
+    );
+    if (check.needsPerson) {
+      lines.push(`   Your answer: ${ANSWER_TEXT[check.id]?.[r.answer] ?? "Not answered"}`);
+    }
+  });
+  return lines.join("\n") + "\n";
+}
 function createDeviceCheck({
   speak,
   voiceInfo,
@@ -4780,8 +4824,8 @@ function createDeviceCheck({
   let recorded = null;
   let storedKey = null;
   const diagnosticRunId = newDiagnosticRunId();
-  const set = (id, status, detail) => {
-    results[id] = { ...results[id], status, detail: String(detail ?? ""), at: now2() };
+  const set = (id, status, detail, answer = null) => {
+    results[id] = { ...results[id], status, detail: String(detail ?? ""), answer, at: now2() };
     onChange(results);
     return results[id];
   };
@@ -4850,7 +4894,7 @@ function createDeviceCheck({
       const check = CHECKS.find((c) => c.id === id);
       if (!check?.needsPerson) return results[id];
       if (results[id]?.status !== "needs_you") return results[id];
-      return heard ? set(id, "pass", "Confirmed by the adult in the room.") : set(id, "fail", "The adult in the room heard nothing.");
+      return heard ? set(id, "pass", "Confirmed by the adult in the room.", "yes") : set(id, "fail", "The adult in the room heard nothing.", "no");
     },
     /**
      * Ask for the microphone and let it go again.
@@ -4967,13 +5011,13 @@ function createDeviceCheck({
     }
   };
 }
-const STATUS_TEXT = {
-  not_run: "Not run",
-  pass: "Working",
-  fail: "Not working",
-  needs_you: "Waiting for you",
-  recording: "Recording…"
-};
+function isStandalone() {
+  try {
+    return navigator.standalone === true || !!window.matchMedia?.("(display-mode: standalone)")?.matches;
+  } catch {
+    return false;
+  }
+}
 const div = (className, text) => {
   const d = document.createElement("div");
   if (className) d.className = className;
@@ -5042,7 +5086,7 @@ function picturePreview() {
   return layer;
 }
 function mountDeviceCheck(container, controller, { onDone = () => {
-} } = {}) {
+}, download = null } = {}) {
   if (!container) return () => {
   };
   let done = false;
@@ -5070,6 +5114,7 @@ function mountDeviceCheck(container, controller, { onDone = () => {
     }
     const foot = div("device-check-actions");
     foot.append(button("Done — clear the test clips", "dc-exit"));
+    if (download) foot.append(button("⬇ Save these results", "dc-save"));
     container.append(foot);
   };
   const handlers = {
@@ -5091,7 +5136,16 @@ function mountDeviceCheck(container, controller, { onDone = () => {
       return controller.showPictures();
     },
     "dc-pictures-yes": () => controller.confirm("pictures", true),
-    "dc-pictures-no": () => controller.confirm("pictures", false)
+    "dc-pictures-no": () => controller.confirm("pictures", false),
+    // A file for the parent to send back. Nothing is written on this device.
+    "dc-save": () => {
+      const now2 = Date.now();
+      download(formatDeviceCheckReport(controller.results(), {
+        now: now2,
+        userAgent: navigator.userAgent,
+        standalone: isStandalone()
+      }), `device-check-${localDay(now2)}.txt`);
+    }
   };
   const onClick = async (event) => {
     const el2 = event.target.closest?.("[data-action]");
@@ -8124,6 +8178,16 @@ configureAssessmentUI({
   }
 });
 let reviewUnmount = null;
+function saveTextFile(text, filename, mime = "text/plain") {
+  const blob = new Blob([text], { type: `${mime};charset=utf-8` });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 3e4);
+}
 function openAssessmentReview() {
   const panel = document.getElementById("assess-review-panel");
   if (!panel) return;
@@ -8144,16 +8208,12 @@ function openAssessmentReview() {
       }
     },
     download: (text, player, run, ext = "txt") => {
-      const mime = ext === "html" ? "text/html" : "text/plain";
-      const blob = new Blob([text], { type: `${mime};charset=utf-8` });
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
       const day = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
-      a.download = `french-checkin-${player}-form${run.form || "x"}-${day}.${ext}`;
-      document.body.append(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(a.href), 3e4);
+      saveTextFile(
+        text,
+        `french-checkin-${player}-form${run.form || "x"}-${day}.${ext}`,
+        ext === "html" ? "text/html" : "text/plain"
+      );
     }
   });
 }
@@ -8183,7 +8243,8 @@ function openDeviceCheck() {
   deviceCheckUnmount = mountDeviceCheck(panel, controller, {
     onDone: () => {
       deviceCheckUnmount = null;
-    }
+    },
+    download: (text, filename) => saveTextFile(text, filename)
   });
 }
 initConnectivityAndSyncUI();

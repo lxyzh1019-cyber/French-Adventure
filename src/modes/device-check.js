@@ -46,8 +46,64 @@ export const CHECKS = [
   { id: 'pictures', label: 'Pictures and map labels', needsPerson: true },
 ];
 
+/** How each status reads to a person, on screen and in the saved results. */
+export const STATUS_TEXT = {
+  not_run: 'Not run',
+  pass: 'Working',
+  fail: 'Not working',
+  needs_you: 'Waiting for you',
+  recording: 'Recording…',
+};
+
+/** The adult's answer to each judged check, in the words of its buttons. */
+const ANSWER_TEXT = {
+  audio_playback: { yes: 'I heard it', no: 'I heard nothing' },
+  record_replay: { yes: 'I heard it', no: 'I heard nothing' },
+  pictures: { yes: 'I can read them', no: 'Too small to read' },
+};
+
 const blank = () => Object.fromEntries(CHECKS.map(c =>
-  [c.id, { id: c.id, label: c.label, status: 'not_run', detail: '', at: 0 }]));
+  [c.id, { id: c.id, label: c.label, status: 'not_run', detail: '', answer: null, at: 0 }]));
+
+const twoDigits = n => String(n).padStart(2, '0');
+
+/** The local calendar day of a timestamp, as YYYY-MM-DD. */
+export function localDay(ms) {
+  const d = new Date(ms);
+  return `${d.getFullYear()}-${twoDigits(d.getMonth() + 1)}-${twoDigits(d.getDate())}`;
+}
+
+/**
+ * The results as a plain-text file a parent can send back.
+ *
+ * Only what the check found about this device: no learner, no run, no score.
+ * `standalone` says whether the app was opened from the Home Screen icon,
+ * because audio and storage behave differently there than in a Safari tab.
+ */
+export function formatDeviceCheckReport(results, { now = Date.now(), userAgent = '', standalone = false } = {}) {
+  const d = new Date(now);
+  const offset = -d.getTimezoneOffset();
+  const zone = `UTC${offset >= 0 ? '+' : '-'}${twoDigits(Math.floor(Math.abs(offset) / 60))}:${twoDigits(Math.abs(offset) % 60)}`;
+  const lines = [
+    'French Adventure — Device & feature check',
+    TEST_MODE_NOTICE,
+    '',
+    `Date: ${localDay(now)} ${twoDigits(d.getHours())}:${twoDigits(d.getMinutes())} (${zone})`,
+    `Browser: ${userAgent || 'unknown'}`,
+    `Opened from: ${standalone ? 'Home Screen icon' : 'Safari tab'}`,
+  ];
+  CHECKS.forEach((check, i) => {
+    const r = results?.[check.id] || {};
+    const status = r.status || 'not_run';
+    lines.push('', `${i + 1}. ${check.label} (${check.id})`,
+      `   Status: ${STATUS_TEXT[status] ?? status}`,
+      `   Detail: ${r.detail || '—'}`);
+    if (check.needsPerson) {
+      lines.push(`   Your answer: ${ANSWER_TEXT[check.id]?.[r.answer] ?? 'Not answered'}`);
+    }
+  });
+  return lines.join('\n') + '\n';
+}
 
 /**
  * @param speak         the app's own speakFrench
@@ -66,8 +122,8 @@ export function createDeviceCheck({
   let storedKey = null;                // the diagnostic clip currently on disk
   const diagnosticRunId = newDiagnosticRunId();
 
-  const set = (id, status, detail) => {
-    results[id] = { ...results[id], status, detail: String(detail ?? ''), at: now() };
+  const set = (id, status, detail, answer = null) => {
+    results[id] = { ...results[id], status, detail: String(detail ?? ''), answer, at: now() };
     onChange(results);
     return results[id];
   };
@@ -141,8 +197,8 @@ export function createDeviceCheck({
       if (!check?.needsPerson) return results[id];
       if (results[id]?.status !== 'needs_you') return results[id];
       return heard
-        ? set(id, 'pass', 'Confirmed by the adult in the room.')
-        : set(id, 'fail', 'The adult in the room heard nothing.');
+        ? set(id, 'pass', 'Confirmed by the adult in the room.', 'yes')
+        : set(id, 'fail', 'The adult in the room heard nothing.', 'no');
     },
 
     /**
