@@ -13,14 +13,14 @@ States: `not_started` · `in_progress` · `ready_for_review` · `accepted` · `b
 | M1 implementation | [PR #17](https://github.com/lxyzh1019-cyber/French-Adventure/pull/17), merged as `f290a3e` |
 | M1 audit | third-party audit of `f290a3e`, 2026-09-08 |
 | This repair round | branch `claude/audit-report-review-cq7cni`, merged as `a8220ce` |
-| M2 branch | `claude/third-party-audit-validation-2oth5n` |
+| M2 branch | Steps 0–5: `claude/third-party-audit-validation-2oth5n`, merged via PRs #20 and #21 (`abb6b7b`, `6e62ad7`). Later M2 work — the audio export and the record of Jess's sitting — landed via [PR #22](https://github.com/lxyzh1019-cyber/French-Adventure/pull/22) `claude/audio-export-for-later-review`, merged as `377b1f6`. Step 6: `claude/m2-step6-closeout`. |
 
 ## Milestones
 
 | Milestone | State | Notes |
 |---|---|---|
 | M1 — Repair foundation | `ready_for_review` | Both audit blockers repaired with regressions; full Match resume matrix; parent iPad smoke checklist and recovery-file confirmation still required for `accepted`. |
-| M2 — Independent assessment | `in_progress` | Steps 0-4 complete: cleanup, data model, shell, objective sections, and writing/speaking capture. Domain scoring and the parent report are Step 5. Nothing learner-facing yet. Step 0 cleanup on `claude/third-party-audit-validation-2oth5n`. Release A imported and validated; scoring rules proven against the content fixtures. No learner-facing assessment exists yet. Per master plan revision 3, M1 cleanup is folded into M2 rather than forming a separate milestone; parent approved building in parallel with the outstanding iPad checklist. |
+| M2 — Independent assessment | `in_progress` | Steps 0–5 complete: cleanup, data model, shell, objective sections, writing/speaking capture, and Step 5 — domain scoring, reports, parent review and the Device & Feature Check, wired behind the parent password (`src/app.js` ~1591–1614). Reassessment comparison is implemented and unit-tested (`compareRuns`) but not yet shown on the parent screen. The assessment is learner-facing: Jess sat Form B in full on 2026-09-17. Step 6 is **partial and parent-blocked** — see "M2 Step 6 — technical suite and handoff". Per master plan revision 3, M1 cleanup is folded into M2 rather than forming a separate milestone; parent approved building in parallel with the outstanding iPad checklist. |
 | M3 — Learning pilot | `not_started` | Release B not yet authored. |
 | M4 — iPad validation | `not_started` | |
 | M5 — Evaluate and release pilot | `not_started` | |
@@ -29,7 +29,7 @@ States: `not_started` · `in_progress` · `ready_for_review` · `accepted` · `b
 
 | Package | Version | Location | State |
 |---|---|---|---|
-| Release A — assessment content | `assessment-v1.0.0` | `content/releases/assessment-v1/` | Imported unchanged. `npm run check:release-a` passes: hashes, 90 items, both forms complete, every skill/outcome/rubric/fixture reference resolves, listening audio-only. Parent approval of the learner-facing experience pending (nothing learner-facing yet). |
+| Release A — assessment content | `assessment-v1.0.2` | `content/releases/assessment-v1/` | Imported as `assessment-v1.0.0`; amended to v1.0.1 and v1.0.2 (see below). `npm run check:release-a` passes: hashes, 90 items, both forms complete, every skill/outcome/rubric/fixture reference resolves, listening audio-only. The assessment is learner-facing — Jess sat Form B in full on 2026-09-17 — and parent approval of the learner-facing experience is still pending. |
 | Release B — pilot learning content | — | — | Not delivered. |
 
 ## M1 repair round — what the audit asked for
@@ -54,14 +54,16 @@ States: `not_started` · `in_progress` · `ready_for_review` · `accepted` · `b
 
 | Check | Command | Count | Last result |
 |---|---|---|---|
-| Unit + handler export | `npm test` | 361 tests across 26 files; 37 inline handlers checked | pass |
+| Unit + handler export | `npm test` | 398 tests across 27 files; 37 inline handlers checked | pass (398/398) |
 | Build parity | `npm run check:drift` | — | pass |
-| Release A contract | `npm run check:release-a` | 90 items, both forms | pass |
-| Content package contract | `npm run check:content -- <dir>` | 3 packages | pass |
-| Browser (Chromium) | `npm run test:browser` | 80 tests across 8 files | pass (`CHROMIUM_PATH=/opt/pw-browsers/chromium` in the sandbox) |
+| Release A contract | `npm run check:release-a` | `assessment-v1.0.2`: 90 items, both forms | pass |
+| Content package contract | `npm run check:content -- <dir>` | 3 packages: `content/releases/assessment-v1`, `tests/fixtures/content-a`, `tests/fixtures/content-b` | pass (3/3) |
+| Browser (Chromium) | `npm run test:browser` | 95 tests across 9 files | pass (95/95; local Chrome 153 via `CHROMIUM_PATH`) |
+| CI | GitHub Actions `CI` on push | same five steps | success on `4a16357` ([run 35669857016](https://github.com/lxyzh1019-cyber/French-Adventure/actions/runs/35669857016)) |
 
-Counts verified by running the suites at the head of the M2 branch, not copied
-from a previous report.
+Counts taken at `4a16357` on 2026-09-29 by running the suites, not copied from a
+previous report — see "M2 Step 6 — technical suite and handoff" for how they
+were run and the one environment caveat.
 
 Chromium is regression coverage, not the plan's actual-iPad gate.
 
@@ -1000,8 +1002,112 @@ build ahead of the feature that preserves half of it. Worth recording plainly:
 the gap between "the code is merged" and "the iPad is running it" is where this
 nearly cost a child's work.
 
+## M2 Step 6 — technical suite and handoff
+
+Master plan §2.0, Step 6: *"Run the full technical suite and provide the
+actual-iPad handoff checklist"*, evidenced by CI pass, no data regression,
+device results, and one M2 review summary. This section is that summary. Run on
+2026-09-29 at `4a16357`, on branch `claude/m2-step6-closeout`.
+
+**Step 6 is PARTIAL.** Everything Claude can evidence is done and green. The
+actual-iPad device results are still outstanding and only the parent can
+produce them. Master plan §2.0: *M2 cannot be accepted until those device
+results are recorded.*
+
+### Steps 0–5 — what was delivered
+
+| Step | Delivered | Evidence |
+|---|---|---|
+| 0 — cleanup | The plan's six cleanup items. Four findings the plan did not list. Three Phase 1 criteria that were not actually met at `a8220ce`, now repaired: §1.3 inline handlers, §1.7 the five round outcomes, §1.6 idempotent scoring tested end to end. | "M2 Step 0 — validation findings"; "Release A — amended to `assessment-v1.0.1`"; `tests/backup-restore.test.js` (v1 backup); `tests/scaffold.test.js` (no inline handler interpolates content); `tests/migrations.test.js` (v2 → v3 outcomes); `tests/browser/m1-repair.test.js` (abandoned / interrupted rounds; "a question cannot score twice even if its buttons come back") |
+| 1 — data model | Separate, versioned assessment store: run model, migrations, merge (a lattice join), a store with a write barrier, content reader, and its own Firestore document. The profile schema is untouched. | "M2 Step 1 — the assessment data model"; `docs/data-schema-v0.md` "Assessment store (v1)"; `tests/assessment-model.test.js`, `tests/assessment-merge.test.js`, `tests/assessment-store.test.js` |
+| 2 — shell | Entry behind the parent password, A/B form assignment from the release, section navigation, autosave, and resume on another device with no cursor. | "M2 Step 2 — the assessment shell"; `tests/assessment-session.test.js`; `tests/browser/assessment-shell.test.js` (forms, "a started section survives the page going away", "a run started on another device is picked up") |
+| 3 — objective sections | Listening, reading, and vocabulary/grammar end to end: routing, a two-play cap, a technical replay, invalid-not-wrong, and no feedback or reward. | "M2 Step 3 — the objective sections"; `tests/browser/assessment-items.test.js` |
+| 4 — open capture | Writing and speaking captured and left `awaiting_review`. Audio stays on the device in IndexedDB. Microphone denial and interruption are stored as invalid, not wrong. Keyboard instruction. Recovery export carries assessment runs. | "M2 Step 4 — writing and speaking capture"; `tests/speech-capture.test.js`, `tests/assessment-audio-store.test.js`, `tests/browser/assessment-open.test.js` |
+| 5 — scoring and reports | Domain scoring against every fixture. Five-section report with no total. Strengths and next-needs rule. Parent report screen, scoring screen with named scorer, Device & Feature Check (seven checks). All behind the parent password (`src/app.js` ~1591–1614). Reassessment comparison: `compareRuns` is implemented and unit-tested, **but the parent screen does not show it** — it lists each run on its own, newest first. | "M2 Step 5 — the report, the parent report screen, and the device check"; "Scoring the open prompts — the screen and the export"; `tests/assessment-scoring.test.js` (16 fixtures), `tests/assessment-report.test.js` (incl. two `compareRuns` cases), `tests/assessment-review.test.js`, `tests/browser/assessment-report.test.js`, `tests/browser/assessment-review.test.js`, `tests/browser/device-check.test.js` |
+| After Step 5 | Audio export: `exportHtml`, one file per sitting with the recordings embedded. Landed via PR #22. | "Scoring will not happen soon — the export had to change"; `tests/browser/assessment-review.test.js` ("the export carries the recordings out of the iPad") |
+
+### Suite results at `4a16357`
+
+| Check | Result |
+|---|---|
+| `npm test` | `ℹ tests 398` · `ℹ pass 398` · `ℹ fail 0` (27 files) |
+| `npm run check:handlers` | `✓ all 37 inline handler(s) are exported on window` |
+| `npm run check:drift` | `✓ index.html is in sync with src/` |
+| `npm run check:release-a` | `✓ content/releases/assessment-v1: assessment-v1.0.2 — 90 items, both forms complete, every reference resolves` |
+| `npm run check:content -- <dir>` | `✓ … passes structural validation` for `content/releases/assessment-v1`, `tests/fixtures/content-a` and `tests/fixtures/content-b` (3/3) |
+| `npm run test:browser` | `ℹ tests 95` · `ℹ pass 95` · `ℹ fail 0` (9 files; local Chrome 153 via `CHROMIUM_PATH`) |
+| CI (GitHub Actions, Linux) | success on `4a16357`, [run 35669857016](https://github.com/lxyzh1019-cyber/French-Adventure/actions/runs/35669857016) |
+| `bash tests/replay-hooks.sh` (governance hooks, not the app) | `passed=12 failed=2` on the Windows PC. The harness passes `/tmp/…` transcript paths that Windows Python cannot open. Given a Windows path, the same hook blocks correctly, so these results do not describe hook behaviour. Not re-run on Linux. |
+
+**One environment caveat, not a code defect.** The PC checkout uses
+`core.autocrlf=true`, so the working tree holds CRLF copies of files committed
+with LF. The Release A manifest hashes raw bytes. In that working tree, one
+unit test fails ("every file the manifest lists still hashes to what it
+claims", 397/398), and `check:drift` and `check:release-a` fail too. The
+committed blobs match the manifest. For example, `HEAD:review_notes.md`
+hashes to the manifest's `4a2275ed…`. So the suite was run on an LF export of
+the same commit (`git -c core.autocrlf=false archive 4a16357`), where
+everything above passes. CI, which checks out with LF, agrees. A
+`.gitattributes` that pins these files to LF would remove the trap. That
+change is not made here.
+
+### Data regression
+
+No data regression at `4a16357`. Run file by file:
+
+| File | Result |
+|---|---|
+| `tests/migrations.test.js` | 15/15 pass |
+| `tests/merge.test.js` | 22/22 pass |
+| `tests/assessment-merge.test.js` | 14/14 pass |
+| `tests/backup-restore.test.js` | 4/4 pass |
+| `tests/assessment-store.test.js` | 14/14 pass |
+| `tests/assessment-model.test.js` | 18/18 pass |
+
+### Phase 2 acceptance criteria — where each one stands
+
+These are Claude's evidence pointers, not acceptance. The boxes in the master
+plan stay unticked: acceptance is the parent's.
+
+| Criterion (plan §"Phase 2 acceptance criteria") | State | Pointer |
+|---|---|---|
+| Step 0 cleanup complete; duplicate script warnings and stale status statements gone | partial | `package.json` has one of each script key. Step 6 corrected the stale M2, Release A and §1c statements. One stale count remains: `docs/ipad-test-checklist.md` line 3 still quotes M1's "88 unit tests and 15 browser tests". |
+| Cloud backup and combined-file recovery both migrate v1 records safely | evidenced | Both call `mergeProfiles(migrateProfile(…), migrateProfile(…))` (`restoreFromBackup`, `reconcilePlayerFromBackup`). `tests/backup-restore.test.js` pins that composition, including a v1 backup. Neither app function is driven directly by a test. |
+| Assessment and practice use separate routes, state, scoring, and reports | evidenced | Step 1 (own store and Firestore document), Step 2 (own screen); `tests/browser/assessment-shell.test.js` ("running an assessment leaves the game profile alone", "writes only to its own storage key") |
+| No assistance or reward system leaks into assessment | evidenced | `tests/browser/assessment-items.test.js`, `assessment-open.test.js` and `assessment-shell.test.js` (no reward, hint or leaderboard; no feedback on choose or submit) |
+| At least two reviewed item forms exist for every implemented section | partial | Forms A and B are complete for all five sections (`check:release-a`), authored and checked by the content owner (`review_notes.md`, 2026-09-08). Independent educator review has not happened ("Release A follow-ups that are not code"). |
+| Listening contains items without written French clues | evidenced | `check:release-a` (listening audio-only); `tests/browser/assessment-items.test.js` ("no listening item shows written French anywhere on screen") |
+| Reading contains connected text comprehension | evidenced | Release A reading items carry multi-sentence `text_fr` passages tagged `R_CONNECTED` / `R_MAIN_IDEA`, administered by Step 3 |
+| Writing includes independent production | evidenced | Six `open_written` prompts per form; `tests/browser/assessment-open.test.js` ("a written answer is captured, unmarked, and left awaiting review") |
+| Speaking preserves original audio locally; transcript is observation only | evidenced in code, **open on the device** | `src/assessment/audio-store.js`; `tests/browser/assessment-open.test.js`; pronunciation rule in `src/assessment/report.js`. Jess's five real clips are not yet confirmed exported — see open items. |
+| Interrupted or technically invalid responses are not scored as wrong | evidenced | `tests/browser/assessment-items.test.js` ("reporting silence … is not a wrong answer"); `tests/browser/assessment-open.test.js` ("a refused microphone is not a wrong answer"); invalid-case scoring fixtures |
+| Jenn and Jess can pause between sections and resume on another device | partial — parent | Chromium: `tests/browser/assessment-shell.test.js` (page closed; other device). On the iPad: checklist §5.4 is not recorded. |
+| Parent report shows domain evidence and uncertainty without false grade equivalence | evidenced | `tests/browser/assessment-report.test.js` (five sections, no total or average, no prohibited claim, unreviewed says so) |
+| All 90 items, both forms, every rubric and every scoring fixture valid and traceable | evidenced | `check:release-a` (90 items, v1.0.2); `tests/assessment-scoring.test.js` (16 fixtures) |
+| Actual-iPad data, resume, microphone, audio and installed-voice results recorded | **not met — parent** | Recorded so far: Device & Feature Check on 2026-09-10, all six passed; pictures readable on 2026-09-17; Jess's full Form B on 2026-09-17. Not recorded: M1 Parts 1–4 (data, resume, audio), §5.5c microphone denial, §4.5 audio after silence, and the voice name as a written result. |
+
+### Open items
+
+| Item | Owner | State |
+|---|---|---|
+| Jenn has not sat a form. Form A is hers (`administration.first_form`). | parent | open |
+| Jess's 11 open prompts (6 written, 5 spoken) are unscored. No French-capable scorer is available (parent decision, 2026-09-17), and an AI may only draft (content-owner ruling, 2026-09-11). | parent | open, by decision |
+| Jess's 5 recordings exist only in IndexedDB on one iPad. WebKit clears unused site data after about a week (`known-risks.md` §2). Rescue is the "⬇ Save everything, with the recordings" export (PR #22, checklist §5.10g). That the file was made and backed up is **not confirmed**. | parent | open — time-bound |
+| Firestore assessment-store exposure: no auth, and the store holds a child's writing (`known-risks.md` §1b). | parent | deferred by decision |
+| **Audio first tap — OPEN, not fixed; needs a design pass.** The parent reported it again on 2026-09-28. The `d8edc24` fix (`src/app.js:1527`) removes only one cause: `cancel()` on an idle `speechSynthesis`. Nothing unlocks audio on a user gesture. Nothing waits for voices to load. Listen & Speak speaks its first word from a `setTimeout`, outside any gesture (`src/app.js:2479`). The `new Audio().play()` paths do not handle a refused play: `src/modes/assessment-ui.js:404` discards the promise, and the review and device-check players (`src/app.js:3286`, `3319`) have no catch. The guard test (`tests/browser/regression.test.js:134-179`) stubs `speak`/`cancel` and checks the call order in Chromium. It cannot detect this defect on an iPad. | Claude (design), parent (device) | open |
+| iPad §5.5c, microphone-denial recovery, not walked | parent | open |
+| M1 smoke checklist (`docs/ipad-test-checklist.md` Parts 1–4) and recovery-file confirmation not walked. M1 is still `ready_for_review` for the same reason. | parent | open |
+
+Checked and **not** open: the tier-band reading. The paragraph under "Release
+A — amended to `assessment-v1.0.1`" asks the content owner to confirm it. The
+content owner did, on 2026-09-09 ("Release A — content-owner decisions", §1).
+
+The parent's handoff is `docs/ipad-test-checklist.md`: the "Still open for M2"
+preface at the top, and the Result page at the end.
+
 ## Parent acceptance
 
 | Milestone | Accepted by | Date | Note |
 |---|---|---|---|
 | M1 | — | — | pending |
+| M2 | — | — | pending |

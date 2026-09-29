@@ -13,6 +13,56 @@ things that matter most.
 
 ---
 
+## Still open for M2 (as of 2026-09-29)
+
+M2 cannot be accepted until these results are recorded. Walk only the items
+under **Still to do**. The items under **Already done** are recorded and do not
+need repeating. Write what you find on the **Result** page at the end of this
+file. You can edit the file on GitHub, or give the answers to Claude in a
+session.
+
+**Still to do**
+
+- [ ] **Recovery file** — the first box under "Before you start": export the
+      backup. Keep the file somewhere that is itself backed up, and write down
+      on the Result page where you kept it. This is the recovery-file
+      confirmation M1 is still waiting for.
+- [ ] **M1 smoke checklist — Parts 1 to 4** (§1.1–§1.4, §2.1–§2.2, §3.1–§3.6,
+      §4.1–§4.7). §2.1 needs a Mac. Without one, use the sentence the
+      **🔧 Device & feature check** shows under *Check the voice* (§5.0b-1)
+      instead — it says which voice this iPad will use.
+- [ ] **§4.5 Audio after silence — and the first tap.** On 2026-09-28 you
+      reported that the first 🔊 tap still sometimes plays nothing. **That is
+      not fixed yet.** While doing §4.5, also note:
+      (a) right after opening the app from the Home Screen icon, did the very
+      first 🔊 tap speak, or only the second?
+      (b) in Listen & Speak, did the first word play by itself when the
+      question appeared, or only after you tapped 🔊?
+      "First tap silent, second worked" is a useful answer. So is "always
+      worked".
+- [ ] **§5.5c Refusing the microphone.** This one can only be walked inside a
+      real check-in. The refused prompt is skipped and kept as a microphone
+      failure. It is **not** marked wrong, but it is used up. Decide before
+      Jenn's check-in whether to spend one of her five speaking prompts on
+      this.
+- [ ] **Jess's recordings (§5.10g), if not already done.** Her five spoken
+      answers exist only on the iPad she recorded on, and Safari clears unused
+      site data after about a week. On **that** iPad, use **⬇ Save everything,
+      with the recordings** for her Form B check-in, and put the file
+      somewhere backed up. Write the date you did it on the Result page.
+
+**Already done — do not repeat**
+
+- Speaking pictures (§5.5d): approved by the content owner on **2026-09-09**.
+- Device & feature check (§5.0b-1 to §5.0b-5, and §5.0b-7): **all six checks
+  passed** on the family iPad on **2026-09-10**.
+- Pictures readable at real size (§5.0b-6, §5.5d): confirmed on
+  **2026-09-17**.
+- Jess sat all of Form B on **2026-09-17**. This was not a check, but it means
+  Form B can never be used for her again. Her next check-in uses Form A.
+
+---
+
 ## Before you start
 
 - [ ] **Export a backup.** Parent Summary → enter password → **Export backup**.
@@ -430,14 +480,29 @@ Their backup from the first step means nothing is lost either way.
 
 ## Result
 
-Date tested: ______________  ·  iPadOS version: ______________
+Date tested: ______________  ·  iPad model: ______________  ·  iPadOS version: ______________
+
+Opened from:  ☐ Home Screen icon  ☐ Safari tab
+
+**M2 open items** (see "Still open for M2" at the top):
+
+- Recovery file exported and kept at: ______________________________
+- M1 Parts 1–4 (§1.1–§4.7): ☐ all passed  ☐ problems — which: ______________________________
+- §4.5 audio after silence: ☐ spoke  ☐ silent
+    - First 🔊 tap after opening the app: ☐ spoke  ☐ silent, second tap worked  ☐ other: ________
+    - Listen & Speak first word played by itself: ☐ yes  ☐ no  ☐ only after tapping 🔊
+- §5.5c refused microphone: ☐ not walked (prompt not spent)  ☐ said *not a wrong answer* and moved on  ☐ problem: ________
+- Jess's recordings saved with **⬇ Save everything, with the recordings** on: ______________  kept at: ______________________________
 
 Jenn ⭐ before: ________ after: ________   Jess ⭐ before: ________ after: ________
 
 Auto-Correction / Predictive Text turned off before the check-in?  ☐ yes  ☐ no
 
 The two pictures (room, street map) looked clear?  ☐ yes  ☐ no — what was unclear: ______
+(Already confirmed on 2026-09-17. Leave this blank unless something has changed.)
 
-`currentVoiceInfo()` said: ________________________________________________
+French voice. Copy the sentence from 🔧 Device & feature check → *Check the
+voice*, or write what `currentVoiceInfo()` said if a Mac was used:
+________________________________________________
 
 Problems found:
