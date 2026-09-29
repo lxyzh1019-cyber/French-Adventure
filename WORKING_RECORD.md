@@ -19,10 +19,11 @@ Single working record for this repository. Updated by the main session at the en
 | 6 | 2026-09-21 | "Make .gitignore track .claude/ and ignore .claude/state/" | done | Also added `__pycache__/` — replay script byte-compiles `_common.py` |
 | 7 | 2026-09-21 | "Run bash tests/replay-hooks.sh and show the last line" | done | `passed=14 failed=0` |
 | 8 | 2026-09-21 | "Commit and push to rules-v2" | done | `30c3c59`; open PR #23 already carried the branch, no new PR opened |
+| 9 | 2026-09-27 | Run the `hz-claude-config` stub installer; commit, push and open a PR if it ends `INSTALL OK` | done | `INSTALL OK`, smoke test `Rules v3.1.4 loaded`. v2 hooks, skill copy, `tests/replay-hooks.sh`, `tests/test-routing-hook.md`, `docs/HZ-skill-trigger-tuning.md` removed; `CLAUDE.md` is now the pointer; `FEATURES.md` governance section updated to match |
 | 10 | 2026-09-28 | "Where is the status of rebuild?" | done | Answer: `docs/implementation-status.md`. Row numbered 10 because `origin/main` (PR #24) already holds row 9 |
 | 11 | 2026-09-28 | "M1 same problems, you have to press play again" | open | Audit only, no fix. `d8edc24` covered one WebKit cause (idle `cancel()`); no gesture unlock, no voices-loaded wait, non-gesture auto-play at `src/app.js:2479`, `new Audio().play()` paths unhandled; guard test is a Chromium stub. Needs a design pass before any patch |
 | 12 | 2026-09-28 | "For M2 the only thing missing is Jenn's assess?" | done | No — Step 5 was already built; Step 6, parent iPad evidence and parent acceptance were outstanding |
-| 13 | 2026-09-28 | Plan v1 "Close out M2 Step 6" (approved) | partial | Items 1–6 done on `claude/m2-step6-closeout`, uncommitted. Plan v2 (merge `origin/main` into the branch) awaiting approval |
+| 13 | 2026-09-28 | Plan v1 "Close out M2 Step 6" (approved) | partial | Items 1–7 done on `claude/m2-step6-closeout` (`1c2172d`, PR #25). Plan v2 approved 2026-09-29: `origin/main` merged into the branch, conflict resolved by keeping both sides |
 
 ## Hotspot counter
 | Area / feature | Fix rounds | Recurrences | Last symptom | Rewrite-vs-repair reviewed? |
@@ -47,7 +48,7 @@ Rule: 3 fix rounds, or 2 recurrences, or a fix causing a nearby regression → n
 | M2 Step 6 — parent iPad handoff checklist | COMPLETE (uncommitted) | `ipad-test-checklist.md:16` preface, Result page at line 481 |
 | M2 Step 6 — actual-iPad device results | BLOCKED | Parent only: §5.5c, §4.5 plus the first-tap observation, M1 Parts 1–4, recovery file |
 | M2 Step 6 overall | PARTIAL | Claude-side evidence complete; device results outstanding; M2 cannot be accepted until they are recorded |
-| Branch up to date with `origin/main` | NOT STARTED | Plan v2 step 6b awaiting approval |
+| Branch up to date with `origin/main` | COMPLETE | Plan v2 6b, 2026-09-29: `bd53ca6` merged; only `WORKING_RECORD.md` conflicted (resolved by keeping both sides); `FEATURES.md` auto-merged |
 | Rules live for this repo | BLOCKED | Needs PR #23 merged to `main` — cloud sessions branch from `main`, so nothing is governed until then |
 
 ## Checks and evidence
@@ -60,8 +61,7 @@ Rule: 3 fix rounds, or 2 recurrences, or a fix causing a nearby regression → n
 
 ## Open questions / blockers
 - PR #23 must merge into `main` before any of this governs a session. Verify in a **new** session: first reply should report "rules v2.1 (2026-09-21)".
-- Upload `.claude/skills/hz-guarantee-audit/` zipped to claude.ai → Settings → Capabilities → Skills; the repo copy does not reach claude.ai chat.
-- Leave `routing_guard_mode: observe` until `tests/test-routing-hook.md` has been walked in a cloud session.
-- 2026-09-28: the local `main` was stale. `origin/main` is at `bd53ca6` (PR #24, the `hz-claude-config` stub), which removes these hooks and `tests/replay-hooks.sh`. Merging it into `claude/m2-step6-closeout` will overlap this file at the request ledger and here; resolve by keeping both sides.
-- `.claude/hooks/config.json` has line-ending-only changes left behind by the hook replay, and the main session was blocked from restoring it. PR #24 deletes the file, so the merge resolves it.
+- Superseded 2026-09-27: the repo copy of `.claude/skills/hz-guarantee-audit/`, `routing_guard_mode` and `tests/test-routing-hook.md` were removed by the stub install; skill and routing-guard mode are now maintained in `hz-claude-config`.
+- 2026-09-29: the local `main` had been stale (PR #24 was never pulled), so this session ran on the in-repo v2.1 rules. `origin/main` (`bd53ca6`) is now merged into `claude/m2-step6-closeout`; from here the central `hz-claude-config` rules apply.
+- `.claude/hooks/config.json` had line-ending-only changes left behind by the hook replay. They were resolved by taking PR #24's deletion of the file during the merge (Plan v2, 6b).
 - On this Windows checkout (`core.autocrlf=true`), `npm run verify` fails `check:drift`, `check:release-a` and one unit test because of CRLF line endings, not code. Structural fix (not done): a `.gitattributes` that pins LF.
