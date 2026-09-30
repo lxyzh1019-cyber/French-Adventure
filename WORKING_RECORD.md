@@ -88,9 +88,9 @@ Rule: 3 fix rounds, or 2 recurrences, or a fix causing a nearby regression → n
 | Design PR 3 — stage 8c evidence check, records, commit, PR, screenshots | COMPLETE | Main session checked: ids kept, both status bars / rule strip / session clock gone, rules text exact, both Chinese strings present, test diff limited to the two files; three after-shots read by eye; committed `f8edd7a`, PR #35 open ready for review; after-screenshots zip sent in the session |
 | Design PR 3 — stage 8d review and merge | WAITING ON YOU — review and merge PR #35 | |
 | Design PR 4 (Patch 1) — stage 1 merge PR 3 | WAITING ON YOU — merge PR #35, then say merged | |
-| Design PR 4 (Patch 1) — stage 2 branch from main | NOT STARTED | after the merge |
-| Design PR 4 (Patch 1) — stage 3 implementation (opus-worker) | NOT STARTED | |
-| Design PR 4 (Patch 1) — stage 4 evidence check, records, commit, PR, screenshots | NOT STARTED | |
+| Design PR 4 (Patch 1) — stage 2 branch from main | WAITING ON YOU — merge PR #35 first (Plan v6 decision 1: PR 4 is built from main after PR 3) | |
+| Design PR 4 (Patch 1) — stage 3 implementation (opus-worker) | WAITING ON YOU — merge PR #35 first | |
+| Design PR 4 (Patch 1) — stage 4 evidence check, records, commit, PR, screenshots | WAITING ON YOU — merge PR #35 first | |
 | Design PR 4 (Patch 1) — stage 5 review and merge | WAITING ON YOU — after PR 4 opens | |
 
 ## Checks and evidence
