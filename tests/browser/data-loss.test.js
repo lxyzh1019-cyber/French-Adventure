@@ -134,6 +134,8 @@ test('a failed cloud read is visible, not silent', async () => {
   await page.evaluate(() => selectPlayer('jenn'));
   await page.waitForTimeout(1500);
 
+  // The save state sits behind the slim bar's save icon; a tap shows it in words.
+  await page.evaluate(() => document.getElementById('save-icon').click());
   const text = await page.evaluate(() => document.body.innerText);
   assert.match(text, /offline|not connected|sync/i,
     'no on-screen indication that the profile has not loaded');

@@ -37,13 +37,14 @@ Single working record for this repository. Updated by the main session at the en
 | 24 | 2026-09-29 | "yes, fix both on the same PR" | done | FEATURES.md audio feature line and the M2 Step 6 device-results row now say first tap confirmed on the iPad; record correction only, no hotspot change (no new fix or recurrence) |
 | 25 | 2026-09-30 | Design handoff zip: "read PROMPT.md, reply with understanding of the 3 PRs, risks, tests; after OK do PR 1 only" → Plan v3 approved (French Time spelling, all 12 Jenn-colour error places, ✗/✓ by CSS, screenshots via chat) | in progress | Branch `claude/design-pr1-tokens`; plan copy `plans/2026-09-30-plan-v3-design-pr1-tokens.md`; PR 2 and PR 3 get their own plans after each merge |
 | 26 | 2026-09-30 | "merged, start PR 2" → Plan v4 (approved: lock only "Show full French times"; mockup clear-button labels; one phone screenshot) | in progress | Branch `claude/design-pr2-parent-tabs`; plan copy `plans/2026-09-30-plan-v4-design-pr2-parent-tabs.md` |
+| 27 | 2026-09-30 | "merged, start PR 3" → Plan v5 (approved: level rows stay in More; whole tile row removed at round end; topic details use each girl's suggested level; save icon quiet only when synced; "← Back" on both bars) | in progress | Branch `claude/design-pr3-kids-screens`; plan copy `plans/2026-09-30-plan-v5-design-pr3-kids-screens.md` |
 
 ## Hotspot counter
 | Area / feature | Fix rounds | Recurrences | Regressions caused | Workarounds/exceptions | Last symptom | Rewrite-vs-repair reviewed? |
 |---|---|---|---|---|---|---|
 | Rules bundle install | 0 | 0 | 0 | 0 | — | no |
 | Audio playback (first tap silent) | 2 (`d8edc24`; one audio owner, `claude/audio-first-tap`) | 1 (parent, 2026-09-28) | 0 | 0 | "You have to press play again" | yes — Plan v1 2026-09-29: one audio owner (`src/speech/audio-out.js`) instead of per-site patches. A further recurrence after this means the WebKit model in `tests/helpers/fake-webkit-audio.js` is wrong, not that another call site needs a patch |
-| Design update (tokens, colours, readability, Parent Summary tabs) | 2 (PR 1 merged #33; PR 2 `claude/design-pr2-parent-tabs`) | 0 | 0 | 0 | Wrong answers in Jenn red; indigo text 2.3–2.8:1; white on green 2.5:1 | no — first round, no history |
+| Design update (tokens, colours, Parent Summary tabs, kids' screens) | 3 (PR 1 merged #33; PR 2 merged #34; PR 3 `claude/design-pr3-kids-screens`) | 0 | 0 | 0 | Wrong answers in Jenn red; indigo text 2.3–2.8:1; white on green 2.5:1 | yes 2026-09-30 — Plan v5: three planned parts of one package, no shared cause; incremental kept, consolidations: one screen switcher, one save-state writer, one punctuation helper |
 Rule: 3 fix rounds, or 2 recurrences, or a fix causing a nearby regression → no further patch until the comparison is presented.
 
 ## Deliverable ledger
@@ -80,8 +81,11 @@ Rule: 3 fix rounds, or 2 recurrences, or a fix causing a nearby regression → n
 | Design PR 2 — stage 6b implementation (opus-worker) | COMPLETE | opus-worker, model `claude-opus-5-5`. LF copy `npm run verify` 418/418, handlers 37, drift ✓, release A ✓; Windows `test:browser` 103/103 (one test file changed: m1-repair scans all three tabs — stronger); Windows `npm test` 417/418 (known CRLF hash). Chinese lines 226→226, every Chinese line identical. 18 screenshots (3 tabs × 2 orientations × before/after, phone Progress, unlocked Settings, report on Check-in) in the session scratch folder |
 | Design PR 2 — stage 6c evidence check, records, commit, PR, screenshots | COMPLETE | Main session checked: all 16 ids kept, 9 onclick strings kept, data-actions kept + 3 `parent-tab`; three after-shots read by eye; committed `bde9f27`, PR #34 open ready for review; screenshots zip sent in the session |
 | Design PR 2 — stage 6d review and merge | WAITING ON YOU — review and merge PR #34 | |
-| Design PR 3 — stage 7 Plan for PR 3 | WAITING ON YOU — merge PR #34 first (the package: PR 3 starts only after PR 2 is merged) | |
-| Design PR 3 — stage 8 approve plan, review and merge | WAITING ON YOU — after Plan for PR 3 | |
+| Design PR 3 — stage 7 Plan for PR 3 | COMPLETE | Plan v5 approved 2026-09-30 |
+| Design PR 3 — stage 8a branch from main | COMPLETE | `claude/design-pr3-kids-screens` from `416b848` |
+| Design PR 3 — stage 8b implementation (opus-worker) | COMPLETE | opus-worker, model `claude-opus-5-5`. LF copy `npm run verify` 422/422 (4 new `joinFrenchParts` cases), handlers 37, drift ✓, release A ✓; Windows `test:browser` 103/103 (changed: data-loss taps the save icon first; fr-text unit cases added); Windows `npm test` 421/422 (known CRLF hash). Chinese: 484 distinct runs before and after, none with fewer occurrences; lines app.js 9→9, index.html 1→1, curriculum-map.js 216→216. 8th tile bottom 647px at 1194×834. 96 screenshots in the session scratch folder |
+| Design PR 3 — stage 8c evidence check, records, commit, PR, screenshots | PARTIAL | Main session checked: ids kept, both status bars / rule strip / session clock gone, rules text exact, both Chinese strings present, test diff limited to the two files; three after-shots read by eye; commit and PR this turn |
+| Design PR 3 — stage 8d review and merge | WAITING ON YOU — review and merge PR 3 after it opens | |
 
 ## Checks and evidence
 - 2026-09-21 `bash tests/replay-hooks.sh` → passed=14 failed=0 (validation-line 3/3, record-guard 3/3, plan-gate 3/3, skill-router 2/2, routing-guard 3/3)
@@ -122,6 +126,24 @@ Rule: 3 fix rounds, or 2 recurrences, or a fix causing a nearby regression → n
 | "Show full French times" locked until 4 digits typed | added | check still runs on press |
 | Overlay subtitle "Weekly & daily performance" | intentionally removed | mockup has title → tabs only |
 | Shared `#assess-parent-panel` status block | intentionally removed | replaced by the two per-girl status elements |
+
+- 2026-09-30 design PR 3 (opus-worker, model `claude-opus-5-5`): LF copy `npm run verify` 422/422, handlers 37, drift ✓, release A ✓; Windows `test:browser` 103/103; Windows `npm test` 421/422 (known CRLF hash). Beyond the letter of the plan, accepted: praise line "🎉 Well done!" for a finished round with no topic star; next-step wording built in kid words from the same progress numbers (the raw "Next:" line can say "Reach 60%", which the design forbids on kids' screens); ☆☆☆ row hidden on out-of-hearts too; save message keeps the Internet state; "Left" label in the time pill; brand text hidden ≤420px; dead CSS removed. Regression table:
+
+| Feature | v6 → v7 | Note |
+|---|---|---|
+| Start screen cards, champion board, wall clock, big title | kept | title and clock now only here; Parent Summary button below the cards |
+| Hub header, slogan + translate, level tabs L1–L7, six games, My Words, Study | kept | new order; My Words and Study are tiles; tabs 52px |
+| Topic stars map | kept | icon, name, stars only; the progress lines moved to the Parent Summary |
+| Hub "More" (level accuracy, suggested next) | kept | now also holds today's 4 numbers, the three rules and the note |
+| Hub one-line rule strip | intentionally removed | rules in kid words inside More |
+| Connection/sync status bars (hub, game) | intentionally removed | one save icon with tap-to-read message; text logic unchanged |
+| Game bar 🔊 | kept | shown only in Word Match; other games have a card speaker |
+| Wrong-answer popup lines | kept | answer once; both Chinese strings on one line; accent note now shows |
+| Round end points formula and Base/Speed/Lives/Rounds tiles | intentionally removed | total stars only; praise and result first |
+| Round recording (stars, rounds, topic stars, day records, round log, moons, saves) | kept | code untouched |
+| Study sets, My Words list/drill, Sentence Builder check | kept | display/speech joins punctuation; check unchanged |
+| Check-in screen rules (no feedback, no banned words, Pause/Close) | kept | slim bar, tappable choices, sub line and plays-left placement |
+| Speech owner | kept | untouched |
 
 ## Open questions / blockers
 - PR #23 must merge into `main` before any of this governs a session. Verify in a **new** session: first reply should report "rules v2.1 (2026-09-21)".

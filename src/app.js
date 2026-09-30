@@ -26,7 +26,7 @@ import { mountDeviceCheck } from './modes/device-check-ui.js';
 import { createAudioCapture } from './speech/capture.js';
 import { createAudioStore } from './assessment/audio-store.js';
 import { normalizeForRecognition, compareFrench, scrambleTypeFor,
-         buildScrambleTiles, joinScrambleTiles, isScrambleSolvable,
+         buildScrambleTiles, joinScrambleTiles, joinFrenchParts, isScrambleSolvable,
          SCRAMBLE_TYPES } from './util/fr-text.js';
 import { getWeekStart, isSameWeek, todayKey, dateKeyAddDays, getIsoDateRange,
          previousWeekStartKey, weekStartForOffset, weekEndFromStart,
@@ -304,7 +304,6 @@ function applyWrongAttemptPenalty(koDelayMs){
 function updateConnectionStatusUI(){
   const online = typeof navigator !== 'undefined' && navigator.onLine;
   const netTxt = online ? 'Online' : 'Offline';
-  const hubs = [['conn-net-hub','conn-sync-hub','conn-dot-hub'], ['conn-net-game','conn-sync-game','conn-dot-game']];
   const p = currentPlayer;
   let syncTxt = '—';
   if(p && syncMeta[p]){
@@ -330,18 +329,31 @@ function updateConnectionStatusUI(){
   }else{
     syncTxt = online ? 'Pick a player' : 'Offline';
   }
-  hubs.forEach(function(row){
-    const netEl = document.getElementById(row[0]);
-    const syEl = document.getElementById(row[1]);
-    const dot = document.getElementById(row[2]);
-    if(netEl) netEl.textContent = netTxt;
-    if(syEl) syEl.textContent = syncTxt;
-    if(dot){
-      const holding = !!(p && syncMeta[p] && syncMeta[p].loadState === 'pending');
-      dot.classList.toggle('cs-online', online && !holding);
-      dot.classList.toggle('cs-offline', !online || holding);
-    }
-  });
+  // One small icon on the kids' bar: a quiet cloud only when saving is
+  // confirmed, a warning otherwise. The words sit behind it (tap to read).
+  const icon = document.getElementById('save-icon');
+  if(!icon) return;
+  const ok = syncTxt === 'Synced to cloud' || syncTxt === 'Ready';
+  const msg = 'Save: ' + syncTxt + ' · Internet: ' + netTxt;
+  if(icon.getAttribute('data-msg') !== msg){
+    // A new state: the message shown by an earlier tap no longer applies.
+    const line = document.getElementById('save-msg');
+    if(line) line.textContent = '';
+  }
+  icon.classList.toggle('ok', ok);
+  icon.classList.toggle('bad', !ok);
+  icon.textContent = ok ? '☁️' : '⚠️';
+  icon.setAttribute('data-msg', msg);
+  icon.setAttribute('aria-label', msg);
+}
+/** Tap on the save icon: say the save state in words. */
+function showSaveStatusMessage(){
+  const icon = document.getElementById('save-icon');
+  if(!icon) return;
+  const msg = icon.getAttribute('data-msg') || '';
+  showToast(msg, icon.classList.contains('bad') ? 'var(--wrong)' : null);
+  const line = document.getElementById('save-msg');
+  if(line) line.textContent = msg;
 }
 async function flushPendingCloudSaves(){
   for(const pl of ['jenn','jess']){
@@ -759,13 +771,6 @@ function startSessionClock(){
   function tickCountdown(){
     const remaining = countdownEnd - Date.now();
     const cd = document.getElementById('countdown-display');
-    const wallEl = document.getElementById('clock-wall');
-
-    // Wall clock
-    const now = new Date();
-    let h = now.getHours(), m = now.getMinutes();
-    const ampm = h>=12?'PM':'AM'; h = h%12||12;
-    if(wallEl) wallEl.textContent = h+':'+(m<10?'0':'')+m+' '+ampm;
 
     if(remaining <= 0){
       clearInterval(countdownInterval);
@@ -1264,8 +1269,6 @@ function selectPlayer(p){
   if(hdsb) hdsb.style.display='none';
   if(hdch) hdch.textContent='▼';
   if(hdbtn) hdbtn.setAttribute('aria-expanded','false');
-  document.getElementById('wall-clock-display').style.display='none';
-  document.getElementById('session-clock').style.display='flex';
   showScreen('hub');updateHub();
   startSessionClock();
   startPlayTimeTracker();
@@ -1274,13 +1277,25 @@ function selectPlayer(p){
 function goBack(){
   stopPlayTimeTracker();
   sessionWeekdayBypass=false;
-  document.getElementById('wall-clock-display').style.display='block';
-  document.getElementById('session-clock').style.display='none';
   showScreen('select');updateLeaderboard();
 }
 function exitGame(){stopAllMics();if(currentPlayer&&currentGameType){recordUnfinishedRound(ROUND_OUTCOME.ABANDONED);persistRoundDraftNow();applyPendingRemoteData(currentPlayer);saveState(currentPlayer);}currentGameType=null;questions=[];showScreen('hub');document.getElementById('hint-panel').classList.remove('show');updateConnectionStatusUI();}
+// The one place that decides which chrome a screen gets: the big title and the
+// wall clock only on the start screen, the slim top bar on the hub and in games,
+// and neither on the check-in.
 function showScreen(name){
   ['select','hub','game','assessment'].forEach(n=>document.getElementById(`screen-${n}`).style.display=n===name?'block':'none');
+  const header=document.querySelector('.game-header');
+  const wall=document.getElementById('wall-clock-display');
+  const bar=document.getElementById('topbar');
+  if(header) header.style.display=name==='select'?'block':'none';
+  if(wall) wall.style.display=name==='select'?'block':'none';
+  if(bar) bar.style.display=(name==='hub'||name==='game')?'flex':'none';
+}
+/** The slim bar's Back: from a game to the hub, from the hub to the start screen. */
+function topBarBack(){
+  if(document.getElementById('screen-game').style.display==='block') exitGame();
+  else goBack();
 }
 function setGrade(g){
   if(g < 4 || g > MAX_PLAYABLE_GRADE) return;
@@ -1404,6 +1419,22 @@ function parentPracticeRowsHtml(words){
   }).join('');
 }
 
+// The Games / Tries / Accuracy / Next lines that used to sit on the kids' topic
+// cards, for each topic of this girl's suggested level — same function, same data.
+function parentTopicDetailsHtml(s){
+  const g = recommendLevel(s).gradeKey || 4;
+  const tk = todayKey();
+  const topicStars = s.topicStars || {};
+  const rows = getTopics(g).map(function([key, topic]){
+    const stars = topicStars[g + '_' + key] || 0;
+    return '<div class="parent-topic-row"><div class="parent-topic-name">' + topic.icon + ' ' + topic.name
+      + ' <span class="parent-topic-stars">' + '⭐'.repeat(Math.min(stars,3)) + '☆'.repeat(Math.max(0,3-stars)) + '</span></div>'
+      + topicStarProgressHTML(s, tk, g + '_' + key, stars) + '</div>';
+  }).join('');
+  return '<details class="parent-topic-details"><summary>Topic details (current level) · ' + levelLabel(g) + '</summary>'
+    + '<div class="parent-topic-list">' + rows + '</div></details>';
+}
+
 function formatPlayerDailySummaryHTML(s){
   const tk=todayKey();
   const ts=s.todayStats&&s.todayStats[tk];
@@ -1472,13 +1503,13 @@ function updateHub(){
 function updateStarMap(){
   const s=state[currentPlayer];
   const grid=document.getElementById('sm-grid');grid.innerHTML='';
-  const tk=todayKey();
+  // Icon, name and stars only on the kids' hub; the Games / Tries / Accuracy
+  // lines are in the Parent Summary › Progress › Topic details.
   getTopics(currentGrade).forEach(([key,topic])=>{
     const stars=s.topicStars[`${currentGrade}_${key}`]||0;
     const div=document.createElement('div');
     div.className=`sm-topic${stars>=3?' mastered':''}`;
-    const progressHtml=topicStarProgressHTML(s, tk, `${currentGrade}_${key}`, stars);
-    div.innerHTML=`<span class="sm-topic-icon">${topic.icon}</span><div class="sm-topic-name">${topic.name}</div><div class="sm-stars">${'⭐'.repeat(Math.min(stars,3))}${'☆'.repeat(Math.max(0,3-stars))}</div>${progressHtml}`;
+    div.innerHTML=`<span class="sm-topic-icon">${topic.icon}</span><div class="sm-topic-name">${topic.name}</div><div class="sm-stars">${'⭐'.repeat(Math.min(stars,3))}${'☆'.repeat(Math.max(0,3-stars))}</div>`;
     grid.appendChild(div);
   });
 }
@@ -1621,12 +1652,13 @@ document.addEventListener('click', function(e){
     case 'assess-record':    void startRecording(); break;
     case 'assess-stop-record': void stopRecording(); break;
     case 'assess-play-own':  playOwnRecording(); break;
+    case 'save-status':      showSaveStatusMessage(); break;
   }
 });
 
 function speakCurrent(){
   if(!currentQ)return;
-  const text=currentQ.word?.fr||currentQ.parts?.join(' ')||'';
+  const text=currentQ.word?.fr||(currentQ.parts?joinFrenchParts(currentQ.parts):'')||'';
   if(text)speakWithSignal(text, () => document.getElementById('btn-tts'));
 }
 // One controller per mic button. Tap starts listening, tap again stops it,
@@ -1710,7 +1742,8 @@ function startGame(type){
     scramble:'🔤 Scramble',builder:'💬 Sentence Builder',
     listen:'🎧 Listen & Speak',boss:'⚡ Boss Round'
   }[type];
-  document.getElementById('btn-tts').style.display='inline-block';
+  // One speaker per screen: every other game has one on the card.
+  document.getElementById('btn-tts').style.display=type==='match'?'inline-block':'none';
   document.getElementById('btn-stt').style.display=recognition?'inline-block':'none';
   updateConnectionStatusUI();
   scheduleRoundDraftPersist();
@@ -2032,7 +2065,7 @@ function renderBuilder(q,area,actions){
   renderBuilderState(q);
   actions.innerHTML='<button class="btn-secondary" onclick="clearBuilder()">Clear</button>'
     +'<button class="btn-primary" onclick="checkBuilder()">Check ✓</button>'
-    +speakButtonHTML(q.parts.join(' '),'question-speak-inline');
+    +speakButtonHTML(joinFrenchParts(q.parts),'question-speak-inline');
 }
 function renderBuilderState(q){
   const built=document.getElementById('built-sentence'),bank=document.getElementById('word-bank');
@@ -2064,7 +2097,7 @@ function checkBuilder(){
     });
     recordGradeAttempt(currentGrade, true);
     showFeedback(true,null,currentQ.target);
-    speakFrench(correct);
+    speakFrench(joinFrenchParts(currentQ.parts));
   } else {
     const wrongParts=builtWords.filter((w,i)=>w!==currentQ.parts[i]);
     currentQ.parts.forEach(p=>{
@@ -2072,7 +2105,7 @@ function checkBuilder(){
       if(f){ logFailure(f); tallyTopicFromWord(f, false); }
     });
     recordGradeAttempt(currentGrade, false);
-    showFeedback(false,null,currentQ.target,correct,wrongParts);
+    showFeedback(false,null,currentQ.target,joinFrenchParts(currentQ.parts),wrongParts);
     applyWrongAttemptPenalty(1500);
   }
   scheduleRoundDraftPersist();
@@ -2092,7 +2125,9 @@ function showFeedback(correct,word=null,extra='',correctAnswer=null,wrongParts=n
 
   document.getElementById('fb-emoji').textContent=correct?rand(['🎉','🌟','🥳','✨','🏆','💫']):rand(['😅','💪','🤔','📚']);
   document.getElementById('fb-title').textContent=correct?rand(['Super!','Excellent!','Parfait!','Bravo!','Fantastique!']):'Almost!';
-  document.getElementById('fb-msg').textContent=word?(`${word.fr} = ${word.en}`+(word.zh?` (中文 → parents)`:'')):extra||'';
+  // A wrong answer shows the answer once, in the green box below; this line
+  // then carries only the accent note when there is one.
+  document.getElementById('fb-msg').textContent=(!correct&&word)?(extra||''):word?(`${word.fr} = ${word.en}`+(word.zh?` (中文 → parents)`:'')):extra||'';
   if(correct && !opts.skipPoints){
     document.getElementById('fb-points').textContent='+'+base+' star pts'+(speedBonus>0?' + ⚡'+speedBonus+' speed':'');
   } else if(correct && opts.skipPoints){
@@ -2104,7 +2139,7 @@ function showFeedback(correct,word=null,extra='',correctAnswer=null,wrongParts=n
   const correctDisplay=document.getElementById('fb-correct-display');
   if(!correct&&(word||correctAnswer)){
     const displayWord=word?word.fr:correctAnswer;
-    const displaySub=word?`${word.en} (中文见家长页)`:'';
+    const displaySub=word?`${word.en} (中文 → parents · 中文见家长页)`:'';
     let wrongHTML='';
     if(wrongParts&&wrongParts.length>0){
       wrongHTML=`<div style="font-size:.75rem;color:var(--text-muted);margin-top:6px;">Wrong parts: ${wrongParts.map(p=>`<span class="wrong-part-highlight">${p}</span>`).join(' ')}</div>`;
@@ -2245,28 +2280,42 @@ async function endRound(outcome = ROUND_OUTCOME.COMPLETED){
   }
   const moonTrophies=[4,5,6,7,8,9,10].map(g=>s.moons&&s.moons['grade'+g]?'🌙L'+levelNumber(g):'').filter(Boolean).join(' ')+(s.moons&&s.moons.super?' · 🌟Super':'');
 
-  // Say plainly whether the round was finished. Running out of lives used to
-  // look identical to completing every question, which told the child — and the
-  // parent summary — something that was not true.
-  const outcomeLine = completed ? ''
-    : `<div class="rc-outcome" style="font-size:.8rem;color:var(--gold);margin-bottom:6px;">`
-      + `💛 Out of lives — this round doesn't count as finished, and it hasn't `
-      + `used up one of today's rounds. Your points are still yours!</div>`;
+  // Praise first, then the result in kid words, then the stars earned — no
+  // points formula. Running out of hearts is said plainly: it does not count
+  // as finished and has not used up one of today's rounds.
+  const praise = !completed ? 'Good effort!'
+    : maxTopicTier===3 ? '🏆 Topic round!' : maxTopicTier===2 ? '🎉 Strong topics!'
+    : maxTopicTier===1 ? '👍 Topics improving!' : '🎉 Well done!';
+  const answered = roundAnswerTally.correct + roundAnswerTally.wrong;
+  const resultLine = !completed
+    ? `<div class="rc-outcome">Out of hearts — this one doesn't count, try again!</div>`
+    : (answered > 0 ? `<div class="rc-result">${roundAnswerTally.correct} of ${answered} right!</div>` : '');
+  const starsRow = maxTopicTier > 0
+    ? `<div class="rc-stars">${'⭐'.repeat(maxTopicTier)}${'☆'.repeat(Math.max(0,3-maxTopicTier))}</div>` : '';
+  // No topic star yet: say what to do next, in kid words, for this round's topic.
+  let nextStepLine = '';
+  if(completed && maxTopicTier===0 && touchedTopicKeys.length){
+    const topicKey = touchedTopicKeys[0];
+    const cut = topicKey.indexOf('_');
+    const topic = CURRICULUM[Number(topicKey.slice(0, cut))]?.[topicKey.slice(cut + 1)];
+    const where = topic ? ` in ${topic.icon} ${topic.name}` : '';
+    const p = topicStarProgressParts(s, todayKey(), topicKey);
+    const step = p.gamesNeed > 0 ? `Play ${p.gamesNeed} more different game${p.gamesNeed===1?'':'s'}${where} to earn a star`
+      : p.triesNeed > 0 ? `Answer ${p.triesNeed} more${where} to earn a star`
+      : `Get more right${where} to earn a star`;
+    nextStepLine = `<div class="rc-next">${step}</div>`;
+  }
 
   area.innerHTML=unlockLine+`<div class="round-complete">
-    ${outcomeLine}
-    <div class="rc-stars">${'⭐'.repeat(maxTopicTier)}${'☆'.repeat(Math.max(0,3-maxTopicTier))}</div>
-    <div class="rc-title">${!completed?'Good effort!':maxTopicTier===3?'🏆 Topic round!':maxTopicTier===2?'🎉 Strong topics!':maxTopicTier===1?'👍 Topics improving!':'Keep practicing topics!'}</div>
-    <div class="rc-score">Leaderboard star points · +${roundBasePoints} base + ${roundSpeedPoints} speed = ${roundScore}</div>
-    <div class="rc-breakdown">
-      <div class="rc-stat"><span class="rc-stat-val">${roundBasePoints}</span><span class="rc-stat-lbl">Base</span></div>
-      <div class="rc-stat"><span class="rc-stat-val">${roundSpeedPoints}</span><span class="rc-stat-lbl">Speed</span></div>
-      <div class="rc-stat"><span class="rc-stat-val">${lives}</span><span class="rc-stat-lbl">Lives</span></div>
-      <div class="rc-stat"><span class="rc-stat-val">${roundsLeft}</span><span class="rc-stat-lbl">Rounds left</span></div>
-    </div>
+    <div class="rc-title">${praise}</div>
+    ${resultLine}
+    ${starsRow}
+    <div class="rc-points">+${roundScore} star pts</div>
+    ${nextStepLine}
     ${moonTrophies?`<div style="color:var(--gold);font-size:.85rem;margin-top:6px;">${moonTrophies}</div>`:''}
     ${moonHTML}
   </div>`;
+  document.getElementById('progress-bar').style.width='100%';
 
   actions.innerHTML=`${roundsLeft>0?`<button class="btn-primary" data-action="start-game" data-game-type="${escapeAttr(currentGameType)}">Play Again (${roundsLeft})</button>`:`<button class="btn-primary" style="opacity:.5;cursor:not-allowed;" disabled>Done today! 🌙</button>`}<button class="btn-secondary" onclick="exitGame()">Hub</button>`;
 
@@ -2354,7 +2403,7 @@ function renderDrillCard(){
   const matchSent = sents.find(s=>s.parts.includes(w.fr));
   let drillHTML = '';
   if(matchSent){
-    const blanked = matchSent.parts.map(p=>p===w.fr?'______':p).join(' ');
+    const blanked = joinFrenchParts(matchSent.parts.map(p=>p===w.fr?'______':p));
     drillHTML = '<div style="font-size:.85rem;color:var(--text-muted);margin-bottom:8px;">🇬🇧 '+matchSent.target+'</div>'
       +'<div style="font-family:\'Fredoka One\',cursive;font-size:1.1rem;margin-bottom:12px;">'+blanked+'</div>';
   } else {
@@ -2436,10 +2485,10 @@ function renderStudySet(n){
     const sents=seededShuffle(getSentences(currentGrade),seed+1).slice(0,4);
     content.innerHTML=sents.map(s=>`
       <div class="study-card">
-        <div class="study-card-fr">${s.parts.join(' ')}</div>
+        <div class="study-card-fr">${joinFrenchParts(s.parts)}</div>
         <div class="study-card-en">${s.target}</div>
         <div class="study-card-zh">${s.zh}</div>
-        ${speakButtonHTML(s.parts.join(' '),'speak-inline','margin-top:8px;')}
+        ${speakButtonHTML(joinFrenchParts(s.parts),'speak-inline','margin-top:8px;')}
       </div>`).join('');
   } else {
     // Set 3 — personalized: failed words first
@@ -2696,6 +2745,7 @@ function renderParentSummary(){
         + '<div class="parent-practice-head" style="color:' + color + ';">🎯 Practice targets</div>'
         + practiceInner
         + '</div>'
+        + parentTopicDetailsHtml(s)
         + '</div>';
     });
     return;
@@ -2788,6 +2838,7 @@ function renderParentSummary(){
           + '<div class="parent-stat-row"><span class="parent-stat-label">⏱ Time played</span><span class="parent-stat-val">' + weekTime + '</span></div>'
           + '<div class="parent-stat-row"><span class="parent-stat-label">📆 Days played</span><span class="parent-stat-val">' + weekDaysPlayed + ' / 7</span></div>')
       + practiceBlock
+      + parentTopicDetailsHtml(s)
       + '</div>';
   });
 }
@@ -3363,7 +3414,7 @@ showScreen('select');
 startWallClock();
 
 Object.assign(window, {
-  selectPlayer, goBack, exitGame, setGrade,
+  selectPlayer, goBack, exitGame, topBarBack, setGrade,
   showMyWords, showMyWordsTab, showStudy, showStudySet,
   showParentSummary, showParentTab, navSummaryWeek, navDailySummary, setSummaryMode,
   toggleHubDailySummary, toggleSloganTranslation,

@@ -22,6 +22,22 @@
     <div style="font-size:.8rem;color:var(--text-muted);font-weight:700;" id="wall-clock-date"></div>
   </div>
 
+  <!-- SLIM TOP BAR — hub and games only; showScreen() owns its visibility -->
+  <div class="topbar" id="topbar" style="display:none;">
+    <button type="button" class="back-btn" onclick="topBarBack()">← Back</button>
+    <div class="brand">French Adventure</div>
+    <div class="topbar-pill topbar-time" id="session-game-time-box" title="Time in this app today (French Adventure)">
+      <span class="sgt-label">French Time</span>
+      <span class="sgt-val" id="hub-playtime-val">0:00</span>
+    </div>
+    <div class="topbar-pill topbar-left">
+      <span class="sgt-label">Left</span>
+      <span class="countdown-display" id="countdown-display">⏳ 20:00</span>
+    </div>
+    <button type="button" class="save-icon ok" id="save-icon" data-action="save-status" data-msg="" aria-label="Save status">☁️</button>
+    <div class="save-msg" id="save-msg" aria-live="polite"></div>
+  </div>
+
   <!-- ── SELECT SCREEN ── -->
   <div id="screen-select">
     <div class="leaderboard">
@@ -46,10 +62,6 @@
       </div>
       <div class="week-reset" id="week-reset-msg"></div>
     </div>
-    <!-- Parent summary on select screen -->
-    <div style="text-align:center;margin-bottom:8px;">
-      <button class="grade-tab summary-tab" onclick="showParentSummary()" style="margin:0 auto;padding:8px 20px;">📋 Parent Summary</button>
-    </div>
     <div class="player-cards">
       <div class="player-card jenn" onclick="selectPlayer('jenn')">
         <span class="player-avatar">🐥</span>
@@ -66,31 +78,14 @@
         <div class="player-daily-mini" id="sel-daily-jess"></div>
       </div>
     </div>
+    <!-- Parent summary on select screen, below the player cards -->
+    <div class="select-parent-row">
+      <button type="button" class="btn-secondary select-parent-btn" onclick="showParentSummary()">📋 Parent Summary</button>
+    </div>
   </div>
 
   <!-- ── HUB SCREEN ── -->
   <div id="screen-hub">
-    <!-- Back + countdown + wall clock — visible after player select -->
-    <div class="session-clock" id="session-clock" style="display:none;margin-bottom:12px;">
-      <div class="session-clock-back">
-        <button type="button" class="back-btn" onclick="goBack()">← Back</button>
-      </div>
-      <div class="session-clock-center">
-        <div class="clock-wall-hub" id="clock-wall">12:00 PM</div>
-        <div class="clock-divider">|</div>
-        <div class="session-game-time" id="session-game-time-box" title="Time in this app today (French Adventure)">
-          <span class="sgt-label">French Time</span>
-          <span class="sgt-val" id="hub-playtime-val">0:00</span>
-        </div>
-        <div class="clock-divider">|</div>
-        <div class="countdown-display" id="countdown-display">⏳ 20:00</div>
-      </div>
-      <div class="conn-status-bar" id="conn-status-hub" aria-live="polite">
-        <span class="cs-dot cs-online" id="conn-dot-hub"></span>
-        <div class="cs-line"><span class="cs-label">Internet</span><span class="cs-val" id="conn-net-hub">—</span></div>
-        <div class="cs-line"><span class="cs-label">Save</span><span class="cs-val" id="conn-sync-hub">—</span></div>
-      </div>
-    </div>
     <div class="hub-header" id="hub-header">
       <div class="hub-top-band">
         <div class="hub-avatar" id="hub-avatar">🐥</div>
@@ -104,34 +99,15 @@
           </div>
         </div>
       </div>
-      <div class="hub-rules-mini" id="hub-rules-mini"><b>⭐ Topic stars</b> 60–79% = 1⭐ · 80–94% = 2⭐ · ≥95% = 3⭐ · topic seen in ≥3 games today &nbsp;|&nbsp; <b>🌙 Moon</b> All topics in a level at 3⭐ &nbsp;|&nbsp; <b>🌟 Superstar</b> Moons on the two highest levels played</div>
       <div class="hub-slogan-wrap">
         <div class="hub-slogan" id="hub-slogan"></div>
         <div class="hub-slogan-actions" id="hub-slogan-actions">
           <button type="button" class="hub-slogan-btn" id="hub-slogan-translate-btn" onclick="toggleSloganTranslation()">Translate to English</button>
         </div>
       </div>
-      <div class="hub-today-panel" id="hub-today-panel">
-        <div class="hub-profile-card" id="hub-profile-card">
-          <div class="hub-p-title">📋 Today</div>
-          <div class="hub-today-grid">
-            <div class="hub-profile-row"><span class="hub-p-label">⭐ Stars (today)</span><span class="hub-p-val" id="hub-day-stars-val">0</span></div>
-            <div class="hub-profile-row"><span class="hub-p-label">🎮 Rounds</span><span class="hub-p-val" id="hub-rounds-today-val">0</span></div>
-            <div class="hub-profile-row"><span class="hub-p-label">📊 Accuracy</span><span class="hub-p-val" id="hub-acc-today-val">—</span></div>
-            <div class="hub-profile-row"><span class="hub-p-label">🏋️ Drill</span><span class="hub-p-val" id="hub-drill-val">—</span></div>
-          </div>
-        </div>
-        <button type="button" class="hub-daily-summary-btn" id="hub-daily-summary-btn" onclick="toggleHubDailySummary()" aria-expanded="false">
-          <span>More: level accuracy &amp; rules</span><span class="chev" id="hub-daily-chev">▼</span>
-        </button>
-        <div class="hub-daily-summary-block" id="hub-daily-summary-block" style="display:none;">
-          <div class="hds-title">Details</div>
-          <div id="hub-daily-summary-inner"></div>
-        </div>
-      </div>
     </div>
 
-    <p class="hub-grade-bar-note" id="hub-grade-bar-note">Play any level, <strong>L1–L7</strong>. The ⭐ marks the level suggested next.</p>
+    <div class="hub-grade-bar-note" id="hub-grade-bar-note"><b>Pick a level</b> · ⭐ = suggested next</div>
     <div class="grade-tabs" id="grade-tabs">
       <button type="button" class="grade-tab active" id="tab-g4" onclick="setGrade(4)" title="Level 1">L1</button>
       <button type="button" class="grade-tab" id="tab-g5" onclick="setGrade(5)" title="Level 2">L2</button>
@@ -140,13 +116,6 @@
       <button type="button" class="grade-tab" id="tab-g8" onclick="setGrade(8)" title="Level 5">L5</button>
       <button type="button" class="grade-tab" id="tab-g9" onclick="setGrade(9)" title="Level 6">L6</button>
       <button type="button" class="grade-tab" id="tab-g10" onclick="setGrade(10)" title="Level 7">L7</button>
-      <button type="button" class="grade-tab action-tab hub-cta-mw" onclick="showMyWords()">💪 My Words</button>
-      <button type="button" class="grade-tab study-tab hub-cta-study" onclick="showStudy()">📖 Study</button>
-    </div>
-
-    <div class="star-map" id="star-map-section">
-      <div class="sm-title">⭐ Topic Stars</div>
-      <div class="sm-grid" id="sm-grid"></div>
     </div>
 
     <div class="mini-games-grid">
@@ -180,17 +149,45 @@
         <span class="game-desc">Mixed • All topics</span>
         <span class="round-badge">2 left today</span>
       </div>
+      <div class="mini-game-btn tile-words" onclick="showMyWords()">
+        <span class="game-icon">💪</span><span class="game-name">My Words</span>
+        <span class="game-desc">Practise</span>
+      </div>
+      <div class="mini-game-btn tile-study" onclick="showStudy()">
+        <span class="game-icon">📖</span><span class="game-name">Study</span>
+        <span class="game-desc">Sets 1–3</span>
+      </div>
+    </div>
+
+    <div class="star-map" id="star-map-section">
+      <div class="sm-title">⭐ Topic Stars</div>
+      <div class="sm-grid" id="sm-grid"></div>
+    </div>
+
+    <div class="hub-today-panel" id="hub-today-panel">
+      <button type="button" class="hub-daily-summary-btn" id="hub-daily-summary-btn" onclick="toggleHubDailySummary()" aria-expanded="false">
+        <span>More: today &amp; how stars work</span><span class="chev" id="hub-daily-chev">▼</span>
+      </button>
+      <div class="hub-daily-summary-block" id="hub-daily-summary-block" style="display:none;">
+        <div class="hub-today-grid">
+          <div class="hub-today-tile"><span class="hub-p-label">⭐ Stars (today)</span><span class="hub-p-val" id="hub-day-stars-val">0</span></div>
+          <div class="hub-today-tile"><span class="hub-p-label">🎮 Rounds</span><span class="hub-p-val" id="hub-rounds-today-val">0</span></div>
+          <div class="hub-today-tile"><span class="hub-p-label">📊 Accuracy</span><span class="hub-p-val" id="hub-acc-today-val">—</span></div>
+          <div class="hub-today-tile"><span class="hub-p-label">🏋️ Drill</span><span class="hub-p-val" id="hub-drill-val">—</span></div>
+        </div>
+        <div class="hub-rules">
+          <div class="hub-rule"><span class="hub-rule-icon">⭐</span><div><b>Topic stars</b><span>Get most answers right in a topic, in 3 different games today. More right = more stars (up to 3).</span></div></div>
+          <div class="hub-rule"><span class="hub-rule-icon">🌙</span><div><b>Moon</b><span>Every topic in a level has 3 stars.</span></div></div>
+          <div class="hub-rule"><span class="hub-rule-icon">🌟</span><div><b>Superstar</b><span>Moons on your two highest levels.</span></div></div>
+        </div>
+        <p class="hub-rules-note">Exact percentages and per-topic counts are in the Parent Summary.</p>
+        <div id="hub-daily-summary-inner"></div>
+      </div>
     </div>
   </div>
 
   <!-- ── GAME SCREEN ── -->
   <div id="screen-game">
-    <button class="back-btn" onclick="exitGame()">← Hub</button>
-    <div class="conn-status-bar" id="conn-status-game" aria-live="polite">
-      <span class="cs-dot cs-online" id="conn-dot-game"></span>
-      <div class="cs-line"><span class="cs-label">Internet</span><span class="cs-val" id="conn-net-game">—</span></div>
-      <div class="cs-line"><span class="cs-label">Save</span><span class="cs-val" id="conn-sync-game">—</span></div>
-    </div>
     <div class="game-topbar">
       <div class="game-topbar-title" id="game-title-bar">Quiz</div>
       <div class="game-lives" id="game-lives">❤️❤️❤️</div>
@@ -228,9 +225,9 @@
     <button class="overlay-close" onclick="closeOverlay('mywords-overlay')">✕</button>
     <div class="overlay-title">💪 My Words</div>
     <div class="overlay-subtitle">Your personal practice list — study then drill!</div>
-    <div class="mywords-tabs">
-      <button class="mywords-tab active" id="mw-tab-list" onclick="showMyWordsTab('list')">📋 Word List</button>
-      <button class="mywords-tab" id="mw-tab-drill" onclick="showMyWordsTab('drill')">🏋️ Drill</button>
+    <div class="mywords-tabs summary-mode-row">
+      <button type="button" class="mywords-tab summary-mode-btn active" id="mw-tab-list" onclick="showMyWordsTab('list')">📋 Word List</button>
+      <button type="button" class="mywords-tab summary-mode-btn" id="mw-tab-drill" onclick="showMyWordsTab('drill')">🏋️ Drill</button>
     </div>
     <div id="mywords-content"></div>
   </div>
@@ -265,8 +262,7 @@
       <div class="assess-title" id="assess-title">Check-in</div>
       <div class="assess-sub" id="assess-sub"></div>
     </div>
-    <button type="button" class="btn-secondary" data-action="assess-pause"
-            style="padding:8px 14px;font-size:.78rem;">Pause</button>
+    <button type="button" class="btn-secondary" data-action="assess-pause">Pause</button>
   </div>
   <div class="assess-progress"><div class="assess-progress-fill" id="assess-progress-fill"></div></div>
   <div id="assess-body"></div>

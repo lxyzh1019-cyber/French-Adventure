@@ -7,7 +7,7 @@
      styles ......... src/styles.css
      game logic ..... src/**/*.js
 
-   Built from 09c5c23
+   Built from 416b848
   ============================================================
 -->
 <!DOCTYPE html>
@@ -395,9 +395,12 @@ function buildScrambleTiles(target, type = scrambleTypeFor(target)) {
   if (type === SCRAMBLE_TYPES.PHRASE) return frTokenize(t);
   return graphemes(t);
 }
+function joinFrenchParts(parts) {
+  return parts.reduce((acc, tok) => !acc ? tok : /^[.!?…,;:»—–]$/.test(tok) ? acc + tok : acc + " " + tok, "");
+}
 function joinScrambleTiles(tiles, type) {
   if (type !== SCRAMBLE_TYPES.PHRASE) return tiles.join("");
-  return tiles.reduce((acc, tok) => !acc ? tok : /^[.!?…,;:»—–]$/.test(tok) ? acc + tok : acc + " " + tok, "");
+  return joinFrenchParts(tiles);
 }
 function isScrambleSolvable(tiles, target, type = scrambleTypeFor(target)) {
   const need = buildScrambleTiles(target, type);
@@ -3235,7 +3238,8 @@ function render() {
   const at = resumePoint(run);
   const { answered, planned } = progressOf(run);
   el("assess-title").textContent = at.done ? "All done" : DOMAIN_LABEL[at.domain] ?? at.domain;
-  el("assess-sub").textContent = at.done ? "Nothing left to do today." : `Form ${run.form} · ${answered} of ${planned} answered so far`;
+  const partStarted = !at.done && run.sections[at.domain]?.status !== SECTION_STATUS.NOT_STARTED;
+  el("assess-sub").textContent = at.done ? "Nothing left to do today." : partStarted ? `Form ${run.form} · ${answered} of ${planned} answered so far` : `Form ${run.form}`;
   el("assess-progress-fill").style.width = planned ? `${Math.round(answered / planned * 100)}%` : "0%";
   const leave = document.querySelector('#screen-assessment [data-action="assess-pause"]');
   if (leave) leave.textContent = at.done ? "Close" : "Pause";
@@ -5748,7 +5752,6 @@ function applyWrongAttemptPenalty(koDelayMs) {
 function updateConnectionStatusUI() {
   const online = typeof navigator !== "undefined" && navigator.onLine;
   const netTxt = online ? "Online" : "Offline";
-  const hubs = [["conn-net-hub", "conn-sync-hub", "conn-dot-hub"], ["conn-net-game", "conn-sync-game", "conn-dot-game"]];
   const p = currentPlayer;
   let syncTxt = "—";
   if (p && syncMeta[p]) {
@@ -5766,18 +5769,27 @@ function updateConnectionStatusUI() {
   } else {
     syncTxt = online ? "Pick a player" : "Offline";
   }
-  hubs.forEach(function(row2) {
-    const netEl = document.getElementById(row2[0]);
-    const syEl = document.getElementById(row2[1]);
-    const dot = document.getElementById(row2[2]);
-    if (netEl) netEl.textContent = netTxt;
-    if (syEl) syEl.textContent = syncTxt;
-    if (dot) {
-      const holding = !!(p && syncMeta[p] && syncMeta[p].loadState === "pending");
-      dot.classList.toggle("cs-online", online && !holding);
-      dot.classList.toggle("cs-offline", !online || holding);
-    }
-  });
+  const icon = document.getElementById("save-icon");
+  if (!icon) return;
+  const ok = syncTxt === "Synced to cloud" || syncTxt === "Ready";
+  const msg = "Save: " + syncTxt + " · Internet: " + netTxt;
+  if (icon.getAttribute("data-msg") !== msg) {
+    const line = document.getElementById("save-msg");
+    if (line) line.textContent = "";
+  }
+  icon.classList.toggle("ok", ok);
+  icon.classList.toggle("bad", !ok);
+  icon.textContent = ok ? "☁️" : "⚠️";
+  icon.setAttribute("data-msg", msg);
+  icon.setAttribute("aria-label", msg);
+}
+function showSaveStatusMessage() {
+  const icon = document.getElementById("save-icon");
+  if (!icon) return;
+  const msg = icon.getAttribute("data-msg") || "";
+  showToast(msg, icon.classList.contains("bad") ? "var(--wrong)" : null);
+  const line = document.getElementById("save-msg");
+  if (line) line.textContent = msg;
 }
 async function flushPendingCloudSaves() {
   for (const pl of ["jenn", "jess"]) {
@@ -6150,12 +6162,6 @@ function startSessionClock() {
   function tickCountdown() {
     const remaining = countdownEnd - Date.now();
     const cd = document.getElementById("countdown-display");
-    const wallEl = document.getElementById("clock-wall");
-    const now2 = /* @__PURE__ */ new Date();
-    let h = now2.getHours(), m = now2.getMinutes();
-    const ampm = h >= 12 ? "PM" : "AM";
-    h = h % 12 || 12;
-    if (wallEl) wallEl.textContent = h + ":" + (m < 10 ? "0" : "") + m + " " + ampm;
     if (remaining <= 0) {
       clearInterval(countdownInterval);
       if (cd) {
@@ -6541,8 +6547,6 @@ function selectPlayer(p) {
   if (hdsb) hdsb.style.display = "none";
   if (hdch) hdch.textContent = "▼";
   if (hdbtn) hdbtn.setAttribute("aria-expanded", "false");
-  document.getElementById("wall-clock-display").style.display = "none";
-  document.getElementById("session-clock").style.display = "flex";
   showScreen("hub");
   updateHub();
   startSessionClock();
@@ -6552,8 +6556,6 @@ function selectPlayer(p) {
 function goBack() {
   stopPlayTimeTracker();
   sessionWeekdayBypass = false;
-  document.getElementById("wall-clock-display").style.display = "block";
-  document.getElementById("session-clock").style.display = "none";
   showScreen("select");
   updateLeaderboard();
 }
@@ -6573,6 +6575,16 @@ function exitGame() {
 }
 function showScreen(name) {
   ["select", "hub", "game", "assessment"].forEach((n) => document.getElementById(`screen-${n}`).style.display = n === name ? "block" : "none");
+  const header = document.querySelector(".game-header");
+  const wall = document.getElementById("wall-clock-display");
+  const bar = document.getElementById("topbar");
+  if (header) header.style.display = name === "select" ? "block" : "none";
+  if (wall) wall.style.display = name === "select" ? "block" : "none";
+  if (bar) bar.style.display = name === "hub" || name === "game" ? "flex" : "none";
+}
+function topBarBack() {
+  if (document.getElementById("screen-game").style.display === "block") exitGame();
+  else goBack();
 }
 function setGrade(g) {
   if (g < 4 || g > MAX_PLAYABLE_GRADE) return;
@@ -6676,6 +6688,16 @@ function parentPracticeRowsHtml(words) {
     return '<div class="parent-row"><div class="parent-fr">' + w.fr + '</div><div class="parent-en">' + w.en + '</div><div class="parent-zh">' + w.zh + '</div><div class="parent-fails">✗' + w.failCount + "</div></div>";
   }).join("");
 }
+function parentTopicDetailsHtml(s) {
+  const g = recommendLevel(s).gradeKey || 4;
+  const tk = todayKey();
+  const topicStars = s.topicStars || {};
+  const rows = getTopics(g).map(function([key, topic]) {
+    const stars = topicStars[g + "_" + key] || 0;
+    return '<div class="parent-topic-row"><div class="parent-topic-name">' + topic.icon + " " + topic.name + ' <span class="parent-topic-stars">' + "⭐".repeat(Math.min(stars, 3)) + "☆".repeat(Math.max(0, 3 - stars)) + "</span></div>" + topicStarProgressHTML(s, tk, g + "_" + key, stars) + "</div>";
+  }).join("");
+  return '<details class="parent-topic-details"><summary>Topic details (current level) · ' + levelLabel(g) + '</summary><div class="parent-topic-list">' + rows + "</div></details>";
+}
 function formatPlayerDailySummaryHTML(s) {
   const tk = todayKey();
   const ts = s.todayStats && s.todayStats[tk];
@@ -6746,13 +6768,11 @@ function updateStarMap() {
   const s = state[currentPlayer];
   const grid = document.getElementById("sm-grid");
   grid.innerHTML = "";
-  const tk = todayKey();
   getTopics(currentGrade).forEach(([key, topic]) => {
     const stars = s.topicStars[`${currentGrade}_${key}`] || 0;
     const div2 = document.createElement("div");
     div2.className = `sm-topic${stars >= 3 ? " mastered" : ""}`;
-    const progressHtml = topicStarProgressHTML(s, tk, `${currentGrade}_${key}`, stars);
-    div2.innerHTML = `<span class="sm-topic-icon">${topic.icon}</span><div class="sm-topic-name">${topic.name}</div><div class="sm-stars">${"⭐".repeat(Math.min(stars, 3))}${"☆".repeat(Math.max(0, 3 - stars))}</div>${progressHtml}`;
+    div2.innerHTML = `<span class="sm-topic-icon">${topic.icon}</span><div class="sm-topic-name">${topic.name}</div><div class="sm-stars">${"⭐".repeat(Math.min(stars, 3))}${"☆".repeat(Math.max(0, 3 - stars))}</div>`;
     grid.appendChild(div2);
   });
 }
@@ -6937,11 +6957,14 @@ document.addEventListener("click", function(e) {
     case "assess-play-own":
       playOwnRecording();
       break;
+    case "save-status":
+      showSaveStatusMessage();
+      break;
   }
 });
 function speakCurrent() {
   if (!currentQ) return;
-  const text = currentQ.word?.fr || currentQ.parts?.join(" ") || "";
+  const text = currentQ.word?.fr || (currentQ.parts ? joinFrenchParts(currentQ.parts) : "") || "";
   if (text) speakWithSignal(text, () => document.getElementById("btn-tts"));
 }
 let quizMic = null;
@@ -7030,7 +7053,7 @@ function startGame(type) {
     listen: "🎧 Listen & Speak",
     boss: "⚡ Boss Round"
   }[type];
-  document.getElementById("btn-tts").style.display = "inline-block";
+  document.getElementById("btn-tts").style.display = type === "match" ? "inline-block" : "none";
   document.getElementById("btn-stt").style.display = recognition ? "inline-block" : "none";
   updateConnectionStatusUI();
   scheduleRoundDraftPersist();
@@ -7360,7 +7383,7 @@ function renderBuilder(q, area, actions) {
   currentQ = q;
   area.innerHTML = '<div class="question-label">Build this sentence in French</div><div class="sentence-target">🇬🇧 ' + q.target + "<br>🇨🇳 " + q.zh + '</div><div class="built-sentence" id="built-sentence"></div><div class="word-bank" id="word-bank"></div>';
   renderBuilderState(q);
-  actions.innerHTML = '<button class="btn-secondary" onclick="clearBuilder()">Clear</button><button class="btn-primary" onclick="checkBuilder()">Check ✓</button>' + speakButtonHTML(q.parts.join(" "), "question-speak-inline");
+  actions.innerHTML = '<button class="btn-secondary" onclick="clearBuilder()">Clear</button><button class="btn-primary" onclick="checkBuilder()">Check ✓</button>' + speakButtonHTML(joinFrenchParts(q.parts), "question-speak-inline");
 }
 function renderBuilderState(q) {
   const built = document.getElementById("built-sentence"), bank = document.getElementById("word-bank");
@@ -7413,7 +7436,7 @@ function checkBuilder() {
     });
     recordGradeAttempt(currentGrade, true);
     showFeedback(true, null, currentQ.target);
-    speakFrench(correct);
+    speakFrench(joinFrenchParts(currentQ.parts));
   } else {
     const wrongParts = builtWords.filter((w, i) => w !== currentQ.parts[i]);
     currentQ.parts.forEach((p) => {
@@ -7424,7 +7447,7 @@ function checkBuilder() {
       }
     });
     recordGradeAttempt(currentGrade, false);
-    showFeedback(false, null, currentQ.target, correct, wrongParts);
+    showFeedback(false, null, currentQ.target, joinFrenchParts(currentQ.parts), wrongParts);
     applyWrongAttemptPenalty(1500);
   }
   scheduleRoundDraftPersist();
@@ -7440,7 +7463,7 @@ function showFeedback(correct, word = null, extra = "", correctAnswer = null, wr
   const speedBonus = correct && !opts.skipPoints && currentGameType !== "match" && elapsed < SPEED_BONUS_WINDOW ? Math.round(SPEED_BONUS_MAX * (1 - elapsed / SPEED_BONUS_WINDOW)) : 0;
   document.getElementById("fb-emoji").textContent = correct ? rand(["🎉", "🌟", "🥳", "✨", "🏆", "💫"]) : rand(["😅", "💪", "🤔", "📚"]);
   document.getElementById("fb-title").textContent = correct ? rand(["Super!", "Excellent!", "Parfait!", "Bravo!", "Fantastique!"]) : "Almost!";
-  document.getElementById("fb-msg").textContent = word ? `${word.fr} = ${word.en}` + (word.zh ? ` (中文 → parents)` : "") : extra || "";
+  document.getElementById("fb-msg").textContent = !correct && word ? extra || "" : word ? `${word.fr} = ${word.en}` + (word.zh ? ` (中文 → parents)` : "") : extra || "";
   if (correct && !opts.skipPoints) {
     document.getElementById("fb-points").textContent = "+" + base + " star pts" + (speedBonus > 0 ? " + ⚡" + speedBonus + " speed" : "");
   } else if (correct && opts.skipPoints) {
@@ -7451,7 +7474,7 @@ function showFeedback(correct, word = null, extra = "", correctAnswer = null, wr
   const correctDisplay = document.getElementById("fb-correct-display");
   if (!correct && (word || correctAnswer)) {
     const displayWord = word ? word.fr : correctAnswer;
-    const displaySub = word ? `${word.en} (中文见家长页)` : "";
+    const displaySub = word ? `${word.en} (中文 → parents · 中文见家长页)` : "";
     let wrongHTML = "";
     if (wrongParts && wrongParts.length > 0) {
       wrongHTML = `<div style="font-size:.75rem;color:var(--text-muted);margin-top:6px;">Wrong parts: ${wrongParts.map((p) => `<span class="wrong-part-highlight">${p}</span>`).join(" ")}</div>`;
@@ -7571,21 +7594,30 @@ async function endRound(outcome = ROUND_OUTCOME.COMPLETED) {
     confetti();
   }
   const moonTrophies = [4, 5, 6, 7, 8, 9, 10].map((g) => s.moons && s.moons["grade" + g] ? "🌙L" + levelNumber(g) : "").filter(Boolean).join(" ") + (s.moons && s.moons.super ? " · 🌟Super" : "");
-  const outcomeLine = completed ? "" : `<div class="rc-outcome" style="font-size:.8rem;color:var(--gold);margin-bottom:6px;">💛 Out of lives — this round doesn't count as finished, and it hasn't used up one of today's rounds. Your points are still yours!</div>`;
+  const praise = !completed ? "Good effort!" : maxTopicTier === 3 ? "🏆 Topic round!" : maxTopicTier === 2 ? "🎉 Strong topics!" : maxTopicTier === 1 ? "👍 Topics improving!" : "🎉 Well done!";
+  const answered = roundAnswerTally.correct + roundAnswerTally.wrong;
+  const resultLine = !completed ? `<div class="rc-outcome">Out of hearts — this one doesn't count, try again!</div>` : answered > 0 ? `<div class="rc-result">${roundAnswerTally.correct} of ${answered} right!</div>` : "";
+  const starsRow = maxTopicTier > 0 ? `<div class="rc-stars">${"⭐".repeat(maxTopicTier)}${"☆".repeat(Math.max(0, 3 - maxTopicTier))}</div>` : "";
+  let nextStepLine = "";
+  if (completed && maxTopicTier === 0 && touchedTopicKeys.length) {
+    const topicKey = touchedTopicKeys[0];
+    const cut = topicKey.indexOf("_");
+    const topic = CURRICULUM[Number(topicKey.slice(0, cut))]?.[topicKey.slice(cut + 1)];
+    const where = topic ? ` in ${topic.icon} ${topic.name}` : "";
+    const p = topicStarProgressParts(s, todayKey(), topicKey);
+    const step = p.gamesNeed > 0 ? `Play ${p.gamesNeed} more different game${p.gamesNeed === 1 ? "" : "s"}${where} to earn a star` : p.triesNeed > 0 ? `Answer ${p.triesNeed} more${where} to earn a star` : `Get more right${where} to earn a star`;
+    nextStepLine = `<div class="rc-next">${step}</div>`;
+  }
   area.innerHTML = unlockLine + `<div class="round-complete">
-    ${outcomeLine}
-    <div class="rc-stars">${"⭐".repeat(maxTopicTier)}${"☆".repeat(Math.max(0, 3 - maxTopicTier))}</div>
-    <div class="rc-title">${!completed ? "Good effort!" : maxTopicTier === 3 ? "🏆 Topic round!" : maxTopicTier === 2 ? "🎉 Strong topics!" : maxTopicTier === 1 ? "👍 Topics improving!" : "Keep practicing topics!"}</div>
-    <div class="rc-score">Leaderboard star points · +${roundBasePoints} base + ${roundSpeedPoints} speed = ${roundScore}</div>
-    <div class="rc-breakdown">
-      <div class="rc-stat"><span class="rc-stat-val">${roundBasePoints}</span><span class="rc-stat-lbl">Base</span></div>
-      <div class="rc-stat"><span class="rc-stat-val">${roundSpeedPoints}</span><span class="rc-stat-lbl">Speed</span></div>
-      <div class="rc-stat"><span class="rc-stat-val">${lives}</span><span class="rc-stat-lbl">Lives</span></div>
-      <div class="rc-stat"><span class="rc-stat-val">${roundsLeft}</span><span class="rc-stat-lbl">Rounds left</span></div>
-    </div>
+    <div class="rc-title">${praise}</div>
+    ${resultLine}
+    ${starsRow}
+    <div class="rc-points">+${roundScore} star pts</div>
+    ${nextStepLine}
     ${moonTrophies ? `<div style="color:var(--gold);font-size:.85rem;margin-top:6px;">${moonTrophies}</div>` : ""}
     ${moonHTML}
   </div>`;
+  document.getElementById("progress-bar").style.width = "100%";
   actions.innerHTML = `${roundsLeft > 0 ? `<button class="btn-primary" data-action="start-game" data-game-type="${escapeAttr(currentGameType)}">Play Again (${roundsLeft})</button>` : `<button class="btn-primary" style="opacity:.5;cursor:not-allowed;" disabled>Done today! 🌙</button>`}<button class="btn-secondary" onclick="exitGame()">Hub</button>`;
   await saveState(currentPlayer, { suppressEcho: true });
   triggerDailyBackup(currentPlayer);
@@ -7653,7 +7685,7 @@ function renderDrillCard() {
   const matchSent = sents.find((s) => s.parts.includes(w.fr));
   let drillHTML = "";
   if (matchSent) {
-    const blanked = matchSent.parts.map((p) => p === w.fr ? "______" : p).join(" ");
+    const blanked = joinFrenchParts(matchSent.parts.map((p) => p === w.fr ? "______" : p));
     drillHTML = '<div style="font-size:.85rem;color:var(--text-muted);margin-bottom:8px;">🇬🇧 ' + matchSent.target + `</div><div style="font-family:'Fredoka One',cursive;font-size:1.1rem;margin-bottom:12px;">` + blanked + "</div>";
   } else {
     drillHTML = `<div style="font-size:.85rem;color:var(--text-muted);margin-bottom:8px;">Translate:</div><div style="font-family:'Fredoka One',cursive;font-size:1.4rem;color:var(--text);margin-bottom:12px;">` + w.en + "</div>";
@@ -7722,10 +7754,10 @@ function renderStudySet(n) {
     const sents = seededShuffle(getSentences(currentGrade), seed + 1).slice(0, 4);
     content.innerHTML = sents.map((s) => `
       <div class="study-card">
-        <div class="study-card-fr">${s.parts.join(" ")}</div>
+        <div class="study-card-fr">${joinFrenchParts(s.parts)}</div>
         <div class="study-card-en">${s.target}</div>
         <div class="study-card-zh">${s.zh}</div>
-        ${speakButtonHTML(s.parts.join(" "), "speak-inline", "margin-top:8px;")}
+        ${speakButtonHTML(joinFrenchParts(s.parts), "speak-inline", "margin-top:8px;")}
       </div>`).join("");
   } else {
     const queue2 = getRequeueWords().slice(0, 8);
@@ -7911,7 +7943,7 @@ function renderParentSummary() {
       const name = p.charAt(0).toUpperCase() + p.slice(1);
       const dayWrong = Object.values(s.failedWords || {}).filter((w) => w.lastFailed === dKey).sort((a, b) => b.failCount - a.failCount);
       const practiceInner = dayWrong.length > 0 ? parentPracticeRowsHtml(dayWrong) : '<div class="empty-state" style="padding:8px;font-size:.75rem;">✅ No misses logged that day</div>';
-      grid.innerHTML += '<div class="parent-player-card"><div class="parent-player-title" style="color:' + color + ';">' + avatar + " " + name + '</div><div class="parent-stat-row"><span class="parent-stat-label">⭐ All-time star pts</span><span class="parent-stat-val">' + s.totalStars + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">📅 Week star pts (so far)</span><span class="parent-stat-val" style="color:var(--gold);">' + s.weekStars + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">☀️ Day star pts (' + dKey + ')</span><span class="parent-stat-val" style="color:var(--green);">' + dayStars + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">✅ Correct / tries</span><span class="parent-stat-val">' + (total > 0 ? correct + " / " + total : "—") + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">📊 Accuracy</span><span class="parent-stat-val">' + (acc !== null ? acc + "%" : "—") + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">🎮 Game rounds</span><span class="parent-stat-val">' + rounds + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">🏋️ My Words drill</span><span class="parent-stat-val">' + (drillDone ? "✅ Done" : "—") + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">⏱ Active time</span><span class="parent-stat-val">' + timeStr + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">💪 Queue (now)</span><span class="parent-stat-val">' + queue2 + '</span></div><div class="parent-practice-sub"><div class="parent-practice-head" style="color:' + color + ';">🎯 Practice targets</div>' + practiceInner + "</div></div>";
+      grid.innerHTML += '<div class="parent-player-card"><div class="parent-player-title" style="color:' + color + ';">' + avatar + " " + name + '</div><div class="parent-stat-row"><span class="parent-stat-label">⭐ All-time star pts</span><span class="parent-stat-val">' + s.totalStars + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">📅 Week star pts (so far)</span><span class="parent-stat-val" style="color:var(--gold);">' + s.weekStars + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">☀️ Day star pts (' + dKey + ')</span><span class="parent-stat-val" style="color:var(--green);">' + dayStars + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">✅ Correct / tries</span><span class="parent-stat-val">' + (total > 0 ? correct + " / " + total : "—") + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">📊 Accuracy</span><span class="parent-stat-val">' + (acc !== null ? acc + "%" : "—") + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">🎮 Game rounds</span><span class="parent-stat-val">' + rounds + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">🏋️ My Words drill</span><span class="parent-stat-val">' + (drillDone ? "✅ Done" : "—") + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">⏱ Active time</span><span class="parent-stat-val">' + timeStr + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">💪 Queue (now)</span><span class="parent-stat-val">' + queue2 + '</span></div><div class="parent-practice-sub"><div class="parent-practice-head" style="color:' + color + ';">🎯 Practice targets</div>' + practiceInner + "</div>" + parentTopicDetailsHtml(s) + "</div>";
     });
     return;
   }
@@ -7963,7 +7995,7 @@ function renderParentSummary() {
     } else {
       practiceBlock = '<div class="parent-practice-sub"><div class="parent-practice-head" style="color:' + color + ';">🎯 Practice targets</div><div class="empty-state" style="padding:8px;font-size:.72rem;">Switch to <strong>Daily</strong> view to see words for a specific day.</div></div>';
     }
-    grid.innerHTML += '<div class="parent-player-card"><div class="parent-player-title" style="color:' + color + ';">' + avatar + " " + name + '</div><div class="parent-stat-row"><span class="parent-stat-label">⭐ All-time star pts</span><span class="parent-stat-val">' + s.totalStars + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">📅 Weekly star pts (' + weekLabel + ')</span><span class="parent-stat-val" style="color:var(--gold);">' + wkStars + "</span></div>" + (isThisWeek ? '<div class="parent-stat-row"><span class="parent-stat-label">✅ Correct (week)</span><span class="parent-stat-val" style="color:var(--green);">' + (total > 0 ? correct + " / " + total : "—") + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">📊 Accuracy (week)</span><span class="parent-stat-val">' + (acc !== null ? acc + "%" : "—") + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">🎮 Rounds (week)</span><span class="parent-stat-val">' + rounds + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">🏋️ Drill rounds (week)</span><span class="parent-stat-val">' + weekDrills + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">⏱ Time this week</span><span class="parent-stat-val">' + weekTime + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">📆 Days played (week)</span><span class="parent-stat-val">' + weekDaysPlayed + ' / 7</span></div><div class="parent-stat-row"><span class="parent-stat-label">🔥 Streak</span><span class="parent-stat-val">' + s.streak + ' days</span></div><div class="parent-stat-row"><span class="parent-stat-label">💪 Queue</span><span class="parent-stat-val">' + queue2 + " words</span></div>" : '<div class="parent-stat-row"><span class="parent-stat-label">✅ Correct (saved week)</span><span class="parent-stat-val">' + (total > 0 ? correct + " / " + total : "—") + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">📊 Accuracy</span><span class="parent-stat-val">' + (acc !== null ? acc + "%" : "—") + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">🎮 Rounds</span><span class="parent-stat-val">' + rounds + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">🏋️ Drill rounds</span><span class="parent-stat-val">' + weekDrills + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">⏱ Time played</span><span class="parent-stat-val">' + weekTime + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">📆 Days played</span><span class="parent-stat-val">' + weekDaysPlayed + " / 7</span></div>") + practiceBlock + "</div>";
+    grid.innerHTML += '<div class="parent-player-card"><div class="parent-player-title" style="color:' + color + ';">' + avatar + " " + name + '</div><div class="parent-stat-row"><span class="parent-stat-label">⭐ All-time star pts</span><span class="parent-stat-val">' + s.totalStars + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">📅 Weekly star pts (' + weekLabel + ')</span><span class="parent-stat-val" style="color:var(--gold);">' + wkStars + "</span></div>" + (isThisWeek ? '<div class="parent-stat-row"><span class="parent-stat-label">✅ Correct (week)</span><span class="parent-stat-val" style="color:var(--green);">' + (total > 0 ? correct + " / " + total : "—") + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">📊 Accuracy (week)</span><span class="parent-stat-val">' + (acc !== null ? acc + "%" : "—") + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">🎮 Rounds (week)</span><span class="parent-stat-val">' + rounds + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">🏋️ Drill rounds (week)</span><span class="parent-stat-val">' + weekDrills + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">⏱ Time this week</span><span class="parent-stat-val">' + weekTime + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">📆 Days played (week)</span><span class="parent-stat-val">' + weekDaysPlayed + ' / 7</span></div><div class="parent-stat-row"><span class="parent-stat-label">🔥 Streak</span><span class="parent-stat-val">' + s.streak + ' days</span></div><div class="parent-stat-row"><span class="parent-stat-label">💪 Queue</span><span class="parent-stat-val">' + queue2 + " words</span></div>" : '<div class="parent-stat-row"><span class="parent-stat-label">✅ Correct (saved week)</span><span class="parent-stat-val">' + (total > 0 ? correct + " / " + total : "—") + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">📊 Accuracy</span><span class="parent-stat-val">' + (acc !== null ? acc + "%" : "—") + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">🎮 Rounds</span><span class="parent-stat-val">' + rounds + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">🏋️ Drill rounds</span><span class="parent-stat-val">' + weekDrills + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">⏱ Time played</span><span class="parent-stat-val">' + weekTime + '</span></div><div class="parent-stat-row"><span class="parent-stat-label">📆 Days played</span><span class="parent-stat-val">' + weekDaysPlayed + " / 7</span></div>") + practiceBlock + parentTopicDetailsHtml(s) + "</div>";
   });
 }
 const PARENT_PASSWORD = "1234";
@@ -8484,6 +8516,7 @@ Object.assign(window, {
   selectPlayer,
   goBack,
   exitGame,
+  topBarBack,
   setGrade,
   showMyWords,
   showMyWordsTab,
@@ -8579,24 +8612,19 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .game-title{font-family:'Fredoka One',cursive;font-size:clamp(2rem,6vw,3.5rem);background:linear-gradient(135deg,#e8445a,#f59e0b,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
 .game-subtitle{color:var(--text-muted);font-size:.85rem;margin-top:4px;font-weight:600;}
 
-/* SESSION CLOCK — unified display in hub (Back + clock + play time + countdown) */
-.session-clock{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;background:var(--surface);border-radius:var(--radius-md);margin-bottom:12px;flex-wrap:wrap;}
-.session-clock .session-clock-back{flex-shrink:0;}
-.session-clock .session-clock-center{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px 12px;flex:1;min-width:0;}
-.session-clock .back-btn{margin-bottom:0;padding:6px 12px;font-size:.78rem;}
-.clock-wall-hub{font-family:'Fredoka One',cursive;font-size:1.15rem;color:var(--text);letter-spacing:1px;}
-.session-game-time{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 12px;background:rgba(79,70,229,.12);border:1px solid rgba(79,70,229,.35);border-radius:var(--radius-sm);min-width:100px;}
-.session-game-time .sgt-label{font-size:.58rem;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;}
-.session-game-time .sgt-val{font-family:'Fredoka One',cursive;font-size:1.05rem;color:var(--french-text);}
-.clock-divider{color:var(--surface2);font-size:1.2rem;}
-.conn-status-bar{width:100%;flex:0 0 100%;display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:8px 12px;margin-top:4px;background:rgba(15,23,42,.65);border:1px solid var(--surface2);border-radius:var(--radius-md);font-size:.68rem;font-weight:700;color:var(--text-muted);line-height:1.35;}
-.conn-status-bar .cs-dot{width:8px;height:8px;border-radius:var(--radius-full);background:var(--surface2);flex-shrink:0;}
-.conn-status-bar .cs-dot.cs-online{background:var(--green);box-shadow:0 0 8px rgba(16,185,129,.5);}
-.conn-status-bar .cs-dot.cs-offline{background:var(--wrong);}
-.conn-status-bar .cs-line{display:flex;align-items:center;gap:6px;min-width:0;}
-.conn-status-bar .cs-label{color:var(--text-muted);font-weight:800;text-transform:uppercase;letter-spacing:.4px;font-size:.58rem;}
-.conn-status-bar .cs-val{color:var(--text);font-weight:800;font-size:.72rem;}
-#screen-game .conn-status-bar{margin-bottom:10px;padding:8px 10px;}
+/* SLIM TOP BAR — hub and games (Back · name · French Time · time left · save icon) */
+.topbar{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-2) var(--space-3);min-height:var(--tap-min);margin-bottom:var(--space-3);}
+.topbar .back-btn{margin-bottom:0;min-height:var(--tap-min);padding:0 var(--space-4);border-radius:var(--radius-md);font-weight:800;}
+.topbar .brand{flex:1 1 auto;min-width:0;font-family:'Fredoka One',cursive;font-size:1.1rem;color:var(--gold);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.topbar-pill{display:flex;align-items:center;gap:var(--space-2);min-height:40px;padding:0 var(--space-3);border-radius:var(--radius-full);background:var(--surface);font-weight:800;}
+.topbar-pill .sgt-label{font-size:.7rem;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;}
+.topbar-pill .sgt-val{font-family:'Fredoka One',cursive;font-size:1.05rem;color:var(--french-text);}
+.topbar-pill .countdown-display{background:none;border:none;padding:0;font-size:1.05rem;}
+.save-icon{width:var(--tap-min);height:var(--tap-min);flex-shrink:0;border-radius:var(--radius-full);border:2px solid transparent;background:var(--surface);font-size:1.1rem;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text);}
+.save-icon.bad{background:rgba(252,165,165,.15);border-color:var(--wrong);}
+.save-msg{flex:0 0 100%;font-size:.8rem;font-weight:700;color:var(--text-muted);text-align:right;}
+.save-msg:empty{display:none;}
+@media(max-width:420px){.topbar .brand{display:none;}.topbar-pill{padding:0 var(--space-2);}}
 
 /* LEADERBOARD */
 .leaderboard{background:var(--surface);border-radius:var(--radius-lg);padding:20px;margin-bottom:16px;border:1px solid var(--surface2);}
@@ -8652,16 +8680,13 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .hub-stat{font-size:.88rem;color:var(--text-muted);font-weight:700;}
 .hub-stat span{color:var(--text);}
 .hub-moons{font-size:.88rem;color:var(--gold);font-weight:700;line-height:1.25;white-space:normal;}
-.hub-rules-mini{font-size:.72rem;color:var(--text-muted);text-align:left;width:100%;padding:8px 11px;background:rgba(0,0,0,.18);border-radius:var(--radius-sm);line-height:1.4;border:1px solid var(--surface2);}
-.hub-rules-mini b{color:var(--gold);font-size:.76rem;display:inline;margin-right:4px;}
 .hub-slogan-wrap{width:100%;display:flex;flex-direction:row;align-items:center;gap:0;background:rgba(245,158,11,.12);border:2px solid rgba(245,158,11,.35);border-radius:var(--radius-md);padding:9px 12px;}
 .hub-slogan{flex:1;min-width:0;font-size:clamp(.88rem,2.4vw,1.05rem);color:var(--gold);font-style:italic;line-height:1.4;font-weight:700;background:none;border:none;padding:0;}
 .hub-slogan-actions{display:flex;flex-shrink:0;margin-left:10px;align-items:center;}
 .hub-slogan-btn{background:rgba(79,70,229,.18);border:2px solid rgba(79,70,229,.45);border-radius:var(--radius-sm);padding:5px 9px;font-family:'Nunito',sans-serif;font-size:.72rem;font-weight:800;color:var(--text);cursor:pointer;white-space:nowrap;}
 .hub-slogan-btn:hover{background:rgba(79,70,229,.28);}
-.hub-today-panel{width:100%;max-width:none;margin-top:4px;}
-.hub-daily-summary-btn{width:100%;padding:9px 14px;border-radius:var(--radius-md);border:2px solid rgba(79,70,229,.45);background:rgba(79,70,229,.15);color:var(--french-text);font-family:'Fredoka One',cursive;font-size:.85rem;cursor:pointer;text-align:left;display:flex;justify-content:space-between;align-items:center;margin-top:8px;}
-.hub-today-panel .hub-daily-summary-block{margin-top:8px;}
+.hub-today-panel{width:100%;background:var(--surface);border:2px solid var(--surface2);border-radius:var(--radius-lg);margin-bottom:var(--space-4);}
+.hub-daily-summary-btn{width:100%;min-height:var(--tap-min);padding:0 var(--space-4);border:none;background:none;color:var(--text);font-family:'Nunito',sans-serif;font-weight:800;font-size:.95rem;cursor:pointer;text-align:left;display:flex;justify-content:space-between;align-items:center;}
 .hub-daily-summary-btn .chev{font-size:.88rem;opacity:.85;}
 .grade-tab.grade-locked{opacity:.55;position:relative;}
 .grade-tab .grade-lock-badge{font-size:.55rem;display:block;margin-top:2px;}
@@ -8669,23 +8694,22 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .grade-tab .grade-lock-top{font-size:.75rem;line-height:1;}
 .grade-tab .grade-num{font-size:.82rem;}
 .grade-tab.grade-tab-future:not(.grade-locked){opacity:.85;}
-.hub-grade-bar-note{font-size:.65rem;color:var(--text-muted);margin:6px 0 4px;line-height:1.35;max-width:720px;}
-.grade-tab.hub-cta-mw,.grade-tab.hub-cta-study{padding:12px 18px;font-size:1rem;min-height:52px;border-width:3px;}
-.grade-tab.hub-cta-mw{background:rgba(124,58,237,.18)!important;border-color:var(--purple)!important;color:#e9d5ff!important;}
-.grade-tab.hub-cta-study{background:rgba(16,185,129,.18)!important;border-color:var(--green)!important;color:#a7f3d0!important;}
+.hub-grade-bar-note{font-size:.8rem;font-weight:700;color:var(--text-muted);margin:0 0 var(--space-2);line-height:1.35;}
+.hub-grade-bar-note b{font-family:'Fredoka One',cursive;font-weight:400;font-size:1rem;color:var(--text);}
 .word-chip.punct{font-size:1.15rem;font-weight:900;padding:10px 14px;border-color:rgba(245,158,11,.5);background:rgba(245,158,11,.12);}
 .unlock-banner{background:linear-gradient(90deg,rgba(245,158,11,.25),rgba(79,70,229,.2));border:2px solid var(--gold);border-radius:var(--radius-md);padding:12px 16px;text-align:center;margin-bottom:10px;font-family:'Fredoka One',cursive;font-size:1.05rem;color:var(--gold);}
-.hub-profile-card{background:var(--surface);border-radius:var(--radius-lg);padding:12px 14px;border:1px solid var(--surface2);width:100%;max-width:none;align-self:stretch;}
-.hub-profile-card .hub-p-title{font-family:'Fredoka One',cursive;font-size:.95rem;color:var(--gold);margin-bottom:10px;text-align:left;}
-.hub-today-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 18px;padding-top:2px;border-top:1px solid rgba(255,255,255,.08);}
-.hub-today-grid .hub-profile-row{border-bottom:none;padding:4px 0;}
-.hub-profile-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:.82rem;}
-.hub-profile-row:last-child{border-bottom:none;}
-.hub-p-label{color:var(--text-muted);font-weight:700;}
-.hub-p-val{font-weight:800;color:var(--text);}
-.hub-profile-time .hub-p-val{font-family:'Fredoka One',cursive;font-size:1.05rem;color:var(--french-text);}
-.hub-daily-summary-block{background:rgba(79,70,229,.08);border:1px solid rgba(79,70,229,.25);border-radius:var(--radius-md);padding:12px 14px;width:100%;text-align:left;}
-.hub-daily-summary-block .hds-title{font-family:'Fredoka One',cursive;font-size:.88rem;color:var(--french-text);margin-bottom:8px;}
+.hub-today-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-3);margin-bottom:var(--space-4);}
+@media(max-width:767px){.hub-today-grid{grid-template-columns:repeat(2,1fr);}}
+.hub-today-tile{background:var(--surface2);border-radius:var(--radius-md);padding:var(--space-3);display:flex;flex-direction:column;gap:var(--space-1);}
+.hub-p-label{display:block;font-size:.75rem;color:var(--text-muted);font-weight:800;}
+.hub-p-val{font-family:'Fredoka One',cursive;font-size:1.3rem;color:var(--text);}
+.hub-rules{display:grid;gap:var(--space-2);}
+.hub-rule{display:flex;gap:var(--space-3);align-items:flex-start;background:var(--surface2);border-radius:var(--radius-md);padding:var(--space-3);font-size:.9rem;}
+.hub-rule-icon{font-size:1.3rem;line-height:1.2;}
+.hub-rule b{display:block;}
+.hub-rule span{color:var(--text-muted);}
+.hub-rules-note{font-size:.8rem;color:var(--text-muted);margin:var(--space-3) 0;}
+.hub-daily-summary-block{padding:0 var(--space-4) var(--space-4);width:100%;text-align:left;}
 .hub-daily-summary-block .hds-row{font-size:.78rem;color:var(--text-muted);padding:3px 0;display:flex;justify-content:space-between;gap:8px;}
 .hub-daily-summary-block .hds-row span:last-child{color:var(--text);font-weight:700;}
 @media screen and (min-width:768px) and (orientation:landscape){
@@ -8698,12 +8722,10 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 }
 
 /* GRADE TABS */
-.grade-tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;}
+.grade-tabs{display:flex;gap:var(--space-2);margin-bottom:var(--space-4);flex-wrap:wrap;}
+.grade-tabs .grade-tab{min-width:var(--tap-min);min-height:var(--tap-min);font-size:1rem;}
 .grade-tab{padding:7px 12px;border-radius:var(--radius-md);border:2px solid var(--surface2);background:var(--surface);color:var(--text-muted);font-family:'Fredoka One',cursive;font-size:.85rem;cursor:pointer;transition:all .2s;}
 .grade-tab.active{border-color:var(--french);color:var(--text);background:rgba(79,70,229,.2);}
-.grade-tab.action-tab{border-color:var(--french);color:var(--french-text);}
-.grade-tab.summary-tab{border-color:var(--gold);color:var(--gold);}
-.grade-tab.study-tab{border-color:var(--green);color:var(--green);}
 .grade-tab.train-tab{border-color:var(--purple);color:var(--purple);}
 
 /* STAR MAP */
@@ -8716,15 +8738,13 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .sm-topic-name{font-size:.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;}
 .sm-stars{color:var(--gold);font-size:.9rem;margin-top:3px;}
 .sm-star-progress{font-size:.62rem;color:var(--text-muted);margin-top:4px;line-height:1.3;font-weight:700;text-align:left;padding:6px 7px;background:rgba(0,0,0,.16);border-radius:var(--radius-sm);border:1px solid rgba(148,163,184,.25);}
-.sm-star-progress-row{display:flex;justify-content:space-between;gap:8px;margin-bottom:2px;}
-.sm-star-progress-row b{color:var(--text);}
-.sm-star-progress-next{margin-top:3px;color:var(--french-text);}
 .sm-star-meter{height:5px;background:rgba(148,163,184,.22);border-radius:var(--radius-full);overflow:hidden;margin-top:4px;}
 .sm-star-meter-fill{height:100%;background:linear-gradient(90deg,var(--french),var(--gold));border-radius:var(--radius-full);transition:width .25s ease;}
 .sm-star-meter-label{font-size:.58rem;margin-top:2px;color:var(--text-muted);}
 
 /* MINI GAMES GRID */
-.mini-games-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:14px;}
+.mini-games-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--space-3);margin-bottom:var(--space-5);}
+@media(min-width:768px){.mini-games-grid{grid-template-columns:repeat(4,1fr);}}
 .mini-game-btn{background:var(--surface);border:2px solid var(--surface2);border-radius:var(--radius-lg);padding:16px 10px;text-align:center;cursor:pointer;transition:all .25s cubic-bezier(.34,1.56,.64,1);color:var(--text);}
 .mini-game-btn:hover{transform:translateY(-4px) scale(1.02);border-color:var(--french);box-shadow:0 12px 40px rgba(79,70,229,.25);}
 .mini-game-btn .game-icon{font-size:2rem;display:block;margin-bottom:6px;}
@@ -8732,6 +8752,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .mini-game-btn .game-desc{font-size:.65rem;color:var(--text-muted);}
 .round-badge{font-size:.65rem;margin-top:4px;display:block;color:var(--text-muted);}
 .boss-btn{border-color:var(--gold)!important;background:rgba(245,158,11,.08)!important;}
+.tile-words{background:rgba(124,58,237,.12);border-color:rgba(124,58,237,.5);}
+.tile-study{background:rgba(16,185,129,.10);border-color:rgba(16,185,129,.5);}
 
 /* BACK BTN */
 .back-btn{background:none;border:2px solid var(--surface2);border-radius:var(--radius-sm);padding:7px 14px;color:var(--text-muted);font-family:'Nunito',sans-serif;font-weight:700;font-size:.8rem;cursor:pointer;transition:all .2s;margin-bottom:14px;}
@@ -8817,11 +8839,10 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .round-complete{text-align:center;width:100%;}
 .rc-stars{font-size:2.2rem;letter-spacing:4px;margin-bottom:10px;}
 .rc-title{font-family:'Fredoka One',cursive;font-size:1.8rem;margin-bottom:6px;}
-.rc-score{color:var(--gold);font-family:'Fredoka One',cursive;font-size:1.2rem;margin-bottom:14px;}
-.rc-breakdown{display:flex;gap:12px;justify-content:center;margin-bottom:14px;flex-wrap:wrap;}
-.rc-stat{background:var(--surface2);border-radius:var(--radius-sm);padding:8px 14px;text-align:center;}
-.rc-stat-val{font-family:'Fredoka One',cursive;font-size:1.3rem;display:block;}
-.rc-stat-lbl{font-size:.65rem;color:var(--text-muted);text-transform:uppercase;}
+.rc-result{font-family:'Fredoka One',cursive;font-size:1.3rem;color:var(--text);margin-bottom:10px;}
+.rc-outcome{font-size:1rem;font-weight:800;color:var(--gold);margin-bottom:10px;}
+.rc-points{color:var(--gold);font-family:'Fredoka One',cursive;font-size:1.2rem;margin-bottom:10px;}
+.rc-next{font-size:.95rem;font-weight:700;color:var(--french-text);margin-bottom:10px;}
 
 /* OVERLAYS */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:150;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px);opacity:0;pointer-events:none;transition:opacity .2s;}
@@ -8988,6 +9009,16 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .summary-mode-row{display:flex;gap:var(--space-1);flex-wrap:wrap;background:var(--bg);border-radius:var(--radius-md);padding:var(--space-1);}
 .summary-mode-btn{min-height:var(--tap-min);padding:0 var(--space-4);border-radius:var(--radius-sm);border:2px solid transparent;background:none;font-family:'Fredoka One',cursive;font-size:.9rem;cursor:pointer;color:var(--text-muted);touch-action:manipulation;}
 .summary-mode-btn.active{border-color:var(--gold);color:var(--gold);background:var(--surface2);}
+.mywords-tabs{display:flex;margin-bottom:var(--space-3);}
+.mywords-tabs .summary-mode-btn{flex:1;}
+.parent-topic-details{margin-top:var(--space-3);padding-top:var(--space-2);border-top:1px solid rgba(255,255,255,.08);}
+.parent-topic-details summary{min-height:var(--tap-min);display:flex;align-items:center;cursor:pointer;font-size:.8rem;font-weight:800;color:var(--text-muted);}
+.parent-topic-list{display:grid;gap:var(--space-2);}
+.parent-topic-row{background:var(--surface);border-radius:var(--radius-sm);padding:var(--space-2) var(--space-3);font-size:.78rem;}
+.parent-topic-name{font-weight:800;}
+.parent-topic-stars{color:var(--gold);letter-spacing:1px;}
+.select-parent-row{text-align:center;margin:var(--space-2) 0 var(--space-4);}
+.select-parent-btn{font-size:.8rem;}
 .hub-daily-mini{font-size:.78rem;color:var(--text-muted);margin-top:6px;line-height:1.5;max-width:520px;}
 .hub-daily-mini strong{color:var(--text);}
 .weekday-grid{display:flex;gap:var(--space-2);justify-content:flex-start;flex-wrap:wrap;margin:var(--space-2) 0;}
@@ -9031,8 +9062,9 @@ button,input{touch-action:manipulation;}
 
 .assess-bar {
   display: flex; align-items: center; justify-content: space-between;
-  gap: 12px; margin-bottom: 10px;
+  gap: 12px; margin-bottom: 10px; min-height: var(--tap-min);
 }
+.assess-bar .btn-secondary { padding: 0 var(--space-4); min-height: var(--tap-min); }
 .assess-title { font-family: 'Fredoka One', cursive; font-size: 1.15rem; color: var(--french-text); }
 .assess-sub { font-size: .74rem; color: var(--text-muted); margin-top: 2px; }
 
@@ -9047,7 +9079,7 @@ button,input{touch-action:manipulation;}
 }
 
 .assess-card {
-  background: var(--card); border: 1px solid rgba(0,0,0,.08); border-radius: var(--radius-md);
+  background: var(--surface); border: 1px solid rgba(0,0,0,.08); border-radius: var(--radius-md);
   padding: 18px 16px; margin-bottom: 12px;
 }
 .assess-prompt { font-size: .95rem; line-height: 1.5; margin-bottom: 14px; }
@@ -9065,14 +9097,15 @@ button,input{touch-action:manipulation;}
   color: var(--french-text); margin: 4px 0 16px;
 }
 .assess-audio { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 16px; }
+.assess-audio .assess-note { flex: 0 0 100%; font-size: .85rem; }
 .assess-choices { display: grid; gap: 8px; }
 .assess-choice {
   text-align: left; padding: 12px 14px; font-size: .92rem;
   font-family: 'Nunito', sans-serif; font-weight: 700;
-  background: var(--card); color: var(--text);
-  border: 2px solid rgba(0,0,0,.12); border-radius: var(--radius-md); cursor: pointer;
+  background: var(--surface2); color: var(--text); min-height: var(--tap-min);
+  border: 2px solid rgba(148,163,184,.5); border-radius: var(--radius-md); cursor: pointer;
 }
-.assess-choice.chosen { border-color: var(--french); background: rgba(37,99,235,.06); }
+.assess-choice.chosen { border-color: var(--french); background: rgba(79,70,229,.2); }
 .assess-input {
   width: 100%; padding: 12px 14px; font-size: 1rem;
   font-family: 'Nunito', sans-serif; border: 2px solid rgba(0,0,0,.12);
@@ -9251,6 +9284,22 @@ button,input{touch-action:manipulation;}
     <div style="font-size:.8rem;color:var(--text-muted);font-weight:700;" id="wall-clock-date"></div>
   </div>
 
+  <!-- SLIM TOP BAR — hub and games only; showScreen() owns its visibility -->
+  <div class="topbar" id="topbar" style="display:none;">
+    <button type="button" class="back-btn" onclick="topBarBack()">← Back</button>
+    <div class="brand">French Adventure</div>
+    <div class="topbar-pill topbar-time" id="session-game-time-box" title="Time in this app today (French Adventure)">
+      <span class="sgt-label">French Time</span>
+      <span class="sgt-val" id="hub-playtime-val">0:00</span>
+    </div>
+    <div class="topbar-pill topbar-left">
+      <span class="sgt-label">Left</span>
+      <span class="countdown-display" id="countdown-display">⏳ 20:00</span>
+    </div>
+    <button type="button" class="save-icon ok" id="save-icon" data-action="save-status" data-msg="" aria-label="Save status">☁️</button>
+    <div class="save-msg" id="save-msg" aria-live="polite"></div>
+  </div>
+
   <!-- ── SELECT SCREEN ── -->
   <div id="screen-select">
     <div class="leaderboard">
@@ -9275,10 +9324,6 @@ button,input{touch-action:manipulation;}
       </div>
       <div class="week-reset" id="week-reset-msg"></div>
     </div>
-    <!-- Parent summary on select screen -->
-    <div style="text-align:center;margin-bottom:8px;">
-      <button class="grade-tab summary-tab" onclick="showParentSummary()" style="margin:0 auto;padding:8px 20px;">📋 Parent Summary</button>
-    </div>
     <div class="player-cards">
       <div class="player-card jenn" onclick="selectPlayer('jenn')">
         <span class="player-avatar">🐥</span>
@@ -9295,31 +9340,14 @@ button,input{touch-action:manipulation;}
         <div class="player-daily-mini" id="sel-daily-jess"></div>
       </div>
     </div>
+    <!-- Parent summary on select screen, below the player cards -->
+    <div class="select-parent-row">
+      <button type="button" class="btn-secondary select-parent-btn" onclick="showParentSummary()">📋 Parent Summary</button>
+    </div>
   </div>
 
   <!-- ── HUB SCREEN ── -->
   <div id="screen-hub">
-    <!-- Back + countdown + wall clock — visible after player select -->
-    <div class="session-clock" id="session-clock" style="display:none;margin-bottom:12px;">
-      <div class="session-clock-back">
-        <button type="button" class="back-btn" onclick="goBack()">← Back</button>
-      </div>
-      <div class="session-clock-center">
-        <div class="clock-wall-hub" id="clock-wall">12:00 PM</div>
-        <div class="clock-divider">|</div>
-        <div class="session-game-time" id="session-game-time-box" title="Time in this app today (French Adventure)">
-          <span class="sgt-label">French Time</span>
-          <span class="sgt-val" id="hub-playtime-val">0:00</span>
-        </div>
-        <div class="clock-divider">|</div>
-        <div class="countdown-display" id="countdown-display">⏳ 20:00</div>
-      </div>
-      <div class="conn-status-bar" id="conn-status-hub" aria-live="polite">
-        <span class="cs-dot cs-online" id="conn-dot-hub"></span>
-        <div class="cs-line"><span class="cs-label">Internet</span><span class="cs-val" id="conn-net-hub">—</span></div>
-        <div class="cs-line"><span class="cs-label">Save</span><span class="cs-val" id="conn-sync-hub">—</span></div>
-      </div>
-    </div>
     <div class="hub-header" id="hub-header">
       <div class="hub-top-band">
         <div class="hub-avatar" id="hub-avatar">🐥</div>
@@ -9333,34 +9361,15 @@ button,input{touch-action:manipulation;}
           </div>
         </div>
       </div>
-      <div class="hub-rules-mini" id="hub-rules-mini"><b>⭐ Topic stars</b> 60–79% = 1⭐ · 80–94% = 2⭐ · ≥95% = 3⭐ · topic seen in ≥3 games today &nbsp;|&nbsp; <b>🌙 Moon</b> All topics in a level at 3⭐ &nbsp;|&nbsp; <b>🌟 Superstar</b> Moons on the two highest levels played</div>
       <div class="hub-slogan-wrap">
         <div class="hub-slogan" id="hub-slogan"></div>
         <div class="hub-slogan-actions" id="hub-slogan-actions">
           <button type="button" class="hub-slogan-btn" id="hub-slogan-translate-btn" onclick="toggleSloganTranslation()">Translate to English</button>
         </div>
       </div>
-      <div class="hub-today-panel" id="hub-today-panel">
-        <div class="hub-profile-card" id="hub-profile-card">
-          <div class="hub-p-title">📋 Today</div>
-          <div class="hub-today-grid">
-            <div class="hub-profile-row"><span class="hub-p-label">⭐ Stars (today)</span><span class="hub-p-val" id="hub-day-stars-val">0</span></div>
-            <div class="hub-profile-row"><span class="hub-p-label">🎮 Rounds</span><span class="hub-p-val" id="hub-rounds-today-val">0</span></div>
-            <div class="hub-profile-row"><span class="hub-p-label">📊 Accuracy</span><span class="hub-p-val" id="hub-acc-today-val">—</span></div>
-            <div class="hub-profile-row"><span class="hub-p-label">🏋️ Drill</span><span class="hub-p-val" id="hub-drill-val">—</span></div>
-          </div>
-        </div>
-        <button type="button" class="hub-daily-summary-btn" id="hub-daily-summary-btn" onclick="toggleHubDailySummary()" aria-expanded="false">
-          <span>More: level accuracy &amp; rules</span><span class="chev" id="hub-daily-chev">▼</span>
-        </button>
-        <div class="hub-daily-summary-block" id="hub-daily-summary-block" style="display:none;">
-          <div class="hds-title">Details</div>
-          <div id="hub-daily-summary-inner"></div>
-        </div>
-      </div>
     </div>
 
-    <p class="hub-grade-bar-note" id="hub-grade-bar-note">Play any level, <strong>L1–L7</strong>. The ⭐ marks the level suggested next.</p>
+    <div class="hub-grade-bar-note" id="hub-grade-bar-note"><b>Pick a level</b> · ⭐ = suggested next</div>
     <div class="grade-tabs" id="grade-tabs">
       <button type="button" class="grade-tab active" id="tab-g4" onclick="setGrade(4)" title="Level 1">L1</button>
       <button type="button" class="grade-tab" id="tab-g5" onclick="setGrade(5)" title="Level 2">L2</button>
@@ -9369,13 +9378,6 @@ button,input{touch-action:manipulation;}
       <button type="button" class="grade-tab" id="tab-g8" onclick="setGrade(8)" title="Level 5">L5</button>
       <button type="button" class="grade-tab" id="tab-g9" onclick="setGrade(9)" title="Level 6">L6</button>
       <button type="button" class="grade-tab" id="tab-g10" onclick="setGrade(10)" title="Level 7">L7</button>
-      <button type="button" class="grade-tab action-tab hub-cta-mw" onclick="showMyWords()">💪 My Words</button>
-      <button type="button" class="grade-tab study-tab hub-cta-study" onclick="showStudy()">📖 Study</button>
-    </div>
-
-    <div class="star-map" id="star-map-section">
-      <div class="sm-title">⭐ Topic Stars</div>
-      <div class="sm-grid" id="sm-grid"></div>
     </div>
 
     <div class="mini-games-grid">
@@ -9409,17 +9411,45 @@ button,input{touch-action:manipulation;}
         <span class="game-desc">Mixed • All topics</span>
         <span class="round-badge">2 left today</span>
       </div>
+      <div class="mini-game-btn tile-words" onclick="showMyWords()">
+        <span class="game-icon">💪</span><span class="game-name">My Words</span>
+        <span class="game-desc">Practise</span>
+      </div>
+      <div class="mini-game-btn tile-study" onclick="showStudy()">
+        <span class="game-icon">📖</span><span class="game-name">Study</span>
+        <span class="game-desc">Sets 1–3</span>
+      </div>
+    </div>
+
+    <div class="star-map" id="star-map-section">
+      <div class="sm-title">⭐ Topic Stars</div>
+      <div class="sm-grid" id="sm-grid"></div>
+    </div>
+
+    <div class="hub-today-panel" id="hub-today-panel">
+      <button type="button" class="hub-daily-summary-btn" id="hub-daily-summary-btn" onclick="toggleHubDailySummary()" aria-expanded="false">
+        <span>More: today &amp; how stars work</span><span class="chev" id="hub-daily-chev">▼</span>
+      </button>
+      <div class="hub-daily-summary-block" id="hub-daily-summary-block" style="display:none;">
+        <div class="hub-today-grid">
+          <div class="hub-today-tile"><span class="hub-p-label">⭐ Stars (today)</span><span class="hub-p-val" id="hub-day-stars-val">0</span></div>
+          <div class="hub-today-tile"><span class="hub-p-label">🎮 Rounds</span><span class="hub-p-val" id="hub-rounds-today-val">0</span></div>
+          <div class="hub-today-tile"><span class="hub-p-label">📊 Accuracy</span><span class="hub-p-val" id="hub-acc-today-val">—</span></div>
+          <div class="hub-today-tile"><span class="hub-p-label">🏋️ Drill</span><span class="hub-p-val" id="hub-drill-val">—</span></div>
+        </div>
+        <div class="hub-rules">
+          <div class="hub-rule"><span class="hub-rule-icon">⭐</span><div><b>Topic stars</b><span>Get most answers right in a topic, in 3 different games today. More right = more stars (up to 3).</span></div></div>
+          <div class="hub-rule"><span class="hub-rule-icon">🌙</span><div><b>Moon</b><span>Every topic in a level has 3 stars.</span></div></div>
+          <div class="hub-rule"><span class="hub-rule-icon">🌟</span><div><b>Superstar</b><span>Moons on your two highest levels.</span></div></div>
+        </div>
+        <p class="hub-rules-note">Exact percentages and per-topic counts are in the Parent Summary.</p>
+        <div id="hub-daily-summary-inner"></div>
+      </div>
     </div>
   </div>
 
   <!-- ── GAME SCREEN ── -->
   <div id="screen-game">
-    <button class="back-btn" onclick="exitGame()">← Hub</button>
-    <div class="conn-status-bar" id="conn-status-game" aria-live="polite">
-      <span class="cs-dot cs-online" id="conn-dot-game"></span>
-      <div class="cs-line"><span class="cs-label">Internet</span><span class="cs-val" id="conn-net-game">—</span></div>
-      <div class="cs-line"><span class="cs-label">Save</span><span class="cs-val" id="conn-sync-game">—</span></div>
-    </div>
     <div class="game-topbar">
       <div class="game-topbar-title" id="game-title-bar">Quiz</div>
       <div class="game-lives" id="game-lives">❤️❤️❤️</div>
@@ -9457,9 +9487,9 @@ button,input{touch-action:manipulation;}
     <button class="overlay-close" onclick="closeOverlay('mywords-overlay')">✕</button>
     <div class="overlay-title">💪 My Words</div>
     <div class="overlay-subtitle">Your personal practice list — study then drill!</div>
-    <div class="mywords-tabs">
-      <button class="mywords-tab active" id="mw-tab-list" onclick="showMyWordsTab('list')">📋 Word List</button>
-      <button class="mywords-tab" id="mw-tab-drill" onclick="showMyWordsTab('drill')">🏋️ Drill</button>
+    <div class="mywords-tabs summary-mode-row">
+      <button type="button" class="mywords-tab summary-mode-btn active" id="mw-tab-list" onclick="showMyWordsTab('list')">📋 Word List</button>
+      <button type="button" class="mywords-tab summary-mode-btn" id="mw-tab-drill" onclick="showMyWordsTab('drill')">🏋️ Drill</button>
     </div>
     <div id="mywords-content"></div>
   </div>
@@ -9494,8 +9524,7 @@ button,input{touch-action:manipulation;}
       <div class="assess-title" id="assess-title">Check-in</div>
       <div class="assess-sub" id="assess-sub"></div>
     </div>
-    <button type="button" class="btn-secondary" data-action="assess-pause"
-            style="padding:8px 14px;font-size:.78rem;">Pause</button>
+    <button type="button" class="btn-secondary" data-action="assess-pause">Pause</button>
   </div>
   <div class="assess-progress"><div class="assess-progress-fill" id="assess-progress-fill"></div></div>
   <div id="assess-body"></div>
