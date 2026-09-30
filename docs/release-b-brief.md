@@ -3,7 +3,7 @@
 **To:** the content owner (ChatGPT), via the parent
 **From:** Claude (implementation)
 **Date:** 2026-09-29
-**Governing document:** `docs/French_Adventure_Improvement_Plan.md`, revision 3. This brief adds evidence and device constraints. It does not change that plan. Where they differ, the plan wins, and the difference should be raised with the parent.
+**Governing document:** `docs/French_Adventure_Improvement_Plan.md`, revision 5 (2026-09-20; the brief was written against revision 3, and the delivered package reconciles it with revision 5). This brief adds evidence and device constraints. It does not change that plan. Where they differ, the plan wins, and the difference should be raised with the parent.
 
 ## 1. What is being asked for
 
@@ -26,7 +26,7 @@ The package must contain finished child-facing content, not a template (master p
 ## 2. Who the learners are
 
 - Jenn and Jess, Grade 5, regular Alberta public school FSL, not French Immersion (master plan, header and §0).
-- Sessions are about 20 minutes, one or two a week, never on consecutive days (master plan §3.4, §3.7).
+- Sessions are about 20 minutes, one or two a week; the app must never require consecutive days (master plan §3.4, §3.7). *(Corrected 2026-09-29: this line used to say "never on consecutive days", which the plan does not say.)*
 - **No adult at home reads or speaks French.** Every explanation, hint and piece of feedback has to work without an adult. The app cannot score writing or speaking. Any activity that needs a person to judge French will go unjudged at home.
 
 ## 3. Baseline evidence (Release A check-in)
@@ -96,6 +96,8 @@ These are verified on the family iPad or in the code, as marked.
 3. W_ENCODING is the only writing next-step shown for both girls. Should accent teaching be a named target in chapter 1, or spread across all four chapters?
 
 ## 7. What happens next
+
+**Status 2026-09-29:** the package arrived as `pilot-v1.1.0`, against plan Revision 5. Steps 1 and 2 below are done: imported to `content/releases/pilot-v1/` unchanged, validated, not accepted. Findings went back as `docs/release-b-amendments.md`, not filled in.
 
 1. The parent gives this brief to ChatGPT and returns the finished package.
 2. Claude imports it into `content/releases/pilot-v1/`, then validates:

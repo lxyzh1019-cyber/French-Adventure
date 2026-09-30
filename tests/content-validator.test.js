@@ -247,3 +247,53 @@ test('the real imported Release A package passes', () => {
   const r = run('content/releases/assessment-v1');
   assert.equal(r.ok, true, `the imported Release A was rejected:\n${r.output}`);
 });
+
+test('the real imported Release B package passes', () => {
+  const r = run('content/releases/pilot-v1');
+  assert.equal(r.ok, true, `the imported Release B was rejected:\n${r.output}`);
+});
+
+/**
+ * Skills with no teaching items that a fixture (history, expected scheduling,
+ * credit) or a review item's `skillIds` nevertheless names. A review item's
+ * `related_assessment_skill_ids` is a curriculum link, not scheduling, and is
+ * deliberately not read.
+ */
+function scheduledLinkOnlySkills(dir) {
+  const readJson = f => JSON.parse(readFileSync(join(dir, f), 'utf8'));
+  const linkOnly = readJson('skills.json').skills
+    .filter(s => !(s.teaching_item_ids?.length)).map(s => s.id);
+  const named = new Set();
+  (function walk(v) {
+    if (Array.isArray(v)) v.forEach(walk);
+    else if (v && typeof v === 'object') {
+      for (const [k, x] of Object.entries(v)) {
+        if (/skill/i.test(k)) [x].flat().forEach(s => { if (typeof s === 'string') named.add(s); });
+        walk(x);
+      }
+    }
+  })(readJson('learning_fixtures.json'));
+  for (const item of readJson('review_items.json').items) for (const id of item.skillIds ?? []) named.add(id);
+  return { linkOnly, scheduled: linkOnly.filter(id => named.has(id)) };
+}
+
+test('a link-only skill is never scheduled — Release B', () => {
+  // Twelve skills exist only to link the pilot to Release A's curriculum ids.
+  // They carry no items, so the engine must never schedule, review or credit
+  // them (M3 constraint, recorded in implementation-status.md).
+  const dir = 'content/releases/pilot-v1';
+  const manifest = JSON.parse(readFileSync(join(dir, 'manifest.json'), 'utf8'));
+  const real = scheduledLinkOnlySkills(dir);
+  assert.equal(real.linkOnly.length, manifest.additional_counts.curriculum_link_only_skills);
+  assert.deepEqual(real.scheduled, [], `link-only skills named by fixtures or review items: ${real.scheduled.join(', ')}`);
+
+  // And the guard fires: put one into a review item's skillIds.
+  const copy = mkdtempSync(join(tmpdir(), 'content-'));
+  cpSync(dir, copy, { recursive: true });
+  try {
+    const d = JSON.parse(readFileSync(join(copy, 'review_items.json'), 'utf8'));
+    d.items[0].skillIds.push(real.linkOnly[0]);
+    writeFileSync(join(copy, 'review_items.json'), JSON.stringify(d));
+    assert.deepEqual(scheduledLinkOnlySkills(copy).scheduled, [real.linkOnly[0]]);
+  } finally { rmSync(copy, { recursive: true, force: true }); }
+});

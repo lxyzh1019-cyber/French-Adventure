@@ -1,0 +1,49 @@
+{
+  "release_id": "pilot-v1.1.0",
+  "assets": [
+    {
+      "id": "C1",
+      "path": "assets/C1.svg",
+      "role": "teaching scene board",
+      "use": "scene and instruction only; never show it beside an independent listening or writing check",
+      "description": "Original vector-labelled scene cards, not historical reproductions",
+      "license": "Original package artwork; may be used and modified for French Adventure",
+      "required_external_artwork": false
+    },
+    {
+      "id": "C2",
+      "path": "assets/C2.svg",
+      "role": "teaching scene board",
+      "use": "scene and instruction only; never show it beside an independent listening or writing check",
+      "description": "Original vector-labelled scene cards, not historical reproductions",
+      "license": "Original package artwork; may be used and modified for French Adventure",
+      "required_external_artwork": false
+    },
+    {
+      "id": "C3",
+      "path": "assets/C3.svg",
+      "role": "teaching scene board",
+      "use": "scene and instruction only; never show it beside an independent listening or writing check",
+      "description": "Original vector-labelled scene cards, not historical reproductions",
+      "license": "Original package artwork; may be used and modified for French Adventure",
+      "required_external_artwork": false
+    },
+    {
+      "id": "C4",
+      "path": "assets/C4.svg",
+      "role": "teaching scene board",
+      "use": "scene and instruction only; never show it beside an independent listening or writing check",
+      "description": "Original vector-labelled scene cards, not historical reproductions",
+      "license": "Original package artwork; may be used and modified for French Adventure",
+      "required_external_artwork": false
+    }
+  ],
+  "audio": {
+    "delivery": "scripts and existing shared device-TTS service",
+    "locale": "fr-CA",
+    "voice_selection": "Prefer checked Amélie if available, else disclose the actual voice",
+    "no_voice": "visual reading route with support/technical flags, not failed listening",
+    "qa": "The brief reports reliable first tap and readable assessment assets. The new lesson scripts, phonetic contrasts and teaching boards still require integrated iPad checks.",
+    "rate": 0.8
+  }
+}

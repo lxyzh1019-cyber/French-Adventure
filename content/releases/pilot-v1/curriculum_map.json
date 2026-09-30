@@ -1,0 +1,54 @@
+{
+  "release_id": "pilot-v1.1.0",
+  "program": "Alberta FSL Nine-year Program, Grades 4–12",
+  "mapping_status": "Inherited official-program summaries from Release A; activity mappings newly reviewed by author, not educator-certified or grade-equivalent",
+  "source": {
+    "url": "https://open.alberta.ca/publications/french-as-a-second-language-nine-year-program-of-studies-grade-4-to-grade-12",
+    "original_checked": "2026-09-08",
+    "current_access": "Official landing and PDF access failed on 2026-09-29; do not present exact grade-specific outcomes as freshly verified."
+  },
+  "outcomes": [
+    {
+      "id": "ABFSL-GEN-COM",
+      "component": "Communication",
+      "summary": "Understand and express French messages for a communicative purpose.",
+      "locator": "Release A curriculum_map.json: program p. 11"
+    },
+    {
+      "id": "ABFSL-GEN-LANG",
+      "component": "Language",
+      "summary": "Use linguistic elements to fulfil a communicative purpose.",
+      "locator": "Release A curriculum_map.json: program p. 11"
+    },
+    {
+      "id": "ABFSL-GEN-CULT",
+      "component": "Culture",
+      "summary": "Develop awareness of Francophone cultures and perspectives.",
+      "locator": "Release A curriculum_map.json: program p. 11"
+    },
+    {
+      "id": "ABFSL-GEN-STRAT",
+      "component": "Language learning strategies",
+      "summary": "Use listening, reading and production strategies.",
+      "locator": "Release A curriculum_map.json: program p. 11"
+    }
+  ],
+  "note": "Museum, archives, history and some causal/past language are enrichment contexts. This is not proof of complete Grade 5 outcome coverage or immersion equivalence.",
+  "assessment_skill_source": "Release A assessment-v1.0.2 curriculum_map.json",
+  "canonical_skill_ids": [
+    "L_KEYWORDS",
+    "L_DIRECTIONS",
+    "L_DETAILS",
+    "R_WORDS",
+    "R_SENTENCE",
+    "R_DETAILS",
+    "VG_ARTICLES",
+    "VG_LOCATION",
+    "VG_PRESENT_CORE",
+    "VG_CONNECTED",
+    "W_SENTENCE",
+    "W_REASON",
+    "W_ENCODING"
+  ],
+  "comparison_policy": "Canonical IDs link the curriculum. Release B evidence never overwrites Release A bands, broad writing results, or assessed strengths/needs."
+}

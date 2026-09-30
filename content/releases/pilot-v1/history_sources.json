@@ -1,0 +1,132 @@
+{
+  "release_id": "pilot-v1.1.0",
+  "sources": [
+    {
+      "id": "H-ALLIANCE",
+      "url": "https://www.canada.ca/en/parks-canada/news/2019/08/government-of-canada-honours-the-national-historic-significance-of-the-18th-century-mikmaq-french-alliance.html",
+      "publisher": "Parks Canada, developed with Mi’kmaq Confederacy of PEI",
+      "checkedAt": "2026-09-29",
+      "access": "full page inspected",
+      "locator": "Paragraphs beginning In the 18th century and The 18th century Mi’kmaq-French Alliance"
+    },
+    {
+      "id": "H-WAR",
+      "url": "https://www.historymuseum.ca/virtual-museum-of-new-france/colonies-and-empires/wars-and-imperial-rivalries/",
+      "publisher": "Canadian Museum of History",
+      "checkedAt": "2026-09-29",
+      "access": "full page inspected",
+      "locator": "Opening paragraph, Treaty of Paris 1763"
+    },
+    {
+      "id": "H-SLAVERY",
+      "url": "https://www.canada.ca/en/parks-canada/news/2020/07/the-enslavement-of-african-people-in-canada-c-16291834.html",
+      "publisher": "Parks Canada",
+      "checkedAt": "2026-09-29",
+      "access": "full page inspected",
+      "locator": "Historical background on enslavement in New France"
+    },
+    {
+      "id": "H-HAITI",
+      "url": "https://whc.unesco.org/en/list/180",
+      "publisher": "UNESCO World Heritage Centre",
+      "checkedAt": "2026-09-29",
+      "access": "full page inspected",
+      "locator": "Outstanding Universal Value, independence proclamation 1 January 1804"
+    },
+    {
+      "id": "H-ALBERTA",
+      "url": "https://www.alberta.ca/francophone-heritage",
+      "publisher": "Government of Alberta",
+      "checkedAt": "2026-09-29",
+      "access": "full page inspected",
+      "locator": "History, Alberta’s Francophone communities, Education"
+    },
+    {
+      "id": "H-WORLD",
+      "url": "https://observatoireancien.francophonie.org/qui-parle-francais-dans-le-monde/",
+      "publisher": "Organisation internationale de la Francophonie",
+      "checkedAt": "2026-09-29",
+      "access": "search excerpt only; page fetch failed",
+      "locator": "2022 distribution and French present on five continents",
+      "limitations": "No population totals or current ranking taught."
+    }
+  ],
+  "claims": [
+    {
+      "id": "H-ALLIANCE",
+      "source": "https://www.canada.ca/en/parks-canada/news/2019/08/government-of-canada-honours-the-national-historic-significance-of-the-18th-century-mikmaq-french-alliance.html",
+      "checkedAt": "2026-09-29",
+      "inspection": "full page inspected",
+      "locator": "Paragraphs beginning In the 18th century and The 18th century Mi’kmaq-French Alliance",
+      "scope": [
+        "HC1",
+        "HC2"
+      ],
+      "review_status": "source-checked by author, not reviewed by external historian or community representative"
+    },
+    {
+      "id": "H-WAR",
+      "source": "https://www.historymuseum.ca/virtual-museum-of-new-france/colonies-and-empires/wars-and-imperial-rivalries/",
+      "checkedAt": "2026-09-29",
+      "inspection": "full page inspected",
+      "locator": "Opening paragraph, Treaty of Paris 1763",
+      "scope": [
+        "HC3"
+      ],
+      "review_status": "source-checked by author, not reviewed by external historian or community representative"
+    },
+    {
+      "id": "H-SLAVERY",
+      "source": "https://www.canada.ca/en/parks-canada/news/2020/07/the-enslavement-of-african-people-in-canada-c-16291834.html",
+      "checkedAt": "2026-09-29",
+      "inspection": "full page inspected",
+      "locator": "Historical background on enslavement in New France",
+      "scope": [
+        "HC3B"
+      ],
+      "review_status": "source-checked by author, not reviewed by external historian or community representative"
+    },
+    {
+      "id": "H-HAITI",
+      "source": "https://whc.unesco.org/en/list/180",
+      "checkedAt": "2026-09-29",
+      "inspection": "full page inspected",
+      "locator": "Outstanding Universal Value, independence proclamation 1 January 1804",
+      "scope": [
+        "HC4"
+      ],
+      "review_status": "source-checked by author, not reviewed by external historian or community representative"
+    },
+    {
+      "id": "H-ALBERTA",
+      "source": "https://www.alberta.ca/francophone-heritage",
+      "checkedAt": "2026-09-29",
+      "inspection": "full page inspected",
+      "locator": "History, Alberta’s Francophone communities, Education",
+      "scope": [
+        "HC4B"
+      ],
+      "review_status": "source-checked by author, not reviewed by external historian or community representative"
+    },
+    {
+      "id": "H-WORLD",
+      "source": "https://observatoireancien.francophonie.org/qui-parle-francais-dans-le-monde/",
+      "checkedAt": "2026-09-29",
+      "inspection": "search excerpt only; page fetch failed",
+      "locator": "2022 distribution and French present on five continents",
+      "scope": [
+        "HC4B"
+      ],
+      "review_status": "source-checked by author, not reviewed by external historian or community representative"
+    }
+  ],
+  "fictional_elements": [
+    "Mina",
+    "Léo",
+    "museum clues",
+    "moved atlas pages",
+    "all quoted museum messages",
+    "all item stimuli"
+  ],
+  "interpretation_notes": "Methodological statements about comparing evidence and avoiding unsupported claims are author explanations, not historical quotations. The pilot does not claim that cooperation was universally equal or peaceful."
+}

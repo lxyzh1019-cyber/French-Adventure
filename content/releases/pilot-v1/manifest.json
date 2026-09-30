@@ -1,0 +1,114 @@
+{
+  "release_id": "pilot-v1.1.0",
+  "version": "1.1.0",
+  "schema_version": 2,
+  "compatible_master_plan_revision": 5,
+  "authored_date": "2026-09-29",
+  "repository_baseline": "5c272b3377f629a43d5e06d9d7d564b77301ca85",
+  "release_kind": "complete_content_package_for_review",
+  "parent_authorization": "2026-09-29: rewrite Release B against supplied implementation brief",
+  "dependencies": {
+    "assessment": "assessment-v1.0.2 unchanged",
+    "implementation": "M3 learning engine; current audio owner from PR #29"
+  },
+  "counts": {
+    "chapters": 4,
+    "learning_items": 144,
+    "review_items": 37,
+    "skills": 21
+  },
+  "additional_counts": {
+    "core_sessions": 12,
+    "followup_sessions": 2,
+    "scenes": 12,
+    "pronunciation_tasks": 12,
+    "history_cards": 6,
+    "svg_assets": 4,
+    "chapter_mastery_targets": 8,
+    "encoding_target": 1,
+    "curriculum_link_only_skills": 12
+  },
+  "files": [
+    {
+      "path": "assets/C1.svg",
+      "sha256": "e74505058c3f6c765c999be4c8bede51d10777a5dd37d108df4eff2531a94604"
+    },
+    {
+      "path": "assets/C2.svg",
+      "sha256": "b11630919d7d29a7e530b24d2c9bd78787f213fd1974bbc13085b1aef9094af3"
+    },
+    {
+      "path": "assets/C3.svg",
+      "sha256": "d2f5f2d10d66f6faa27379085ee19a5243dc3a15560f58efdf3dfe85b2c58315"
+    },
+    {
+      "path": "assets/C4.svg",
+      "sha256": "0f43c9e1737c048885cd96b0a801246ef467e38abe924fa72b12910a4e7ec825"
+    },
+    {
+      "path": "assets.json",
+      "sha256": "81ac4ebfca665f0c77e3a69c3f814e7a72f4b2b9e119761b98fb8fba27ae2bac"
+    },
+    {
+      "path": "chapters.json",
+      "sha256": "66e5f58042d10c8039b1f38029554a4029b148fb94dd2d66ddb0ac0af9f84bef"
+    },
+    {
+      "path": "curriculum_map.json",
+      "sha256": "f11452d9becc975acab9a89afccf867b45e5ec55ef686f715b3bd0311fb690e7"
+    },
+    {
+      "path": "history_sources.json",
+      "sha256": "923375bb2784db55c8b862d8d9c02b49e46518c29a0b803c9f1a60ec84f3632d"
+    },
+    {
+      "path": "learning_fixtures.json",
+      "sha256": "781239403f70ebc851df881baf7eb4e10cf8ac5a46d17a3c48fe01f04c2b7e84"
+    },
+    {
+      "path": "learning_items.json",
+      "sha256": "c31e327d5d43492e019829dba183319d5e680607e799f5a07b720b4913df99a8"
+    },
+    {
+      "path": "preview.html",
+      "sha256": "d5da2d19299e4ad19dc397f884d445254b5245db6459271b25b581f54f43f6ee"
+    },
+    {
+      "path": "pronunciation_tasks.json",
+      "sha256": "0a99d16135872ca90249e27bade4a9fd370db1b79db40e725e5a40130876b735"
+    },
+    {
+      "path": "review_items.json",
+      "sha256": "1c91038c7933266860d36bbde2029624468a235c983550e060de6af203fb3554"
+    },
+    {
+      "path": "review_notes.md",
+      "sha256": "4ae1b88d6b26e4ba7b3ce3d36953f7148bcbc53bc8bc33d6bb55b101779a298b"
+    },
+    {
+      "path": "skills.json",
+      "sha256": "6f7e0749820b4ced824af2cb60698c8af82c86b4d58155631bcf10e5d097a428"
+    },
+    {
+      "path": "validate-release-b.mjs",
+      "sha256": "13030b5cf7b37a06cb21af48d15f2cbe548cccea6bf2f9d62d1fe23e0f761cc1"
+    }
+  ],
+  "validation_status": "See validation_report.json for observed checks. No device or educational acceptance implied.",
+  "limitations": [
+    "No external educator or community review",
+    "Not integrated into app",
+    "No human pronunciation model recording",
+    "Current official Alberta source access limited",
+    "Small finite review bank",
+    "OIF claim inspected through search excerpt only"
+  ],
+  "supersedes": "pilot-v1.0.0",
+  "changes": [
+    "Reconcile release-b-brief.md with governing plan Revision 5",
+    "Add fixed recognition/assembly/completion support routes",
+    "Add W_ENCODING teaching and separate meaning/spelling policies",
+    "Replace independent English translation prompts with French clues",
+    "Add canonical assessment links, item release identity, two baseline fixtures and support regression fixtures"
+  ]
+}
