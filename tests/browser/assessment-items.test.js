@@ -48,7 +48,12 @@ async function openApp() {
     window.__spoken = [];
     const synth = window.speechSynthesis;
     if (synth) {
-      synth.speak = u => { window.__spoken.push(u.text); };
+      // A play is counted when speech starts, so the double says it started.
+      // The empty line is the audio module's silent unlock on first tap.
+      synth.speak = u => {
+        if (u.text) window.__spoken.push(u.text);
+        setTimeout(() => u.onstart?.(), 0);
+      };
       synth.cancel = () => {};
     }
   });

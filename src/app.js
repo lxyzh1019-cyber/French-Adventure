@@ -10,6 +10,7 @@ import { SCHEMA_VERSION, hasAnyProgress, DEFAULT_STATE,
 import { GRADE_KEYS, levelLabel, levelNumber, recommendLevel,
          recommendationText, levelAccuracy, hasMoon } from './learning/levels.js';
 import { pickFrenchVoice, describeVoice, PREFERRED_LOCALE } from './speech/playback.js';
+import { createAudioOut } from './speech/audio-out.js';
 import { escapeAttr } from './util/html.js';
 import { createAttemptLedger } from './state/attempts.js';
 import { createAssessmentStore } from './assessment/store.js';
@@ -1512,27 +1513,31 @@ if(speechSynth && typeof speechSynth.addEventListener==='function'){
 /** What the device actually plays, for diagnostics and later pronunciation work. */
 function currentVoiceInfo(){ if(!frenchVoiceInfo) resolveFrenchVoice(); return frenchVoiceInfo; }
 
-function speakFrench(text){
-  if(!speechSynth)return;
-  // Stop what is playing, but only if something is. The cancel exists so that
-  // moving to the next word cuts the previous one off mid-sentence rather than
-  // queueing behind it — that behaviour is kept exactly.
-  //
-  // What is not kept is calling cancel() when the queue is already empty. On
-  // WebKit that is the documented way to lose the first utterance after a page
-  // loads: cancel() on an idle synthesiser can leave it in a state where the
-  // speak() that follows produces nothing, so the child's first tap is silent
-  // and the second works. Guarding on speaking||pending removes the no-op call
-  // without touching the one that does work.
-  if(speechSynth.speaking || speechSynth.pending) speechSynth.cancel();
-  const utt=new SpeechSynthesisUtterance(text);
-  const voice = frenchVoice || resolveFrenchVoice();
-  if(voice) utt.voice = voice;
-  // Set lang even when a voice is chosen: it is the hint the platform uses when
-  // no French voice is installed at all.
-  utt.lang=voice ? voice.lang : PREFERRED_LOCALE;
-  utt.rate=SPEECH_RATE;
-  speechSynth.speak(utt);
+// Every sound goes through one owner (src/speech/audio-out.js): it unlocks the
+// engine on the first tap, resumes it after the screen locks, keeps the
+// d8edc24 rule of never cancelling an idle engine, and tells the caller when a
+// line never started so the screen can say so instead of staying silent.
+const audioOut = createAudioOut({
+  synth: speechSynth,
+  pickVoice: () => frenchVoice || resolveFrenchVoice(),
+  fallbackLang: PREFERRED_LOCALE,
+  rate: SPEECH_RATE,
+});
+audioOut.install({ win: window, doc: document });
+
+/** opts: { onStart, onRefused } — see audioOut.speak. */
+function speakFrench(text, opts){
+  return audioOut.speak(text, opts);
+}
+// Speak, and if the line never starts, make its 🔊 button ask for a tap rather
+// than leave the child wondering. findBtn is looked up when the answer comes,
+// since the question may have been redrawn by then.
+function speakWithSignal(text, findBtn){
+  const btn = () => { try { return findBtn ? findBtn() : null; } catch(_) { return null; } };
+  return speakFrench(text, {
+    onStart: () => btn()?.classList.remove('needs-tap'),
+    onRefused: () => btn()?.classList.add('needs-tap'),
+  });
 }
 // Build a 🔊 button that carries its French text as data rather than as
 // interpolated JavaScript inside an onclick attribute. Apostrophes in words like
@@ -1568,7 +1573,7 @@ window.__faDebug = {
 };
 document.addEventListener('click', function(e){
   const t = e.target && e.target.closest ? e.target.closest('[data-speak]') : null;
-  if(t) speakFrench(t.getAttribute('data-speak'));
+  if(t) speakWithSignal(t.getAttribute('data-speak'), () => t);
 });
 
 // Same idea for the remaining generated buttons: carry parameters as data
@@ -1618,7 +1623,7 @@ document.addEventListener('click', function(e){
 function speakCurrent(){
   if(!currentQ)return;
   const text=currentQ.word?.fr||currentQ.parts?.join(' ')||'';
-  if(text)speakFrench(text);
+  if(text)speakWithSignal(text, () => document.getElementById('btn-tts'));
 }
 // One controller per mic button. Tap starts listening, tap again stops it,
 // and every way a listen can end (result, error, silence, timeout) resets the
@@ -1795,7 +1800,7 @@ function renderQuiz(q,area,actions){
   });
   actions.innerHTML='<button class="btn-secondary" onclick="showHint()">💡 Hint</button>';
   document.getElementById('hint-text').textContent='Parents: 中文提示 = '+q.hint;
-  speakFrench(q.word.fr);
+  speakWithSignal(q.word.fr, () => area.querySelector('[data-speak]'));
 }
 function handleQuizAnswer(choice,q,btn){
   if(!commitAnswerOnce()) return;
@@ -1969,7 +1974,7 @@ function renderScramble(q,area,actions){
   actions.innerHTML='<button class="btn-secondary" onclick="clearScramble()">Clear</button>'
     +'<button class="btn-primary" data-action="check-scramble">Check ✓</button>'
     +speakButtonHTML(q.word.fr,'question-speak-inline');
-  speakFrench(q.word.fr);
+  speakWithSignal(q.word.fr, () => actions.querySelector('[data-speak]'));
 }
 function renderScrambleState(q){
   const slots=document.getElementById('answer-slots'),pool=document.getElementById('scramble-letters');
@@ -2475,13 +2480,15 @@ function renderListenQuestion(q, area, actions){
     +(recognition ? '<button class="btn-speak" id="btn-stt-listen" onclick="startListenSpeech()">🎤 Speak</button>' : '')
     +'<button class="btn-primary" onclick="checkListenAnswer()">Check ✓</button>';
 
-  // Auto-play on question load
-  setTimeout(()=>speakFrench(q.word.fr), 400);
+  // Auto-play on question load, in the same task as the tap that brought the
+  // question up. It used to wait 400 ms, which put it outside the tap, where
+  // WebKit drops a first utterance without a word.
+  speakWithSignal(q.word.fr, () => document.getElementById('listen-play-btn'));
   setTimeout(()=>document.getElementById('listen-input')?.focus(), 600);
 }
 
 function speakAndReveal(){
-  if(currentQ?.word?.fr) speakFrench(currentQ.word.fr);
+  if(currentQ?.word?.fr) speakWithSignal(currentQ.word.fr, () => document.getElementById('listen-play-btn'));
 }
 
 function checkListenAnswer(){
@@ -3246,6 +3253,7 @@ configureAssessmentUI({
   todayKey,
   deviceId,
   speak: speakFrench,
+  playClip: blob => audioOut.playClip(blob),
   // Recorded on every listening response, so a whole section that fell back to
   // a France voice is visible afterwards rather than guessed at.
   voiceInfo: assessmentVoiceInfo,
@@ -3292,11 +3300,7 @@ function openAssessmentReview(){
     store: assessment,
     audioStore: assessmentAudioStore,
     deviceId,
-    playBlob: async (blob) => {
-      const url = URL.createObjectURL(blob);
-      try { await new Audio(url).play(); }
-      finally { setTimeout(() => URL.revokeObjectURL(url), 30000); }
-    },
+    playClip: blob => audioOut.playClip(blob),
     download: (text, player, run, ext = 'txt') => {
       // Dated, because a second sitting produces a second file and the two must
       // not be told apart by which folder they landed in.
@@ -3318,11 +3322,7 @@ function openDeviceCheck(){
     makeCapture: makeAssessmentCapture,
     audioStore: assessmentAudioStore,
     requestedLocale: PREFERRED_LOCALE,
-    playBlob: async (blob) => {
-      const url = URL.createObjectURL(blob);
-      try { await new Audio(url).play(); }
-      finally { setTimeout(() => URL.revokeObjectURL(url), 30000); }
-    },
+    playClip: blob => audioOut.playClip(blob),
   });
   deviceCheckUnmount = mountDeviceCheck(panel, controller, {
     onDone: () => { deviceCheckUnmount = null; },

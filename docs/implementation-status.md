@@ -54,15 +54,17 @@ States: `not_started` · `in_progress` · `ready_for_review` · `accepted` · `b
 
 | Check | Command | Count | Last result |
 |---|---|---|---|
-| Unit + handler export | `npm test` | 398 tests across 27 files; 37 inline handlers checked | pass (398/398) |
+| Unit + handler export | `npm test` | 416 tests across 28 files; 37 inline handlers checked | pass (416/416, LF copy) |
 | Build parity | `npm run check:drift` | — | pass |
 | Release A contract | `npm run check:release-a` | `assessment-v1.0.2`: 90 items, both forms | pass |
 | Content package contract | `npm run check:content -- <dir>` | 3 packages: `content/releases/assessment-v1`, `tests/fixtures/content-a`, `tests/fixtures/content-b` | pass (3/3) |
-| Browser (Chromium) | `npm run test:browser` | 95 tests across 9 files | pass (95/95; local Chrome 153 via `CHROMIUM_PATH`) |
+| Browser (Chromium) | `npm run test:browser` | 103 tests across 10 files | pass (103/103; local Chrome via `CHROMIUM_PATH`) |
 | CI | GitHub Actions `CI` on push | same five steps | success on `4a16357` ([run 35669857016](https://github.com/lxyzh1019-cyber/French-Adventure/actions/runs/35669857016)) |
 
 Counts taken at `4a16357` on 2026-09-29 by running the suites, not copied from a
-previous report — see "M2 Step 6 — technical suite and handoff" for how they
+previous report; the unit and browser counts were re-taken on the
+`claude/audio-first-tap` working tree the same day (see "2026-09-29 — Audio
+first tap: one audio owner"). CI has not run on that branch yet — see "M2 Step 6 — technical suite and handoff" for how they
 were run and the one environment caveat.
 
 Chromium is regression coverage, not the plan's actual-iPad gate.
@@ -1100,7 +1102,7 @@ plan stay unticked: acceptance is the parent's.
 | Jess's 5 Form B recordings (sat 2026-09-10, about 19 days old on 2026-09-29) exist only in IndexedDB in the browser that recorded them. WebKit clears unused site data after about a week (`known-risks.md` §2). The Form B report still opens, so the data is probably not wiped — unconfirmed; the report does not prove the clips survive. Rescue is the "⬇ Save everything, with the recordings" export (PR #22, checklist §5.10g), made in the same browser where the Form B report opens. **Not done** as of 2026-09-29. | parent | open — time-bound |
 | Finding: the Device & Feature Check file says "Opened from: Safari tab" for a check run in Chrome for iOS. `formatDeviceCheckReport` (`src/modes/device-check.js:93`) has only two labels, Home Screen icon or Safari tab, so any other browser tab reads as Safari. Not fixed. | Claude | open |
 | Firestore assessment-store exposure: no auth, and the store holds a child's writing (`known-risks.md` §1b). | parent | deferred by decision |
-| **Audio first tap — OPEN, not fixed; needs a design pass.** The parent reported it again on 2026-09-28. The `d8edc24` fix (`src/app.js:1527`) removes only one cause: `cancel()` on an idle `speechSynthesis`. Nothing unlocks audio on a user gesture. Nothing waits for voices to load. Listen & Speak speaks its first word from a `setTimeout`, outside any gesture (`src/app.js:2479`). The `new Audio().play()` paths do not handle a refused play: `src/modes/assessment-ui.js:404` discards the promise, and the review and device-check players (`src/app.js:3286`, `3319`) have no catch. The guard test (`tests/browser/regression.test.js:134-179`) stubs `speak`/`cancel` and checks the call order in Chromium. It cannot detect this defect on an iPad. | Claude (design), parent (device) | open |
+| **Audio first tap — fixed in code, awaiting iPad confirmation.** Reported again by the parent on 2026-09-28; the `d8edc24` fix removed only one cause (idle `cancel()`). Plan v1 (2026-09-29) replaced the per-site sound code with one owner, `src/speech/audio-out.js`: unlock on the first tap, resume after the screen locks, a start watchdog that makes 🔊 pulse instead of staying silent, Listen & Speak auto-play inside the tap, clips played inside the tap with refusals reported, and a check-in play counted only once speech starts. See "2026-09-29 — Audio first tap: one audio owner". Tests use a WebKit double; only the iPad can confirm the double is right (`ipad-test-checklist.md` §4.5). | parent (device) | fixed in code — awaiting iPad |
 | iPad §5.5c, microphone-denial recovery, not walked. No check-in is available: both children have used theirs. Defer to the next re-check. | parent | open |
 | M1 smoke checklist (`docs/ipad-test-checklist.md` Parts 1–4) and recovery-file confirmation not walked. M1 is still `ready_for_review` for the same reason. | parent | open |
 
@@ -1181,6 +1183,99 @@ children have used theirs. Deferred to the next re-check.
 
 Still open, unchanged: the first-tap audio defect, M1 Parts 1–4, §4.5, and the
 recovery file.
+
+## 2026-09-29 — Audio first tap: one audio owner
+
+Plan v1 "Fix the silent first tap", approved with both recommendations: one
+module owns every sound, rather than a patch per call site; and in the
+check-in a listening play counts as used only once sound actually starts.
+Branch `claude/audio-first-tap`.
+
+**Diagnosis.** Every sound path runs on iPad WebKit (Safari, and Chrome for
+iOS, which is WebKit underneath). `d8edc24` removed one cause, `cancel()` on
+an idle engine. What remained: nothing unlocked speech on a tap, so a line
+spoken outside a tap before any in-tap line could be dropped without an
+error — and Listen & Speak spoke its first word from a 400 ms `setTimeout`,
+outside the tap that brought the question up. Nothing resumed an engine iOS
+had left paused after the screen locked. Nothing kept a reference to the
+utterance, and nothing noticed a line that never started. The scoring screen
+read a clip from IndexedDB *after* the tap and then called `play()`, which
+WebKit refuses outside the gesture; the refusal surfaced only as "This device
+would not play it back". The learner's own replay discarded the `play()`
+promise. The check-in counted a play at the tap, so a swallowed tap used up
+one of her two plays. The old guard test stubbed `speak`/`cancel` in Chromium
+and could not see any of this.
+
+**Design.** `src/speech/audio-out.js` (`createAudioOut`) is the only place
+that calls `synth.speak`, builds an `Audio`, or calls `.play(` — a `grep` of
+`src/` finds none anywhere else.
+- The first trusted tap anywhere (touchend, pointerup, click or keydown,
+  capture phase) speaks one empty, volume-0 line and warms the voice list.
+  Scripted events are ignored. The listeners are removed once anything has
+  started.
+- `speak` resumes a paused engine, cancels only when something is speaking or
+  pending (the `d8edc24` rule) and never to clear the silent unlock line,
+  keeps a strong reference to the line until it ends, and sets voice, lang and
+  `SPEECH_RATE` exactly as before.
+- A line that has not started within 1.5 s is reported to the caller once
+  (`onRefused`); a late start is still reported (`onStart`). It is **not**
+  retried automatically: a retry outside the tap would meet the same refusal,
+  and a retry of a line that was merely slow would play it twice. Instead the
+  🔊 button for that line pulses (`.needs-tap`) until a line starts.
+- On `visibilitychange` back to visible, and on `pageshow`, a paused engine is
+  resumed.
+- `playClip(blob)` builds the object URL and the `Audio` and calls `play()` in
+  the same task as the call, resolves `{ ok, reason }` and never throws, and
+  revokes the URL after 30 s as before. The scoring screen now reads its clips
+  when the cards are drawn, so the tap plays what is already in memory; a
+  refusal says "That did not play. Tap ▶ again." The device check and the
+  learner's own replay already hold the clip in memory. The two duplicate
+  `playBlob`s in `src/app.js` and the bare `new Audio().play()` in
+  `assessment-ui.js` are gone.
+- Listen & Speak speaks in the same task as the tap that rendered the
+  question; the input is still focused at 600 ms.
+- Check-in: `playCurrentAudio` records the consumed play in `onStart`. A play
+  that never starts records nothing and shows "No sound started. Tap ▶︎ Play
+  again."; the Play button is held while a play is starting, so a second tap
+  cannot queue a second play. `playback_events` keeps its shape (`at_utc`,
+  `consumed`, `resolved_locale`); no schema change. "I heard nothing" is
+  unchanged. A play that starts only after the item has been submitted is not
+  recorded against it.
+- Device check: a refused "Play it back" leaves the check at *needs you* with
+  the reason and asks for another tap; the person's "I heard nothing" still
+  fails it. "Play a French phrase" goes through the same `speak`, and its
+  confirmation flow is unchanged.
+
+**Tests, failing first.** `tests/helpers/fake-webkit-audio.js` is a double of
+WebKit's rules: speech outside a tap is dropped silently until the engine is
+unlocked; the engine can be left paused after the screen locks; `play()` is
+refused outside a tap. `tests/browser/audio-first-tap.test.js` drives the real
+built page with trusted taps and asserts what was *heard*. Against the build
+at `origin/main` (`5634577`), 6 of its 7 tests failed, each on its own
+assertion: nothing heard after the first tap; Listen & Speak's first word
+dropped (`dropped: ["blanc"]`); no signal on a refused word; the word after
+waking not heard; the scoring screen's first tap refused ("This device would
+not play it back"); a silent play counted ("1 play left"). The seventh (a play
+that starts is counted once) passed before and after, as it should. The
+replaced guard in `regression.test.js` (no idle cancel; a second tap cuts the
+first off; both words heard) and the new device-check first-tap test also
+passed on the old build — they guard behaviour that was already right. After
+the change all pass: Windows `npm run test:browser` 103/103;
+`tests/audio-out.test.js` 14/14 (fake engine and clock: resume, cancel rule,
+watchdog, late start, error, unlock queueing, trusted-only unlock, visibility
+resume, clip refusal, URL release, `play()` in the same task); LF copy
+`npm test` 416/416; handlers 37; drift and Release A pass (LF copy; `index.html` was built from it, since a build from the Windows CRLF checkout differs by line endings alone). The
+assessment-items and device-check speech stubs now ignore the empty unlock
+line, and the assessment-items stub reports a start, since a play is counted
+only then.
+
+**What only the iPad can prove.** That the double is right: that an empty
+volume-0 utterance on the first tap unlocks speech on this iPad's WebKit; that
+iOS leaves the engine paused (rather than some other stuck state) after a
+screen lock; that 1.5 s is long enough for the first line after a cold start
+(a slower start shows the pulse and then plays — noisy, not silent); and that
+a pre-read clip plays on the first tap in Chrome for iOS. Checklist §4.5 now
+asks for all of it. The open item stays open until that is recorded.
 
 ## Parent acceptance
 

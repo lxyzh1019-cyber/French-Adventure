@@ -21,18 +21,19 @@ Single working record for this repository. Updated by the main session at the en
 | 8 | 2026-09-21 | "Commit and push to rules-v2" | done | `30c3c59`; open PR #23 already carried the branch, no new PR opened |
 | 9 | 2026-09-27 | Run the `hz-claude-config` stub installer; commit, push and open a PR if it ends `INSTALL OK` | done | `INSTALL OK`, smoke test `Rules v3.1.4 loaded`. v2 hooks, skill copy, `tests/replay-hooks.sh`, `tests/test-routing-hook.md`, `docs/HZ-skill-trigger-tuning.md` removed; `CLAUDE.md` is now the pointer; `FEATURES.md` governance section updated to match |
 | 10 | 2026-09-28 | "Where is the status of rebuild?" | done | Answer: `docs/implementation-status.md`. Row numbered 10 because `origin/main` (PR #24) already holds row 9 |
-| 11 | 2026-09-28 | "M1 same problems, you have to press play again" | open | Audit only, no fix. `d8edc24` covered one WebKit cause (idle `cancel()`); no gesture unlock, no voices-loaded wait, non-gesture auto-play at `src/app.js:2479`, `new Audio().play()` paths unhandled; guard test is a Chromium stub. Needs a design pass before any patch |
+| 11 | 2026-09-28 | "M1 same problems, you have to press play again" | open — fixed in code (row 17), awaiting iPad | Audit only, no fix. `d8edc24` covered one WebKit cause (idle `cancel()`); no gesture unlock, no voices-loaded wait, non-gesture auto-play at `src/app.js:2479`, `new Audio().play()` paths unhandled; guard test is a Chromium stub. Needs a design pass before any patch |
 | 12 | 2026-09-28 | "For M2 the only thing missing is Jenn's assess?" | done | No — Step 5 was already built; Step 6, parent iPad evidence and parent acceptance were outstanding |
 | 13 | 2026-09-28 | Plan v1 "Close out M2 Step 6" (approved) | partial | Items 1–7 done on `claude/m2-step6-closeout` (`1c2172d`, PR #25). Plan v2 approved 2026-09-29: `origin/main` merged into the branch, conflict resolved by keeping both sides |
 | 14 | 2026-09-29 | "Can you export the diagnose report", Plan v1 "Save the Device & feature check as a file" (approved) | done (uncommitted) | ⬇ Save these results in the device check → `device-check-YYYY-MM-DD.txt`; shared `saveTextFile` in `src/app.js`; results gain an `answer` field. Does not unblock the iPad row: a person still has to run it |
 | 15 | 2026-09-29 | "Here are the results, how to move on" (device check `.txt`, Jenn Form A `.html`, Jess Form A `.html` + `.txt`) | done | Plan v2 (approved). Recorded in `implementation-status.md` ("2026-09-29 — iPad results received", open items, Phase 2 rows) and `ipad-test-checklist.md`. Docs only; no code. Jess sat both forms — recorded, not an app defect |
 | 16 | 2026-09-29 | Jess Form B report screenshots ("jess · form B · 2026-09-10") | done | Sitting date corrected 2026-09-17 → 2026-09-10 in both docs; 2026-09-17 is the report date. Her Form B recordings still not exported |
+| 17 | 2026-09-29 | Plan v1 "Fix the silent first tap" (approved: one audio owner; a check-in play counts only once sound starts) | done in code — awaiting iPad | Branch `claude/audio-first-tap`. `src/speech/audio-out.js` owns all speech and clip playback; every caller routed through it. Closes the code side of row 11; row 11 stays open until the iPad confirms |
 
 ## Hotspot counter
 | Area / feature | Fix rounds | Recurrences | Last symptom | Rewrite-vs-repair reviewed? |
 |---|---|---|---|---|
 | Rules bundle install | 0 | 0 | — | no |
-| Audio playback (first tap silent) | 1 (`d8edc24`) | 1 (parent, 2026-09-28) | "You have to press play again" | no — a design pass is required before the next patch; one more recurrence hits the gate |
+| Audio playback (first tap silent) | 2 (`d8edc24`; one audio owner, `claude/audio-first-tap`) | 1 (parent, 2026-09-28) | "You have to press play again" | yes — Plan v1 2026-09-29: one audio owner (`src/speech/audio-out.js`) instead of per-site patches. A further recurrence after this means the WebKit model in `tests/helpers/fake-webkit-audio.js` is wrong, not that another call site needs a patch |
 Rule: 3 fix rounds, or 2 recurrences, or a fix causing a nearby regression → no further patch until the comparison is presented.
 
 ## Deliverable ledger
@@ -52,6 +53,7 @@ Rule: 3 fix rounds, or 2 recurrences, or a fix causing a nearby regression → n
 | M2 Step 6 — actual-iPad device results | PARTIAL | 2026-09-29: device check 7/7 (voice fr-CA Amélie), Jenn and Jess Form A exported with 5/5 clips each. Still parent only: §5.5c (no check-in available; next re-check), §4.5 plus the first-tap observation, M1 Parts 1–4, recovery file, Jess Form B clip export |
 | Device check "⬇ Save these results" | COMPLETE | opus-worker: LF copy `npm test` 401/401, drift and release-a pass; Windows `test:browser` 95/95 (system Chrome); Windows `npm test` 400/401, the one failure the known CRLF manifest hash. Used on the iPad 2026-09-29 (Chrome for iOS): file produced; its "Opened from" label is wrong under Chrome (open question) |
 | Record 2026-09-29 iPad results (docs) | COMPLETE | Branch `claude/record-ipad-results-2026-09-29`; `implementation-status.md`, `ipad-test-checklist.md`, this file, `FEATURES.md` |
+| Audio first tap — one audio owner | PARTIAL | Code, tests and docs done on `claude/audio-first-tap` (opus-worker, uncommitted). 9 new or replaced browser tests: 6 failed on the old build (3 were guards that already passed), all pass after; Windows `test:browser` 103/103, LF-copy `npm test` 416/416, handlers 37, drift pass (LF copy; the Windows CRLF tree fails drift by line endings alone), Release A pass. `index.html` built from the LF copy. Not yet: commit/PR, iPad confirmation (`ipad-test-checklist.md` §4.5) |
 | M2 Step 6 overall | PARTIAL | Claude-side evidence complete; device results outstanding; M2 cannot be accepted until they are recorded |
 | Branch up to date with `origin/main` | COMPLETE | Plan v2 6b, 2026-09-29: `bd53ca6` merged; only `WORKING_RECORD.md` conflicted (resolved by keeping both sides); `FEATURES.md` auto-merged |
 | Rules live for this repo | BLOCKED | Needs PR #23 merged to `main` — cloud sessions branch from `main`, so nothing is governed until then |
@@ -64,6 +66,8 @@ Rule: 3 fix rounds, or 2 recurrences, or a fix causing a nearby regression → n
 - 2026-09-29 `opus-worker` self-reported model `claude-opus-5-5` (effort: configured high, not observable)
 - 2026-09-29 M2 Step 6 suite: see the deliverable ledger. `bash tests/replay-hooks.sh` → `passed=12 failed=2` on Windows: the harness hands `/tmp` paths to Windows Python, so this is an environment failure, not a hook defect. Not re-run on Linux; the script is deleted upstream by PR #24
 - 2026-09-29 record iPad results (docs only): Windows `npm test` 400/401 (the known CRLF manifest-hash failure); LF export of `98d679d` with the four edited files overlaid: `npm test` 401/401, `check:drift` and `check:release-a` pass. Grep: no remaining claim that Jess sat Form B on 2026-09-17; no claim that writing or speaking is scored. opus-worker self-reported model `claude-opus-5-5`
+
+- 2026-09-29 audio first tap (opus-worker, model `claude-opus-5-5`): failing-first evidence against the old build and the passing run are in the deliverable ledger row; `grep` shows `synth.speak`, `new Audio` and `.play(` only in `src/speech/audio-out.js` (and tests)
 
 ## Open questions / blockers
 - PR #23 must merge into `main` before any of this governs a session. Verify in a **new** session: first reply should report "rules v2.1 (2026-09-21)".

@@ -25,7 +25,8 @@ let deps = {
   todayKey: () => null,
   deviceId: () => null,
   onExit: () => {},
-  speak: () => {},              // plays a French string aloud
+  speak: () => {},              // (text, { onStart, onRefused }) plays a French string aloud
+  playClip: async () => ({ ok: false, reason: 'unavailable' }), // plays a recorded blob
   voiceInfo: () => ({}),        // { resolvedLocale, name } for the record
   makeCapture: null,            // () => audio capture controller
   audioStore: null,             // device-local clip storage
@@ -227,10 +228,8 @@ export function render() {
 let capture = null;             // live audio controller, while recording
 let captureState = 'idle';
 let captureError = null;
-let clipUrl = null;             // object URL for replaying what was just said
 
 function resetCapture() {
-  if (clipUrl) { try { URL.revokeObjectURL(clipUrl); } catch { /* already gone */ } clipUrl = null; }
   capture = null; captureState = 'idle'; captureError = null;
 }
 
@@ -387,22 +386,23 @@ export async function stopRecording() {
     draft.audio_duration_ms = result.durationMs ?? null;
     draft.audio_mime = result.mimeType ?? null;
     draft.technical_invalid_reason = null;
-    if (clipUrl) { try { URL.revokeObjectURL(clipUrl); } catch { /* gone */ } }
-    clipUrl = null;
   } else {
     captureError = 'That did not record. You can try again.';
   }
   render();
 }
 
-/** Let the learner hear her own answer back. Nothing is judged by it. */
+/**
+ * Let the learner hear her own answer back. Nothing is judged by it.
+ * The clip is already in memory, so play() is reached inside the tap.
+ */
 export function playOwnRecording() {
   if (!draft?.audio_blob) return;
-  try {
-    if (!clipUrl) clipUrl = URL.createObjectURL(draft.audio_blob);
-    const audio = new Audio(clipUrl);
-    void audio.play();
-  } catch { captureError = 'That clip cannot be played back here.'; render(); }
+  void deps.playClip(draft.audio_blob).then((r) => {
+    if (r?.ok) return;
+    captureError = 'That did not play. Tap ▶ again.';
+    render();
+  });
 }
 
 /**
@@ -498,21 +498,33 @@ function audioControls(item, d) {
 
   const used = session.playsUsed(d);
   const max = item.audio?.max_plays ?? content.MAX_LISTENING_PLAYS;
+  const mine = playState.draft === d ? playState : null;
 
   const play = document.createElement('button');
   play.type = 'button';
   play.className = 'btn-primary';
   play.setAttribute('data-action', 'assess-play');
   play.textContent = used === 0 ? '▶︎ Play' : '▶︎ Play again';
-  play.disabled = !session.canPlay(item, d);
+  // Held while a play is starting, so a second tap cannot queue a second play
+  // before the first has been counted.
+  play.disabled = !session.canPlay(item, d) || !!mine?.pending;
+  if (mine?.notice) play.classList.add('needs-tap');
   box.append(play);
 
   const left = document.createElement('div');
   left.className = 'assess-note';
-  left.textContent = play.disabled
+  left.textContent = !session.canPlay(item, d)
     ? 'That was the last play for this one.'
     : `${max - used} play${max - used === 1 ? '' : 's'} left`;
   box.append(left);
+
+  if (mine?.notice) {
+    const note = document.createElement('div');
+    note.className = 'assess-note';
+    note.setAttribute('role', 'status');
+    note.textContent = mine.notice;
+    box.append(note);
+  }
 
   // The child is the only one who can tell silence from a device fault, so the
   // control has to be plain and easy to reach. A repeat after this does not
@@ -571,17 +583,49 @@ export function chooseOption(choiceId) {
   render();
 }
 
-/** Play the item's audio, consuming one of the allowed plays. */
+/**
+ * The play in progress on the item on screen: whether it is still waiting to
+ * start, and what to tell her if it never did. Tied to its draft, so a new item
+ * starts clean without anything having to remember to reset it.
+ */
+let playState = { draft: null, pending: false, notice: null };
+
+/**
+ * Play the item's audio. A play is counted when the speech actually starts
+ * (replay.play_count_definition counts a playback that ran, not a tap): on an
+ * iPad a tap can be swallowed without a sound, and she has only two plays. If
+ * it never starts, nothing is used up and she is asked to tap again. The "I
+ * heard nothing" path is unchanged, for a play that started but was not heard.
+ */
 export async function playCurrentAudio() {
   const run = currentRun();
   if (!run || !draft) return;
   const item = content.getItem(draft.item_id);
   if (!item?.audio || !session.canPlay(item, draft)) return;
+  const d = draft;
+  if (playState.draft === d && playState.pending) return;
   const info = deps.voiceInfo() || {};
-  session.recordPlayback(draft, { consumed: true, resolvedLocale: info.resolvedLocale ?? null });
-  draft.voice_requested_locale = item.audio.locale ?? null;
-  draft.voice_name = info.name ?? null;
-  deps.speak(item.audio.script_fr_ca);
+  d.voice_requested_locale = item.audio.locale ?? null;
+  d.voice_name = info.name ?? null;
+  playState = { draft: d, pending: true, notice: null };
+  const onScreen = () => draft === d;
+  const asked = deps.speak(item.audio.script_fr_ca, {
+    onStart: () => {
+      if (playState.draft === d) playState = { draft: d, pending: false, notice: null };
+      if (!onScreen() || !session.canPlay(item, d)) return;
+      session.recordPlayback(d, { consumed: true, resolvedLocale: info.resolvedLocale ?? null });
+      render();
+    },
+    onRefused: () => {
+      if (playState.draft !== d) return;
+      playState = { draft: d, pending: false, notice: 'No sound started. Tap ▶︎ Play again.' };
+      if (onScreen()) render();
+    },
+  });
+  // No engine to ask at all: nothing will ever start, so do not wait for it.
+  if (asked === false && playState.draft === d) {
+    playState = { draft: d, pending: false, notice: 'No sound started. Tap ▶︎ Play again.' };
+  }
   render();
 }
 

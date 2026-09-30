@@ -45,7 +45,7 @@ function make(overrides = {}) {
       abandon() { return { ok: false, reason: 'app_interrupted_before_submit' }; },
     }),
     audioStore: store,
-    playBlob: async () => {},
+    playClip: async () => ({ ok: true }),
     requestedLocale: 'fr-CA',
     ...overrides,
   });
@@ -229,6 +229,24 @@ test('a recording is captured, and its playback is judged by the person', async 
   assert.equal(controller.hasRecording(), true);
   assert.equal((await controller.playRecording()).status, 'needs_you');
   assert.equal(controller.confirm('record_replay', true).status, 'pass');
+});
+
+test('a refused playback asks for another tap, and the person still decides', async () => {
+  // On an iPad a first play() can be refused and a second tap works. That is
+  // not yet a verdict on the device; only the person saying they heard
+  // nothing fails the check.
+  let calls = 0;
+  const { controller } = make({
+    playClip: async () => (++calls === 1 ? { ok: false, reason: 'NotAllowedError' } : { ok: true }),
+  });
+  await controller.startRecording();
+  await controller.stopRecording();
+  const refused = await controller.playRecording();
+  assert.equal(refused.status, 'needs_you');
+  assert.match(refused.detail, /NotAllowedError/);
+  assert.match(refused.detail, /again/i);
+  assert.equal((await controller.playRecording()).status, 'needs_you');
+  assert.equal(controller.confirm('record_replay', false).status, 'fail');
 });
 
 test('a recording that produced no audio is a failure, not a silent pass', async () => {
