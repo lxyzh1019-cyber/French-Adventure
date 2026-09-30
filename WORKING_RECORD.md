@@ -72,8 +72,8 @@ Rule: 3 fix rounds, or 2 recurrences, or a fix causing a nearby regression → n
 | Rules live for this repo | BLOCKED | Needs PR #23 merged to `main` — cloud sessions branch from `main`, so nothing is governed until then |
 | Design PR 1 — stage 1 branch from main | COMPLETE | `claude/design-pr1-tokens` created from `d042a58` |
 | Design PR 1 — stage 2 implementation (opus-worker) | COMPLETE | opus-worker, model `claude-opus-5-5` (effort configured medium). LF copy `npm run verify`: 418/418, handlers 37, drift ✓, release A ✓ (90 items); Windows `test:browser` 103/103 (no test changed); Windows `npm test` 417/418 (the known CRLF manifest hash). Contrast indigo text 2.33→9.81, text on green 2.54→7.04, wrong on surface 3.77→7.71. Chinese lines 226→226, `中文见家长页` 3→3, `(中文 → parents` 2→2. 40 screenshots (10 screens × 2 orientations × before/after) in the session scratch folder |
-| Design PR 1 — stage 3 evidence check, records, commit, PR, screenshots | PARTIAL | Main session re-checked the diff (no `--jenn` left in the 12 places, 3 raw radii left as planned, label in both places, tests untouched) and two after-screenshots by eye; commit/PR pending in this turn |
-| Design PR 1 — stage 4 review and merge | WAITING ON YOU — review and merge PR 1 after it opens | |
+| Design PR 1 — stage 3 evidence check, records, commit, PR, screenshots | COMPLETE | Main session re-checked the diff (no `--jenn` left in the 12 places, 3 raw radii left as planned, label in both places, tests untouched) and after-screenshots by eye; committed and pushed on `claude/design-pr1-tokens`, PR #33 open ready for review; screenshots zip sent in the session |
+| Design PR 1 — stage 4 review and merge | WAITING ON YOU — review and merge PR #33 | |
 | Design PR 2 — stage 5 Plan for PR 2 | NOT STARTED | after PR 1 merges |
 | Design PR 2 — stage 6 approve plan, review and merge | WAITING ON YOU — after Plan for PR 2 | |
 | Design PR 3 — stage 7 Plan for PR 3 | NOT STARTED | after PR 2 merges |
