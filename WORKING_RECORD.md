@@ -84,8 +84,8 @@ Rule: 3 fix rounds, or 2 recurrences, or a fix causing a nearby regression → n
 | Design PR 3 — stage 7 Plan for PR 3 | COMPLETE | Plan v5 approved 2026-09-30 |
 | Design PR 3 — stage 8a branch from main | COMPLETE | `claude/design-pr3-kids-screens` from `416b848` |
 | Design PR 3 — stage 8b implementation (opus-worker) | COMPLETE | opus-worker, model `claude-opus-5-5`. LF copy `npm run verify` 422/422 (4 new `joinFrenchParts` cases), handlers 37, drift ✓, release A ✓; Windows `test:browser` 103/103 (changed: data-loss taps the save icon first; fr-text unit cases added); Windows `npm test` 421/422 (known CRLF hash). Chinese: 484 distinct runs before and after, none with fewer occurrences; lines app.js 9→9, index.html 1→1, curriculum-map.js 216→216. 8th tile bottom 647px at 1194×834. 96 screenshots in the session scratch folder |
-| Design PR 3 — stage 8c evidence check, records, commit, PR, screenshots | PARTIAL | Main session checked: ids kept, both status bars / rule strip / session clock gone, rules text exact, both Chinese strings present, test diff limited to the two files; three after-shots read by eye; commit and PR this turn |
-| Design PR 3 — stage 8d review and merge | WAITING ON YOU — review and merge PR 3 after it opens | |
+| Design PR 3 — stage 8c evidence check, records, commit, PR, screenshots | COMPLETE | Main session checked: ids kept, both status bars / rule strip / session clock gone, rules text exact, both Chinese strings present, test diff limited to the two files; three after-shots read by eye; committed `f8edd7a`, PR #35 open ready for review; after-screenshots zip sent in the session |
+| Design PR 3 — stage 8d review and merge | WAITING ON YOU — review and merge PR #35 | |
 
 ## Checks and evidence
 - 2026-09-21 `bash tests/replay-hooks.sh` → passed=14 failed=0 (validation-line 3/3, record-guard 3/3, plan-gate 3/3, skill-router 2/2, routing-guard 3/3)
