@@ -35,12 +35,14 @@ Single working record for this repository. Updated by the main session at the en
 | 22 | 2026-09-29 | Plan v2 "Import master plan Revision 5 and Release B `pilot-v1.1.0`" (approved; finding 2 → re-inspect, finding 7 model voice → deferred) | done — committed, see row 23 | Branch `claude/import-rev5-pilot-v1.1.0`. Plan replaced verbatim; package imported unmodified; validator test; docs; amendment list `docs/release-b-amendments.md`. Nothing in the package changed |
 | 23 | 2026-09-29 | "yes, commit and open the PR and the first tap is confirmed in last chat" | done | Checklist §4.5 first-tap item corrected to done (a–c confirmed 2026-09-29; idle 30 s check not separately reported) and Result page sub-lines filled; import of row 22 committed and PR opened (`4905512`, PR #31) |
 | 24 | 2026-09-29 | "yes, fix both on the same PR" | done | FEATURES.md audio feature line and the M2 Step 6 device-results row now say first tap confirmed on the iPad; record correction only, no hotspot change (no new fix or recurrence) |
+| 25 | 2026-09-30 | Design handoff zip: "read PROMPT.md, reply with understanding of the 3 PRs, risks, tests; after OK do PR 1 only" → Plan v3 approved (French Time spelling, all 12 Jenn-colour error places, ✗/✓ by CSS, screenshots via chat) | in progress | Branch `claude/design-pr1-tokens`; plan copy `plans/2026-09-30-plan-v3-design-pr1-tokens.md`; PR 2 and PR 3 get their own plans after each merge |
 
 ## Hotspot counter
 | Area / feature | Fix rounds | Recurrences | Regressions caused | Workarounds/exceptions | Last symptom | Rewrite-vs-repair reviewed? |
 |---|---|---|---|---|---|---|
 | Rules bundle install | 0 | 0 | 0 | 0 | — | no |
 | Audio playback (first tap silent) | 2 (`d8edc24`; one audio owner, `claude/audio-first-tap`) | 1 (parent, 2026-09-28) | 0 | 0 | "You have to press play again" | yes — Plan v1 2026-09-29: one audio owner (`src/speech/audio-out.js`) instead of per-site patches. A further recurrence after this means the WebKit model in `tests/helpers/fake-webkit-audio.js` is wrong, not that another call site needs a patch |
+| Design update (tokens, colours, readability) | 1 (PR 1, `claude/design-pr1-tokens`) | 0 | 0 | 0 | Wrong answers in Jenn red; indigo text 2.3–2.8:1; white on green 2.5:1 | no — first round, no history |
 Rule: 3 fix rounds, or 2 recurrences, or a fix causing a nearby regression → no further patch until the comparison is presented.
 
 ## Deliverable ledger
@@ -68,6 +70,14 @@ Rule: 3 fix rounds, or 2 recurrences, or a fix causing a nearby regression → n
 | Release B validator cases | COMPLETE (committed `4905512`, PR #31, not merged) | `tests/content-validator.test.js`: real package passes; link-only skills never scheduled (fires on a mutated copy). File 23/23; see "Checks and evidence" for the suite |
 | Release B docs and amendment list | COMPLETE (committed `4905512`, PR #31, not merged) | `implementation-status.md` (rows, new section, §4.6 mapping, M3 constraints), `release-b-brief.md` (3 edits), `known-risks.md` §3 note and §4, `ipad-test-checklist.md` boards check, `release-b-amendments.md` (findings 1, 2, 3, 6 and the brief correction) |
 | Rules live for this repo | BLOCKED | Needs PR #23 merged to `main` — cloud sessions branch from `main`, so nothing is governed until then |
+| Design PR 1 — stage 1 branch from main | COMPLETE | `claude/design-pr1-tokens` created from `d042a58` |
+| Design PR 1 — stage 2 implementation (opus-worker) | COMPLETE | opus-worker, model `claude-opus-5-5` (effort configured medium). LF copy `npm run verify`: 418/418, handlers 37, drift ✓, release A ✓ (90 items); Windows `test:browser` 103/103 (no test changed); Windows `npm test` 417/418 (the known CRLF manifest hash). Contrast indigo text 2.33→9.81, text on green 2.54→7.04, wrong on surface 3.77→7.71. Chinese lines 226→226, `中文见家长页` 3→3, `(中文 → parents` 2→2. 40 screenshots (10 screens × 2 orientations × before/after) in the session scratch folder |
+| Design PR 1 — stage 3 evidence check, records, commit, PR, screenshots | COMPLETE | Main session re-checked the diff (no `--jenn` left in the 12 places, 3 raw radii left as planned, label in both places, tests untouched) and after-screenshots by eye; committed and pushed on `claude/design-pr1-tokens`, PR #33 open ready for review; screenshots zip sent in the session |
+| Design PR 1 — stage 4 review and merge | WAITING ON YOU — review and merge PR #33 | |
+| Design PR 2 — stage 5 Plan for PR 2 | WAITING ON YOU — merge PR #33 first (the package: PR 2 starts only after PR 1 is merged) | |
+| Design PR 2 — stage 6 approve plan, review and merge | WAITING ON YOU — after Plan for PR 2 | |
+| Design PR 3 — stage 7 Plan for PR 3 | WAITING ON YOU — merge PR 2 first (the package: PR 3 starts only after PR 2 is merged) | |
+| Design PR 3 — stage 8 approve plan, review and merge | WAITING ON YOU — after Plan for PR 3 | |
 
 ## Checks and evidence
 - 2026-09-21 `bash tests/replay-hooks.sh` → passed=14 failed=0 (validation-line 3/3, record-guard 3/3, plan-gate 3/3, skill-router 2/2, routing-guard 3/3)
@@ -80,6 +90,18 @@ Rule: 3 fix rounds, or 2 recurrences, or a fix causing a nearby regression → n
 
 - 2026-09-29 audio first tap (opus-worker, model `claude-opus-5-5`): failing-first evidence against the old build and the passing run are in the deliverable ledger row; `grep` shows `synth.speak`, `new Audio` and `.play(` only in `src/speech/audio-out.js` (and tests)
 - 2026-09-29 Release B import (opus-worker, self-reported model `claude-fable-5-1`): `node scripts/check-content.mjs content/releases/pilot-v1` passes; 16/16 manifest hashes match, 18/18 files byte-identical to the zip; plan file sha256 equals the Downloads file (LF); LF copy of the working tree: `npm test` 418/418 (416 + 2 new), handlers 37, `check:drift` and `check:release-a` pass; Windows `npm test` 417/418, the one failure the known CRLF manifest hash. Grep "revision 3": only historical statements remain (`implementation-status.md:23`, `:90`, `:102`)
+
+- 2026-09-30 design PR 1 (opus-worker, model `claude-opus-5-5`): LF copy `npm run verify` 418/418, `check:handlers` 37, `check:drift` ✓, `check:release-a` ✓; Windows `CHROMIUM_PATH=…chrome.exe npm run test:browser` 103/103; Windows `npm test` 417/418 (known CRLF manifest hash). `index.html` rebuilt in the LF copy, banner "Built from d042a58", byte-identical to the drift-checked build. Contrast script and screenshot script (`shots.mjs`) live in the session scratch folder only. Regression table for this change:
+
+| Feature | v4 → v5 | Note |
+|---|---|---|
+| All learner screens, modes, points, rounds, drafts | kept | colours, corners, one label only |
+| Speech / audio owner | kept | untouched |
+| Assessment screens and rules | kept | title/stimulus colour only; no marks on `.assess-choice` (snapshot tests pass) |
+| Parent area (password, clear, recovery, device check) | kept | Reset All and error messages recoloured to `--wrong` |
+| Data and sync | kept | untouched |
+| Design tokens and rules section | added | `docs/DESIGN.md`, tokens, wrong ≠ Jenn, ✓/✗ marks, indigo text, radii, back-button size, "French Time" |
+| Hub label "French_game" | intentionally removed | now "French Time" (parent's spelling) |
 
 ## Open questions / blockers
 - PR #23 must merge into `main` before any of this governs a session. Verify in a **new** session: first reply should report "rules v2.1 (2026-09-21)".

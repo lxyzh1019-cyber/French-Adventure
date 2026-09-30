@@ -1,4 +1,4 @@
-# FEATURES — French Adventure — manifest v4 — 2026-09-29
+# FEATURES — French Adventure — manifest v5 — 2026-09-30
 
 Locked features of the current version. Every edit is checked against this list and ends with a regression table. Update this file in the same change that alters a feature. Over-list rather than under-list.
 
@@ -19,9 +19,19 @@ Locked features of the current version. Every edit is checked against this list 
 - GitHub Pages serves the committed root `index.html`.
 - `npm run build` regenerates `index.html` from `src/`; `npm run verify` runs tests plus the "index.html matches src/" drift check.
 
-## App features (read from `src/`, `src/index.html` and `docs/data-schema-v0.md` at `4a16357`, 2026-09-29)
+## App features (read from `src/`, `src/index.html` and `docs/data-schema-v0.md` at `4a16357`, 2026-09-29; design tokens added 2026-09-30, PR 1 of the design update)
 
 This section lists only what the code does today. Where a feature has a known defect, that is noted with a pointer.
+
+### Design tokens and rules (added 2026-09-30, design PR 1)
+- `docs/DESIGN.md` is the single source of design rules; `docs/mockups/` holds the target layouts for the Parent Summary (PR 2) and the kids' hub (PR 3).
+- `src/styles.css` `:root` defines the tokens: the 13 original colours plus `--correct`, `--wrong` (#fca5a5), `--french-text` (#c7d2fe), `--on-green`, `--space-1..5`, `--page-max`, `--page-max-wide`, `--tap-min` (52px), `--bp-phone`, `--bp-ipad`, `--radius-sm/md/lg/full`.
+- Wrong answers, errors and offline use `--wrong`, never Jenn's colour: `.choice-btn.wrong`, `.wrong-part-highlight`, `.parent-fails`, `.lock-error`, the offline dot, `.assess-review-msg`, the Reset All button, the Word Match wrong pair, the Drill wrong toast, the parent password error messages and "Backup not available offline". Jenn's own rows, name, cards and backup rows keep `--jenn`; so do the mic listening state, the blocked weekday chip, the time-warning countdown and the overlay close hover (not wrong/error/offline).
+- Right and wrong choice buttons carry a ✓ / ✗ mark from CSS (`::after`); button text is unchanged. The check-in choices (`.assess-choice`) show no mark.
+- Indigo text uses `--french-text`; `--french` is kept for fills, borders and gradients. `.btn-green` text is `--on-green`; `.btn-secondary` text is `--text`; the Drill's English prompt word uses `--text`.
+- Every `border-radius` in `src/styles.css` and `src/index.html` uses a radius token, except three 2–3px underline/bar corners.
+- On touch screens `.back-btn` is at least `--tap-min` (52px); `.grade-tab` stays 44px until PR 3.
+- The play-time label on the hub clock and in the Today summary reads "French Time" (was the code name "French_game").
 
 ### Learner screens and modes
 - Player select screen: Jenn (🐥) and Jess (🦊) cards, each with star points, day streak and today's mini summary (`src/index.html` `#screen-select`).
@@ -33,7 +43,7 @@ This section lists only what the code does today. Where a feature has a known de
 - All learner-facing level text goes through `levelLabel()`/`levelNumber()` ("Level N", "LN"). No "G4" or "Grade N" text anywhere (`tests/browser/m1-repair.test.js`).
 - Six game modes from the hub: Quick Quiz, Word Match, Scramble, Sentence Builder, Listen & Speak, and Boss Round (mixed, all topics) (`ALL_GAME_TYPES`).
 - At most 2 rounds per game mode per child per day (`DAILY_ROUND_LIMIT`), shown as "N left today". Only a completed round uses one.
-- Game screen: 3 lives (❤️/🖤), score, progress bar, 🔊 speak and 🎤 mic buttons, a hint panel, a feedback overlay, and Next.
+- Game screen: 3 lives (❤️/🖤), score, progress bar, 🔊 speak and 🎤 mic buttons, a hint panel, a feedback overlay, and Next. The chosen right/wrong button shows ✓ / ✗ (CSS).
 - Points: 15 / 10 / 5 base per correct answer (3 / 2 / 1 lives left). Speed bonus up to 10 within 8 s, not in Word Match (`showFeedback`, `SPEED_BONUS_*`).
 - Each question scores at most once, even if its buttons are re-enabled (`commitAnswerOnce`, `src/state/attempts.js`).
 - A wrong answer costs a life. Running out of lives ends the round as `challengeFailed`: points kept, no daily round used.

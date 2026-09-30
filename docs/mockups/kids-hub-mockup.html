@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kids Hub mockup</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap">
+<style>
+:root{
+  --bg:#0f172a;--surface:#1e293b;--surface2:#334155;--text:#f8fafc;--text-muted:#94a3b8;
+  --french:#4f46e5;--purple:#7c3aed;--gold:#f59e0b;--green:#10b981;--jenn:#e8445a;--jess:#3b82f6;
+  --wrong:#fca5a5;--french-text:#c7d2fe;
+  --space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:20px;
+  --radius-sm:10px;--radius-md:14px;--radius-lg:20px;--radius-full:999px;
+  --tap-min:52px;--page-max-wide:1100px;
+  --display:"Fredoka One",cursive;--sans:Nunito,sans-serif;
+  --me:var(--jenn);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#05080f;color:var(--text);font-family:var(--sans)}
+button{font:inherit;color:inherit;cursor:pointer}
+
+.review{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;gap:var(--space-2);align-items:center;padding:var(--space-2) var(--space-4);background:#000;border-bottom:1px solid var(--surface2);font-size:13px;color:var(--text-muted)}
+.review button{background:var(--surface);border:1px solid var(--surface2);border-radius:var(--radius-sm);padding:6px 10px;color:var(--text-muted)}
+.review button.on{color:var(--text);border-color:var(--gold)}
+.review .fold{margin-left:auto}
+.stage{display:flex;justify-content:center;padding:var(--space-5) var(--space-2)}
+.device{position:relative;width:1194px;height:834px;max-width:100%;overflow-y:auto;background:var(--bg);border-radius:var(--radius-lg);border:2px solid #222;transition:width .2s,height .2s}
+.device.portrait{width:834px;height:1194px}
+.device.phone{width:390px;height:844px}
+.foldline{position:sticky;display:none}
+.wrap{max-width:var(--page-max-wide);margin:0 auto;padding:var(--space-3) var(--space-4) var(--space-5)}
+
+/* slim top bar (replaces big title + clock + status bar) */
+.topbar{display:flex;align-items:center;gap:var(--space-3);min-height:var(--tap-min);margin-bottom:var(--space-3)}
+.back{min-height:var(--tap-min);padding:0 var(--space-4);border-radius:var(--radius-md);border:2px solid var(--surface2);background:none;color:var(--text-muted);font-weight:800}
+.brand{font-family:var(--display);font-size:1.1rem;color:var(--gold);flex:1}
+.pill{display:flex;align-items:center;gap:var(--space-2);min-height:40px;padding:0 var(--space-3);border-radius:var(--radius-full);background:var(--surface);font-weight:800;font-size:.9rem}
+.pill small{font-size:.7rem;color:var(--text-muted);font-weight:800;text-transform:uppercase;letter-spacing:.4px}
+.pill.time b{color:var(--french-text)}
+.pill.left b{color:var(--gold)}
+.save{width:40px;height:40px;border-radius:var(--radius-full);background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:1rem}
+.save.bad{background:rgba(252,165,165,.15);outline:2px solid var(--wrong)}
+
+/* player header */
+.me{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-3) var(--space-4);padding:var(--space-4);border-radius:var(--radius-lg);background:linear-gradient(0deg,rgba(232,68,90,.10),rgba(232,68,90,.10)),var(--surface);border:2px solid rgba(232,68,90,.35);margin-bottom:var(--space-4)}
+.me .ava{font-size:2.6rem;line-height:1}
+.me h1{font-family:var(--display);font-weight:400;font-size:1.5rem;color:var(--me)}
+.me .stats{display:flex;gap:var(--space-4);font-weight:800;font-size:.95rem}
+.me .stats span{white-space:nowrap}
+.slogan{flex:1 1 320px;display:flex;align-items:center;gap:var(--space-3);justify-content:flex-end}
+.slogan i{font-weight:800;color:var(--gold);font-style:italic}
+.tr{min-height:44px;padding:0 var(--space-3);border-radius:var(--radius-sm);border:2px solid rgba(79,70,229,.5);background:rgba(79,70,229,.15);font-weight:800;font-size:.8rem}
+
+/* level row */
+.sec-title{font-family:var(--display);font-size:1rem;margin-bottom:var(--space-2);color:var(--text)}
+.sec-title span{font-family:var(--sans);font-size:.8rem;color:var(--text-muted);font-weight:700;margin-left:var(--space-2)}
+.levels{display:flex;gap:var(--space-2);flex-wrap:wrap;margin-bottom:var(--space-4)}
+.lv{min-width:var(--tap-min);min-height:var(--tap-min);padding:0 var(--space-3);border-radius:var(--radius-md);border:2px solid var(--surface2);background:var(--surface);font-family:var(--display);font-size:1rem;color:var(--text-muted)}
+.lv.on{border-color:var(--gold);color:var(--text);background:rgba(79,70,229,.25)}
+
+/* games */
+.games{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-3);margin-bottom:var(--space-5)}
+.device.phone .games{grid-template-columns:repeat(2,1fr)}
+.game{min-height:112px;padding:var(--space-3);border-radius:var(--radius-lg);border:2px solid var(--surface2);background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--space-1);text-align:center}
+.game .i{font-size:1.9rem}
+.game b{font-family:var(--display);font-weight:400;font-size:1rem}
+.game small{font-size:.78rem;color:var(--text-muted);font-weight:700}
+.game.listen{border-color:var(--purple)}
+.game.boss{border-color:var(--gold)}
+.game.words{background:rgba(124,58,237,.12);border-color:rgba(124,58,237,.5)}
+.game.study{background:rgba(16,185,129,.10);border-color:rgba(16,185,129,.5)}
+
+/* topic stars — same simple card on every level */
+.topics{background:var(--surface);border-radius:var(--radius-lg);padding:var(--space-4);margin-bottom:var(--space-4)}
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:var(--space-3)}
+.topic{background:var(--surface2);border-radius:var(--radius-md);padding:var(--space-3);text-align:center}
+.topic .i{font-size:1.6rem}
+.topic b{display:block;font-weight:800;font-size:.85rem;margin:var(--space-1) 0;letter-spacing:.3px}
+.topic .st{color:var(--gold);font-size:1.1rem;letter-spacing:2px}
+.topic .st .off{color:#56657d}
+
+/* More (collapsed) */
+details{background:var(--surface);border-radius:var(--radius-lg);border:2px solid var(--surface2)}
+summary{min-height:var(--tap-min);display:flex;align-items:center;padding:0 var(--space-4);font-weight:800;cursor:pointer;list-style:none}
+summary::after{content:"▾";margin-left:auto;color:var(--text-muted)}
+details[open] summary::after{content:"▴"}
+.more{padding:0 var(--space-4) var(--space-4)}
+.today{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-3);margin-bottom:var(--space-4)}
+.device.phone .today{grid-template-columns:repeat(2,1fr)}
+.today div{background:var(--surface2);border-radius:var(--radius-md);padding:var(--space-3)}
+.today small{display:block;font-size:.75rem;color:var(--text-muted);font-weight:800}
+.today b{font-family:var(--display);font-weight:400;font-size:1.3rem}
+.rules{display:grid;gap:var(--space-2)}
+.rule{display:flex;gap:var(--space-3);align-items:flex-start;background:var(--surface2);border-radius:var(--radius-md);padding:var(--space-3);font-size:.9rem}
+.rule .i{font-size:1.3rem}
+.rule b{display:block}
+.rule span{color:var(--text-muted)}
+.note{font-size:.8rem;color:var(--text-muted);margin-top:var(--space-3)}
+</style>
+</head>
+<body>
+
+<div class="review">
+  <span>Preview as:</span>
+  <button class="on" data-frame="">iPad landscape</button>
+  <button data-frame="portrait">iPad portrait</button>
+  <button data-frame="phone">Phone</button>
+  <button data-save>Show "save failed" icon</button>
+  <span class="fold">The frame is one iPad screen — scroll inside it · Mockup · sample data</span>
+</div>
+
+<div class="stage"><div class="device" id="device"><div class="wrap">
+
+  <div class="topbar">
+    <button class="back">← Back</button>
+    <div class="brand">French Adventure</div>
+    <div class="pill time"><small>French time</small><b>12:40</b></div>
+    <div class="pill left"><small>Left</small><b>⏳ 7:20</b></div>
+    <div class="save" id="save" title="Saved">☁️</div>
+  </div>
+
+  <div class="me">
+    <div class="ava">🐥</div>
+    <div>
+      <h1>Jenn</h1>
+      <div class="stats"><span>⭐ 1240</span><span>🔥 3 days</span><span>📅 185 this week</span></div>
+    </div>
+    <div class="slogan"><i id="slogan">Une nouvelle journée, une nouvelle chance ! ✨</i><button class="tr" id="tr">English</button></div>
+  </div>
+
+  <div class="sec-title">Pick a level <span>⭐ = suggested next</span></div>
+  <div class="levels" id="levels"></div>
+
+  <div class="games">
+    <button class="game"><span class="i">🧠</span><b>Quick Quiz</b><small>2 left today</small></button>
+    <button class="game"><span class="i">🎯</span><b>Word Match</b><small>2 left today</small></button>
+    <button class="game"><span class="i">🔤</span><b>Scramble</b><small>2 left today</small></button>
+    <button class="game"><span class="i">💬</span><b>Sentence Builder</b><small>2 left today</small></button>
+    <button class="game listen"><span class="i">🎧</span><b>Listen &amp; Speak</b><small>2 left today</small></button>
+    <button class="game boss"><span class="i">⚡</span><b>Boss Round</b><small>1 left today</small></button>
+    <button class="game words"><span class="i">💪</span><b>My Words</b><small>5 to practise</small></button>
+    <button class="game study"><span class="i">📖</span><b>Study</b><small>3 sets today</small></button>
+  </div>
+
+  <div class="topics">
+    <div class="sec-title" id="ttitle">⭐ Topic stars — Level 1</div>
+    <div class="tgrid" id="tgrid"></div>
+  </div>
+
+  <details>
+    <summary>More: today &amp; how stars work</summary>
+    <div class="more">
+      <div class="today">
+        <div><small>⭐ Stars today</small><b>40</b></div>
+        <div><small>🎮 Rounds</small><b>2</b></div>
+        <div><small>📊 Accuracy</small><b>83%</b></div>
+        <div><small>🏋️ Drill</small><b>1</b></div>
+      </div>
+      <div class="rules">
+        <div class="rule"><span class="i">⭐</span><div><b>Topic stars</b><span>Get most answers right in a topic, in 3 different games today. More right = more stars (up to 3).</span></div></div>
+        <div class="rule"><span class="i">🌙</span><div><b>Moon</b><span>Every topic in a level has 3 stars.</span></div></div>
+        <div class="rule"><span class="i">🌟</span><div><b>Superstar</b><span>Moons on your two highest levels.</span></div></div>
+      </div>
+      <p class="note">Exact percentages and per-topic counts are in the Parent Summary.</p>
+    </div>
+  </details>
+
+</div></div></div>
+
+<script>
+const LEVELS = {
+  1:[['🎨','Colours',3],['🔢','Numbers',2],['👨‍👩‍👧','Family',2],['📚','Classroom',1],['🐾','Animals',0],['🍎','Food',1]],
+  2:[['🫀','Body parts',1],['🌤','Weather',2],['🍂','Seasons',0],['🏘','Community',0],['⏰','Time',1]],
+  3:[['⏮','Past tense',0],['✨','Adjectives',1],['🗺','Places',0],['🏫','School',2],['🎨','Hobbies',0],['🩺','Health',0]],
+  4:[['❓','Questions',0],['🚫','Negation',0],['💬','Expressions',1],['🍽','Food & meals',0],['🏠','Home',0],['✈️','Travel',0]],
+  5:[['⚡','Irregular verbs',0],['🎩','Formal vs informal',0],['🗣','Dialogues',0]],
+  6:[['💭','Opinions',0],['📝','Complex sentences',0],['📖','Reading',0]],
+  7:[['🪪','Identité & valeurs',0],['🎓','Études & objectifs',0],['🌍','Monde & société',0],['🎯','Compétences & verbes',0],['✨','Qualificatifs & fréquence',0],['🔗','Lieux & verbes modaux',0]],
+};
+const SUGGESTED = 2;
+let level = 1;
+function stars(n){return '★'.repeat(n)+'<span class="off">'+'★'.repeat(3-n)+'</span>';}
+function render(){
+  document.getElementById('levels').innerHTML = Object.keys(LEVELS).map(k=>`<button class="lv ${+k===level?'on':''}" data-l="${k}">L${k}${+k===SUGGESTED?' ⭐':''}</button>`).join('');
+  document.querySelectorAll('.lv').forEach(b=>b.onclick=()=>{level=+b.dataset.l;render();});
+  document.getElementById('ttitle').textContent = '⭐ Topic stars — Level '+level;
+  document.getElementById('tgrid').innerHTML = LEVELS[level].map(([i,n,s])=>`<div class="topic"><div class="i">${i}</div><b>${n}</b><div class="st" aria-label="${s} of 3 stars">${stars(s)}</div></div>`).join('');
+}
+render();
+let fr=true;
+document.getElementById('tr').onclick=()=>{fr=!fr;document.getElementById('slogan').textContent=fr?'Une nouvelle journée, une nouvelle chance ! ✨':'A new day, a new chance! ✨';document.getElementById('tr').textContent=fr?'English':'Français';};
+document.querySelectorAll('[data-frame]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-frame]').forEach(x=>x.classList.toggle('on',x===b));document.getElementById('device').className='device '+b.dataset.frame;});
+document.querySelector('[data-save]').onclick=e=>{const s=document.getElementById('save');const bad=s.classList.toggle('bad');s.textContent=bad?'⚠️':'☁️';s.title=bad?'Not saved to the cloud yet — tell a parent':'Saved';e.target.classList.toggle('on',bad);};
+</script>
+</body>
+</html>

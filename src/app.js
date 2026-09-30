@@ -1413,7 +1413,7 @@ function formatPlayerDailySummaryHTML(s){
   const rawMs=(s.dailyTimeMs&&s.dailyTimeMs[tk])||0;
   const timeShown=formatPlayTime(rawMs,true);
   const capHint=!sessionFullTimeReveal&&rawMs>DAILY_PLAY_CAP_MS?' <span style="opacity:.75">(30m+)</span>':'';
-  return '<strong>Today</strong><br>⏱ French_game '+timeShown+capHint+'<br>⭐ '+dayStars+' pts · 🎮 '+rounds+' rounds<br>🏋️ '+(drillDone?'Drill ✅':'Drill —');
+  return '<strong>Today</strong><br>⏱ French Time '+timeShown+capHint+'<br>⭐ '+dayStars+' pts · 🎮 '+rounds+' rounds<br>🏋️ '+(drillDone?'Drill ✅':'Drill —');
 }
 
 function updateHub(){
@@ -1903,7 +1903,7 @@ function handleMatchClick(btn,side,word){
     // already started a new selection. The reset acts only on this pair, and
     // leaves a tile alone if it has since been matched or re-selected.
     const wrongPair=[btn,matchSelected.btn];
-    wrongPair.forEach(b=>b.style.borderColor='var(--jenn)');
+    wrongPair.forEach(b=>b.style.borderColor='var(--wrong)');
     setTimeout(()=>{
       wrongPair.forEach(b=>{
         if(!b||b.classList.contains('used'))return;
@@ -2355,7 +2355,7 @@ function renderDrillCard(){
       +'<div style="font-family:\'Fredoka One\',cursive;font-size:1.1rem;margin-bottom:12px;">'+blanked+'</div>';
   } else {
     drillHTML = '<div style="font-size:.85rem;color:var(--text-muted);margin-bottom:8px;">Translate:</div>'
-      +'<div style="font-family:\'Fredoka One\',cursive;font-size:1.4rem;color:var(--french);margin-bottom:12px;">'+w.en+'</div>';
+      +'<div style="font-family:\'Fredoka One\',cursive;font-size:1.4rem;color:var(--text);margin-bottom:12px;">'+w.en+'</div>';
   }
   el.innerHTML = '<div class="train-card">'
     +drillHTML
@@ -2384,7 +2384,7 @@ function checkDrill(target){
   } else {
     // Right word, missing accent reads differently to a child than a wrong word.
     showToast(cmp.meaning ? '✏️ So close — check the accents: '+target
-                          : '❌ Answer: '+target, 'var(--jenn)');
+                          : '❌ Answer: '+target, 'var(--wrong)');
     saveState(currentPlayer);
     setTimeout(()=>{trainIndex++;renderDrillCard();}, 1600);
   }
@@ -2774,7 +2774,7 @@ function revealFullPlayTime(){
   const input = document.getElementById('parent-pwd');
   const msg = document.getElementById('pwd-msg');
   if((input?.value||'').trim() !== PARENT_PASSWORD){
-    if(msg){ msg.textContent = '❌ Enter parent password first'; msg.style.color = 'var(--jenn)'; }
+    if(msg){ msg.textContent = '❌ Enter parent password first'; msg.style.color = 'var(--wrong)'; }
     return;
   }
   sessionFullTimeReveal = true;
@@ -2850,7 +2850,7 @@ async function renderBackupRestoreUI(){
   el.style.display = 'block';
   el.innerHTML = '<div style="font-size:.72rem;color:var(--text-muted);text-align:center;">Loading backups…</div>';
   if(!window.fbBackupList){
-    el.innerHTML = '<div style="font-size:.72rem;color:var(--jenn);">Backup not available offline.</div>';
+    el.innerHTML = '<div style="font-size:.72rem;color:var(--wrong);">Backup not available offline.</div>';
     return;
   }
   const [jennBackups, jessBackups] = await Promise.all([
@@ -3081,7 +3081,7 @@ async function clearProgress(mode){
 
   if(entered !== PARENT_PASSWORD){
     msg.textContent = '❌ Wrong password';
-    msg.style.color = 'var(--jenn)';
+    msg.style.color = 'var(--wrong)';
     setTimeout(()=>{ msg.textContent=''; }, 2000);
     return;
   }

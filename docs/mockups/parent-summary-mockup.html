@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Parent Summary mockup</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap">
+<style>
+:root{
+  --bg:#0f172a;--surface:#1e293b;--surface2:#334155;--text:#f8fafc;--text-muted:#94a3b8;
+  --french:#4f46e5;--purple:#7c3aed;--gold:#f59e0b;--green:#10b981;--jenn:#e8445a;--jess:#3b82f6;
+  --correct:var(--green);--wrong:#fca5a5;--french-text:#c7d2fe;--on-green:var(--bg);
+  --space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:20px;
+  --radius-sm:10px;--radius-md:14px;--radius-lg:20px;--radius-full:999px;
+  --tap-min:52px;--page-max-wide:1100px;
+  --display:"Fredoka One",cursive;--sans:Nunito,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#05080f;color:var(--text);font-family:var(--sans);min-height:100vh}
+button,input{font:inherit;color:inherit}
+
+/* review toolbar (not part of the design) */
+.review{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;gap:var(--space-2);align-items:center;padding:var(--space-2) var(--space-4);background:#000;border-bottom:1px solid var(--surface2);font-size:13px;color:var(--text-muted)}
+.review button{background:var(--surface);border:1px solid var(--surface2);border-radius:var(--radius-sm);padding:6px 10px;cursor:pointer;color:var(--text-muted)}
+.review button.on{color:var(--text);border-color:var(--gold)}
+.stage{display:flex;justify-content:center;padding:var(--space-5) var(--space-2)}
+.device{width:1194px;max-width:100%;background:var(--bg);border-radius:var(--radius-lg);padding:var(--space-5) var(--space-4);transition:width .2s}
+.device.portrait{width:834px}
+.device.phone{width:390px}
+
+/* overlay card */
+.card{position:relative;background:var(--surface);border:2px solid var(--surface2);border-radius:var(--radius-lg);padding:var(--space-5);max-width:var(--page-max-wide);margin:0 auto}
+.head{display:flex;align-items:center;gap:var(--space-3);margin-bottom:var(--space-4)}
+.head h1{font-family:var(--display);font-weight:400;font-size:1.4rem;color:var(--gold);flex:1}
+.close{width:var(--tap-min);height:var(--tap-min);border-radius:var(--radius-full);border:none;background:var(--surface2);color:var(--text-muted);font-size:1.2rem;cursor:pointer}
+
+/* tabs */
+.tabs{display:flex;gap:var(--space-2);border-bottom:2px solid var(--surface2);margin-bottom:var(--space-5)}
+.tab{min-height:var(--tap-min);padding:0 var(--space-5);background:none;border:none;border-bottom:3px solid transparent;margin-bottom:-2px;font-family:var(--display);font-size:1rem;color:var(--text-muted);cursor:pointer}
+.tab.on{color:var(--text);border-bottom-color:var(--gold)}
+.panel{display:none}.panel.on{display:block}
+
+/* progress controls */
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-3);margin-bottom:var(--space-4)}
+.seg{display:flex;background:var(--bg);border-radius:var(--radius-md);padding:var(--space-1)}
+.seg button{min-height:44px;padding:0 var(--space-4);border:none;border-radius:var(--radius-sm);background:none;color:var(--text-muted);font-weight:800;cursor:pointer}
+.seg button.on{background:var(--surface2);color:var(--text)}
+.period{display:flex;align-items:center;gap:var(--space-2);margin-left:auto}
+.period .label{font-family:var(--display);font-size:1.1rem;color:var(--gold);min-width:150px;text-align:center}
+.icon-btn{width:var(--tap-min);height:var(--tap-min);border-radius:var(--radius-md);border:2px solid var(--surface2);background:var(--surface);font-size:1.1rem;cursor:pointer;color:var(--text)}
+.icon-btn:disabled{opacity:.35;cursor:default}
+
+/* per-girl columns: kept from the current app (all 10 rows) */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)}
+.device.phone .cols{grid-template-columns:1fr}
+.girl{background:var(--surface2);border-radius:var(--radius-md);padding:var(--space-4);border-top:4px solid var(--c)}
+.girl h2{font-family:var(--display);font-weight:400;font-size:1.1rem;color:var(--c);margin-bottom:var(--space-3)}
+.row{display:grid;grid-template-columns:1fr auto;gap:var(--space-3);align-items:baseline;padding:var(--space-2) 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:.9rem}
+.row:last-of-type{border-bottom:none}
+.row .k{color:var(--text-muted)}
+.row .v{font-weight:800;text-align:right;white-space:nowrap}
+.row .v small{display:block;font-weight:600;font-size:.72rem;color:var(--text-muted)}
+.v.gold{color:var(--gold)}
+.targets{margin-top:var(--space-4);padding-top:var(--space-3);border-top:1px solid rgba(255,255,255,.1)}
+.targets h3{font-size:.75rem;letter-spacing:.8px;text-transform:uppercase;color:var(--text-muted);font-weight:800;margin-bottom:var(--space-2)}
+.word{display:grid;grid-template-columns:auto 1fr auto;gap:var(--space-3);align-items:center;background:var(--surface);border-radius:var(--radius-sm);padding:var(--space-2) var(--space-3);margin-bottom:var(--space-1);font-size:.88rem}
+.word .fr{font-weight:800;color:var(--french-text)}
+.word .zh{color:var(--text-muted);font-size:.8rem;margin-left:var(--space-1)}
+.miss{background:rgba(252,165,165,.15);color:var(--wrong);border-radius:var(--radius-full);padding:2px var(--space-2);font-size:.75rem;font-weight:800;white-space:nowrap}
+
+/* sections (check-in + settings) */
+.section{margin-bottom:var(--space-5);padding-bottom:var(--space-5);border-bottom:1px solid var(--surface2)}
+.section:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.section h2{font-family:var(--display);font-weight:400;font-size:1.1rem;margin-bottom:var(--space-1)}
+.hint{font-size:.85rem;color:var(--text-muted);margin-bottom:var(--space-3);max-width:640px;line-height:1.45}
+.btns{display:flex;flex-wrap:wrap;gap:var(--space-2)}
+.btn{min-height:var(--tap-min);padding:0 var(--space-5);border-radius:var(--radius-md);border:2px solid var(--surface2);background:var(--surface2);font-weight:800;font-size:.95rem;color:var(--text);cursor:pointer;text-align:left}
+.btn.primary{background:var(--french);border-color:var(--french);color:#fff}
+.btn.ghost{background:none}
+.btn.danger{background:rgba(252,165,165,.12);border-color:var(--wrong);color:var(--wrong)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.who{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);margin-bottom:var(--space-3)}
+.device.phone .who{grid-template-columns:1fr}
+.who .slot{background:var(--surface2);border-radius:var(--radius-md);padding:var(--space-4);border-top:4px solid var(--c)}
+.who .slot b{font-family:var(--display);font-weight:400;color:var(--c);font-size:1.05rem}
+.who .slot p{font-size:.85rem;color:var(--text-muted);margin:var(--space-1) 0 var(--space-3)}
+
+.days{display:flex;flex-wrap:wrap;gap:var(--space-2)}
+.day{width:var(--tap-min);height:var(--tap-min);border-radius:var(--radius-md);border:2px solid var(--green);background:rgba(16,185,129,.15);color:var(--text);font-weight:800;cursor:pointer}
+.day.off{border-color:var(--wrong);background:rgba(252,165,165,.08);color:var(--wrong);text-decoration:line-through}
+.legend{font-size:.8rem;color:var(--text-muted);margin-top:var(--space-2)}
+
+.pwd{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-3);margin-bottom:var(--space-4)}
+.pwd input{width:140px;min-height:var(--tap-min);background:var(--bg);border:2px solid var(--surface2);border-radius:var(--radius-md);text-align:center;letter-spacing:6px;font-weight:800;font-size:1.1rem;outline:none}
+.pwd input:focus{border-color:var(--gold)}
+.pwd .state{font-size:.85rem;color:var(--text-muted)}
+.clear{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-3);max-width:720px}
+.device.phone .clear{grid-template-columns:1fr}
+.clear .item p{font-size:.8rem;color:var(--text-muted);margin-top:var(--space-1);line-height:1.4}
+.clear .btn{width:100%}
+.dangerzone{margin-top:var(--space-5);padding:var(--space-4);border:2px dashed rgba(252,165,165,.4);border-radius:var(--radius-md);max-width:720px}
+.dangerzone p{font-size:.8rem;color:var(--text-muted);margin-top:var(--space-2)}
+.todo{display:inline-block;margin-left:var(--space-2);font-family:var(--sans);font-size:.7rem;font-weight:800;color:var(--gold);border:1px solid var(--gold);border-radius:var(--radius-full);padding:1px var(--space-2);vertical-align:middle}
+.note{font-size:.8rem;color:var(--text-muted);margin-top:var(--space-3)}
+</style>
+</head>
+<body>
+
+<div class="review">
+  <span>Preview as:</span>
+  <button class="on" data-frame="">iPad landscape</button>
+  <button data-frame="portrait">iPad portrait</button>
+  <button data-frame="phone">Phone</button>
+  <span style="margin-left:auto">Mockup · sample numbers</span>
+</div>
+
+<div class="stage"><div class="device" id="device">
+<div class="card">
+  <div class="head">
+    <h1>📋 Parent Summary</h1>
+    <button class="close" aria-label="Close">✕</button>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab on" data-tab="progress">📊 Progress</button>
+    <button class="tab" data-tab="checkin">📋 Check-in</button>
+    <button class="tab" data-tab="settings">⚙️ Settings</button>
+  </div>
+
+  <!-- PROGRESS -->
+  <section class="panel on" id="progress">
+    <div class="bar">
+      <div class="seg" role="group">
+        <button class="on" data-mode="weekly">📅 Weekly</button>
+        <button data-mode="daily">📆 Daily</button>
+      </div>
+      <div class="period">
+        <button class="icon-btn" id="prev" aria-label="Previous">‹</button>
+        <span class="label" id="plabel">This Week</span>
+        <button class="icon-btn" id="next" aria-label="Next" disabled>›</button>
+      </div>
+    </div>
+    <div class="cols" id="cols"></div>
+  </section>
+
+  <!-- CHECK-IN -->
+  <section class="panel" id="checkin">
+    <div class="section">
+      <h2>Independent check-in</h2>
+      <p class="hint">A quiet measurement, separate from the games. No hints, no points, nothing to win. It can be paused between sections and picked up later, on either iPad.</p>
+      <div class="who">
+        <div class="slot" style="--c:var(--jenn)"><b>🐥 Jenn</b><p>Not started yet.</p><button class="btn primary">Start / resume</button></div>
+        <div class="slot" style="--c:var(--jess)"><b>🦊 Jess</b><p>Not started yet.</p><button class="btn primary">Start / resume</button></div>
+      </div>
+    </div>
+    <div class="section">
+      <h2>After a check-in</h2>
+      <p class="hint">Read the results, and score the answers the app can't mark on its own.</p>
+      <div class="btns">
+        <button class="btn">📊 Show check-in report</button>
+        <button class="btn">✍️ Score written &amp; spoken answers</button>
+        <button class="btn ghost">🔧 Device &amp; feature check</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section class="panel" id="settings">
+    <div class="section">
+      <h2>📆 Screen time — allowed days</h2>
+      <p class="hint">Tap a day to switch it. On a blocked day the kids need the parent password to play.</p>
+      <div class="days" id="days"></div>
+      <div class="legend">Green = allowed · Red, crossed out = blocked</div>
+    </div>
+
+    <div class="section">
+      <h2>🔐 Parent password</h2>
+      <p class="hint">Needed for clearing data and for showing full French times.</p>
+      <div class="pwd">
+        <input id="pw" type="password" inputmode="numeric" maxlength="4" placeholder="••••" aria-label="Parent password">
+        <span class="state" id="pwstate">Enter the 4-digit password to unlock the buttons below.</span>
+      </div>
+      <div class="btns">
+        <button class="btn needs" disabled>⏱ Show full French times</button>
+      </div>
+      <p class="note">The kids' hub caps time at 30 minutes. This shows the real tracked time for this browser session.</p>
+    </div>
+
+    <div class="section">
+      <h2>🧹 Clear progress</h2>
+      <div class="clear">
+        <div class="item"><button class="btn needs" disabled>🗑 Clear today</button><p>Today's stats, rounds, topic stars and missed words.</p></div>
+        <div class="item"><button class="btn needs" disabled>🗂 Clear old days</button><p>Previous stats, week stars, streak and old missed words.</p></div>
+      </div>
+      <div class="dangerzone">
+        <button class="btn danger needs" disabled>🔄 Reset everything</button>
+        <p>Wipes everything — total stars, all history, full restart. Cannot be undone.</p>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>💾 Backup &amp; recovery</h2>
+      <p class="hint">Keep a copy of progress, or bring it back after a problem.</p>
+      <div class="btns">
+        <button class="btn">💾 Export backup JSON</button>
+        <button class="btn">♻️ Import recovery JSON</button>
+        <button class="btn">📅 Show daily cloud backups</button>
+        <button class="btn ghost">🛡 Freeze cloud writes</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>🔓 Levels <span class="todo">To fix later</span></h2>
+      <p class="hint">Every level is open to both girls, all the time. The app suggests where to work next from how they are actually doing, not from how many days in a row they have played.</p>
+    </div>
+  </section>
+</div>
+</div></div>
+
+<script>
+const data = {
+  weekly: [
+    { jenn:{all:1240,week:185,correct:'42 / 50',acc:'84%',rounds:9,drill:3,time:'1:52',cap:'cap 30m/day',days:'4 / 7',streak:'3 days',queue:'5 words'},
+      jess:{all:980,week:140,correct:'35 / 46',acc:'76%',rounds:7,drill:1,time:'1:21',cap:'cap 30m/day',days:'3 / 7',streak:'1 day',queue:'8 words'},
+      miss:{jenn:[['quatre','four','四',3],['la souris','mouse','老鼠',2]],jess:[['huit','eight','八',4],['le crayon','pencil','铅笔',2],['rouge','red','红色',2]]}},
+  ],
+  daily: {jenn:{all:1240,week:40,correct:'10 / 12',acc:'83%',rounds:2,drill:1,time:'0:24',cap:'cap 30m',days:'Played',streak:'3 days',queue:'5 words'},
+          jess:{all:980,week:0,correct:'—',acc:'—',rounds:0,drill:0,time:'0:00',cap:'cap 30m',days:'Not played',streak:'1 day',queue:'8 words'},
+          miss:{jenn:[['quatre','four','四',1]],jess:[]}}
+};
+let mode='weekly', offset=0;
+const rows = (s,m)=>[
+  ['⭐ All-time star pts', s.all],
+  [m==='weekly'?'📅 Weekly star pts':'📅 Star pts today', s.week, 'gold'],
+  ['✅ Correct', s.correct],
+  ['📊 Accuracy', s.acc],
+  ['🎮 Rounds', s.rounds],
+  ['🏋️ Drill rounds', s.drill],
+  ['⏱ Time', s.time+'<small>'+s.cap+'</small>'],
+  [m==='weekly'?'📆 Days played':'📆 Today', s.days],
+  ['🔥 Streak', s.streak],
+  ['💪 Queue', s.queue],
+];
+function girl(name,emoji,color,s,miss){
+  const r = rows(s,mode).map(([k,v,c])=>`<div class="row"><span class="k">${k}</span><span class="v ${c||''}">${v}</span></div>`).join('');
+  const w = miss.length ? miss.map(([fr,en,zh,n])=>`<div class="word"><span class="fr">${fr}</span><span>${en}<span class="zh">${zh}</span></span><span class="miss">✗ ${n}</span></div>`).join('')
+                        : `<p style="font-size:.85rem;color:var(--text-muted)">✓ No missed words ${mode==='weekly'?'this week':'today'}.</p>`;
+  return `<div class="girl" style="--c:var(${color})"><h2>${emoji} ${name}</h2>${r}<div class="targets"><h3>🎯 Practice targets</h3>${w}</div></div>`;
+}
+function render(){
+  const d = mode==='weekly' ? data.weekly[0] : data.daily;
+  document.getElementById('cols').innerHTML = girl('Jenn','🐥','--jenn',d.jenn,d.miss.jenn)+girl('Jess','🦊','--jess',d.jess,d.miss.jess);
+  const lbl = mode==='weekly' ? (offset===0?'This Week':offset===-1?'Last Week':`${-offset} weeks ago`) : (offset===0?'Today':offset===-1?'Yesterday':`${-offset} days ago`);
+  document.getElementById('plabel').textContent = lbl;
+  document.getElementById('next').disabled = offset===0;
+  document.getElementById('prev').disabled = mode==='weekly' ? offset<=-3 : offset<=-13;
+}
+document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{mode=b.dataset.mode;offset=0;document.querySelectorAll('[data-mode]').forEach(x=>x.classList.toggle('on',x===b));render();});
+document.getElementById('prev').onclick=()=>{offset--;render();};
+document.getElementById('next').onclick=()=>{offset++;render();};
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===t));document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('on',p.id===t.dataset.tab));});
+const open=[false,true,true,true,true,true,false];
+document.getElementById('days').innerHTML=['S','M','T','W','T','F','S'].map((d,i)=>`<button class="day ${open[i]?'':'off'}" data-i="${i}">${d}</button>`).join('');
+document.querySelectorAll('.day').forEach(b=>b.onclick=()=>b.classList.toggle('off'));
+document.getElementById('pw').oninput=e=>{const ok=e.target.value.length===4;document.querySelectorAll('.needs').forEach(b=>b.disabled=!ok);document.getElementById('pwstate').textContent=ok?'Unlocked (mockup: any 4 digits).':'Enter the 4-digit password to unlock the buttons below.';};
+document.querySelectorAll('[data-frame]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-frame]').forEach(x=>x.classList.toggle('on',x===b));document.getElementById('device').className='device '+b.dataset.frame;});
+render();
+</script>
+</body>
+</html>
