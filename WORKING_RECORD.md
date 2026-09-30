@@ -39,6 +39,7 @@ Single working record for this repository. Updated by the main session at the en
 | 26 | 2026-09-30 | "merged, start PR 2" → Plan v4 (approved: lock only "Show full French times"; mockup clear-button labels; one phone screenshot) | in progress | Branch `claude/design-pr2-parent-tabs`; plan copy `plans/2026-09-30-plan-v4-design-pr2-parent-tabs.md` |
 | 27 | 2026-09-30 | "merged, start PR 3" → Plan v5 (approved: level rows stay in More; whole tile row removed at round end; topic details use each girl's suggested level; save icon quiet only when synced; "← Back" on both bars) | in progress | Branch `claude/design-pr3-kids-screens`; plan copy `plans/2026-09-30-plan-v5-design-pr3-kids-screens.md` |
 | 28 | 2026-09-30 | Patch 1 zip (N1–N9): additional scope → Plan v6 approved (PR 4 from main after PR 3 merges; fonts as latin + latin-ext woff2 embedded by the build; all 58 small-text sites raised) | in progress | Plan copy plans/2026-09-30-plan-v6-design-pr4-patch-1.md; the patch's PR 1b placement superseded by decision 1 |
+| 29 | 2026-09-30 | "merged, start PR 4 till the end" then "continue" | done | PR #36 opened and merged; live page confirmed; this record-only PR closes the design update. Open: parent iPad check of all four PRs |
 
 ## Hotspot counter
 | Area / feature | Fix rounds | Recurrences | Regressions caused | Workarounds/exceptions | Last symptom | Rewrite-vs-repair reviewed? |
@@ -76,22 +77,22 @@ Rule: 3 fix rounds, or 2 recurrences, or a fix causing a nearby regression → n
 | Design PR 1 — stage 1 branch from main | COMPLETE | `claude/design-pr1-tokens` created from `d042a58` |
 | Design PR 1 — stage 2 implementation (opus-worker) | COMPLETE | opus-worker, model `claude-opus-5-5` (effort configured medium). LF copy `npm run verify`: 418/418, handlers 37, drift ✓, release A ✓ (90 items); Windows `test:browser` 103/103 (no test changed); Windows `npm test` 417/418 (the known CRLF manifest hash). Contrast indigo text 2.33→9.81, text on green 2.54→7.04, wrong on surface 3.77→7.71. Chinese lines 226→226, `中文见家长页` 3→3, `(中文 → parents` 2→2. 40 screenshots (10 screens × 2 orientations × before/after) in the session scratch folder |
 | Design PR 1 — stage 3 evidence check, records, commit, PR, screenshots | COMPLETE | Main session re-checked the diff (no `--jenn` left in the 12 places, 3 raw radii left as planned, label in both places, tests untouched) and after-screenshots by eye; committed and pushed on `claude/design-pr1-tokens`, PR #33 open ready for review; screenshots zip sent in the session |
-| Design PR 1 — stage 4 review and merge | WAITING ON YOU — review and merge PR #33 | |
+| Design PR 1 — stage 4 review and merge | COMPLETE | PR #33 merged 2026-09-30 (`09c5c23`) |
 | Design PR 2 — stage 5 Plan for PR 2 | COMPLETE | Plan v4 approved 2026-09-30 |
 | Design PR 2 — stage 6a branch from main | COMPLETE | `claude/design-pr2-parent-tabs` from `09c5c23` |
 | Design PR 2 — stage 6b implementation (opus-worker) | COMPLETE | opus-worker, model `claude-opus-5-5`. LF copy `npm run verify` 418/418, handlers 37, drift ✓, release A ✓; Windows `test:browser` 103/103 (one test file changed: m1-repair scans all three tabs — stronger); Windows `npm test` 417/418 (known CRLF hash). Chinese lines 226→226, every Chinese line identical. 18 screenshots (3 tabs × 2 orientations × before/after, phone Progress, unlocked Settings, report on Check-in) in the session scratch folder |
 | Design PR 2 — stage 6c evidence check, records, commit, PR, screenshots | COMPLETE | Main session checked: all 16 ids kept, 9 onclick strings kept, data-actions kept + 3 `parent-tab`; three after-shots read by eye; committed `bde9f27`, PR #34 open ready for review; screenshots zip sent in the session |
-| Design PR 2 — stage 6d review and merge | WAITING ON YOU — review and merge PR #34 | |
+| Design PR 2 — stage 6d review and merge | COMPLETE | PR #34 merged 2026-09-30 (`416b848`) |
 | Design PR 3 — stage 7 Plan for PR 3 | COMPLETE | Plan v5 approved 2026-09-30 |
 | Design PR 3 — stage 8a branch from main | COMPLETE | `claude/design-pr3-kids-screens` from `416b848` |
 | Design PR 3 — stage 8b implementation (opus-worker) | COMPLETE | opus-worker, model `claude-opus-5-5`. LF copy `npm run verify` 422/422 (4 new `joinFrenchParts` cases), handlers 37, drift ✓, release A ✓; Windows `test:browser` 103/103 (changed: data-loss taps the save icon first; fr-text unit cases added); Windows `npm test` 421/422 (known CRLF hash). Chinese: 484 distinct runs before and after, none with fewer occurrences; lines app.js 9→9, index.html 1→1, curriculum-map.js 216→216. 8th tile bottom 647px at 1194×834. 96 screenshots in the session scratch folder |
 | Design PR 3 — stage 8c evidence check, records, commit, PR, screenshots | COMPLETE | Main session checked: ids kept, both status bars / rule strip / session clock gone, rules text exact, both Chinese strings present, test diff limited to the two files; three after-shots read by eye; committed `f8edd7a`, PR #35 open ready for review; after-screenshots zip sent in the session |
-| Design PR 3 — stage 8d review and merge | WAITING ON YOU — review and merge PR #35 | |
+| Design PR 3 — stage 8d review and merge | COMPLETE | PR #35 merged 2026-09-30 (`9dc669a`) |
 | Design PR 4 (Patch 1) — stage 1 merge PR 3 | COMPLETE | PR #35 merged (parent, 2026-09-30) |
 | Design PR 4 (Patch 1) — stage 2 branch from main | NOT STARTED | after the merge |
 | Design PR 4 (Patch 1) — stage 3 implementation (opus-worker) | COMPLETE | opus-worker, model `claude-opus-5-5`. LF copy `npm run verify` 422/422, handlers 37, drift ✓, release A ✓; Windows `test:browser` 103/103; Windows `npm test` 421/422 (known CRLF hash); no test changed. Greps in `src/`: fonts.googleapis 0, cursive 0, font-size below 0.75rem 0 (was 62). Built page 528,810 → 654,079 B with 3 embedded woff2 data URIs; offline `document.fonts.check` true for "sœur élève". Start-screen card bottoms 423px at 1194×834 (was 854). Confetti pieces 55 → 0 under reduced motion. Chinese lines 9/1/216 unchanged, 484 runs unchanged. 14 screenshots in the session scratch folder |
 | Design PR 4 (Patch 1) — stage 4 evidence check, records, commit, PR, screenshots | COMPLETE | Main session re-ran the greps (0/0/0), confirmed 3 font data URIs in the built page, `docs/DESIGN.md` identical to the patch file, tests untouched; start-screen shot read by eye; committed on `claude/design-pr4-patch-1`, PR #36 open ready for review; screenshots zip sent in the session |
-| Design PR 4 (Patch 1) — stage 5 review and merge | WAITING ON YOU — review and merge PR #36 | |
+| Design PR 4 (Patch 1) — stage 5 review and merge | COMPLETE | PR #36 merged 2026-09-30 22:43 UTC (`c4ec1ae`). Live GitHub Pages page fetched 2026-09-30: HTTP 200, 654,079 bytes, banner `Built from 9dc669a` — identical to the merged build (the banner names the build base; the byte size is the PR 4 build). Deployed and confirmed live; not yet seen on the iPads |
 
 ## Checks and evidence
 - 2026-09-21 `bash tests/replay-hooks.sh` → passed=14 failed=0 (validation-line 3/3, record-guard 3/3, plan-gate 3/3, skill-router 2/2, routing-guard 3/3)
@@ -164,6 +165,7 @@ Rule: 3 fix rounds, or 2 recurrences, or a fix causing a nearby regression → n
 | Fonts self-hosted, text-min, touch-action rule, hover media, primary border, reduced motion | added | Patch 1 N1–N5, N9 |
 
 ## Open questions / blockers
+- 2026-09-30 design update (PR #33, #34, #35, #36) merged and live (654,079-byte build). Not yet checked on a real iPad: slim bar and 52px buttons, pressed-state feedback, offline fonts, 12px labels at phone width, the countdown warning colour. Parent-only check; no plan needed unless something looks wrong.
 - PR #23 must merge into `main` before any of this governs a session. Verify in a **new** session: first reply should report "rules v2.1 (2026-09-21)".
 - Superseded 2026-09-27: the repo copy of `.claude/skills/hz-guarantee-audit/`, `routing_guard_mode` and `tests/test-routing-hook.md` were removed by the stub install; skill and routing-guard mode are now maintained in `hz-claude-config`.
 - 2026-09-29: the local `main` had been stale (PR #24 was never pulled), so this session ran on the in-repo v2.1 rules. `origin/main` (`bd53ca6`) is now merged into `claude/m2-step6-closeout`; from here the central `hz-claude-config` rules apply.
