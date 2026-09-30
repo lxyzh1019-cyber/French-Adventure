@@ -78,9 +78,9 @@ Rule: 3 fix rounds, or 2 recurrences, or a fix causing a nearby regression → n
 | Design PR 2 — stage 5 Plan for PR 2 | COMPLETE | Plan v4 approved 2026-09-30 |
 | Design PR 2 — stage 6a branch from main | COMPLETE | `claude/design-pr2-parent-tabs` from `09c5c23` |
 | Design PR 2 — stage 6b implementation (opus-worker) | COMPLETE | opus-worker, model `claude-opus-5-5`. LF copy `npm run verify` 418/418, handlers 37, drift ✓, release A ✓; Windows `test:browser` 103/103 (one test file changed: m1-repair scans all three tabs — stronger); Windows `npm test` 417/418 (known CRLF hash). Chinese lines 226→226, every Chinese line identical. 18 screenshots (3 tabs × 2 orientations × before/after, phone Progress, unlocked Settings, report on Check-in) in the session scratch folder |
-| Design PR 2 — stage 6c evidence check, records, commit, PR, screenshots | PARTIAL | Main session checked: all 16 ids kept, 9 onclick strings kept, data-actions kept + 3 `parent-tab`; three after-shots read by eye; commit/PR this turn |
-| Design PR 2 — stage 6d review and merge | WAITING ON YOU — review and merge PR 2 after it opens | |
-| Design PR 3 — stage 7 Plan for PR 3 | WAITING ON YOU — merge PR 2 first (the package: PR 3 starts only after PR 2 is merged) | |
+| Design PR 2 — stage 6c evidence check, records, commit, PR, screenshots | COMPLETE | Main session checked: all 16 ids kept, 9 onclick strings kept, data-actions kept + 3 `parent-tab`; three after-shots read by eye; committed `bde9f27`, PR #34 open ready for review; screenshots zip sent in the session |
+| Design PR 2 — stage 6d review and merge | WAITING ON YOU — review and merge PR #34 | |
+| Design PR 3 — stage 7 Plan for PR 3 | WAITING ON YOU — merge PR #34 first (the package: PR 3 starts only after PR 2 is merged) | |
 | Design PR 3 — stage 8 approve plan, review and merge | WAITING ON YOU — after Plan for PR 3 | |
 
 ## Checks and evidence
