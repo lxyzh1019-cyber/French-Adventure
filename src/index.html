@@ -79,7 +79,7 @@
         <div class="clock-wall-hub" id="clock-wall">12:00 PM</div>
         <div class="clock-divider">|</div>
         <div class="session-game-time" id="session-game-time-box" title="Time in this app today (French Adventure)">
-          <span class="sgt-label">French_game</span>
+          <span class="sgt-label">French Time</span>
           <span class="sgt-val" id="hub-playtime-val">0:00</span>
         </div>
         <div class="clock-divider">|</div>
@@ -292,7 +292,7 @@
         <input class="parent-pwd-input" id="parent-pwd" type="password" maxlength="4" placeholder="••••" autocomplete="off">
         <button class="btn-clear-today" onclick="clearProgress('today')">🗑 Today</button>
         <button class="btn-clear-prev" onclick="clearProgress('prev')">🗂 Old Days</button>
-        <button onclick="clearProgress('all')" style="background:rgba(232,68,90,.15);border:2px solid var(--jenn);border-radius:12px;padding:9px 14px;font-family:'Nunito',sans-serif;font-weight:800;font-size:.8rem;color:var(--jenn);cursor:pointer;touch-action:manipulation;">🔄 Reset All</button>
+        <button onclick="clearProgress('all')" style="background:rgba(252,165,165,.15);border:2px solid var(--wrong);border-radius:var(--radius-md);padding:9px 14px;font-family:'Nunito',sans-serif;font-weight:800;font-size:.8rem;color:var(--wrong);cursor:pointer;touch-action:manipulation;">🔄 Reset All</button>
       </div>
       <div class="parent-pwd-row" style="justify-content:center;">
         <button type="button" class="btn-secondary" onclick="toggleRecoveryFreeze()" style="padding:8px 12px;font-size:.74rem;">🛡 Freeze cloud writes</button>
@@ -332,7 +332,7 @@
                 style="padding:8px 14px;font-size:.74rem;">🔧 Device &amp; feature check</button>
       </div>
       <div id="assess-device-check-panel" style="margin-top:8px;"></div>
-      <div id="backup-restore-panel" style="margin-top:8px;padding:10px 12px;background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.25);border-radius:12px;display:none;"></div>
+      <div id="backup-restore-panel" style="margin-top:8px;padding:10px 12px;background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.25);border-radius:var(--radius-md);display:none;"></div>
       <div id="recovery-msg" style="font-size:.72rem;color:var(--text-muted);text-align:center;min-height:20px;"></div>
       <input id="recovery-import-file" type="file" accept="application/json" style="display:none;" onchange="handleRecoveryImport(event)">
       <div class="pwd-msg" id="pwd-msg"></div>
