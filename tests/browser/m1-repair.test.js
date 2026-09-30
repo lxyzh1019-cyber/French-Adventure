@@ -356,6 +356,14 @@ test('no learner-facing screen shows a G4-style or "Grade N" label', async () =>
     window.__faDebug.endRound(); await sleep(300); scan('round-complete');
     exitGame(); await sleep(150);
     try { showParentSummary(); await sleep(300); scan('parent'); } catch (_) {}
+    // The Parent Summary has three tabs and innerText reads only the shown
+    // one, so visit each tab and check it is really on screen before scanning.
+    for (const tab of ['progress', 'checkin', 'settings']) {
+      window.showParentTab(tab); await sleep(150);
+      const panel = document.querySelector('#parent-overlay .parent-panel[data-panel="' + tab + '"]');
+      if (!panel || !panel.offsetParent) found.push('parent-' + tab + ': tab not shown');
+      scan('parent-' + tab);
+    }
     return found;
   }, GRADE);
   assert.deepEqual(hits, [], 'grade labels still shown');

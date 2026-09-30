@@ -278,79 +278,117 @@
   <div class="overlay-card">
     <button class="overlay-close" onclick="closeOverlay('parent-overlay')">✕</button>
     <div class="overlay-title" style="color:var(--gold);">📋 Parent Summary</div>
-    <div class="overlay-subtitle">Weekly & daily performance</div>
-    <div class="summary-mode-row" id="summary-mode-row">
-      <button type="button" class="summary-mode-btn active" id="summary-btn-weekly" onclick="setSummaryMode('weekly')">📅 Weekly</button>
-      <button type="button" class="summary-mode-btn" id="summary-btn-daily" onclick="setSummaryMode('daily')">📆 Daily</button>
+    <div class="parent-tabs" role="tablist">
+      <button type="button" class="parent-tab on" role="tab" data-action="parent-tab" data-tab="progress">📊 Progress</button>
+      <button type="button" class="parent-tab" role="tab" data-action="parent-tab" data-tab="checkin">📋 Check-in</button>
+      <button type="button" class="parent-tab" role="tab" data-action="parent-tab" data-tab="settings">⚙️ Settings</button>
     </div>
-    <div id="summary-nav"></div>
-    <div class="parent-side-by-side" id="parent-stats-grid"></div>
-    <!-- Parent password + clear controls -->
-    <div class="parent-pwd-section">
-      <div class="parent-pwd-title">🔐 Parent Controls</div>
-      <div class="parent-pwd-row">
-        <input class="parent-pwd-input" id="parent-pwd" type="password" maxlength="4" placeholder="••••" autocomplete="off">
-        <button class="btn-clear-today" onclick="clearProgress('today')">🗑 Today</button>
-        <button class="btn-clear-prev" onclick="clearProgress('prev')">🗂 Old Days</button>
-        <button onclick="clearProgress('all')" style="background:rgba(252,165,165,.15);border:2px solid var(--wrong);border-radius:var(--radius-md);padding:9px 14px;font-family:'Nunito',sans-serif;font-weight:800;font-size:.8rem;color:var(--wrong);cursor:pointer;touch-action:manipulation;">🔄 Reset All</button>
-      </div>
-      <div class="parent-pwd-row" style="justify-content:center;">
-        <button type="button" class="btn-secondary" onclick="toggleRecoveryFreeze()" style="padding:8px 12px;font-size:.74rem;">🛡 Freeze cloud writes</button>
-        <button type="button" class="btn-secondary" onclick="exportRecoveryBackup()" style="padding:8px 12px;font-size:.74rem;">💾 Export backup JSON</button>
-        <button type="button" class="btn-secondary" onclick="promptRecoveryImport()" style="padding:8px 12px;font-size:.74rem;">♻️ Import recovery JSON</button>
-      </div>
-      <div style="text-align:center;margin-top:6px;">
-        <button type="button" class="btn-secondary" onclick="renderBackupRestoreUI()" style="padding:8px 14px;font-size:.74rem;border-color:var(--green);color:var(--green);">📅 Show daily cloud backups</button>
-      </div>
-      <!-- Assessment starts here, behind the parent password, and not from the
-           child's hub. Exposure is permanent and each form is 45 items: a child
-           who wanders in out of curiosity spends a measurement. -->
-      <div class="parent-pwd-title" style="margin-top:14px;">📋 Independent check-in</div>
-      <div style="font-size:.7rem;color:var(--text-muted);text-align:center;margin-bottom:6px;">
-        A quiet measurement, separate from the games. No hints, no points, nothing to win.
-        It can be paused between sections and picked up later, on either iPad.
-      </div>
-      <div class="parent-pwd-row" style="justify-content:center;">
-        <button type="button" class="btn-secondary" data-action="assess-open" data-player="jenn"
-                style="padding:8px 12px;font-size:.74rem;">Start / resume — Jenn</button>
-        <button type="button" class="btn-secondary" data-action="assess-open" data-player="jess"
-                style="padding:8px 12px;font-size:.74rem;">Start / resume — Jess</button>
-      </div>
-      <div id="assess-parent-panel" style="margin-top:8px;"></div>
-      <div style="text-align:center;margin-top:6px;">
-        <button type="button" class="btn-secondary" data-action="assess-report"
-                style="padding:8px 14px;font-size:.74rem;">📊 Show check-in report</button>
-      </div>
-      <div id="assess-report-panel" style="margin-top:8px;"></div>
-      <div style="text-align:center;margin-top:6px;">
-        <button type="button" class="btn-secondary" data-action="assess-review"
-                style="padding:8px 14px;font-size:.74rem;">✍️ Score the written &amp; spoken answers</button>
-      </div>
-      <div id="assess-review-panel" style="margin-top:8px;"></div>
-      <div style="text-align:center;margin-top:6px;">
-        <button type="button" class="btn-secondary" data-action="assess-device-check"
-                style="padding:8px 14px;font-size:.74rem;">🔧 Device &amp; feature check</button>
-      </div>
-      <div id="assess-device-check-panel" style="margin-top:8px;"></div>
-      <div id="backup-restore-panel" style="margin-top:8px;padding:10px 12px;background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.25);border-radius:var(--radius-md);display:none;"></div>
-      <div id="recovery-msg" style="font-size:.72rem;color:var(--text-muted);text-align:center;min-height:20px;"></div>
-      <input id="recovery-import-file" type="file" accept="application/json" style="display:none;" onchange="handleRecoveryImport(event)">
+    <!-- One message strip for every tab: the password box lives in Settings,
+         but Check-in and Backup refusals must be seen wherever the parent is. -->
+    <div class="parent-msg-strip">
       <div class="pwd-msg" id="pwd-msg"></div>
-      <div style="font-size:.7rem;color:var(--text-muted);margin-top:4px;">
-        <b>Today:</b> clears today's stats, rounds, topic stars, missed words<br>
-        <b>Old Days:</b> clears previous stats, week stars, streak, old missed words<br>
-        <b>Reset All:</b> wipes everything — total stars, all history, full restart
-      </div>
-      <div class="parent-pwd-title" style="margin-top:14px;">📆 Screen time — allowed days</div>
-      <div class="weekday-hint">Green = kids may open the app · Red = blocked (parent password to play that day)</div>
-      <div class="weekday-grid" id="weekday-grid"></div>
-      <div class="parent-pwd-title" style="margin-top:10px;">🔓 Levels</div>
-      <div id="parent-grade-reopen-controls" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:8px;"></div>
-      <div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:8px;">
-        <button type="button" class="btn-secondary" onclick="revealFullPlayTime()" style="padding:8px 14px;font-size:.72rem;">Show full French times (uses password above)</button>
-        <div style="font-size:.62rem;color:var(--text-muted);text-align:center;max-width:420px;">Default view caps at 30 minutes on the child hub. This button reveals the real tracked time in stats and on the hub for this browser session.</div>
-      </div>
+      <div id="recovery-msg" class="recovery-msg"></div>
     </div>
+
+    <!-- PROGRESS -->
+    <section class="parent-panel on" data-panel="progress">
+      <div class="parent-progress-bar">
+        <div class="summary-mode-row" id="summary-mode-row">
+          <button type="button" class="summary-mode-btn active" id="summary-btn-weekly" onclick="setSummaryMode('weekly')">📅 Weekly</button>
+          <button type="button" class="summary-mode-btn" id="summary-btn-daily" onclick="setSummaryMode('daily')">📆 Daily</button>
+        </div>
+        <div id="summary-nav"></div>
+      </div>
+      <div class="parent-side-by-side" id="parent-stats-grid"></div>
+    </section>
+
+    <!-- CHECK-IN -->
+    <!-- Assessment starts here, behind the parent password, and not from the
+         child's hub. Exposure is permanent and each form is 45 items: a child
+         who wanders in out of curiosity spends a measurement. -->
+    <section class="parent-panel" data-panel="checkin">
+      <div class="parent-section">
+        <div class="parent-section-title">📋 Independent check-in</div>
+        <p class="parent-hint">
+          A quiet measurement, separate from the games. No hints, no points, nothing to win.
+          It can be paused between sections and picked up later, on either iPad.
+        </p>
+        <div class="parent-checkin-who">
+          <div class="parent-checkin-card" style="border-top-color:var(--jenn);">
+            <div class="parent-checkin-name" style="color:var(--jenn);">🐥 Jenn</div>
+            <div class="parent-checkin-status" id="assess-parent-status-jenn"></div>
+            <button type="button" class="parent-btn" data-action="assess-open" data-player="jenn">Start / resume</button>
+          </div>
+          <div class="parent-checkin-card" style="border-top-color:var(--jess);">
+            <div class="parent-checkin-name" style="color:var(--jess);">🦊 Jess</div>
+            <div class="parent-checkin-status" id="assess-parent-status-jess"></div>
+            <button type="button" class="parent-btn" data-action="assess-open" data-player="jess">Start / resume</button>
+          </div>
+        </div>
+        <p class="parent-hint">Needs the parent password from the Settings tab.</p>
+      </div>
+      <div class="parent-section">
+        <div class="parent-section-title">After a check-in</div>
+        <div class="parent-btn-stack">
+          <button type="button" class="parent-btn" data-action="assess-report">📊 Show check-in report</button>
+          <div id="assess-report-panel"></div>
+          <button type="button" class="parent-btn" data-action="assess-review">✍️ Score the written &amp; spoken answers</button>
+          <div id="assess-review-panel"></div>
+          <button type="button" class="parent-btn" data-action="assess-device-check">🔧 Device &amp; feature check</button>
+          <div id="assess-device-check-panel"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="parent-panel" data-panel="settings">
+      <div class="parent-section">
+        <div class="parent-section-title">📆 Screen time — allowed days</div>
+        <div class="weekday-hint">Green = kids may open the app · Red = blocked (parent password to play that day)</div>
+        <div class="weekday-grid" id="weekday-grid"></div>
+      </div>
+      <div class="parent-section">
+        <div class="parent-section-title">🔐 Parent password</div>
+        <div class="parent-pwd-row">
+          <input class="parent-pwd-input" id="parent-pwd" type="password" maxlength="4" placeholder="••••" autocomplete="off">
+          <span class="parent-pwd-state">Needed to clear progress, use backups, start a check-in and show full French times.</span>
+        </div>
+        <button type="button" class="parent-btn" id="btn-reveal-time" onclick="revealFullPlayTime()" disabled>⏱ Show full French times</button>
+        <p class="parent-hint">Default view caps at 30 minutes on the child hub. This button reveals the real tracked time in stats and on the hub for this browser session.</p>
+      </div>
+      <div class="parent-section">
+        <div class="parent-section-title">🧹 Clear progress</div>
+        <div class="clear-grid">
+          <div class="clear-item">
+            <button type="button" class="parent-btn" onclick="clearProgress('today')">🗑 Clear today</button>
+            <p class="parent-hint"><b>Today:</b> clears today's stats, rounds, topic stars, missed words</p>
+          </div>
+          <div class="clear-item">
+            <button type="button" class="parent-btn" onclick="clearProgress('prev')">🗂 Clear old days</button>
+            <p class="parent-hint"><b>Old Days:</b> clears previous stats, week stars, streak, old missed words</p>
+          </div>
+        </div>
+        <div class="dangerzone">
+          <button type="button" class="parent-btn btn-clear-all" onclick="clearProgress('all')">🔄 Reset everything</button>
+          <p class="parent-hint"><b>Reset All:</b> wipes everything — total stars, all history, full restart</p>
+        </div>
+      </div>
+      <div class="parent-section">
+        <div class="parent-section-title">💾 Backup &amp; recovery</div>
+        <div class="parent-btn-row">
+          <button type="button" class="parent-btn" onclick="exportRecoveryBackup()">💾 Export backup JSON</button>
+          <button type="button" class="parent-btn" onclick="promptRecoveryImport()">♻️ Import recovery JSON</button>
+          <button type="button" class="parent-btn" onclick="renderBackupRestoreUI()">📅 Show daily cloud backups</button>
+          <button type="button" class="parent-btn" onclick="toggleRecoveryFreeze()">🛡 Freeze cloud writes</button>
+        </div>
+        <div id="backup-restore-panel" style="margin-top:8px;padding:10px 12px;background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.25);border-radius:var(--radius-md);display:none;"></div>
+        <input id="recovery-import-file" type="file" accept="application/json" style="display:none;" onchange="handleRecoveryImport(event)">
+      </div>
+      <div class="parent-section">
+        <div class="parent-section-title">🔓 Levels <span class="todo-tag">To fix later</span></div>
+        <div id="parent-grade-reopen-controls"></div>
+      </div>
+    </section>
   </div>
 </div>
 
