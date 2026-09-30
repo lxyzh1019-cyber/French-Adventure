@@ -1,4 +1,4 @@
-# FEATURES — French Adventure — manifest v7 — 2026-09-30
+# FEATURES — French Adventure — manifest v8 — 2026-09-30
 
 Locked features of the current version. Every edit is checked against this list and ends with a regression table. Update this file in the same change that alters a feature. Over-list rather than under-list.
 
@@ -24,9 +24,14 @@ Locked features of the current version. Every edit is checked against this list 
 This section lists only what the code does today. Where a feature has a known defect, that is noted with a pointer.
 
 ### Design tokens and rules (added 2026-09-30, design PR 1)
-- `docs/DESIGN.md` is the single source of design rules; `docs/mockups/` holds the target layouts for the Parent Summary (PR 2) and the kids' hub (PR 3).
+- `docs/DESIGN.md` is the single source of design rules (Patch 1 version since PR 4); `docs/mockups/` holds the target layouts for the Parent Summary (PR 2) and the kids' hub (PR 3).
+- Fonts are self-hosted (PR 4, Patch 1 N1): `src/fonts/` holds Fredoka One (latin) and Nunito (latin + latin-ext, variable weight 400–800) as woff2 with their OFL licence files; `@font-face` rules with `font-display: swap` at the top of `src/styles.css`; the build inlines them into `index.html` as data URIs (built page ≈654 KB), so the real fonts render offline. No Google Fonts link; every family stack ends in `system-ui, sans-serif`, never `cursive`.
+- Smallest text (N2): `--text-min: 0.75rem`; no `font-size` below it anywhere in `src/`, uppercase labels included.
+- Touch and hover (N3, N4): one `touch-action: manipulation` rule for buttons, inputs, choices, tiles, chips, tabs, cards; every `:hover` rule sits inside `@media (hover: hover)` and has an `:active` twin.
+- `.btn-primary` carries a 2px `--french-text` border so it never reads as Jess's blue (N5); no primary button sits inside a Jess-tinted area.
+- Reduced motion (N9): under `prefers-reduced-motion: reduce` all animations and transitions are cut to 0.01 ms and `confetti()` draws nothing.
 - `src/styles.css` `:root` defines the tokens: the 13 original colours plus `--correct`, `--wrong` (#fca5a5), `--french-text` (#c7d2fe), `--on-green`, `--space-1..5`, `--page-max`, `--page-max-wide`, `--tap-min` (52px), `--bp-phone`, `--bp-ipad`, `--radius-sm/md/lg/full`.
-- Wrong answers, errors and offline use `--wrong`, never Jenn's colour: `.choice-btn.wrong`, `.wrong-part-highlight`, `.parent-fails`, `.lock-error`, the offline dot, `.assess-review-msg`, the Reset All button, the Word Match wrong pair, the Drill wrong toast, the parent password error messages and "Backup not available offline". Jenn's own rows, name, cards and backup rows keep `--jenn`; so do the mic listening state, the time-warning countdown and the overlay close hover (not wrong/error/offline). The blocked weekday chip uses `--wrong` with a line-through since PR 2 (no Jenn/Jess colours on buttons).
+- Wrong answers, errors and offline use `--wrong`, never Jenn's colour: `.choice-btn.wrong`, `.wrong-part-highlight`, `.parent-fails`, `.lock-error`, the offline dot, `.assess-review-msg`, the Reset All button, the Word Match wrong pair, the Drill wrong toast, the parent password error messages and "Backup not available offline". Jenn's own rows, name, cards and backup rows keep `--jenn`; so do the mic listening state and the overlay close hover (not wrong/error/offline). The time-warning countdown (`.countdown-display.warning`) uses `--wrong` since PR 4 (Patch 1 N7), pulse kept. The blocked weekday chip uses `--wrong` with a line-through since PR 2 (no Jenn/Jess colours on buttons).
 - Right and wrong choice buttons carry a ✓ / ✗ mark from CSS (`::after`); button text is unchanged. The check-in choices (`.assess-choice`) show no mark.
 - Indigo text uses `--french-text`; `--french` is kept for fills, borders and gradients. `.btn-green` text is `--on-green`; `.btn-secondary` text is `--text`; the Drill's English prompt word uses `--text`.
 - Every `border-radius` in `src/styles.css` and `src/index.html` uses a radius token, except three 2–3px underline/bar corners.
@@ -34,7 +39,7 @@ This section lists only what the code does today. Where a feature has a known de
 - The play-time label on the hub clock and in the Today summary reads "French Time" (was the code name "French_game").
 
 ### Learner screens and modes
-- Player select screen: Jenn (🐥) and Jess (🦊) cards, each with star points, day streak and today's mini summary (`src/index.html` `#screen-select`). The big title and the wall clock show only here; the "📋 Parent Summary" button sits below the player cards, small (PR 3).
+- Player select screen: Jenn (🐥) and Jess (🦊) cards, each with star points, day streak and today's mini summary (`src/index.html` `#screen-select`). The big title and the wall clock show only here. Order since PR 4 (Patch 1 N6): slim title row (app name and subtitle left, small clock and date right) → the two player cards (fully visible at 1194×834, bottoms at 423px) → Weekly Champion Board → "📋 Parent Summary" button, small, last.
 - Weekly Champion Board on the select screen: star points, streak, week points, and a weekly played-day dot strip per child.
 - Wall clock (time and date) on the start screen (`startWallClock`). `showScreen` is the single owner of where the big title, the wall clock and the slim top bar show: title and clock on select; slim bar on hub and game; none on the check-in (PR 3).
 - Slim top bar `#topbar` on the hub and in games (PR 3): ← Back (`topBarBack()`: hub from a game, start screen from the hub) · "French Adventure" · French Time (`#hub-playtime-val`) · Left ⏳ (`#countdown-display`) · save icon `#save-icon` (☁️ quiet when the save text is "Synced to cloud" or "Ready"; ⚠️ in `--wrong` otherwise; `data-action="save-status"` tap shows the message in the toast and in `#save-msg`). The old session-clock row and both INTERNET/SAVE status bars are gone; the status text logic in `updateConnectionStatusUI` is unchanged.
@@ -53,7 +58,7 @@ This section lists only what the code does today. Where a feature has a known de
 - Scramble keeps œ, hyphens and apostrophes as tiles. Every scramble-eligible curriculum word is solvable (`src/util/fr-text.js`).
 - Answer checking: recognition ignores accents. Dictation spelling (Listen & Speak) requires them, and an accent-only miss says "So close — check the accents and marks!" (`compareFrench`).
 - Missed words are logged in `failedWords` and requeued into later rounds (`logFailure`, `injectRequeue`).
-- Round-complete screen (PR 3): praise first (tier title, "🎉 Well done!" or "Good effort!"), then "N of M right!" or "Out of hearts — this one doesn't count, try again!", then "+N star pts" only (no formula line, no Base/Speed/Lives/Rounds tiles); when no topic star was earned, a kid-words next step built from the topic's progress numbers replaces "Keep practicing topics!" and the empty-stars row; confetti, moon banners and trophies, then "Play Again (N)" or "Done today! 🌙", and Hub. What is recorded is unchanged.
+- Round-complete screen (PR 3): praise first (tier title, "🎉 Well done!" or "Good effort!"), then "N of M right!" or "Out of hearts — this one doesn't count, try again!", then "+N star pts" only (no formula line, no Base/Speed/Lives/Rounds tiles); when no topic star was earned, a kid-words next step built from the topic's progress numbers replaces "Keep practicing topics!" and the empty-stars row; confetti, moon banners and trophies, then "Play again · N left today" (PR 4, Patch 1 N8) or "Done today! 🌙", and Hub. The Listen & Speak "🔊 Play Again" (replay the sound) is unchanged. What is recorded is unchanged.
 - Moons (per level, plus super) are earned achievements and never gate anything. Topic stars come from daily topic accuracy.
 - Study overlay: Set 1 Vocab, Set 2 Sentences, Set 3 My Words, and "I'm Ready!".
 - My Words overlay: Word List / Drill as a 52px segmented switch. The drill's Check works on apostrophe words. Sentences are displayed and spoken through `joinFrenchParts` (`src/util/fr-text.js`): no space before punctuation; the Sentence Builder check compares parts and is unchanged (PR 3).

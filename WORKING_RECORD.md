@@ -87,11 +87,11 @@ Rule: 3 fix rounds, or 2 recurrences, or a fix causing a nearby regression → n
 | Design PR 3 — stage 8b implementation (opus-worker) | COMPLETE | opus-worker, model `claude-opus-5-5`. LF copy `npm run verify` 422/422 (4 new `joinFrenchParts` cases), handlers 37, drift ✓, release A ✓; Windows `test:browser` 103/103 (changed: data-loss taps the save icon first; fr-text unit cases added); Windows `npm test` 421/422 (known CRLF hash). Chinese: 484 distinct runs before and after, none with fewer occurrences; lines app.js 9→9, index.html 1→1, curriculum-map.js 216→216. 8th tile bottom 647px at 1194×834. 96 screenshots in the session scratch folder |
 | Design PR 3 — stage 8c evidence check, records, commit, PR, screenshots | COMPLETE | Main session checked: ids kept, both status bars / rule strip / session clock gone, rules text exact, both Chinese strings present, test diff limited to the two files; three after-shots read by eye; committed `f8edd7a`, PR #35 open ready for review; after-screenshots zip sent in the session |
 | Design PR 3 — stage 8d review and merge | WAITING ON YOU — review and merge PR #35 | |
-| Design PR 4 (Patch 1) — stage 1 merge PR 3 | WAITING ON YOU — merge PR #35, then say merged | |
+| Design PR 4 (Patch 1) — stage 1 merge PR 3 | COMPLETE | PR #35 merged (parent, 2026-09-30) |
 | Design PR 4 (Patch 1) — stage 2 branch from main | NOT STARTED | after the merge |
-| Design PR 4 (Patch 1) — stage 3 implementation (opus-worker) | NOT STARTED | |
-| Design PR 4 (Patch 1) — stage 4 evidence check, records, commit, PR, screenshots | NOT STARTED | |
-| Design PR 4 (Patch 1) — stage 5 review and merge | WAITING ON YOU — after PR 4 opens | |
+| Design PR 4 (Patch 1) — stage 3 implementation (opus-worker) | COMPLETE | opus-worker, model `claude-opus-5-5`. LF copy `npm run verify` 422/422, handlers 37, drift ✓, release A ✓; Windows `test:browser` 103/103; Windows `npm test` 421/422 (known CRLF hash); no test changed. Greps in `src/`: fonts.googleapis 0, cursive 0, font-size below 0.75rem 0 (was 62). Built page 528,810 → 654,079 B with 3 embedded woff2 data URIs; offline `document.fonts.check` true for "sœur élève". Start-screen card bottoms 423px at 1194×834 (was 854). Confetti pieces 55 → 0 under reduced motion. Chinese lines 9/1/216 unchanged, 484 runs unchanged. 14 screenshots in the session scratch folder |
+| Design PR 4 (Patch 1) — stage 4 evidence check, records, commit, PR, screenshots | COMPLETE | Main session re-ran the greps (0/0/0), confirmed 3 font data URIs in the built page, `docs/DESIGN.md` identical to the patch file, tests untouched; start-screen shot read by eye; committed on `claude/design-pr4-patch-1`, PR #36 open ready for review; screenshots zip sent in the session |
+| Design PR 4 (Patch 1) — stage 5 review and merge | WAITING ON YOU — review and merge PR #36 | |
 
 ## Checks and evidence
 - 2026-09-21 `bash tests/replay-hooks.sh` → passed=14 failed=0 (validation-line 3/3, record-guard 3/3, plan-gate 3/3, skill-router 2/2, routing-guard 3/3)
@@ -150,6 +150,18 @@ Rule: 3 fix rounds, or 2 recurrences, or a fix causing a nearby regression → n
 | Study sets, My Words list/drill, Sentence Builder check | kept | display/speech joins punctuation; check unchanged |
 | Check-in screen rules (no feedback, no banned words, Pause/Close) | kept | slim bar, tappable choices, sub line and plays-left placement |
 | Speech owner | kept | untouched |
+
+- 2026-09-30 design PR 4 / Patch 1 (opus-worker, model `claude-opus-5-5`): LF copy `npm run verify` 422/422, handlers 37, drift ✓, release A ✓; Windows `test:browser` 103/103; Windows `npm test` 421/422 (known CRLF hash). Beyond the letter of the plan, accepted: Nunito ships as one variable-weight file per piece (2 files, not 8); Fredoka One has no extended piece on Google's host and its basic piece already covers œ; its OFL text fetched from the last google/fonts commit that held it (be2838a); 62 small-text sites (the plan's own list summed to 62, not 58); one SVG label stack in `src/assessment/assets.js` also ends in `system-ui, sans-serif`; the subtitle stays under the app name. Regression table:
+
+| Feature | v7 → v8 | Note |
+|---|---|---|
+| All screens, games, speech, data, sync, assessment rules | kept | fonts, sizes, touch, hover, motion only |
+| Google Fonts link and `cursive` fallbacks | intentionally removed | self-hosted fonts embedded in the page |
+| Start screen order | kept | cards first, then champion board, then Parent Summary; slim title row |
+| Countdown warning colour | kept | now `--wrong` (was Jenn red) |
+| Round-end Play Again label | kept | "Play again · N left today" |
+| Confetti and looping animations | kept | stopped under reduced motion |
+| Fonts self-hosted, text-min, touch-action rule, hover media, primary border, reduced motion | added | Patch 1 N1–N5, N9 |
 
 ## Open questions / blockers
 - PR #23 must merge into `main` before any of this governs a session. Verify in a **new** session: first reply should report "rules v2.1 (2026-09-21)".

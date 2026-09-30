@@ -41,7 +41,7 @@ const WOOD_DARK = '#8a5a31';
 const place = (x, y, w, h, fill, label) => `
     <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="6" fill="${fill}" stroke="${INK}" stroke-width="2"/>
     <text x="${x + w / 2}" y="${y + h + 18}" text-anchor="middle"
-          font-family="'Nunito',sans-serif" font-size="15" font-weight="800" fill="${INK}">${label}</text>`;
+          font-family="'Nunito',system-ui,sans-serif" font-size="15" font-weight="800" fill="${INK}">${label}</text>`;
 
 /**
  * SA-F02 — "name two things you can see, and give one colour".

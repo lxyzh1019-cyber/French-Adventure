@@ -1,6 +1,6 @@
 # French Adventure — Design rules
 
-The single source of design rules for this app. Every screen change follows this file. Source: the French Adventure design system (synced from `src/styles.css` at 030beda, then extended).
+The single source of design rules for this app. Every screen change follows this file. Source: the French Adventure design system (synced from `src/styles.css` at 030beda, then extended; Patch 1 rules included).
 
 A French learning game for Jenn and Jess, played on iPad in short sessions. The look is a dark night sky with bright, friendly colours: each girl has her own colour, and indigo means "French".
 
@@ -30,7 +30,7 @@ A French learning game for Jenn and Jess, played on iPad in short sessions. The 
 
 Accents are often used as soft tints (12–20% opacity fill plus a 30–45% border) behind rows and badges, for example a Jenn leaderboard row.
 
-**Type.** Two Google fonts, loaded from Google Fonts (`Fredoka One` and `Nunito` 400/600/700/800).
+**Type.** Two fonts, `Fredoka One` and `Nunito` 400/600/700/800. Self-host them in the app (`src/fonts/`) so it looks the same offline; fallback `system-ui, sans-serif`, never `cursive`. Nothing smaller than `text-min` (0.75rem = 12px), uppercase labels included.
 - `display` (Fredoka One): titles, questions, French words, numbers, primary buttons.
 - `sans` (Nunito): body, choices, inputs, labels. Use weight 700–800 for anything a child taps or reads fast.
 - Sizes in rem, base 16px. Title and question sizes scale with the screen; the tokens store the largest size.
@@ -43,25 +43,25 @@ Accents are often used as soft tints (12–20% opacity fill plus a 30–45% bord
 
 **Spacing.** Use only `space-1` … `space-5`. Inside a card: `space-3`–`space-4`. Between cards: `space-4`. Between sections: `space-5`.
 
-**Screen pattern.** Header → one main task → actions at the bottom. One screen, one job.
+**Screen pattern.** Header → one main task → actions at the bottom. One screen, one job. Button labels say what happens in words, not codes: "Play again · 2 left today", not "Play Again (2)".
 
 **Per-girl content.** Jenn and Jess side by side in two equal columns from `bp-ipad` up, in both orientations; stacked below it. Same order and rows in both columns so a parent can compare across.
 
 **Alignment.** Left-align text, titles and controls within a section. Centre only single hero items (a question, a French word, a result).
 
-**Buttons.** At least `tap-min` tall on touch screens. In a group, one primary action; a destructive action (reset, delete) sits apart, last, in `wrong`, never next to the password field or other buttons of equal weight. Never use `jenn` or `jess` for a button that is not about that girl.
+**Buttons.** At least `tap-min` tall on touch screens, `touch-action: manipulation` so a fast second tap never zooms, and hover styles only inside `@media (hover: hover)`. The primary (indigo) button carries a thin light border so it never reads as Jess's blue. In a group, one primary action; a destructive action (reset, delete) sits apart, last, in `wrong`, never next to the password field or other buttons of equal weight. Never use `jenn` or `jess` for a button that is not about that girl.
 
-**Kids' screens — every level, every screen.** The main task (pick a game, answer the question) sits in the first screen-height, never below the fold. No adult rules, formulas or raw counts (percent thresholds, "Games 0/3 · Tries 0/6"), no code names. Chinese stays exactly where the app shows it today (question hints, Sentence Builder, feedback popups, Study, My Words, Parent Summary) — it is placed there on purpose. Never remove or move Chinese text during a layout change; when two lines are merged, the Chinese from both is kept. Show each answer once. A finished round never looks like a failure: praise first, then what to do next. Answer choices must look tappable (filled `surface2` or a visible border), including in the check-in. Explain rules in kid words inside a "More" section; exact numbers go to the Parent Summary. Topic cards show only icon, name and stars. The big title appears only on the start screen; other screens use a slim top bar. Save/connection status shows as one small icon, and only calls attention when saving fails.
+**Kids' screens — every level, every screen.** The main task (tap your name, pick a game, answer the question) sits in the first screen-height, never below the fold. No adult rules, formulas or raw counts (percent thresholds, "Games 0/3 · Tries 0/6"), no code names. Chinese stays exactly where the app shows it today (question hints, Sentence Builder, feedback popups, Study, My Words, Parent Summary) — it is placed there on purpose. Never remove or move Chinese text during a layout change; when two lines are merged, the Chinese from both is kept. Show each answer once. A finished round never looks like a failure: praise first, then what to do next. Answer choices must look tappable (filled `surface2` or a visible border), including in the check-in. Explain rules in kid words inside a "More" section; exact numbers go to the Parent Summary. Topic cards show only icon, name and stars. The big title appears only on the start screen; other screens use a slim top bar. Save/connection status shows as one small icon, and only calls attention when saving fails.
 
 **Parent screens.** Reading comes first, admin second: show the answer (did she play, how well) before any control. Keep settings, data tools and resets in their own section or tab, grouped by job, with each button's explanation right under it.
 
-**Motion.** Gentle float on avatars, a springy lift on player cards, a gold glow for the week leader.
+**Motion.** Gentle float on avatars, a springy lift on player cards, a gold glow for the week leader. All of it stops under `prefers-reduced-motion: reduce`.
 
 ## Readability rules
 
 These pairs fail today; the tokens below fix them.
 
-- **Wrong answers, errors and "offline" use `jenn`** (`.wrong`, `.wrong-part-highlight`, `.parent-fails`, `.lock-error`, offline dot). Fix: `wrong`.
+- **Wrong answers, errors, "offline" and the countdown warning use `jenn`** (`.wrong`, `.wrong-part-highlight`, `.parent-fails`, `.lock-error`, offline dot, `.countdown-display.warning`). Fix: `wrong`.
 
 - **`french` text on `bg`/`surface` is 2.3–2.8:1 — too dark.** French words on study cards use it. Fix: use a light indigo for text (the app already has `#c7d2fe`, 9.8:1 on `surface`), keep `french` for fills.
 - **White text on `green` is 2.5:1 — fails.** Fix: use `bg` text on green buttons (7.0:1).
@@ -102,6 +102,7 @@ Defined in `src/styles.css` `:root`. Use the variable, never the raw value.
   /* size */
   --page-max: 960px;
   --page-max-wide: 1100px;
+  --text-min: 0.75rem;
   --tap-min: 52px;
   --bp-phone: 420px;
   --bp-ipad: 768px;
@@ -139,6 +140,7 @@ Defined in `src/styles.css` `:root`. Use the variable, never the raw value.
 | `space-5` | Between sections on a screen; padding of large cards and overlays. |
 | `page-max` | Content width cap on phones and iPad portrait. |
 | `page-max-wide` | Content width cap on iPad landscape (≥768px wide, landscape). Overlays use it too. |
+| `text-min` | Smallest text anywhere (12px), uppercase labels included. |
 | `tap-min` | Minimum height of anything tapped on a touch screen — kids and parents alike. |
 | `bp-phone` | At or below: phone layout, one column. |
 | `bp-ipad` | At or above: iPad layout, two columns where content is per-girl. |
@@ -167,5 +169,5 @@ Defined in `src/styles.css` `:root`. Use the variable, never the raw value.
 | `subtitle` | sans | 0.85rem | 600 | Subtitle under the game title, in text-muted. |
 | `button-secondary` | sans | 0.85rem | 700 | Secondary button label. |
 | `back` | sans | 0.8rem | 700 | Back button, in text-muted. |
-| `label-caps` | sans | 0.6rem | 400 | Stat captions. Written in uppercase. |
-| `micro-label` | sans | 0.58rem | 800 | Tiny status labels (session clock, connection bar). Written in uppercase. |
+| `label-caps` | sans | 0.75rem | 400 | Stat captions. Written in uppercase. Raised to text-min. |
+| `micro-label` | sans | 0.75rem | 800 | Tiny status labels (session clock, connection bar). Written in uppercase. Raised to text-min. |
