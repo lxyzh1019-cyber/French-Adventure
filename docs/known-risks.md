@@ -218,6 +218,11 @@ that define the skills, so inventing one now would conflict with them.
 
 **Status:** blocking M3. Nothing to fix in code.
 
+**Updated 2026-09-29.** Release B *has* been delivered: `pilot-v1.1.0` was
+imported unchanged to `content/releases/pilot-v1/` and validated, not yet
+accepted. Its accepted limits are §4 below. M3 now waits on M2 acceptance and
+the parent's approval of Release B.
+
 **Updated 2026-09-09.** Release A *has* been delivered. `assessment-v1.0.0` was
 imported unchanged to `content/releases/assessment-v1/` and validated: 90 items
 across two complete parallel forms, every skill, outcome, rubric and fixture
@@ -247,3 +252,18 @@ against sound content, so it now applies to learning content only.
 It checks structure and internal consistency only. It cannot tell you whether
 the questions are any good, and passing it is not evidence of educational
 validity.
+
+---
+
+## 4. Release B `pilot-v1.1.0` — accepted pilot limits
+
+**Status:** accepted for the pilot, 2026-09-29, with an owner each. None is
+fixed by import; each is picked up where the owner column says.
+
+| Limit | Owner | Where it is picked up |
+|---|---|---|
+| The OIF "who speaks French" source behind history card HC4B was inspected through a search excerpt only. The card's claim is also carried by the fully inspected Alberta source, so no child-facing text depends on it alone. | content owner | Re-inspect fully in the next amendment (`docs/release-b-amendments.md` §2). |
+| No educator or community review of the story, the French or the history. | parent | Decide on external review before family use (master plan §5.3). |
+| Alberta curriculum source access was limited; outcome summaries are inherited from Release A and full Grade 5 alignment is not claimed. | parent | Same decision as the row above. |
+| No human recording of the pronunciation model lines; the device voice (fr-CA Amélie, rate 0.80) reads them. | parent — deferred | Decide after the Chapter 1 slice is heard on the iPad: record the 12 short model lines there, or keep the device voice, which the plan allows (§5.1). |
+| Finite review bank: 37 review items. Once used, there is nothing fresh to schedule. | Claude (engine), then content owner | The engine must report `fresh_bank_exhausted` instead of recycling items; the parent then asks the content owner for a versioned amendment with more. |

@@ -1,0 +1,83 @@
+{
+  "release_id": "pilot-v1.1.0",
+  "status": "passed",
+  "checks": 3110,
+  "reference_state_fixtures": 22,
+  "scoring_cases": 8,
+  "scheduler_cases": 4,
+  "scope": "JSON parse, references, counts, hashes, exposure policies, teaching/check separation, required coverage, reference-rule oracle. Not app execution or educational validation.",
+  "limitations": [
+    "No external educator or community review",
+    "Not integrated into app",
+    "No human pronunciation model recording",
+    "Current official Alberta source access limited",
+    "Small finite review bank",
+    "OIF claim inspected through search excerpt only"
+  ],
+  "negative_guard_tests": [
+    {
+      "case": "duplicate-id",
+      "rejected_by_matching_guard": true
+    },
+    {
+      "case": "unreachable-key",
+      "rejected_by_matching_guard": true
+    },
+    {
+      "case": "translation-missing",
+      "rejected_by_matching_guard": true
+    },
+    {
+      "case": "support-counted-independent",
+      "rejected_by_matching_guard": true
+    },
+    {
+      "case": "audio-no-script",
+      "rejected_by_matching_guard": true
+    },
+    {
+      "case": "finite-key-rejects-new-answer",
+      "rejected_by_matching_guard": true
+    },
+    {
+      "case": "missing-history-source",
+      "rejected_by_matching_guard": true
+    },
+    {
+      "case": "early-retention",
+      "rejected_by_matching_guard": true
+    },
+    {
+      "case": "count-drift",
+      "rejected_by_matching_guard": true
+    },
+    {
+      "case": "same-model-delayed",
+      "rejected_by_matching_guard": true
+    },
+    {
+      "case": "missing-item-release",
+      "rejected_by_matching_guard": true
+    },
+    {
+      "case": "missing-support-route",
+      "rejected_by_matching_guard": true
+    },
+    {
+      "case": "wrong-tts-rate",
+      "rejected_by_matching_guard": true
+    },
+    {
+      "case": "review-blocks-child",
+      "rejected_by_matching_guard": true
+    },
+    {
+      "case": "meaning-credits-spelling",
+      "rejected_by_matching_guard": true
+    },
+    {
+      "case": "baseline-listening-collapsed",
+      "rejected_by_matching_guard": true
+    }
+  ]
+}

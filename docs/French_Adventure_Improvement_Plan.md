@@ -4,8 +4,9 @@
 **Baseline branch:** `main`  
 **Baseline commit:** `f065ca89dbd771a4c396baf9b0081af2f31e8f77`  
 **Prepared:** 2026-09-05  
-**Revision:** 3 — 2026-09-09; M1 cleanup folded into M2 and single-document execution clarified  
-**Status updated:** 2026-09-09; M1 code re-audit passed at `a8220ce`; combined cleanup-plus-M2 plan ready; actual-iPad acceptance pending  
+**Revision:** 5 — 2026-09-20; story-led teaching model consolidated into the existing M3/Release B scope  
+**Delivery clarification:** 2026-09-29 — This is the governing Revision 5 plan for Release B `pilot-v1.1.0`. References to earlier revisions describe history, not this file's revision. This clarification changes no acceptance criteria.  
+**Status updated:** 2026-09-20; `main` at `377b1f6`; M1 and M2 are technically complete and ready for parent acceptance; the complete five-milestone plan is 39% finished by explicit acceptance criteria; M3 is blocked by missing Release B  
 **Primary users:** Jenn and Jess, Grade 5, Alberta regular public school (not French Immersion)  
 **Primary device:** iPad  
 **Expected use:** one or two 20-minute sessions per week
@@ -32,7 +33,7 @@ This is an implementation plan, not authorization to begin coding. Before implem
 - pass its internal work-package checks before advancing;
 - request review at milestone boundaries, not after every internal task.
 
-**Current readiness:** This is the only governing Claude-facing document. Release A (`assessment-v1.0.0`) has been authored, imported into the repository, and validated with both complete forms. The M1 re-audit of `a8220ce` confirms that the same-day concurrent-sync and delayed wrong-match blockers are repaired and the full automated code gate passes in CI. Claude may handle the remaining small cleanup as Step 0 of the same M2 branch and approval cycle; it is not a separate milestone or document. Actual-iPad evidence must still be recorded before M2 is accepted. Release B has not been authored or delivered.
+**Current readiness:** This is the only governing Claude-facing plan. Release A is now `assessment-v1.0.2`: 90 items across complete A/B forms, integrated and validated. M1 repair work and the complete M2 assessment implementation are merged through PR #22 at `377b1f6`; the latest `main` CI build, deploy, and verification checks passed. The family-iPad Device & Feature Check passed all six technical checks on 2026-09-10, all four speaking pictures and map labels were confirmed readable on 2026-09-17, and Jess completed Form B in full. M1 and M2 remain `ready_for_review`, not `accepted`, because the remaining manual data-safety/resume and microphone-denial evidence and the parent's explicit milestone acceptance are not recorded. Release B has not been authored or delivered, so the Learning Adventure has not begun and M3 cannot start.
 
 Blue text marked “Updated” identifies the principal revised decisions. Colour may not render in every Markdown reader; the wording remains authoritative.
 
@@ -56,6 +57,7 @@ These decisions are settled and must not be reopened unless implementation evide
 | Main French variety | Canadian French (`fr-CA`) |
 | Accent exposure | Introduce France and other Francophone accents gradually and label the speaker/region |
 | Pronunciation technology | Test free iPad features first; Azure free-tier trial only if needed; paid usage only after explicit approval |
+| AI scoring | External AI may provide advisory draft feedback only; Release A writing or speaking bands require a named qualified human who reads or listens to the original response |
 | Authentication | Deferred by parent decision; preserve current cross-device sync and do not add authentication to M1 or M2 unless the parent reopens the decision |
 | Initial scope | Repair defects, build assessment, and validate one four-chapter pilot before expanding the curriculum |
 
@@ -90,6 +92,23 @@ Every chapter must connect:
 5. an independent application;
 6. delayed retrieval in a later session.
 
+The normal learning sequence is:
+
+**short story scene → explicit teaching → guided use → meaningful story task → later retrieval check**
+
+Story reading alone is not instruction, and a multiple-choice question placed after a story paragraph is not sufficient evidence of story-based learning. French must be needed to interpret evidence, communicate with a character, make a defensible choice, or advance the investigation.
+
+### 3.2A Manage language and history load separately
+
+Do not require a child to decode unfamiliar French and independently understand a complex historical issue at the same moment.
+
+- Present fictional investigation scenes in short, accessible French, normally through an audio-first micro-scene of approximately 4–8 lines followed by readable French.
+- Treat 4–8 lines as an authoring target, not a rigid validator threshold; clarity and the 20-minute session rhythm govern exceptions.
+- Put complex context in a separate, visibly labelled **Real History** card. Mark invented people, dialogue, clues, and events as **Story Fiction** wherever confusion is possible.
+- Provide reviewed English support for complex explanations. Chinese may be offered as optional family support when an accurate reviewed version exists; its absence must not block the French lesson.
+- Never score French proficiency from remembering a difficult historical fact. Language evidence and historical understanding must remain distinguishable.
+- Use illustration as the normal visual medium. Animation is optional and justified only when movement or sequence materially teaches meaning.
+
 ### 3.3 Support must fade
 
 Support levels must be explicit:
@@ -123,11 +142,12 @@ Lives may remain in optional challenge games, but must not block core instructio
 - Include the experiences and agency of Indigenous peoples, colonized communities, enslaved people, settlers, traders, women, children, resistance movements, and later Francophone communities when relevant.
 - Use age-appropriate language without hiding coercion or harm.
 - Have historical content reviewed before release; do not generate it dynamically for children without review.
+- Describe the historical arc as exploration, trade, settlement, colonial expansion, cultural influence, conflict, changing control, resistance, independence, and continuing Francophone legacies. Do not reduce it to a simple story that France “conquered the world and lost it.”
 
 ### 3.6 Privacy and child safety
 
 - Do not embed service secrets in client-side code.
-- Do not store raw child audio by default.
+- Store raw child audio only after an explicit assessment or pronunciation recording action. Keep it on the recording device by default; do not upload it automatically.
 - For any future external pronunciation service, send only the short clip required for the current task.
 - Obtain explicit parent opt-in before external audio submission.
 - Show whether a recording remains on the device, is uploaded temporarily, or is saved.
@@ -153,10 +173,12 @@ flowchart TD
 
 ### Required distinctions
 
-- **Learning Adventure:** teaching, hints, retries, story rewards, and planned review.
+- **Learning Adventure:** teaching, hints, retries, story rewards, and planned review. **Continue Learning Adventure** is the primary learner action and the default return path after profile selection.
 - **Assessment:** no teaching, no correctness feedback during a section, no game points, and unseen or securely rotated item forms.
-- **Free Practice:** existing game styles may remain after repair, but results are practice evidence only.
+- **Free Practice:** existing game styles remain secondary to the learning path; results are practice evidence only.
 - **Parent Dashboard:** shows skill-specific evidence, support use, retention, and history; it must not summarize everything as one grade.
+
+The home screen, saved-session bookmark, and learner progress display must all reinforce this hierarchy. Independent Assessment must not become the default learner destination merely because it was implemented first.
 
 ---
 
@@ -170,11 +192,41 @@ flowchart TD
 |---|---|---|---|
 | M1 — Repair foundation | Work packages 0 and 1: baseline, recovery, tests, answer checking, scoring, resume, dates, sync | This master plan plus permission to implement M1 | Regression evidence, migration/recovery checks, basic iPad smoke test, parent acceptance |
 | M2 — Cleanup + independent assessment | First close the listed M1 cleanup, then implement Release A scoring, routing, section resume, original-audio handling and reports in one branch/PR | M1 automated code gate passed; complete imported Release A | Cleanup and all Release A implementation checks pass; actual-iPad evidence recorded; parent accepts assessment flow |
-| M3 — Learning pilot | Work packages 3 and 4: learning engine, review scheduling, complete four-chapter mystery | M2 accepted; complete approved Release B | Content integration and learning-engine tests pass; story and skill coverage verified |
+| M3 — Learning pilot | Work packages 3 and 4: learning engine, review scheduling, Chapter 1 vertical slice, then the complete four-chapter mystery | M2 accepted; complete approved Release B | Vertical-slice gate passes before Chapters 2–4 integration; content, learning-engine, story and skill-coverage checks pass |
 | M4 — iPad validation | Work package 5 plus end-to-end touch, keyboard, audio, interruption, and sync checks | M3 working build and device checklist | Actual-device results and repairs; no critical device blocker; parent accepts free pronunciation experience |
 | M5 — Evaluate and release pilot | Work package 6: family use, findings, repairs, release evidence | M4 accepted, baseline records, completed learner sessions | Review against pilot criteria; final release approval; explicitly scoped expansion decision |
 
 Work package 7 (Azure) is an optional later experiment, not a prerequisite for M5. Work package 8 (curriculum expansion) is future scope, not part of the initial release promise. Neither starts automatically.
+
+### 5.1A Status reconciliation — 2026-09-20
+
+Percentages below use the original plan's explicit acceptance criteria, not commits, files, test counts, or lines of code. The denominator is 56 criteria: M1 9; M2 14; M3 17 across the learning engine and four-chapter pilot; M4 7; M5 9. A partially evidenced criterion is not counted as complete.
+
+| Milestone | Criteria met | Completion | Formal state | Evidence and remaining gate |
+|---|---:|---:|---|---|
+| M1 — Repair foundation | 9 / 9 | 100% technical | `ready_for_review` | Repair, migration, scoring, date, resume, and deterministic merge tests pass. The combined recovery file exists. Parent acceptance and the complete family-iPad data-safety checklist, especially the two-iPad offline merge, are not recorded. |
+| M2 — Cleanup + independent assessment | 13 / 14 | 93% | `ready_for_review` | Steps 0–6 are implemented. Release A v1.0.2, scoring, reports, human-review flow, audio export, reassessment rules, and guards are merged. Device Check passed; pictures passed; Jess completed Form B. The combined actual-iPad data/resume/microphone-denial evidence and explicit parent acceptance remain incomplete. |
+| M3 — Learning pilot | 0 / 17 | 0% | `not_started` — dependency blocked | Release B and the learning/mastery engine do not exist. Existing games and the assessment are not the planned story-led learning tool. |
+| M4 — iPad validation | 0 / 7 | 0% | `not_started` | Some device mechanisms were tested early for M2, but M4 validates the not-yet-built Learning Adventure and free pronunciation lesson flow after M3. Early evidence is reusable risk reduction, not M4 completion. |
+| M5 — Evaluate and release pilot | 0 / 9 | 0% | `not_started` | Requires the four-chapter family pilot, delayed evidence, engagement review, and release decision. |
+| **Complete initial plan** | **22 / 56** | **39%** | **in progress** | Assessment foundation is nearly accepted; the learning product, its device validation, and family pilot remain. |
+
+This percentage intentionally looks lower than the M2 implementation percentage. The original goal was not merely to build an assessment; it was to transform the app into an assessment **and** a story-led learning tool. Three later milestones therefore remain at zero until their own deliverables and evidence exist.
+
+**Execution deviation:** M2 was planned as one branch/PR. The main implementation merged in PR #20, followed by PR #21 for iPad-discovered repairs and the human-review screen and PR #22 for durable audio export. The follow-ups were justified by real-device and data-preservation findings, but the one-PR target was not met and must not be reported as if it was.
+
+**Verification snapshot:** At `377b1f6`, GitHub reports successful build, deploy, deployment-status, and full verification checks, including the browser suite. A fresh local run on 2026-09-20 passed all 398 unit tests, 37 handler checks, build-drift verification, and the Release A v1.0.2 validator. The local browser rerun could not launch because this workspace lacks the Playwright Chromium executable; that is an environment limitation, not evidence of a product failure, and the same browser suite passed in CI.
+
+Revision 5 consolidates the approved story-led teaching frame into M3 and Release B. It does not claim additional completed work, change the 56-criterion denominator, or alter assessment prompts, rules, rubrics, scoring fixtures, or results. Release A v1.0.2 therefore remains compatible; M3 remains blocked until Release B is complete and approved.
+
+#### Immediate remaining actions, in order
+
+1. On the iPad that recorded Jess, use **Save everything, with the recordings** immediately and verify that all five audio players work in the exported HTML. The export feature was deployed after her sitting, and local browser storage is not a durable archive.
+2. Record the microphone-denial result from checklist §5.5c. A denial must be technical/invalid, never an incorrect answer.
+3. If both family iPads are available, record the two-iPad same-day offline merge (§1.4) and assessment pause-on-one/resume-on-the-other (§5.4c).
+4. Review Jess's parent report, confirm that Listening, Reading, and Vocabulary and grammar are understandable, and confirm that Writing and Speaking honestly remain `awaiting_review` without a qualified French scorer.
+5. Record explicit parent acceptance for M1 and M2 only after the applicable checks above pass. Do not reopen Release A or consume Jenn's Form A merely to create more test evidence.
+6. Author and approve Release B before asking Claude to begin M3. Release B is now the main project blocker.
 
 ### 5.2 Exactly one master plan and two content releases
 
@@ -182,9 +234,9 @@ There is one governing Markdown plan: this file. Keep its filename and identity 
 
 | Delivery | Owner | Release point | Current status |
 |---|---|---|---|
-| Master plan, revision 3 | ChatGPT | Now; governs all five milestones | Delivered; M1 cleanup and M2 consolidated into one execution path |
-| Release A — Assessment Content | ChatGPT | Before M2 begins; may be authored while Claude implements M1 | Delivered and imported as `assessment-v1.0.0`; 90 items across complete A/B forms; one tier-band sentence needs correction before learner-facing scoring integration |
-| Release B — Four-Chapter Learning Content | ChatGPT | Before M3 begins; may be drafted during M2 and adjusted using baseline evidence | Pending; existing chapter descriptions are outlines only |
+| Master plan, revision 5 | ChatGPT | Now; governs all five milestones | Revision 4 implementation status retained; M3/Release B teaching, cognitive-load, content-remediation and vertical-slice rules consolidated; 39% overall completion unchanged |
+| Release A — Assessment Content | ChatGPT | Before M2 begins; may be authored while Claude implements M1 | Delivered, amended, and imported as `assessment-v1.0.2`; 90 items across complete A/B forms; scoring decisions closed; Jess has completed Form B |
+| Release B — Four-Chapter Learning Content | ChatGPT | Complete and approve after M1/M2 acceptance evidence and before M3 coding | Pending; existing chapter descriptions are outlines only |
 
 These are dependency-based release points, not background delivery promises or calendar deadlines. ChatGPT and Claude work in their respective active sessions; the parent transfers released packages between them. No automatic handoff or unattended authoring is assumed.
 
@@ -249,6 +301,16 @@ Deliver one versioned package, `French_Adventure_Pilot_Content.zip`, containing:
 
 The package must contain actual child-facing content, not only an authoring template or instructions for Claude to fill it. Every target needs teaching, guided practice, independent checking, delayed review and transfer coverage. All branches and error paths need finished text and behaviour.
 
+Release B must also satisfy these authoring rules:
+
+- Each new scene normally begins with an audio-first French micro-scene, followed by readable French and then optional support. Assessment audio-only rules do not apply to Learning Adventure teaching scenes.
+- Each chapter uses a small coherent set—normally 4–6 useful words or chunks and one central sentence frame—chosen for the chapter's communicative task rather than to fill a vocabulary quota.
+- A concrete noun introduced as a lexical target normally includes its natural article or determiner and an example in context, such as `un chien`, `une pomme`, or `l'école`. Do not attach an article artificially to verbs, adjectives, fixed expressions, plural/mass uses, or contexts where French normally omits it.
+- English or Chinese explanation, translation, word banks, and complete models are recorded as support. They must be hidden during Level 0 independent checks.
+- A chapter may span two or three 20-minute sessions. Each session still needs a recap, meaningful stopping point, and saved bookmark.
+- The existing 416 vocabulary entries and 63 fixed sentences are source material, not an automatically approved curriculum. Do not import them wholesale or equalize levels by padding counts. A legacy item enters Release B only when it has a communicative purpose, accurate contextual form, teaching/model support, independent evidence, and planned later retrieval.
+- Historical content and language targets must have separate identifiers/evidence where either could be answered without the other.
+
 Start with the four-chapter scope in this plan. If baseline evidence shows the content is too easy or difficult, ChatGPT revises the support/difficulty variants and records the rationale before M3. If baseline results are not yet available, label any difficulty choice provisional and retain a review gate before learner use.
 
 ### 5.6 Content delivery, versioning and change control
@@ -268,12 +330,13 @@ For a material change: state the problem, proposed change, affected items/code, 
 
 ### 5.7 What Claude can do with this revision
 
-- Once authorized, execute the combined M2 sequence in this document. Step 0 contains the remaining M1 cleanup; do not create a separate cleanup plan, milestone, PR or approval round.
+- Preserve the merged M1/M2 implementation and current learner records. Do not reopen those milestones or change Release A unless actual acceptance evidence exposes a defect or the parent authorizes a new requirement.
 - Use synthetic fixtures for technical tests, clearly marked test-only.
 - Do not create production assessment/lesson pools, invent grade bands, or promote placeholders into child-facing content.
 - If Release A or B is missing, report the specific missing dependency. Continue only unrelated work already authorized within the current milestone.
 - A partial bank is a prototype, not completion of M2 or M3.
-- At the end of M2, return one evidence-backed review summary. Its internal steps do not create extra plans or approval rounds unless a material decision or blocker requires parent input.
+- Complete and record the remaining M1/M2 acceptance evidence before treating those milestones as accepted. Do not consume an unused learner assessment form merely to produce technical evidence.
+- Do not begin M3 coding from chapter outlines. After complete Release B is approved, follow the M3 internal sequence in §3.8; Chapter 1 is a gate inside M3, not a new milestone or a separate plan.
 
 ---
 
@@ -361,13 +424,6 @@ Create distinct utilities instead of using one accent-stripping comparison every
 - `normalizeForSpelling(text)` — preserve letters, apostrophes, hyphens, accents, and `œ` when those are learning targets.
 - `tokenizeFrench(text)` — safe handling for spaces, punctuation, elisions, and apostrophes.
 - `escapeForDisplay(text)` — display through DOM text nodes or safe binding, not string-built inline JavaScript.
-
-> **Implementation note (Claude, M2 Step 0).** The first two exist under these
-> names in `src/util/fr-text.js`. The last two ship under different names:
-> `tokenizeFrench` is `frTokenize` (`src/util/fr-text.js`), and
-> `escapeForDisplay` is `escapeAttr` (`src/app.js`). The names were kept and
-> this note added instead of renaming working code. Recorded in
-> `docs/implementation-status.md`.
 
 Do not silently treat `ou` and `où`, `a` and `à`, or `sur` and `sûr` as equivalent in spelling tasks. If accents are not being assessed at an early stage, record the response as **meaning correct, spelling needs correction**, rather than completely correct.
 
@@ -748,6 +804,19 @@ Requirements:
 - Do not begin a long mandatory activity when fewer than two minutes remain.
 - Resume at the exact story and learning checkpoint on another date/device.
 
+## 3.8 M3 internal implementation sequence
+
+M3 remains one milestone. Its work must proceed in this order:
+
+1. **Release B approval** — finish and review all four chapters, learning items, review items, skills, pronunciation tasks, history sources, fixtures, and assets before production implementation begins.
+2. **Package validation** — validate schemas, IDs, links, accepted answers, branches, source references, required media, and coverage of teaching through delayed retrieval.
+3. **Chapter 1 vertical slice** — implement one complete path from recap and audio-first scene through explicit teaching, guided use, meaningful story action, pronunciation, independent exit check, bookmark, and scheduled later review.
+4. **Vertical-slice gate** — verify support fading, error-specific teaching, evidence attribution, resume, session timing, non-microphone fallback, and the separation of language evidence from historical knowledge. Correct the engine or content contract before scaling if the slice exposes a structural problem.
+5. **Chapters 2–4 integration** — reuse the validated interaction and evidence patterns while preserving each chapter's approved content and equivalent branch evidence.
+6. **M3 verification** — run the complete learning-engine, content, story-coverage, scheduling, resume, accessibility, and regression suites before requesting milestone review.
+
+The vertical slice is an internal risk-control gate, not a partial Release B, extra milestone, learner pilot, or authorization to improvise the other chapters.
+
 ## Phase 3 acceptance criteria
 
 - [ ] Support use is recorded and affects interpretation.
@@ -756,7 +825,7 @@ Requirements:
 - [ ] A later failure can move a skill to `Needs review`.
 - [ ] Scheduler works for both one-session and two-session weeks.
 - [ ] No core gate requires consecutive days.
-- [ ] The session stops or bookmarks cleanly near 20 minutes.
+- [ ] The primary learning path and Chapter 1 vertical slice complete the full teaching cycle, and sessions stop or bookmark cleanly near 20 minutes.
 - [ ] Parent report distinguishes lesson completion, current success, delayed retention, and transfer.
 
 ---
@@ -804,6 +873,30 @@ Do not organize chapters by a long vocabulary list. Each chapter should introduc
 
 Difficulty must adapt through support, sentence length, audio speed, response demand, and text complexity—not by changing the historical truth.
 
+For each new scene, the intended presentation order is:
+
+1. short French audio scene;
+2. readable French transcript;
+3. four to six useful words/chunks and one sentence frame in context;
+4. explicit explanation or model;
+5. guided use;
+6. a story action that requires the target language;
+7. an independent check with translations, complete models, and predictive help removed;
+8. a different delayed check in a later session.
+
+The chapter does not need to finish in one sitting. It may occupy two or three sessions if each session has a concise recap, meaningful investigation progress, pronunciation practice, and a safe bookmark.
+
+### 4.3A Legacy-content remediation
+
+The existing content bank is uneven: it contains 416 vocabulary entries and 63 fixed sentences, with much of the volume concentrated at the highest repository grade key. This is a selection and sequencing risk, not a requirement to make every grade contain the same number of entries.
+
+- Treat existing vocabulary and sentences as candidates requiring review, not as required Release B coverage.
+- Prefer natural lexical chunks and connected sentence patterns over isolated translation pairs.
+- Introduce beginner concrete nouns with a natural article/determiner and reuse them in context so gender is learned with the noun.
+- Reject or rewrite legacy entries that are inaccurate, decontextualized, unnecessarily difficult, duplicative, or unrelated to the chapter's communicative goal.
+- Do not manufacture balance by duplicating sentences or padding thin levels.
+- Record whether a Release B item is retained, adapted, or newly authored so later audits can distinguish legacy reuse from reviewed learning content.
+
 ## 4.4 Story task examples
 
 - Hear `Le document est sous la carte` and move the document correctly.
@@ -832,6 +925,11 @@ story_summary:
 historical_scope:
 real_history_sources:
 fictional_elements:
+scene_lines:
+audio_script:
+readable_french:
+real_history_card:
+support_languages:
 curriculum_outcomes:
 prerequisite_skills:
 target_skills:
@@ -848,16 +946,17 @@ independent_exit_check:
 delayed_check_in_later_chapter:
 common_errors_and_feedback:
 session_bookmarks:
+estimated_sessions:
 ```
 
 ## Phase 4 acceptance criteria
 
 - [ ] Four chapters form one coherent mystery with a satisfying pilot resolution.
 - [ ] Every French activity changes what the learner understands or does in the story.
-- [ ] Each chapter has a manageable, explicit language scope.
+- [ ] Each chapter has a manageable, explicit language scope, normally using short audio-first scenes, 4–6 useful chunks and one central sentence frame rather than a long vocabulary list.
 - [ ] Every new target receives teaching, guided practice, independent application, and later retrieval.
 - [ ] Historical facts have reviewed sources in authoring notes.
-- [ ] Fiction and history are distinguishable to a 10-year-old.
+- [ ] Fiction and history are distinguishable to a 10-year-old, and complex historical knowledge is not required as proof of French proficiency.
 - [ ] The story includes multiple perspectives and does not celebrate conquest uncritically.
 - [ ] Jenn and Jess can follow the same plot at different support levels.
 - [ ] No branch creates a dead end or changes historical facts.
@@ -1207,17 +1306,18 @@ Claude must not:
 
 ---
 
-## 13. Recommended first implementation milestone
+## 13. Recommended next delivery and implementation order
 
-The first approved coding milestone should include only:
+M1 and the technical M2 implementation already exist. The next work is:
 
-1. Phase 0 baseline/tests/schema preparation;
-2. Phase 1 defect repairs;
-3. a short manual iPad regression checklist.
+1. complete the remaining actual-iPad evidence and record explicit M1/M2 acceptance;
+2. have ChatGPT author the complete Release B package under §5.5 and Phases 3–4;
+3. review Release B French, historical treatment, assets, mappings, branches, support variants, and fixtures before coding;
+4. authorize Claude to begin M3 only when M2 is accepted and Release B is approved;
+5. follow the internal M3 sequence in §3.8, including the Chapter 1 vertical-slice gate before Chapters 2–4 integration;
+6. move to M4 actual-iPad validation only after M3 reaches `ready_for_review`.
 
-Do **not** build assessment or story content in the same milestone. Reliable scoring, resume, date handling, and sync are prerequisites for trustworthy assessment and learning records.
-
-While Claude implements M1, ChatGPT may author Release A in a separate active session. After M1 is accepted and the complete Release A is delivered and approved, Claude begins M2. A small section may be prototyped first within M2 to verify delivery and scoring, but the content bank must already be supplied; Claude does not author the remaining production questions.
+Do not create a second plan for Release B or the vertical slice. Release B is a versioned content package governed by this document, and the vertical slice is an internal M3 risk-control gate.
 
 ---
 

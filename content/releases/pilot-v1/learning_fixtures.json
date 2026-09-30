@@ -1,0 +1,1191 @@
+{
+  "release_id": "pilot-v1.1.0",
+  "fixture_scope": "Reference rule oracle only; Claude must run these through the actual implemented reducer and add browser fixtures. Passing this oracle does not test the app.",
+  "fixtures": [
+    {
+      "id": "F01-no-evidence",
+      "history": [],
+      "expected_state": "New"
+    },
+    {
+      "id": "F02-supported-only",
+      "history": [
+        {
+          "evidence_id": "a",
+          "item_id": "a",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "guided",
+          "result": "correct",
+          "support_level": 2,
+          "technical_invalid": false,
+          "exposed_before": false
+        }
+      ],
+      "expected_state": "Learning"
+    },
+    {
+      "id": "F03-one-independent",
+      "history": [
+        {
+          "evidence_id": "a",
+          "item_id": "a",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "independent_exit",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        }
+      ],
+      "expected_state": "Practising"
+    },
+    {
+      "id": "F04-three-independent",
+      "history": [
+        {
+          "evidence_id": "a",
+          "item_id": "a",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "independent_exit",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "b",
+          "item_id": "b",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "independent_exit",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "c",
+          "item_id": "c",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "independent_exit",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        }
+      ],
+      "expected_state": "Ready to check"
+    },
+    {
+      "id": "F05-repeated-id",
+      "history": [
+        {
+          "evidence_id": "a",
+          "item_id": "a",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "independent_exit",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "a",
+          "item_id": "a",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "independent_exit",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "a",
+          "item_id": "a",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "independent_exit",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        }
+      ],
+      "expected_state": "Practising"
+    },
+    {
+      "id": "F06-early-delayed",
+      "history": [
+        {
+          "evidence_id": "a",
+          "item_id": "a",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "independent_exit",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "b",
+          "item_id": "b",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "independent_exit",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "c",
+          "item_id": "c",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "independent_exit",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "d",
+          "item_id": "d",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 47,
+          "phase": "delayed",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "e",
+          "item_id": "e",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 47,
+          "phase": "delayed",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        }
+      ],
+      "expected_state": "Ready to check"
+    },
+    {
+      "id": "F07-supported-delayed",
+      "history": [
+        {
+          "evidence_id": "a",
+          "item_id": "a",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "independent_exit",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "b",
+          "item_id": "b",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "independent_exit",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "c",
+          "item_id": "c",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "independent_exit",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "d",
+          "item_id": "d",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 48,
+          "phase": "delayed",
+          "result": "correct",
+          "support_level": 1,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "e",
+          "item_id": "e",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 49,
+          "phase": "delayed",
+          "result": "correct",
+          "support_level": 1,
+          "technical_invalid": false,
+          "exposed_before": false
+        }
+      ],
+      "expected_state": "Ready to check"
+    },
+    {
+      "id": "F08-retained",
+      "history": [
+        {
+          "evidence_id": "a",
+          "item_id": "a",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "independent_exit",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "b",
+          "item_id": "b",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "independent_exit",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "c",
+          "item_id": "c",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "independent_exit",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "d",
+          "item_id": "d",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 48,
+          "phase": "delayed",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "e",
+          "item_id": "e",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 49,
+          "phase": "delayed",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        }
+      ],
+      "expected_state": "Remembered"
+    },
+    {
+      "id": "F09-transfer",
+      "history": [
+        {
+          "evidence_id": "a",
+          "item_id": "a",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "independent_exit",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "b",
+          "item_id": "b",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "independent_exit",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "c",
+          "item_id": "c",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "independent_exit",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "d",
+          "item_id": "d",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 48,
+          "phase": "delayed",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "e",
+          "item_id": "e",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 49,
+          "phase": "delayed",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "f",
+          "item_id": "f",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 72,
+          "phase": "transfer",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        }
+      ],
+      "expected_state": "Transfer shown"
+    },
+    {
+      "id": "F10-delayed-failure",
+      "history": [
+        {
+          "evidence_id": "a",
+          "item_id": "a",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "independent_exit",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "b",
+          "item_id": "b",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "independent_exit",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "c",
+          "item_id": "c",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "independent_exit",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "d",
+          "item_id": "d",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 48,
+          "phase": "delayed",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "e",
+          "item_id": "e",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 49,
+          "phase": "delayed",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "f",
+          "item_id": "f",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 72,
+          "phase": "delayed",
+          "result": "incorrect",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        }
+      ],
+      "expected_state": "Needs review"
+    },
+    {
+      "id": "F11-technical-failure",
+      "history": [
+        {
+          "evidence_id": "a",
+          "item_id": "a",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "independent_exit",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "b",
+          "item_id": "b",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "independent_exit",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "c",
+          "item_id": "c",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "independent_exit",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "d",
+          "item_id": "d",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 72,
+          "phase": "delayed",
+          "result": "invalid",
+          "support_level": 0,
+          "technical_invalid": true,
+          "exposed_before": false
+        }
+      ],
+      "expected_state": "Ready to check"
+    },
+    {
+      "id": "F12-other-skill",
+      "history": [
+        {
+          "evidence_id": "a",
+          "item_id": "a",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "independent_exit",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "b",
+          "item_id": "b",
+          "skill_id": "C2.COMPARE",
+          "hours_since_teaching": 1,
+          "phase": "independent_exit",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "c",
+          "item_id": "c",
+          "skill_id": "C2.COMPARE",
+          "hours_since_teaching": 1,
+          "phase": "independent_exit",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        }
+      ],
+      "expected_state": "Practising"
+    },
+    {
+      "id": "F13-old-key-new-id",
+      "history": [
+        {
+          "evidence_id": "a",
+          "item_id": "a",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "independent_exit",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "b",
+          "item_id": "b",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "independent_exit",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "c",
+          "item_id": "c",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "independent_exit",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "d",
+          "item_id": "d",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 48,
+          "phase": "delayed",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": true
+        },
+        {
+          "evidence_id": "e",
+          "item_id": "e",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 49,
+          "phase": "delayed",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": true
+        }
+      ],
+      "expected_state": "Ready to check"
+    },
+    {
+      "id": "F14-history-not-french",
+      "history": [
+        {
+          "evidence_id": "a",
+          "item_id": "a",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "history",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "b",
+          "item_id": "b",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "history",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "c",
+          "item_id": "c",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "history",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        }
+      ],
+      "expected_state": "New"
+    },
+    {
+      "id": "F15-transcript-not-speech",
+      "history": [
+        {
+          "evidence_id": "a",
+          "item_id": "a",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "pronunciation",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "b",
+          "item_id": "b",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "pronunciation",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "c",
+          "item_id": "c",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "pronunciation",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        }
+      ],
+      "expected_state": "New"
+    },
+    {
+      "id": "F16-awaiting-review",
+      "history": [
+        {
+          "evidence_id": "a",
+          "item_id": "a",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "production",
+          "result": "awaiting_review",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        }
+      ],
+      "expected_state": "Learning"
+    },
+    {
+      "id": "F17-clear-receptive-but-not-productive",
+      "history": [
+        {
+          "evidence_id": "a",
+          "item_id": "a",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "independent_exit",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "b",
+          "item_id": "b",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "independent_exit",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "c",
+          "item_id": "c",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "independent_exit",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        }
+      ],
+      "target_skill": "C1.LOCATION_SENTENCE",
+      "expected_state": "New"
+    },
+    {
+      "id": "F18-transfer-before-retention",
+      "history": [
+        {
+          "evidence_id": "a",
+          "item_id": "a",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "independent_exit",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "b",
+          "item_id": "b",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "independent_exit",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "c",
+          "item_id": "c",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "independent_exit",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "f",
+          "item_id": "f",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 72,
+          "phase": "transfer",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        }
+      ],
+      "expected_state": "Ready to check"
+    },
+    {
+      "id": "F19-delayed-before-ready",
+      "history": [
+        {
+          "evidence_id": "a",
+          "item_id": "a",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "independent_exit",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "d",
+          "item_id": "d",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 48,
+          "phase": "delayed",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "e",
+          "item_id": "e",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 49,
+          "phase": "delayed",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "b",
+          "item_id": "b",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "independent_exit",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "c",
+          "item_id": "c",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "independent_exit",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        }
+      ],
+      "expected_state": "Ready to check"
+    },
+    {
+      "id": "F20-recovery-requires-new-checks",
+      "history": [
+        {
+          "evidence_id": "a",
+          "item_id": "a",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "independent_exit",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "b",
+          "item_id": "b",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "independent_exit",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "c",
+          "item_id": "c",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 1,
+          "phase": "independent_exit",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "d",
+          "item_id": "d",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 48,
+          "phase": "delayed",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "e",
+          "item_id": "e",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 49,
+          "phase": "delayed",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "f",
+          "item_id": "f",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 72,
+          "phase": "delayed",
+          "result": "incorrect",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        },
+        {
+          "evidence_id": "g",
+          "item_id": "g",
+          "skill_id": "C1.LOCATE",
+          "hours_since_teaching": 100,
+          "phase": "independent_exit",
+          "result": "correct",
+          "support_level": 0,
+          "technical_invalid": false,
+          "exposed_before": false
+        }
+      ],
+      "expected_state": "Ready to check"
+    },
+    {
+      "id": "F21-guided-right-independent-wrong",
+      "target_skill": "C1.LOCATION_SENTENCE",
+      "history": [
+        {
+          "evidence_id": "g1",
+          "item_id": "C1-S1-ASSEMBLE",
+          "skill_id": "C1.LOCATION_SENTENCE",
+          "phase": "guided",
+          "result": "correct",
+          "support_level": 2,
+          "hours_since_teaching": 1
+        },
+        {
+          "evidence_id": "u1",
+          "item_id": "C1-S1-CHECK-P",
+          "skill_id": "C1.LOCATION_SENTENCE",
+          "phase": "independent_exit",
+          "result": "incorrect",
+          "support_level": 0,
+          "hours_since_teaching": 2
+        }
+      ],
+      "expected_state": "Practising"
+    },
+    {
+      "id": "F22-meaning-credit-is-not-encoding",
+      "target_skill": "W_ENCODING",
+      "history": [
+        {
+          "evidence_id": "m1",
+          "item_id": "C3-S1-CHECK-P",
+          "skill_id": "C3.PAST_SENTENCE",
+          "phase": "independent_exit",
+          "result": "correct",
+          "raw_scoring_result": "meaning_correct_spelling_needs_correction",
+          "support_level": 0,
+          "hours_since_teaching": 1
+        }
+      ],
+      "expected_state": "New"
+    }
+  ],
+  "scoring_cases": [
+    {
+      "id": "K1",
+      "item_id": "C1-S1-CHECK-P",
+      "response": "la carte est sur la table",
+      "expected": "correct",
+      "credited_skill": "C1.LOCATION_SENTENCE"
+    },
+    {
+      "id": "K2",
+      "item_id": "C1-S1-CHECK-P",
+      "response": "La carte se trouve sur la table.",
+      "expected": "awaiting_review"
+    },
+    {
+      "id": "K3",
+      "item_id": "C1-S1-CHECK-P",
+      "response": "La carte est sur la table.",
+      "support_level": 3,
+      "expected_independent": false
+    },
+    {
+      "id": "K4",
+      "item_id": "C3-S1-CHECK-P",
+      "response": "Mina a trouve la carte.",
+      "expected": "meaning_correct_spelling_needs_correction",
+      "note": "Authored accent-only equivalent gets message credit, no encoding credit."
+    },
+    {
+      "id": "K5",
+      "item_id": "C4-S1-CHECK-P",
+      "response": "On parle francais a la maison.",
+      "expected": "meaning_correct_spelling_needs_correction"
+    },
+    {
+      "id": "K6",
+      "item_id": "C1-ENC-PRACTICE",
+      "response": "boite",
+      "expected": "encoding_needs_practice"
+    },
+    {
+      "id": "K7",
+      "item_id": "C2-ENC-PRACTICE",
+      "response": "l'indice",
+      "expected": "correct"
+    },
+    {
+      "id": "K8",
+      "item_id": "C1-ENC-CHECK",
+      "response": "o2",
+      "expected": "incorrect"
+    }
+  ],
+  "scheduler_cases": [
+    {
+      "id": "D1",
+      "taught": "2026-10-01T20:00:00Z",
+      "session": "2026-10-03T19:59:59Z",
+      "expected_due": false
+    },
+    {
+      "id": "D2",
+      "taught": "2026-10-01T20:00:00Z",
+      "session": "2026-10-03T20:00:00Z",
+      "expected_due": true
+    },
+    {
+      "id": "D3",
+      "taught": "2026-10-01T20:00:00Z",
+      "session": "2026-10-08T20:00:00Z",
+      "expected_due": true
+    },
+    {
+      "id": "D4",
+      "taught": "2026-10-01T20:00:00Z",
+      "session": "2026-10-15T20:00:00Z",
+      "expected_due": true
+    }
+  ],
+  "integration_cases": [
+    {
+      "id": "I1",
+      "action": "resume an unfinished exit check on a second device",
+      "expected": "submitted answer IDs and story collectible persist; unsubmitted response resumes without scoring twice"
+    },
+    {
+      "id": "I2",
+      "action": "three wrong story choices",
+      "expected": "teach/retry path and checkpoint, never knockout"
+    },
+    {
+      "id": "I3",
+      "action": "tap listening play, no audio_start",
+      "expected": "zero consumed plays, technical flag, no scored incorrect"
+    },
+    {
+      "id": "I4",
+      "action": "microphone denied in pronunciation",
+      "expected": "non-microphone path reaches same checkpoint; no spoken evidence"
+    },
+    {
+      "id": "I5",
+      "action": "translation shown before independent answer",
+      "expected": "support level 3, cannot count as independent"
+    },
+    {
+      "id": "I6",
+      "action": "parent extends past twenty minutes",
+      "expected": "existing bookmark retained; continuation does not duplicate evidence"
+    },
+    {
+      "id": "I7",
+      "action": "review reserve already shown as retry under another ID",
+      "expected": "not eligible for fresh retention/transfer"
+    },
+    {
+      "id": "I8",
+      "action": "missing pronunciation recording key",
+      "expected": "absent, not a truthy database request"
+    },
+    {
+      "id": "I9",
+      "action": "all 3 required independent pattern items correct, but open writing unreviewed",
+      "expected": "narrow pattern Ready to check; open writing awaiting_review; no broad Writing band"
+    },
+    {
+      "id": "I10",
+      "action": "C4 complete but delayed review not yet due",
+      "expected": "adventure complete; C4 not Remembered yet"
+    },
+    {
+      "id": "I11",
+      "action": "first sound tap after screen lock",
+      "expected": "same shared audio owner; no dropped word; only count once audio starts"
+    },
+    {
+      "id": "I12",
+      "action": "unknown free wording and no home reviewer",
+      "expected": "awaiting_review observation, worked example and bounded practice offered, Continue remains enabled"
+    },
+    {
+      "id": "I13",
+      "action": "supported frame succeeds and independent check fails",
+      "expected": "guided evidence remains supported; no independent mastery; teaching response then a different eligible delayed check"
+    },
+    {
+      "id": "I14",
+      "action": "accent-tolerant sentence matches with keyboard support unknown",
+      "expected": "meaning credit only; no typed-encoding mastery; exact grapheme recognition evidence remains separately labelled"
+    },
+    {
+      "id": "I15",
+      "action": "more-supported English gloss rendered before check submission",
+      "expected": "response support level 3, never independent; less-supported variant may not reset that response flag"
+    }
+  ],
+  "baseline_cases": [
+    {
+      "id": "BASE-A",
+      "source": "Jenn Form A parent report, 2026-09-29, as transcribed in brief",
+      "baseline": {
+        "listening": "Developing secure",
+        "reading": "Foundation secure",
+        "vocabulary_grammar": "below measurable",
+        "writing": "awaiting_review",
+        "speaking": "awaiting_review"
+      },
+      "expected": {
+        "story_start": "C1-S1",
+        "listening_support": "less",
+        "reading_support": "more",
+        "grammar_support": "more",
+        "production_route": [
+          "recognize",
+          "assemble",
+          "complete"
+        ],
+        "inferred_productive_band": null,
+        "mastery_from_baseline": false
+      }
+    },
+    {
+      "id": "BASE-B",
+      "source": "Jess Form B parent report, 2026-09-10, as transcribed in brief",
+      "baseline": {
+        "listening": "Foundation secure",
+        "reading": "Foundation secure",
+        "vocabulary_grammar": "below measurable",
+        "writing": "awaiting_review",
+        "speaking": "awaiting_review"
+      },
+      "expected": {
+        "story_start": "C1-S1",
+        "listening_support": "more",
+        "reading_support": "more",
+        "grammar_support": "more",
+        "production_route": [
+          "recognize",
+          "assemble",
+          "complete"
+        ],
+        "inferred_productive_band": null,
+        "mastery_from_baseline": false
+      }
+    },
+    {
+      "id": "BASE-B-LATER",
+      "source": "Jess Form A, 2026-09-29: possible exposure/conditions concern",
+      "baseline_ref": "BASE-B",
+      "later": {
+        "listening": "Developing secure",
+        "reading": "Stretch emerging"
+      },
+      "expected": {
+        "use_later_as_starting_baseline": false,
+        "definite_upper_bound": false,
+        "assessment_equivalent_from_learning": false
+      }
+    }
+  ]
+}

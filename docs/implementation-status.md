@@ -8,7 +8,7 @@ States: `not_started` · `in_progress` · `ready_for_review` · `accepted` · `b
 
 | Field | Value |
 |---|---|
-| Master plan | [French Adventure Improvement Plan](French_Adventure_Improvement_Plan.md), revision 3 (2026-09-09) |
+| Master plan | [French Adventure Improvement Plan](French_Adventure_Improvement_Plan.md), revision 5 (2026-09-20; delivery clarification 2026-09-29). Imported verbatim 2026-09-29; revision 3 (2026-09-09) before that |
 | Baseline commit | `f065ca8` |
 | M1 implementation | [PR #17](https://github.com/lxyzh1019-cyber/French-Adventure/pull/17), merged as `f290a3e` |
 | M1 audit | third-party audit of `f290a3e`, 2026-09-08 |
@@ -21,7 +21,7 @@ States: `not_started` · `in_progress` · `ready_for_review` · `accepted` · `b
 |---|---|---|
 | M1 — Repair foundation | `ready_for_review` | Both audit blockers repaired with regressions; full Match resume matrix; parent iPad smoke checklist and recovery-file confirmation still required for `accepted`. |
 | M2 — Independent assessment | `in_progress` | Steps 0–5 complete: cleanup, data model, shell, objective sections, writing/speaking capture, and Step 5 — domain scoring, reports, parent review and the Device & Feature Check, wired behind the parent password (`src/app.js` ~1591–1614). Reassessment comparison is implemented and unit-tested (`compareRuns`) but not yet shown on the parent screen. The assessment is learner-facing: Jess sat Form B in full on 2026-09-10, and on 2026-09-29 Jenn and Jess each sat Form A. Step 6 is **partial and parent-blocked** — see "M2 Step 6 — technical suite and handoff". Per master plan revision 3, M1 cleanup is folded into M2 rather than forming a separate milestone; parent approved building in parallel with the outstanding iPad checklist. |
-| M3 — Learning pilot | `not_started` | Release B not yet authored. |
+| M3 — Learning pilot | `blocked` | Release B `pilot-v1.1.0` received, imported and validated on 2026-09-29 (see "2026-09-29 — Release B received"), not accepted. M3 waits on M2 acceptance (master plan §5.1) and on the parent's approval of Release B. Engine design is a later plan. |
 | M4 — iPad validation | `not_started` | |
 | M5 — Evaluate and release pilot | `not_started` | |
 
@@ -30,7 +30,7 @@ States: `not_started` · `in_progress` · `ready_for_review` · `accepted` · `b
 | Package | Version | Location | State |
 |---|---|---|---|
 | Release A — assessment content | `assessment-v1.0.2` | `content/releases/assessment-v1/` | Imported as `assessment-v1.0.0`; amended to v1.0.1 and v1.0.2 (see below). `npm run check:release-a` passes: hashes, 90 items, both forms complete, every skill/outcome/rubric/fixture reference resolves, listening audio-only. The assessment is learner-facing — Jess sat Form B in full on 2026-09-10; Jenn and Jess each sat Form A on 2026-09-29 — and parent approval of the learner-facing experience is still pending. |
-| Release B — pilot learning content | — | — | Not delivered. |
+| Release B — pilot learning content | `pilot-v1.1.0` | `content/releases/pilot-v1/` | Imported unmodified 2026-09-29 (all 18 files, including `assets/`, the author's `validate-release-b.mjs` and `validation_report.json`); validated, **not accepted**. `node scripts/check-content.mjs content/releases/pilot-v1` passes; all 16 manifest hashes match; `tests/content-validator.test.js` now runs against it. Findings and the field mapping are under "2026-09-29 — Release B received". Supersedes `pilot-v1.0.0`, which was not imported. |
 
 ## M1 repair round — what the audit asked for
 
@@ -1276,6 +1276,132 @@ screen lock; that 1.5 s is long enough for the first line after a cold start
 (a slower start shows the pulse and then plays — noisy, not silent); and that
 a pre-read clip plays on the first tap in Chrome for iOS. Checklist §4.5 now
 asks for all of it. The open item stays open until that is recorded.
+
+## 2026-09-29 — Release B received
+
+The content owner delivered master plan **Revision 5** (dated 2026-09-20, with
+a delivery clarification of 2026-09-29) and Release B **`pilot-v1.1.0`**. Both
+were validated read-only before anything was written in (Plan v2, approved
+2026-09-29). The plan file was replaced verbatim; the package was copied
+unmodified to `content/releases/pilot-v1/`. Nothing in the package was
+corrected or filled in. Docs, content and one test file only; no source code.
+
+**Validated, 2026-09-29** (repository checks run on the import, on Windows and
+on an LF copy):
+
+- All 16 SHA-256 hashes in `manifest.json` match; the 18 files are
+  byte-identical to the delivered zip. Counts match: 4 chapters, 144 learning
+  items, 37 review items, 21 skills, 12 pronunciation tasks, 6 history cards.
+- No duplicate ids. Every skill, item, chapter, pronunciation, history-card,
+  claim and fixture reference resolves.
+- `node scripts/check-content.mjs content/releases/pilot-v1` passes.
+  `tests/content-validator.test.js` runs the real package and the new
+  link-only-skill case; `npm test` passes on an LF copy.
+- Each of the 8 chapter skills has teaching, guided, independent, delayed and
+  transfer items (plan §5.5). Every item has `more`/`less`/`independent`
+  support variants (brief §4) and a `release_id`.
+- Typed items state accent handling: accents preserved; an authored
+  accent-tolerant key gives `meaning_correct_spelling_needs_correction`, never
+  encoding credit; encoding items are exact (brief §5.2).
+- Audio scripts carry no digits and no stage directions. All pronunciation
+  tasks are fr-CA, Amélie, rate 0.80, with a non-microphone fallback; audio
+  is kept on the device and leaves it only with parent opt-in (brief §5.1,
+  §5.3; plan §3.6).
+- 12 sessions of 20 minutes, each stepped 3/4/4/5/3/1 (plan §3.7). The story
+  advances on attempt plus feedback, not on score.
+- Chapter chunks 6/6/6/6 with one sentence frame each (plan §4.3). Story
+  Fiction / Real History labels present; history claims cite sources checked
+  2026-09-29.
+- `W_ENCODING` and the canonical links reuse Release A skill ids only (brief
+  §5.6). The content names neither child; the baseline fixtures are the
+  anonymous BASE-A and BASE-B.
+- The brief's "never on consecutive days" was read by the author as the plan
+  means it: the app must never *require* consecutive days.
+
+**Findings.** None blocks the import. Each is either recorded here or handed to
+the content owner in `docs/release-b-amendments.md`; nothing was changed in
+the package.
+
+1. *§4.6 template fields are not present by name.* The content is there under
+   the package's own names; the table below is the mapping the M3 engine reads
+   from, so nobody later reports these fields as missing. Sent to the author
+   for a future revision (add the names, or update §4.6).
+2. *One history source seen as an excerpt only.* The OIF "who speaks French"
+   source behind card HC4B was inspected through a search excerpt; the card's
+   claim is also carried by the fully inspected Alberta source. Accepted for
+   the pilot; on the amendment list for re-inspection; in `known-risks.md`.
+3. *Skill mapping oddity.* `C3.PAST_SENTENCE` (passé composé) and
+   `C4.EXPLAIN_SENTENCE` carry the canonical link `VG_PRESENT_CORE`. Reported
+   to the author. Until answered, the M3 report shows canonical links as a
+   curriculum relationship, never as evidence toward a Release A band — which
+   the package's own `comparison_policy` already requires.
+4. *Twelve link-only skills.* See "M3 constraints" below.
+5. *Extras beyond §5.5.* `assets/C1–C4.svg`, `assets.json`,
+   `curriculum_map.json`, `preview.html`, `validate-release-b.mjs`,
+   `validation_report.json`. All imported unmodified, as with Release A.
+   `validate-release-b.mjs` is the author's reference check, not a repository
+   script: it is not wired into `package.json` or CI, and
+   `validation_report.json` is the author's evidence only. The repository's
+   `check-content.mjs` remains the gate. The four boards go to the parent as a
+   readability check (`ipad-test-checklist.md`), since the author states their
+   readiness is structural only.
+6. *Revision 5 contradicts itself on recordings.* §3.6 says raw child audio is
+   stored only after an explicit record action and kept on the device; the
+   Phase 5 acceptance line says "No raw child audio is retained by default".
+   **§3.6 is the rule the app and the package follow.** The Phase 5 line is
+   treated as superseded wording pending Revision 6; the replacement sentence
+   is on the amendment list.
+7. *Author-declared limits.* No educator or community review; no human voice
+   recording; Alberta source access limited; finite review bank (37 items).
+   Cannot be fixed by import. Carried into `known-risks.md` with an owner
+   each; the model-voice decision (parent records the model lines, or the
+   device voice stays) is deferred until the Chapter 1 slice is heard on the
+   device.
+
+**§4.6 field mapping** (template field → where it lives in `pilot-v1.1.0`):
+
+| Template field (plan §4.6) | In the package |
+|---|---|
+| `scene_lines`, `audio_script`, `readable_french` | `chapters[].scenes[].lines_fr`, `.audio_script`; `lines_fr` shown after the audio (`audio_before_text`) |
+| `real_history_card`, `real_history_sources` | `chapters[].real_history_card_ids` → `history_cards[]` → `history_sources.json` claims and sources |
+| `fictional_elements` | `history_sources.json.fictional_elements` and `story.labels` |
+| `support_languages`, `support_variants` | `chapters[].support_variants`; per item `support_variants.more/less/independent` (en + zh) |
+| `listening_focus`, `reading_strategy`, `writing_task`, `speaking_task` | per session `steps[]` (`scene`, `teach_and_guide`, `story_action`, `pronunciation`, `exit_and_bookmark`) and `chapters[].language_progression` |
+| `pronunciation_focus` | `chapters[].pronunciation_task_ids` → `pronunciation_tasks.json` (`feature_id`, `qa_focus`) |
+| (encoding, brief §5.2) | `chapters[].encoding_focus` |
+| `independent_exit_check` | items with `phase: independent_exit` (`*-CHECK-R`, `*-CHECK-P`) |
+| `delayed_check_in_later_chapter` | `chapters[].review_item_ids` → `review_items.json` (`phase: delayed \| transfer \| delayed_reserve`, `due`) |
+| `common_errors_and_feedback` | `skills[].common_errors`; per item `feedback` and `explanation_en` |
+| `review_skills`, `prerequisite_skills` | `chapters[].prerequisite_skills`, `skills[].prerequisites` |
+| `estimated_sessions` | `chapters[].estimated_sessions` (3 per chapter) |
+
+Fields present by name and not listed (`chapter_id`, `title`, `story_summary`,
+`historical_scope`, `curriculum_outcomes`, `target_skills`,
+`new_words_or_chunks`, `sentence_pattern`, `session_bookmarks`) need no
+mapping.
+
+**M3 constraints recorded now.**
+
+- The 12 skills with no `teaching_item_ids` (`L_KEYWORDS`, `L_DIRECTIONS`,
+  `L_DETAILS`, `R_WORDS`, `R_SENTENCE`, `R_DETAILS`, `VG_ARTICLES`,
+  `VG_LOCATION`, `VG_PRESENT_CORE`, `VG_CONNECTED`, `W_SENTENCE`, `W_REASON`;
+  `evidence_role: curriculum_link_only`, `mastery_enabled: false`) exist only
+  to link the pilot to Release A's curriculum ids. The engine must never
+  schedule, review or credit them. `tests/content-validator.test.js` fails
+  if a package version names one in a fixture history, expected scheduling or
+  a review item's `skillIds`.
+- Recordings follow plan §3.6 (finding 6).
+- Canonical links are a curriculum relationship, not band evidence
+  (finding 3).
+- When the 37-item review bank is used up the engine reports
+  `fresh_bank_exhausted` rather than recycling items; the parent then asks the
+  content owner for a versioned amendment.
+
+**State.** Release B: imported, validated, not accepted. M3: `blocked` on M2
+acceptance and on the parent's approval of Release B. The amendment list
+(`docs/release-b-amendments.md`) requests a versioned package
+(`pilot-v1.1.1` or later) and a plan Revision 6; nothing in the repository
+changes until they arrive.
 
 ## Parent acceptance
 

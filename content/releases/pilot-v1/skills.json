@@ -1,0 +1,1173 @@
+{
+  "release_id": "pilot-v1.1.0",
+  "mastery_rules": {
+    "independent_checkpoint_min_items": 3,
+    "independent_checkpoint_cut": 0.8,
+    "minimum_distinct_contexts": 2,
+    "delayed_min_hours": 48,
+    "delayed_min_items": 2,
+    "delayed_cut": 1,
+    "transfer_min_items": 1,
+    "transfer_cut": 1,
+    "excellence_cut": 0.95,
+    "settings": "Pilot parameters, not scientific universal thresholds. Count evidence by exact skill and response demand; do not average receptive and productive evidence."
+  },
+  "skills": [
+    {
+      "id": "C1.LOCATE",
+      "chapter_id": "C1",
+      "description": "Identify and locate evidence — comprehension",
+      "prerequisites": [],
+      "prerequisites_are_hard_gates": false,
+      "receptive_forms": [
+        "short_audio",
+        "short_connected_text"
+      ],
+      "productive_forms": [
+        "choose or act on meaning"
+      ],
+      "scoring_scope": "Comprehension of this communicative function across short messages; no domain proficiency band. Report listening and reading evidence counts separately.",
+      "acceptable_answers": "Each linked item defines its own accepted variants; never assume an unlisted open response is wrong.",
+      "common_errors": [
+        "sur/sous confusion",
+        "inside/under confusion",
+        "article omitted"
+      ],
+      "teaching_item_ids": [
+        "C1-S1-TEACH",
+        "C1-S2-TEACH",
+        "C1-S3-TEACH"
+      ],
+      "guided_item_ids": [
+        "C1-S1-GUIDED",
+        "C1-S2-GUIDED",
+        "C1-S3-GUIDED"
+      ],
+      "independent_item_ids": [
+        "C1-S1-CHECK-R",
+        "C1-S2-CHECK-R",
+        "C1-S3-CHECK-R"
+      ],
+      "delayed_item_ids": [
+        "C1-R1",
+        "C1-R2"
+      ],
+      "transfer_item_ids": [
+        "C1-TR"
+      ],
+      "outcome_ids": [
+        "ABFSL-GEN-COM",
+        "ABFSL-GEN-LANG",
+        "ABFSL-GEN-STRAT"
+      ],
+      "story_use": "Identify and locate evidence",
+      "mastery_rule_ref": {
+        "independent_checkpoint_min_items": 3,
+        "independent_checkpoint_cut": 0.8,
+        "minimum_distinct_contexts": 2,
+        "delayed_min_hours": 48,
+        "delayed_min_items": 2,
+        "delayed_cut": 1,
+        "transfer_min_items": 1,
+        "transfer_cut": 1,
+        "excellence_cut": 0.95,
+        "settings": "Pilot parameters, not scientific universal thresholds. Count evidence by exact skill and response demand; do not average receptive and productive evidence."
+      },
+      "confidence": "Provisional baseline adaptation; do not infer unreviewed productive ability from multiple-choice success",
+      "initial_state": "New",
+      "review_intervals_days": [
+        7,
+        14,
+        28
+      ],
+      "support_variants": {
+        "more": {
+          "starting_support": 3,
+          "gloss_default": true,
+          "route": "recognize → assemble → complete",
+          "maximum_audio_starts": 4,
+          "rate": 0.8
+        },
+        "less": {
+          "starting_support": 1,
+          "gloss_default": false,
+          "route": "brief recognition → frame completion",
+          "maximum_audio_starts": 3,
+          "rate": 0.8
+        },
+        "independent": {
+          "starting_support": 0,
+          "gloss_default": false,
+          "maximum_audio_starts": 2,
+          "rate": 0.8
+        }
+      },
+      "legacy_content": "newly authored; nouns with articles are deliberately contextualized",
+      "canonical_skill_ids": [
+        "L_DETAILS",
+        "R_DETAILS"
+      ]
+    },
+    {
+      "id": "C1.LOCATION_SENTENCE",
+      "chapter_id": "C1",
+      "description": "Identify and locate evidence — bounded production",
+      "prerequisites": [],
+      "prerequisites_are_hard_gates": false,
+      "receptive_forms": [
+        "interpret teacher model before practice"
+      ],
+      "productive_forms": [
+        "typed_bounded",
+        "open_written",
+        "spoken_observation"
+      ],
+      "scoring_scope": "Exact bounded target pattern only. Open writing requires review; spoken output is observation until reviewed.",
+      "acceptable_answers": "Each linked item defines its own accepted variants; never assume an unlisted open response is wrong.",
+      "common_errors": [
+        "sur/sous confusion",
+        "inside/under confusion",
+        "article omitted"
+      ],
+      "teaching_item_ids": [
+        "C1-S1-TEACH",
+        "C1-S2-TEACH",
+        "C1-S3-TEACH"
+      ],
+      "guided_item_ids": [
+        "C1-S1-GUIDED-P",
+        "C1-S2-GUIDED-P",
+        "C1-S3-GUIDED-P",
+        "C1-S1-RECOGNIZE",
+        "C1-S1-ASSEMBLE",
+        "C1-S2-RECOGNIZE",
+        "C1-S2-ASSEMBLE",
+        "C1-S3-RECOGNIZE",
+        "C1-S3-ASSEMBLE"
+      ],
+      "independent_item_ids": [
+        "C1-S1-CHECK-P",
+        "C1-S2-CHECK-P",
+        "C1-S3-CHECK-P"
+      ],
+      "delayed_item_ids": [
+        "C1-P1",
+        "C1-P2"
+      ],
+      "transfer_item_ids": [
+        "C1-TP"
+      ],
+      "outcome_ids": [
+        "ABFSL-GEN-COM",
+        "ABFSL-GEN-LANG",
+        "ABFSL-GEN-STRAT"
+      ],
+      "story_use": "Identify and locate evidence",
+      "mastery_rule_ref": {
+        "independent_checkpoint_min_items": 3,
+        "independent_checkpoint_cut": 0.8,
+        "minimum_distinct_contexts": 2,
+        "delayed_min_hours": 48,
+        "delayed_min_items": 2,
+        "delayed_cut": 1,
+        "transfer_min_items": 1,
+        "transfer_cut": 1,
+        "excellence_cut": 0.95,
+        "settings": "Pilot parameters, not scientific universal thresholds. Count evidence by exact skill and response demand; do not average receptive and productive evidence."
+      },
+      "confidence": "Provisional baseline adaptation; do not infer unreviewed productive ability from multiple-choice success",
+      "initial_state": "New",
+      "review_intervals_days": [
+        7,
+        14,
+        28
+      ],
+      "support_variants": {
+        "more": {
+          "starting_support": 3,
+          "gloss_default": true,
+          "route": "recognize → assemble → complete",
+          "maximum_audio_starts": 4,
+          "rate": 0.8
+        },
+        "less": {
+          "starting_support": 1,
+          "gloss_default": false,
+          "route": "brief recognition → frame completion",
+          "maximum_audio_starts": 3,
+          "rate": 0.8
+        },
+        "independent": {
+          "starting_support": 0,
+          "gloss_default": false,
+          "maximum_audio_starts": 2,
+          "rate": 0.8
+        }
+      },
+      "legacy_content": "newly authored; nouns with articles are deliberately contextualized",
+      "canonical_skill_ids": [
+        "W_SENTENCE",
+        "VG_LOCATION"
+      ]
+    },
+    {
+      "id": "C2.COMPARE",
+      "chapter_id": "C2",
+      "description": "Compare accounts and justify one conclusion — comprehension",
+      "prerequisites": [
+        "C1.LOCATE"
+      ],
+      "prerequisites_are_hard_gates": false,
+      "receptive_forms": [
+        "short_audio",
+        "short_connected_text"
+      ],
+      "productive_forms": [
+        "choose or act on meaning"
+      ],
+      "scoring_scope": "Comprehension of this communicative function across short messages; no domain proficiency band. Report listening and reading evidence counts separately.",
+      "acceptable_answers": "Each linked item defines its own accepted variants; never assume an unlisted open response is wrong.",
+      "common_errors": [
+        "one message mistaken for both",
+        "different mistaken for contradictory",
+        "opinion without evidence"
+      ],
+      "teaching_item_ids": [
+        "C2-S1-TEACH",
+        "C2-S2-TEACH",
+        "C2-S3-TEACH"
+      ],
+      "guided_item_ids": [
+        "C2-S1-GUIDED",
+        "C2-S2-GUIDED",
+        "C2-S3-GUIDED"
+      ],
+      "independent_item_ids": [
+        "C2-S1-CHECK-R",
+        "C2-S2-CHECK-R",
+        "C2-S3-CHECK-R"
+      ],
+      "delayed_item_ids": [
+        "C2-R1",
+        "C2-R2"
+      ],
+      "transfer_item_ids": [
+        "C2-TR"
+      ],
+      "outcome_ids": [
+        "ABFSL-GEN-COM",
+        "ABFSL-GEN-LANG",
+        "ABFSL-GEN-STRAT"
+      ],
+      "story_use": "Compare accounts and justify one conclusion",
+      "mastery_rule_ref": {
+        "independent_checkpoint_min_items": 3,
+        "independent_checkpoint_cut": 0.8,
+        "minimum_distinct_contexts": 2,
+        "delayed_min_hours": 48,
+        "delayed_min_items": 2,
+        "delayed_cut": 1,
+        "transfer_min_items": 1,
+        "transfer_cut": 1,
+        "excellence_cut": 0.95,
+        "settings": "Pilot parameters, not scientific universal thresholds. Count evidence by exact skill and response demand; do not average receptive and productive evidence."
+      },
+      "confidence": "Provisional baseline adaptation; do not infer unreviewed productive ability from multiple-choice success",
+      "initial_state": "New",
+      "review_intervals_days": [
+        7,
+        14,
+        28
+      ],
+      "support_variants": {
+        "more": {
+          "starting_support": 3,
+          "gloss_default": true,
+          "route": "recognize → assemble → complete",
+          "maximum_audio_starts": 4,
+          "rate": 0.8
+        },
+        "less": {
+          "starting_support": 1,
+          "gloss_default": false,
+          "route": "brief recognition → frame completion",
+          "maximum_audio_starts": 3,
+          "rate": 0.8
+        },
+        "independent": {
+          "starting_support": 0,
+          "gloss_default": false,
+          "maximum_audio_starts": 2,
+          "rate": 0.8
+        }
+      },
+      "legacy_content": "newly authored; nouns with articles are deliberately contextualized",
+      "canonical_skill_ids": [
+        "L_DETAILS",
+        "R_DETAILS"
+      ]
+    },
+    {
+      "id": "C2.EVIDENCE_SENTENCE",
+      "chapter_id": "C2",
+      "description": "Compare accounts and justify one conclusion — bounded production",
+      "prerequisites": [
+        "C1.LOCATE"
+      ],
+      "prerequisites_are_hard_gates": false,
+      "receptive_forms": [
+        "interpret teacher model before practice"
+      ],
+      "productive_forms": [
+        "typed_bounded",
+        "open_written",
+        "spoken_observation"
+      ],
+      "scoring_scope": "Exact bounded target pattern only. Open writing requires review; spoken output is observation until reviewed.",
+      "acceptable_answers": "Each linked item defines its own accepted variants; never assume an unlisted open response is wrong.",
+      "common_errors": [
+        "one message mistaken for both",
+        "different mistaken for contradictory",
+        "opinion without evidence"
+      ],
+      "teaching_item_ids": [
+        "C2-S1-TEACH",
+        "C2-S2-TEACH",
+        "C2-S3-TEACH"
+      ],
+      "guided_item_ids": [
+        "C2-S1-GUIDED-P",
+        "C2-S2-GUIDED-P",
+        "C2-S3-GUIDED-P",
+        "C2-S1-RECOGNIZE",
+        "C2-S1-ASSEMBLE",
+        "C2-S2-RECOGNIZE",
+        "C2-S2-ASSEMBLE",
+        "C2-S3-RECOGNIZE",
+        "C2-S3-ASSEMBLE"
+      ],
+      "independent_item_ids": [
+        "C2-S1-CHECK-P",
+        "C2-S2-CHECK-P",
+        "C2-S3-CHECK-P"
+      ],
+      "delayed_item_ids": [
+        "C2-P1",
+        "C2-P2"
+      ],
+      "transfer_item_ids": [
+        "C2-TP"
+      ],
+      "outcome_ids": [
+        "ABFSL-GEN-COM",
+        "ABFSL-GEN-LANG",
+        "ABFSL-GEN-STRAT"
+      ],
+      "story_use": "Compare accounts and justify one conclusion",
+      "mastery_rule_ref": {
+        "independent_checkpoint_min_items": 3,
+        "independent_checkpoint_cut": 0.8,
+        "minimum_distinct_contexts": 2,
+        "delayed_min_hours": 48,
+        "delayed_min_items": 2,
+        "delayed_cut": 1,
+        "transfer_min_items": 1,
+        "transfer_cut": 1,
+        "excellence_cut": 0.95,
+        "settings": "Pilot parameters, not scientific universal thresholds. Count evidence by exact skill and response demand; do not average receptive and productive evidence."
+      },
+      "confidence": "Provisional baseline adaptation; do not infer unreviewed productive ability from multiple-choice success",
+      "initial_state": "New",
+      "review_intervals_days": [
+        7,
+        14,
+        28
+      ],
+      "support_variants": {
+        "more": {
+          "starting_support": 3,
+          "gloss_default": true,
+          "route": "recognize → assemble → complete",
+          "maximum_audio_starts": 4,
+          "rate": 0.8
+        },
+        "less": {
+          "starting_support": 1,
+          "gloss_default": false,
+          "route": "brief recognition → frame completion",
+          "maximum_audio_starts": 3,
+          "rate": 0.8
+        },
+        "independent": {
+          "starting_support": 0,
+          "gloss_default": false,
+          "maximum_audio_starts": 2,
+          "rate": 0.8
+        }
+      },
+      "legacy_content": "newly authored; nouns with articles are deliberately contextualized",
+      "canonical_skill_ids": [
+        "W_SENTENCE",
+        "VG_CONNECTED"
+      ]
+    },
+    {
+      "id": "C3.SEQUENCE",
+      "chapter_id": "C3",
+      "description": "Sequence a short account and state one past event — comprehension",
+      "prerequisites": [
+        "C2.COMPARE"
+      ],
+      "prerequisites_are_hard_gates": false,
+      "receptive_forms": [
+        "short_audio",
+        "short_connected_text"
+      ],
+      "productive_forms": [
+        "choose or act on meaning"
+      ],
+      "scoring_scope": "Comprehension of this communicative function across short messages; no domain proficiency band. Report listening and reading evidence counts separately.",
+      "acceptable_answers": "Each linked item defines its own accepted variants; never assume an unlisted open response is wrong.",
+      "common_errors": [
+        "before/after reversed",
+        "order words ignored",
+        "a omitted from a trouvé"
+      ],
+      "teaching_item_ids": [
+        "C3-S1-TEACH",
+        "C3-S2-TEACH",
+        "C3-S3-TEACH"
+      ],
+      "guided_item_ids": [
+        "C3-S1-GUIDED",
+        "C3-S2-GUIDED",
+        "C3-S3-GUIDED"
+      ],
+      "independent_item_ids": [
+        "C3-S1-CHECK-R",
+        "C3-S2-CHECK-R",
+        "C3-S3-CHECK-R"
+      ],
+      "delayed_item_ids": [
+        "C3-R1",
+        "C3-R2"
+      ],
+      "transfer_item_ids": [
+        "C3-TR"
+      ],
+      "outcome_ids": [
+        "ABFSL-GEN-COM",
+        "ABFSL-GEN-LANG",
+        "ABFSL-GEN-STRAT"
+      ],
+      "story_use": "Sequence a short account and state one past event",
+      "mastery_rule_ref": {
+        "independent_checkpoint_min_items": 3,
+        "independent_checkpoint_cut": 0.8,
+        "minimum_distinct_contexts": 2,
+        "delayed_min_hours": 48,
+        "delayed_min_items": 2,
+        "delayed_cut": 1,
+        "transfer_min_items": 1,
+        "transfer_cut": 1,
+        "excellence_cut": 0.95,
+        "settings": "Pilot parameters, not scientific universal thresholds. Count evidence by exact skill and response demand; do not average receptive and productive evidence."
+      },
+      "confidence": "Provisional baseline adaptation; do not infer unreviewed productive ability from multiple-choice success",
+      "initial_state": "New",
+      "review_intervals_days": [
+        7,
+        14,
+        28
+      ],
+      "support_variants": {
+        "more": {
+          "starting_support": 3,
+          "gloss_default": true,
+          "route": "recognize → assemble → complete",
+          "maximum_audio_starts": 4,
+          "rate": 0.8
+        },
+        "less": {
+          "starting_support": 1,
+          "gloss_default": false,
+          "route": "brief recognition → frame completion",
+          "maximum_audio_starts": 3,
+          "rate": 0.8
+        },
+        "independent": {
+          "starting_support": 0,
+          "gloss_default": false,
+          "maximum_audio_starts": 2,
+          "rate": 0.8
+        }
+      },
+      "legacy_content": "newly authored; nouns with articles are deliberately contextualized",
+      "canonical_skill_ids": [
+        "L_DETAILS",
+        "R_DETAILS"
+      ]
+    },
+    {
+      "id": "C3.PAST_SENTENCE",
+      "chapter_id": "C3",
+      "description": "Sequence a short account and state one past event — bounded production",
+      "prerequisites": [
+        "C2.COMPARE"
+      ],
+      "prerequisites_are_hard_gates": false,
+      "receptive_forms": [
+        "interpret teacher model before practice"
+      ],
+      "productive_forms": [
+        "typed_bounded",
+        "open_written",
+        "spoken_observation"
+      ],
+      "scoring_scope": "Exact bounded target pattern only. Open writing requires review; spoken output is observation until reviewed.",
+      "acceptable_answers": "Each linked item defines its own accepted variants; never assume an unlisted open response is wrong.",
+      "common_errors": [
+        "before/after reversed",
+        "order words ignored",
+        "a omitted from a trouvé"
+      ],
+      "teaching_item_ids": [
+        "C3-S1-TEACH",
+        "C3-S2-TEACH",
+        "C3-S3-TEACH"
+      ],
+      "guided_item_ids": [
+        "C3-S1-GUIDED-P",
+        "C3-S2-GUIDED-P",
+        "C3-S3-GUIDED-P",
+        "C3-S1-RECOGNIZE",
+        "C3-S1-ASSEMBLE",
+        "C3-S2-RECOGNIZE",
+        "C3-S2-ASSEMBLE",
+        "C3-S3-RECOGNIZE",
+        "C3-S3-ASSEMBLE"
+      ],
+      "independent_item_ids": [
+        "C3-S1-CHECK-P",
+        "C3-S2-CHECK-P",
+        "C3-S3-CHECK-P"
+      ],
+      "delayed_item_ids": [
+        "C3-P1",
+        "C3-P2"
+      ],
+      "transfer_item_ids": [
+        "C3-TP"
+      ],
+      "outcome_ids": [
+        "ABFSL-GEN-COM",
+        "ABFSL-GEN-LANG",
+        "ABFSL-GEN-STRAT"
+      ],
+      "story_use": "Sequence a short account and state one past event",
+      "mastery_rule_ref": {
+        "independent_checkpoint_min_items": 3,
+        "independent_checkpoint_cut": 0.8,
+        "minimum_distinct_contexts": 2,
+        "delayed_min_hours": 48,
+        "delayed_min_items": 2,
+        "delayed_cut": 1,
+        "transfer_min_items": 1,
+        "transfer_cut": 1,
+        "excellence_cut": 0.95,
+        "settings": "Pilot parameters, not scientific universal thresholds. Count evidence by exact skill and response demand; do not average receptive and productive evidence."
+      },
+      "confidence": "Provisional baseline adaptation; do not infer unreviewed productive ability from multiple-choice success",
+      "initial_state": "New",
+      "review_intervals_days": [
+        7,
+        14,
+        28
+      ],
+      "support_variants": {
+        "more": {
+          "starting_support": 3,
+          "gloss_default": true,
+          "route": "recognize → assemble → complete",
+          "maximum_audio_starts": 4,
+          "rate": 0.8
+        },
+        "less": {
+          "starting_support": 1,
+          "gloss_default": false,
+          "route": "brief recognition → frame completion",
+          "maximum_audio_starts": 3,
+          "rate": 0.8
+        },
+        "independent": {
+          "starting_support": 0,
+          "gloss_default": false,
+          "maximum_audio_starts": 2,
+          "rate": 0.8
+        }
+      },
+      "legacy_content": "newly authored; nouns with articles are deliberately contextualized",
+      "canonical_skill_ids": [
+        "W_SENTENCE",
+        "VG_PRESENT_CORE"
+      ]
+    },
+    {
+      "id": "C4.CONNECT",
+      "chapter_id": "C4",
+      "description": "Connect present-day voices with a simple reason — comprehension",
+      "prerequisites": [
+        "C3.SEQUENCE"
+      ],
+      "prerequisites_are_hard_gates": false,
+      "receptive_forms": [
+        "short_audio",
+        "short_connected_text"
+      ],
+      "productive_forms": [
+        "choose or act on meaning"
+      ],
+      "scoring_scope": "Comprehension of this communicative function across short messages; no domain proficiency band. Report listening and reading evidence counts separately.",
+      "acceptable_answers": "Each linked item defines its own accepted variants; never assume an unlisted open response is wrong.",
+      "common_errors": [
+        "on + parlent",
+        "encore taken as never",
+        "claim about every person from one message"
+      ],
+      "teaching_item_ids": [
+        "C4-S1-TEACH",
+        "C4-S2-TEACH",
+        "C4-S3-TEACH"
+      ],
+      "guided_item_ids": [
+        "C4-S1-GUIDED",
+        "C4-S2-GUIDED",
+        "C4-S3-GUIDED"
+      ],
+      "independent_item_ids": [
+        "C4-S1-CHECK-R",
+        "C4-S2-CHECK-R",
+        "C4-S3-CHECK-R"
+      ],
+      "delayed_item_ids": [
+        "C4-R1",
+        "C4-R2"
+      ],
+      "transfer_item_ids": [
+        "C4-TR"
+      ],
+      "outcome_ids": [
+        "ABFSL-GEN-COM",
+        "ABFSL-GEN-LANG",
+        "ABFSL-GEN-STRAT"
+      ],
+      "story_use": "Connect present-day voices with a simple reason",
+      "mastery_rule_ref": {
+        "independent_checkpoint_min_items": 3,
+        "independent_checkpoint_cut": 0.8,
+        "minimum_distinct_contexts": 2,
+        "delayed_min_hours": 48,
+        "delayed_min_items": 2,
+        "delayed_cut": 1,
+        "transfer_min_items": 1,
+        "transfer_cut": 1,
+        "excellence_cut": 0.95,
+        "settings": "Pilot parameters, not scientific universal thresholds. Count evidence by exact skill and response demand; do not average receptive and productive evidence."
+      },
+      "confidence": "Provisional baseline adaptation; do not infer unreviewed productive ability from multiple-choice success",
+      "initial_state": "New",
+      "review_intervals_days": [
+        7,
+        14,
+        28
+      ],
+      "support_variants": {
+        "more": {
+          "starting_support": 3,
+          "gloss_default": true,
+          "route": "recognize → assemble → complete",
+          "maximum_audio_starts": 4,
+          "rate": 0.8
+        },
+        "less": {
+          "starting_support": 1,
+          "gloss_default": false,
+          "route": "brief recognition → frame completion",
+          "maximum_audio_starts": 3,
+          "rate": 0.8
+        },
+        "independent": {
+          "starting_support": 0,
+          "gloss_default": false,
+          "maximum_audio_starts": 2,
+          "rate": 0.8
+        }
+      },
+      "legacy_content": "newly authored; nouns with articles are deliberately contextualized",
+      "canonical_skill_ids": [
+        "L_DETAILS",
+        "R_DETAILS"
+      ]
+    },
+    {
+      "id": "C4.EXPLAIN_SENTENCE",
+      "chapter_id": "C4",
+      "description": "Connect present-day voices with a simple reason — bounded production",
+      "prerequisites": [
+        "C3.SEQUENCE"
+      ],
+      "prerequisites_are_hard_gates": false,
+      "receptive_forms": [
+        "interpret teacher model before practice"
+      ],
+      "productive_forms": [
+        "typed_bounded",
+        "open_written",
+        "spoken_observation"
+      ],
+      "scoring_scope": "Exact bounded target pattern only. Open writing requires review; spoken output is observation until reviewed.",
+      "acceptable_answers": "Each linked item defines its own accepted variants; never assume an unlisted open response is wrong.",
+      "common_errors": [
+        "on + parlent",
+        "encore taken as never",
+        "claim about every person from one message"
+      ],
+      "teaching_item_ids": [
+        "C4-S1-TEACH",
+        "C4-S2-TEACH",
+        "C4-S3-TEACH"
+      ],
+      "guided_item_ids": [
+        "C4-S1-GUIDED-P",
+        "C4-S2-GUIDED-P",
+        "C4-S3-GUIDED-P",
+        "C4-S1-RECOGNIZE",
+        "C4-S1-ASSEMBLE",
+        "C4-S2-RECOGNIZE",
+        "C4-S2-ASSEMBLE",
+        "C4-S3-RECOGNIZE",
+        "C4-S3-ASSEMBLE"
+      ],
+      "independent_item_ids": [
+        "C4-S1-CHECK-P",
+        "C4-S2-CHECK-P",
+        "C4-S3-CHECK-P"
+      ],
+      "delayed_item_ids": [
+        "C4-P1",
+        "C4-P2"
+      ],
+      "transfer_item_ids": [
+        "C4-TP"
+      ],
+      "outcome_ids": [
+        "ABFSL-GEN-COM",
+        "ABFSL-GEN-LANG",
+        "ABFSL-GEN-STRAT"
+      ],
+      "story_use": "Connect present-day voices with a simple reason",
+      "mastery_rule_ref": {
+        "independent_checkpoint_min_items": 3,
+        "independent_checkpoint_cut": 0.8,
+        "minimum_distinct_contexts": 2,
+        "delayed_min_hours": 48,
+        "delayed_min_items": 2,
+        "delayed_cut": 1,
+        "transfer_min_items": 1,
+        "transfer_cut": 1,
+        "excellence_cut": 0.95,
+        "settings": "Pilot parameters, not scientific universal thresholds. Count evidence by exact skill and response demand; do not average receptive and productive evidence."
+      },
+      "confidence": "Provisional baseline adaptation; do not infer unreviewed productive ability from multiple-choice success",
+      "initial_state": "New",
+      "review_intervals_days": [
+        7,
+        14,
+        28
+      ],
+      "support_variants": {
+        "more": {
+          "starting_support": 3,
+          "gloss_default": true,
+          "route": "recognize → assemble → complete",
+          "maximum_audio_starts": 4,
+          "rate": 0.8
+        },
+        "less": {
+          "starting_support": 1,
+          "gloss_default": false,
+          "route": "brief recognition → frame completion",
+          "maximum_audio_starts": 3,
+          "rate": 0.8
+        },
+        "independent": {
+          "starting_support": 0,
+          "gloss_default": false,
+          "maximum_audio_starts": 2,
+          "rate": 0.8
+        }
+      },
+      "legacy_content": "newly authored; nouns with articles are deliberately contextualized",
+      "canonical_skill_ids": [
+        "W_SENTENCE",
+        "VG_PRESENT_CORE"
+      ]
+    },
+    {
+      "id": "L_KEYWORDS",
+      "domain": "Listening",
+      "description": "Recognize familiar words and global expressions.",
+      "outcome_ids": [
+        "ABFSL-G4-LISTEN",
+        "ABFSL-G5-LISTEN"
+      ],
+      "status": "assessed_in_release_a",
+      "evidence_role": "curriculum_link_only",
+      "mastery_enabled": false,
+      "mastery_scope": "Link to assessment curriculum only; no inferred mastered status",
+      "initial_state": "New",
+      "prerequisites": [],
+      "prerequisites_are_hard_gates": false,
+      "common_errors": [
+        "missing or wrong taught character"
+      ],
+      "support_variants": {
+        "more": "EN/ZH model plus keyboard instructions; support level 3",
+        "less": "French word with target character blank; support level 1",
+        "independent": "Different masked context without model; support level 0"
+      }
+    },
+    {
+      "id": "L_DIRECTIONS",
+      "domain": "Listening",
+      "description": "Act on a short concrete direction.",
+      "outcome_ids": [
+        "ABFSL-G4-LISTEN",
+        "ABFSL-G6-LISTEN"
+      ],
+      "status": "assessed_in_release_a",
+      "evidence_role": "curriculum_link_only",
+      "mastery_enabled": false,
+      "mastery_scope": "Link to assessment curriculum only; no inferred mastered status",
+      "initial_state": "New",
+      "prerequisites": [],
+      "prerequisites_are_hard_gates": false,
+      "common_errors": [
+        "missing or wrong taught character"
+      ],
+      "support_variants": {
+        "more": "EN/ZH model plus keyboard instructions; support level 3",
+        "less": "French word with target character blank; support level 1",
+        "independent": "Different masked context without model; support level 0"
+      }
+    },
+    {
+      "id": "L_DETAILS",
+      "domain": "Listening",
+      "description": "Locate stated details such as person, place, time, or preference.",
+      "outcome_ids": [
+        "ABFSL-G6-LISTEN",
+        "ABFSL-G7-LISTEN"
+      ],
+      "status": "assessed_in_release_a",
+      "evidence_role": "curriculum_link_only",
+      "mastery_enabled": false,
+      "mastery_scope": "Link to assessment curriculum only; no inferred mastered status",
+      "initial_state": "New",
+      "prerequisites": [],
+      "prerequisites_are_hard_gates": false,
+      "common_errors": [
+        "missing or wrong taught character"
+      ],
+      "support_variants": {
+        "more": "EN/ZH model plus keyboard instructions; support level 3",
+        "less": "French word with target character blank; support level 1",
+        "independent": "Different masked context without model; support level 0"
+      }
+    },
+    {
+      "id": "R_WORDS",
+      "domain": "Reading",
+      "description": "Recognize familiar words and expressions in context.",
+      "outcome_ids": [
+        "ABFSL-G4-READ",
+        "ABFSL-G5-READ"
+      ],
+      "status": "assessed_in_release_a",
+      "evidence_role": "curriculum_link_only",
+      "mastery_enabled": false,
+      "mastery_scope": "Link to assessment curriculum only; no inferred mastered status",
+      "initial_state": "New",
+      "prerequisites": [],
+      "prerequisites_are_hard_gates": false,
+      "common_errors": [
+        "missing or wrong taught character"
+      ],
+      "support_variants": {
+        "more": "EN/ZH model plus keyboard instructions; support level 3",
+        "less": "French word with target character blank; support level 1",
+        "independent": "Different masked context without model; support level 0"
+      }
+    },
+    {
+      "id": "R_SENTENCE",
+      "domain": "Reading",
+      "description": "Understand a simple concrete sentence.",
+      "outcome_ids": [
+        "ABFSL-G5-READ",
+        "ABFSL-G6-READ"
+      ],
+      "status": "assessed_in_release_a",
+      "evidence_role": "curriculum_link_only",
+      "mastery_enabled": false,
+      "mastery_scope": "Link to assessment curriculum only; no inferred mastered status",
+      "initial_state": "New",
+      "prerequisites": [],
+      "prerequisites_are_hard_gates": false,
+      "common_errors": [
+        "missing or wrong taught character"
+      ],
+      "support_variants": {
+        "more": "EN/ZH model plus keyboard instructions; support level 3",
+        "less": "French word with target character blank; support level 1",
+        "independent": "Different masked context without model; support level 0"
+      }
+    },
+    {
+      "id": "R_DETAILS",
+      "domain": "Reading",
+      "description": "Find explicit details in a short connected text.",
+      "outcome_ids": [
+        "ABFSL-G6-READ",
+        "ABFSL-G7-READ"
+      ],
+      "status": "assessed_in_release_a",
+      "evidence_role": "curriculum_link_only",
+      "mastery_enabled": false,
+      "mastery_scope": "Link to assessment curriculum only; no inferred mastered status",
+      "initial_state": "New",
+      "prerequisites": [],
+      "prerequisites_are_hard_gates": false,
+      "common_errors": [
+        "missing or wrong taught character"
+      ],
+      "support_variants": {
+        "more": "EN/ZH model plus keyboard instructions; support level 3",
+        "less": "French word with target character blank; support level 1",
+        "independent": "Different masked context without model; support level 0"
+      }
+    },
+    {
+      "id": "VG_ARTICLES",
+      "domain": "Vocabulary and grammar",
+      "description": "Choose definite or indefinite articles for familiar nouns.",
+      "outcome_ids": [
+        "ABFSL-G4-LANG",
+        "ABFSL-G5-LANG"
+      ],
+      "status": "assessed_in_release_a",
+      "evidence_role": "curriculum_link_only",
+      "mastery_enabled": false,
+      "mastery_scope": "Link to assessment curriculum only; no inferred mastered status",
+      "initial_state": "New",
+      "prerequisites": [],
+      "prerequisites_are_hard_gates": false,
+      "common_errors": [
+        "missing or wrong taught character"
+      ],
+      "support_variants": {
+        "more": "EN/ZH model plus keyboard instructions; support level 3",
+        "less": "French word with target character blank; support level 1",
+        "independent": "Different masked context without model; support level 0"
+      }
+    },
+    {
+      "id": "VG_LOCATION",
+      "domain": "Vocabulary and grammar",
+      "description": "Use familiar prepositions and location expressions.",
+      "outcome_ids": [
+        "ABFSL-G4-LANG",
+        "ABFSL-G7-LANG"
+      ],
+      "status": "assessed_in_release_a",
+      "evidence_role": "curriculum_link_only",
+      "mastery_enabled": false,
+      "mastery_scope": "Link to assessment curriculum only; no inferred mastered status",
+      "initial_state": "New",
+      "prerequisites": [],
+      "prerequisites_are_hard_gates": false,
+      "common_errors": [
+        "missing or wrong taught character"
+      ],
+      "support_variants": {
+        "more": "EN/ZH model plus keyboard instructions; support level 3",
+        "less": "French word with target character blank; support level 1",
+        "independent": "Different masked context without model; support level 0"
+      }
+    },
+    {
+      "id": "VG_PRESENT_CORE",
+      "domain": "Vocabulary and grammar",
+      "description": "Use present forms of être, avoir, aller, faire, aimer, and familiar -er verbs.",
+      "outcome_ids": [
+        "ABFSL-G5-LANG",
+        "ABFSL-G6-LANG"
+      ],
+      "status": "assessed_in_release_a",
+      "evidence_role": "curriculum_link_only",
+      "mastery_enabled": false,
+      "mastery_scope": "Link to assessment curriculum only; no inferred mastered status",
+      "initial_state": "New",
+      "prerequisites": [],
+      "prerequisites_are_hard_gates": false,
+      "common_errors": [
+        "missing or wrong taught character"
+      ],
+      "support_variants": {
+        "more": "EN/ZH model plus keyboard instructions; support level 3",
+        "less": "French word with target character blank; support level 1",
+        "independent": "Different masked context without model; support level 0"
+      }
+    },
+    {
+      "id": "VG_CONNECTED",
+      "domain": "Vocabulary and grammar",
+      "description": "Link ideas with simple connectors and maintain sentence order.",
+      "outcome_ids": [
+        "ABFSL-G7-LANG",
+        "ABFSL-G8-ENRICH"
+      ],
+      "status": "assessed_in_release_a",
+      "evidence_role": "curriculum_link_only",
+      "mastery_enabled": false,
+      "mastery_scope": "Link to assessment curriculum only; no inferred mastered status",
+      "initial_state": "New",
+      "prerequisites": [],
+      "prerequisites_are_hard_gates": false,
+      "common_errors": [
+        "missing or wrong taught character"
+      ],
+      "support_variants": {
+        "more": "EN/ZH model plus keyboard instructions; support level 3",
+        "less": "French word with target character blank; support level 1",
+        "independent": "Different masked context without model; support level 0"
+      }
+    },
+    {
+      "id": "W_SENTENCE",
+      "domain": "Writing",
+      "description": "Write a simple sentence that communicates the requested message.",
+      "outcome_ids": [
+        "ABFSL-G4-WRITE",
+        "ABFSL-G5-WRITE"
+      ],
+      "status": "assessed_in_release_a",
+      "evidence_role": "curriculum_link_only",
+      "mastery_enabled": false,
+      "mastery_scope": "Link to assessment curriculum only; no inferred mastered status",
+      "initial_state": "New",
+      "prerequisites": [],
+      "prerequisites_are_hard_gates": false,
+      "common_errors": [
+        "missing or wrong taught character"
+      ],
+      "support_variants": {
+        "more": "EN/ZH model plus keyboard instructions; support level 3",
+        "less": "French word with target character blank; support level 1",
+        "independent": "Different masked context without model; support level 0"
+      }
+    },
+    {
+      "id": "W_REASON",
+      "domain": "Writing",
+      "description": "State a preference or opinion with a simple reason.",
+      "outcome_ids": [
+        "ABFSL-G7-WRITE",
+        "ABFSL-G8-ENRICH"
+      ],
+      "status": "assessed_in_release_a",
+      "evidence_role": "curriculum_link_only",
+      "mastery_enabled": false,
+      "mastery_scope": "Link to assessment curriculum only; no inferred mastered status",
+      "initial_state": "New",
+      "prerequisites": [],
+      "prerequisites_are_hard_gates": false,
+      "common_errors": [
+        "missing or wrong taught character"
+      ],
+      "support_variants": {
+        "more": "EN/ZH model plus keyboard instructions; support level 3",
+        "less": "French word with target character blank; support level 1",
+        "independent": "Different masked context without model; support level 0"
+      }
+    },
+    {
+      "id": "W_ENCODING",
+      "domain": "Writing",
+      "description": "Spell familiar words with meaningful accents, apostrophes, and hyphens.",
+      "outcome_ids": [
+        "ABFSL-G4-WRITE",
+        "ABFSL-G6-LANG"
+      ],
+      "status": "assessed_in_release_a",
+      "evidence_role": "narrow_grapheme_recognition",
+      "mastery_enabled": true,
+      "mastery_scope": "Recognition of taught graphemes across novel sentence contexts; never a writing band or proof of typed encoding",
+      "initial_state": "New",
+      "prerequisites": [],
+      "prerequisites_are_hard_gates": false,
+      "common_errors": [
+        "missing or wrong taught character"
+      ],
+      "support_variants": {
+        "more": "EN/ZH model plus keyboard instructions; support level 3",
+        "less": "French word with target character blank; support level 1",
+        "independent": "Different masked context without model; support level 0"
+      },
+      "teaching_item_ids": [
+        "C1-ENC-TEACH",
+        "C2-ENC-TEACH",
+        "C3-ENC-TEACH",
+        "C4-ENC-TEACH"
+      ],
+      "guided_item_ids": [
+        "C1-ENC-PRACTICE",
+        "C2-ENC-PRACTICE",
+        "C3-ENC-PRACTICE",
+        "C4-ENC-PRACTICE"
+      ],
+      "independent_item_ids": [
+        "C1-ENC-CHECK",
+        "C2-ENC-CHECK",
+        "C3-ENC-CHECK",
+        "C4-ENC-CHECK"
+      ],
+      "delayed_item_ids": [
+        "C1-ENC-DELAY",
+        "C2-ENC-DELAY",
+        "C3-ENC-DELAY",
+        "C4-ENC-DELAY"
+      ],
+      "transfer_item_ids": [
+        "ENC-TRANSFER"
+      ],
+      "mastery_rule_ref": {
+        "independent_checkpoint_min_items": 3,
+        "independent_checkpoint_cut": 0.8,
+        "minimum_distinct_contexts": 2,
+        "delayed_min_hours": 48,
+        "delayed_min_items": 2,
+        "delayed_cut": 1,
+        "transfer_min_items": 1,
+        "transfer_cut": 1,
+        "excellence_cut": 0.95,
+        "settings": "Pilot parameters, not scientific universal thresholds. Count evidence by exact skill and response demand; do not average receptive and productive evidence."
+      },
+      "review_intervals_days": [
+        7,
+        14,
+        28
+      ]
+    }
+  ]
+}

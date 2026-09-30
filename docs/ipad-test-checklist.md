@@ -31,21 +31,13 @@ session.
       §4.1–§4.7). §2.1 needs a Mac. Without one, use the sentence the
       **🔧 Device & feature check** shows under *Check the voice* (§5.0b-1)
       instead — it says which voice this iPad will use.
-- [ ] **§4.5 Audio after silence — and the first tap.** On 2026-09-28 you
-      reported that the first 🔊 tap still sometimes plays nothing. **A fix is
-      in the build from branch `claude/audio-first-tap` (2026-09-29) but is not
-      confirmed on the iPad yet** — only you can confirm it. While doing §4.5,
-      also note:
-      (a) right after opening the app from the Home Screen icon, did the very
-      first 🔊 tap speak, or only the second?
-      (b) in Listen & Speak, did the first word play by itself when the
-      question appeared, or only after you tapped 🔊? If a 🔊 button starts
-      pulsing with a gold ring, the iPad refused the sound: note that too.
-      (c) after sleep: lock the iPad for a minute in the middle of a round,
-      unlock it, come back to the app and tap 🔊. Did it speak on the first
-      tap?
-      "First tap silent, second worked" is a useful answer. So is "always
-      worked".
+- [x] **§4.5 The first tap.** Done **2026-09-29**: the fix (PR #29, merged
+      as `5c272b3`) is confirmed on the iPad. You reported:
+      (a) right after opening the app, the very first 🔊 tap spoke;
+      (b) in Listen & Speak, the first word played;
+      (c) after sleep, the first 🔊 tap spoke.
+      The plain §4.5 check — leave the app idle 30 s, then tap 🔊 — was not
+      reported on its own. It stays part of the M1 Parts 1–4 item above.
 - [ ] **§5.5c Refusing the microphone.** This one can only be walked inside a
       real check-in. The refused prompt is skipped and kept as a microphone
       failure. It is **not** marked wrong, but it is used up. **No check-in is
@@ -64,6 +56,14 @@ session.
 **Do not start another check-in.** Jenn's check-in is done (Form A,
 2026-09-29). Jess has now sat both forms. Neither girl should start another
 check-in until her re-check is due. Jenn's re-check uses Form B.
+
+**Not part of M2 — Release B, when you have a moment**
+
+- [ ] **The four story boards** (`content/releases/pilot-v1/assets/C1.svg` to
+      `C4.svg`) — open each one on the iPad and hold it the way she would, at
+      arm's length. Answer **I can read them** or **Too small to read**, and
+      if a label is cramped say which one. The author checked only that the
+      files are well formed, not that a child can read them.
 
 **Already done — do not repeat**
 
@@ -516,9 +516,9 @@ Opened from:  ☐ Home Screen icon  ☐ Safari tab
 - Recovery file exported and kept at: ______________________________
 - M1 Parts 1–4 (§1.1–§4.7): ☐ all passed  ☐ problems — which: ______________________________
 - §4.5 audio after silence: ☐ spoke  ☐ silent
-    - First 🔊 tap after opening the app: ☐ spoke  ☐ silent, second tap worked  ☐ other: ________
-    - Listen & Speak first word played by itself: ☐ yes  ☐ no  ☐ only after tapping 🔊  ☐ 🔊 pulsed
-    - After sleep, first 🔊 tap: ☐ spoke  ☐ silent, second tap worked  ☐ other: ________
+    - First 🔊 tap after opening the app: ☑ spoke  ☐ silent, second tap worked  ☐ other: ________ — confirmed 2026-09-29
+    - Listen & Speak first word played by itself: ☑ yes  ☐ no  ☐ only after tapping 🔊  ☐ 🔊 pulsed — confirmed 2026-09-29
+    - After sleep, first 🔊 tap: ☑ spoke  ☐ silent, second tap worked  ☐ other: ________ — confirmed 2026-09-29
 - §5.5c refused microphone: ☐ not walked (prompt not spent)  ☐ said *not a wrong answer* and moved on  ☐ problem: ________
 - Jess's recordings saved with **⬇ Save everything, with the recordings** on: ______________  kept at: ______________________________
 

@@ -1,0 +1,2969 @@
+{
+  "release_id": "pilot-v1.1.0",
+  "story": {
+    "id": "missing-pages-atlas",
+    "title": "The Missing Pages of the Atlas",
+    "labels": {
+      "fiction": {
+        "en": "Story Fiction",
+        "zh": "故事虚构"
+      },
+      "history": {
+        "en": "Real History",
+        "zh": "真实历史"
+      }
+    },
+    "opening_en": "Mina, a present-day curator, is arranging a new exhibit. Four atlas pages have been separated from the binding. Follow their clues with Léo to bring maps and voices together.",
+    "opening_zh": "当代策展人米娜正在布置新展览。地图册的四页离开了装订。和雷奥一起循着线索，把地图与声音放在一起。",
+    "resolution_en": "Mina moved the pages for the new exhibit. They were not stolen or lost during a real historical event. The recovered atlas includes exploration, alliances, harm, resistance, changing control and living communities.",
+    "resolution_zh": "米娜为了新展览移动了这些页。它们并非在真实历史事件中被偷走或丢失。修复后的地图册涵盖探索、联盟、伤害、反抗、控制权的变化以及今天的社群。",
+    "scope": "Four chapters introduce an arc; they do not represent a complete history of France or its colonial empires."
+  },
+  "chapters": [
+    {
+      "chapter_id": "C1",
+      "title": "La carte déchirée",
+      "title_en": "The Torn Map",
+      "title_zh": "破损的地图",
+      "story_summary": "Identify and locate evidence",
+      "content_kind": "fiction",
+      "historical_scope": [
+        "HC1"
+      ],
+      "real_history_card_ids": [
+        "HC1"
+      ],
+      "curriculum_outcomes": [
+        "ABFSL-GEN-COM",
+        "ABFSL-GEN-LANG",
+        "ABFSL-GEN-CULT",
+        "ABFSL-GEN-STRAT"
+      ],
+      "prerequisite_skills": [],
+      "target_skills": [
+        "C1.LOCATE",
+        "C1.LOCATION_SENTENCE",
+        "W_ENCODING"
+      ],
+      "new_words_or_chunks": [
+        {
+          "fr": "une carte",
+          "en": "a map",
+          "zh": "一张地图"
+        },
+        {
+          "fr": "une lettre",
+          "en": "a letter",
+          "zh": "一封信"
+        },
+        {
+          "fr": "une boîte",
+          "en": "a box",
+          "zh": "一个盒子"
+        },
+        {
+          "fr": "sur",
+          "en": "on",
+          "zh": "在……上"
+        },
+        {
+          "fr": "sous",
+          "en": "under",
+          "zh": "在……下"
+        },
+        {
+          "fr": "dans",
+          "en": "in",
+          "zh": "在……里"
+        }
+      ],
+      "sentence_pattern": "La lettre est dans la boîte.",
+      "scenes": [
+        {
+          "id": "C1-S1-SCENE",
+          "label": {
+            "en": "Story Fiction",
+            "zh": "故事虚构"
+          },
+          "lines_fr": [
+            "Mina : Bienvenue au musée !",
+            "Léo : Il manque quatre pages.",
+            "Mina : Regarde la carte.",
+            "Léo : Une lettre est sous la carte.",
+            "Mina : Où est la lettre ?",
+            "Léo : Cherchons un indice."
+          ],
+          "lines_en": [
+            "Mina: Welcome to the museum!",
+            "Léo: Four pages are missing.",
+            "Mina: Look at the map.",
+            "Léo: A letter is under the map.",
+            "Mina: Where is the letter?",
+            "Léo: Let’s look for a clue."
+          ],
+          "lines_zh": [
+            "米娜：欢迎来到博物馆！",
+            "雷奥：有四页不见了。",
+            "米娜：看这张地图。",
+            "雷奥：一封信在地图下面。",
+            "米娜：信在哪里？",
+            "雷奥：我们找一个线索吧。"
+          ],
+          "audio_script": "Bienvenue au musée ! Il manque quatre pages. Regarde la carte. Une lettre est sous la carte. Où est la lettre ? Cherchons un indice.",
+          "audio_locale": "fr-CA",
+          "audio_source": "device_tts",
+          "audio_before_text": true,
+          "render_translation": "default in more-supported teaching (level 3); on request in less-supported teaching",
+          "illustration_asset": "assets/C1.svg",
+          "source_status": "wholly fictional contemporary museum dialogue; not a historical quotation",
+          "characters": [
+            "Mina — present-day museum curator",
+            "Léo — fictional companion"
+          ],
+          "speaker_voice_policy": "One checked fr-CA voice is sufficient; no invented accents for Indigenous or Haitian people",
+          "audio_rate": 0.8,
+          "translation_default": "shown in more-supported teaching; collapsed in less-supported teaching"
+        },
+        {
+          "id": "C1-S2-SCENE",
+          "label": {
+            "en": "Story Fiction",
+            "zh": "故事虚构"
+          },
+          "lines_fr": [
+            "Léo : Voici une boîte bleue.",
+            "Mina : La lettre est dans la boîte.",
+            "Léo : La carte est sur la table.",
+            "Mina : Et le crayon ?",
+            "Léo : Il est sous la table.",
+            "Mina : Lis la lettre, pas seulement la couleur."
+          ],
+          "lines_en": [
+            "Léo: Here is a blue box.",
+            "Mina: The letter is in the box.",
+            "Léo: The map is on the table.",
+            "Mina: And the pencil?",
+            "Léo: It is under the table.",
+            "Mina: Read the letter, not just the colour."
+          ],
+          "lines_zh": [
+            "雷奥：这里有一个蓝盒子。",
+            "米娜：信在盒子里。",
+            "雷奥：地图在桌子上。",
+            "米娜：铅笔呢？",
+            "雷奥：在桌子下面。",
+            "米娜：读信，不要只看颜色。"
+          ],
+          "audio_script": "Voici une boîte bleue. La lettre est dans la boîte. La carte est sur la table. Et le crayon ? Il est sous la table. Lis la lettre, pas seulement la couleur.",
+          "audio_locale": "fr-CA",
+          "audio_source": "device_tts",
+          "audio_before_text": true,
+          "render_translation": "default in more-supported teaching (level 3); on request in less-supported teaching",
+          "illustration_asset": "assets/C1.svg",
+          "source_status": "wholly fictional contemporary museum dialogue; not a historical quotation",
+          "characters": [
+            "Mina — present-day museum curator",
+            "Léo — fictional companion"
+          ],
+          "speaker_voice_policy": "One checked fr-CA voice is sufficient; no invented accents for Indigenous or Haitian people",
+          "audio_rate": 0.8,
+          "translation_default": "shown in more-supported teaching; collapsed in less-supported teaching"
+        },
+        {
+          "id": "C1-S3-SCENE",
+          "label": {
+            "en": "Story Fiction",
+            "zh": "故事虚构"
+          },
+          "lines_fr": [
+            "Mina : La lettre dit : « Cherche dans la boîte verte. »",
+            "Léo : Pas la boîte bleue ?",
+            "Mina : Non. La boîte verte est sous la table.",
+            "Léo : Voici la première page !",
+            "Mina : Elle parle de cartes et de rencontres.",
+            "Léo : Qui a déplacé les pages ?"
+          ],
+          "lines_en": [
+            "Mina: The letter says: Look in the green box.",
+            "Léo: Not the blue box?",
+            "Mina: No. The green box is under the table.",
+            "Léo: Here is the first page!",
+            "Mina: It is about maps and encounters.",
+            "Léo: Who moved the pages?"
+          ],
+          "lines_zh": [
+            "米娜：信上说：在绿盒子里找。",
+            "雷奥：不是蓝盒子吗？",
+            "米娜：不是。绿盒子在桌子下面。",
+            "雷奥：第一张缺页在这里！",
+            "米娜：它讲地图与相遇。",
+            "雷奥：谁移动了这些页？"
+          ],
+          "audio_script": "La lettre dit : « Cherche dans la boîte verte. » Pas la boîte bleue ? Non. La boîte verte est sous la table. Voici la première page ! Elle parle de cartes et de rencontres. Qui a déplacé les pages ?",
+          "audio_locale": "fr-CA",
+          "audio_source": "device_tts",
+          "audio_before_text": true,
+          "render_translation": "default in more-supported teaching (level 3); on request in less-supported teaching",
+          "illustration_asset": "assets/C1.svg",
+          "source_status": "wholly fictional contemporary museum dialogue; not a historical quotation",
+          "characters": [
+            "Mina — present-day museum curator",
+            "Léo — fictional companion"
+          ],
+          "speaker_voice_policy": "One checked fr-CA voice is sufficient; no invented accents for Indigenous or Haitian people",
+          "audio_rate": 0.8,
+          "translation_default": "shown in more-supported teaching; collapsed in less-supported teaching"
+        }
+      ],
+      "sessions": [
+        {
+          "id": "C1-S1",
+          "index": 1,
+          "target_minutes": 20,
+          "recap": {
+            "fr": "Nous cherchons quatre pages de l’atlas.",
+            "en": "We are looking for four atlas pages.",
+            "zh": "我们正在寻找地图册的四页。",
+            "label": "Story Fiction"
+          },
+          "steps": [
+            {
+              "kind": "due_review_and_recap",
+              "minutes": 3,
+              "candidate_item_ids": [],
+              "first_session": "If no prior learning exists, orient to the mystery; no fabricated retention score."
+            },
+            {
+              "kind": "scene",
+              "minutes": 4,
+              "scene_id": "C1-S1-SCENE",
+              "sequence": [
+                "audio_first",
+                "show_french_text",
+                "optional_translation_support"
+              ]
+            },
+            {
+              "kind": "teach_and_guide",
+              "minutes": 4,
+              "item_ids": [
+                "C1-S1-TEACH",
+                "C1-S1-GUIDED",
+                "C1-S1-RECOGNIZE",
+                "C1-S1-ASSEMBLE",
+                "C1-S1-GUIDED-P",
+                "C1-ENC-TEACH",
+                "C1-ENC-PRACTICE"
+              ],
+              "routing": {
+                "more": "recognition → assembly → completion; one target only",
+                "less": "recognition brief check, then assembly or completion; do not add all drills if already secure",
+                "maximum_minutes": 4,
+                "overflow": "bookmark within teaching and continue next session; retain the 20-minute stop",
+                "encoding": "One short feature within the four-minute allocation; bookmark if the guided language work fills the time."
+              }
+            },
+            {
+              "kind": "story_action",
+              "minutes": 5,
+              "item_ids": [
+                "C1-S1-STORY"
+              ],
+              "optional_open_item_id": "C1-S1-OPEN"
+            },
+            {
+              "kind": "pronunciation",
+              "minutes": 3,
+              "task_id": "C1-S1-PRON"
+            },
+            {
+              "kind": "exit_and_bookmark",
+              "minutes": 1,
+              "item_ids": [
+                "C1-S1-CHECK-R",
+                "C1-S1-CHECK-P"
+              ],
+              "checkpoint_id": "C1-S1-END",
+              "overflow": "If typing takes longer, save between exit items and finish next time. No speed score."
+            }
+          ],
+          "branch": {
+            "choice": "inspect written clue first or replay clue first",
+            "paths": {
+              "written_first": {
+                "en": "Let’s inspect the written clue.",
+                "zh": "先查看文字线索。"
+              },
+              "audio_first": {
+                "en": "Let’s listen to the clue.",
+                "zh": "先听线索。"
+              }
+            },
+            "converge_before": "C1-S1-STORY",
+            "required_items_equal": true,
+            "extra_replay_marks_support": true
+          },
+          "required_item_ids": [
+            "C1-S1-TEACH",
+            "C1-S1-GUIDED",
+            "C1-S1-STORY",
+            "C1-S1-CHECK-R",
+            "C1-S1-CHECK-P",
+            "C1-S1-RECOGNIZE",
+            "C1-S1-ASSEMBLE",
+            "C1-S1-GUIDED-P",
+            "C1-ENC-TEACH",
+            "C1-ENC-PRACTICE"
+          ],
+          "checkpoint": {
+            "id": "C1-S1-END",
+            "save_fields": [
+              "learner_id",
+              "content_version",
+              "session_id",
+              "step_index",
+              "submitted_item_ids",
+              "responses",
+              "support_flags",
+              "due_review_queue",
+              "story_collectibles"
+            ],
+            "award": "C1-CLUE-1",
+            "advance_on": "attempted plus feedback opportunity; not score threshold",
+            "next_session": "C1-S2"
+          },
+          "required_items_policy": "Required IDs are available core steps; assembly and completion may be satisfied by an explicit supported-route skip after demonstrated guided success. Store skipped_with_reason; never create mastery evidence for skipped work."
+        },
+        {
+          "id": "C1-S2",
+          "index": 2,
+          "target_minutes": 20,
+          "recap": {
+            "fr": "Nous cherchons quatre pages de l’atlas.",
+            "en": "We are looking for four atlas pages.",
+            "zh": "我们正在寻找地图册的四页。",
+            "label": "Story Fiction"
+          },
+          "steps": [
+            {
+              "kind": "due_review_and_recap",
+              "minutes": 3,
+              "candidate_item_ids": [
+                "C1-R1",
+                "C1-R2",
+                "C1-P1",
+                "C1-P2"
+              ],
+              "first_session": "If no prior learning exists, orient to the mystery; no fabricated retention score."
+            },
+            {
+              "kind": "scene",
+              "minutes": 4,
+              "scene_id": "C1-S2-SCENE",
+              "sequence": [
+                "audio_first",
+                "show_french_text",
+                "optional_translation_support"
+              ]
+            },
+            {
+              "kind": "teach_and_guide",
+              "minutes": 4,
+              "item_ids": [
+                "C1-S2-TEACH",
+                "C1-S2-GUIDED",
+                "C1-S2-RECOGNIZE",
+                "C1-S2-ASSEMBLE",
+                "C1-S2-GUIDED-P"
+              ],
+              "routing": {
+                "more": "recognition → assembly → completion; one target only",
+                "less": "recognition brief check, then assembly or completion; do not add all drills if already secure",
+                "maximum_minutes": 4,
+                "overflow": "bookmark within teaching and continue next session; retain the 20-minute stop"
+              }
+            },
+            {
+              "kind": "story_action",
+              "minutes": 5,
+              "item_ids": [
+                "C1-S2-STORY"
+              ],
+              "optional_open_item_id": "C1-S2-OPEN"
+            },
+            {
+              "kind": "pronunciation",
+              "minutes": 3,
+              "task_id": "C1-S2-PRON"
+            },
+            {
+              "kind": "exit_and_bookmark",
+              "minutes": 1,
+              "item_ids": [
+                "C1-S2-CHECK-R",
+                "C1-S2-CHECK-P"
+              ],
+              "checkpoint_id": "C1-S2-END",
+              "overflow": "If typing takes longer, save between exit items and finish next time. No speed score."
+            }
+          ],
+          "branch": {
+            "choice": "inspect written clue first or replay clue first",
+            "paths": {
+              "written_first": {
+                "en": "Let’s inspect the written clue.",
+                "zh": "先查看文字线索。"
+              },
+              "audio_first": {
+                "en": "Let’s listen to the clue.",
+                "zh": "先听线索。"
+              }
+            },
+            "converge_before": "C1-S2-STORY",
+            "required_items_equal": true,
+            "extra_replay_marks_support": true
+          },
+          "required_item_ids": [
+            "C1-S2-TEACH",
+            "C1-S2-GUIDED",
+            "C1-S2-STORY",
+            "C1-S2-CHECK-R",
+            "C1-S2-CHECK-P",
+            "C1-S2-RECOGNIZE",
+            "C1-S2-ASSEMBLE",
+            "C1-S2-GUIDED-P"
+          ],
+          "checkpoint": {
+            "id": "C1-S2-END",
+            "save_fields": [
+              "learner_id",
+              "content_version",
+              "session_id",
+              "step_index",
+              "submitted_item_ids",
+              "responses",
+              "support_flags",
+              "due_review_queue",
+              "story_collectibles"
+            ],
+            "award": "C1-CLUE-2",
+            "advance_on": "attempted plus feedback opportunity; not score threshold",
+            "next_session": "C1-S3"
+          },
+          "required_items_policy": "Required IDs are available core steps; assembly and completion may be satisfied by an explicit supported-route skip after demonstrated guided success. Store skipped_with_reason; never create mastery evidence for skipped work."
+        },
+        {
+          "id": "C1-S3",
+          "index": 3,
+          "target_minutes": 20,
+          "recap": {
+            "fr": "Nous cherchons quatre pages de l’atlas.",
+            "en": "We are looking for four atlas pages.",
+            "zh": "我们正在寻找地图册的四页。",
+            "label": "Story Fiction"
+          },
+          "steps": [
+            {
+              "kind": "due_review_and_recap",
+              "minutes": 3,
+              "candidate_item_ids": [
+                "C1-R1",
+                "C1-R2",
+                "C1-P1",
+                "C1-P2"
+              ],
+              "first_session": "If no prior learning exists, orient to the mystery; no fabricated retention score."
+            },
+            {
+              "kind": "scene",
+              "minutes": 4,
+              "scene_id": "C1-S3-SCENE",
+              "sequence": [
+                "audio_first",
+                "show_french_text",
+                "optional_translation_support"
+              ]
+            },
+            {
+              "kind": "teach_and_guide",
+              "minutes": 4,
+              "item_ids": [
+                "C1-S3-TEACH",
+                "C1-S3-GUIDED",
+                "C1-S3-RECOGNIZE",
+                "C1-S3-ASSEMBLE",
+                "C1-S3-GUIDED-P"
+              ],
+              "routing": {
+                "more": "recognition → assembly → completion; one target only",
+                "less": "recognition brief check, then assembly or completion; do not add all drills if already secure",
+                "maximum_minutes": 4,
+                "overflow": "bookmark within teaching and continue next session; retain the 20-minute stop"
+              }
+            },
+            {
+              "kind": "story_action",
+              "minutes": 5,
+              "item_ids": [
+                "C1-S3-STORY"
+              ],
+              "optional_open_item_id": "C1-S3-OPEN"
+            },
+            {
+              "kind": "pronunciation",
+              "minutes": 3,
+              "task_id": "C1-S3-PRON"
+            },
+            {
+              "kind": "exit_and_bookmark",
+              "minutes": 1,
+              "item_ids": [
+                "C1-S3-CHECK-R",
+                "C1-S3-CHECK-P",
+                "C1-ENC-CHECK"
+              ],
+              "checkpoint_id": "C1-S3-END",
+              "overflow": "One-minute target: bookmark between checks, including encoding. No time penalty."
+            }
+          ],
+          "branch": {
+            "choice": "inspect written clue first or replay clue first",
+            "paths": {
+              "written_first": {
+                "en": "Let’s inspect the written clue.",
+                "zh": "先查看文字线索。"
+              },
+              "audio_first": {
+                "en": "Let’s listen to the clue.",
+                "zh": "先听线索。"
+              }
+            },
+            "converge_before": "C1-S3-STORY",
+            "required_items_equal": true,
+            "extra_replay_marks_support": true
+          },
+          "required_item_ids": [
+            "C1-S3-TEACH",
+            "C1-S3-GUIDED",
+            "C1-S3-STORY",
+            "C1-S3-CHECK-R",
+            "C1-S3-CHECK-P",
+            "C1-S3-RECOGNIZE",
+            "C1-S3-ASSEMBLE",
+            "C1-S3-GUIDED-P",
+            "C1-ENC-CHECK"
+          ],
+          "checkpoint": {
+            "id": "C1-S3-END",
+            "save_fields": [
+              "learner_id",
+              "content_version",
+              "session_id",
+              "step_index",
+              "submitted_item_ids",
+              "responses",
+              "support_flags",
+              "due_review_queue",
+              "story_collectibles"
+            ],
+            "award": "C1-CLUE-3",
+            "advance_on": "attempted plus feedback opportunity; not score threshold",
+            "next_session": "C2-S1"
+          },
+          "required_items_policy": "Required IDs are available core steps; assembly and completion may be satisfied by an explicit supported-route skip after demonstrated guided success. Store skipped_with_reason; never create mastery evidence for skipped work."
+        }
+      ],
+      "estimated_sessions": 3,
+      "session_bookmarks": [
+        "C1-S1-END",
+        "C1-S2-END",
+        "C1-S3-END"
+      ],
+      "learning_item_ids": [
+        "C1-S1-TEACH",
+        "C1-S1-GUIDED",
+        "C1-S1-GUIDED-P",
+        "C1-S1-STORY",
+        "C1-S1-CHECK-R",
+        "C1-S1-CHECK-P",
+        "C1-S1-OPEN",
+        "C1-S1-RETRY-R",
+        "C1-S1-RETRY-P",
+        "C1-S2-TEACH",
+        "C1-S2-GUIDED",
+        "C1-S2-GUIDED-P",
+        "C1-S2-STORY",
+        "C1-S2-CHECK-R",
+        "C1-S2-CHECK-P",
+        "C1-S2-OPEN",
+        "C1-S2-RETRY-R",
+        "C1-S2-RETRY-P",
+        "C1-S3-TEACH",
+        "C1-S3-GUIDED",
+        "C1-S3-GUIDED-P",
+        "C1-S3-STORY",
+        "C1-S3-CHECK-R",
+        "C1-S3-CHECK-P",
+        "C1-S3-OPEN",
+        "C1-S3-RETRY-R",
+        "C1-S3-RETRY-P",
+        "C1-S1-RECOGNIZE",
+        "C1-S1-ASSEMBLE",
+        "C1-S2-RECOGNIZE",
+        "C1-S2-ASSEMBLE",
+        "C1-S3-RECOGNIZE",
+        "C1-S3-ASSEMBLE",
+        "C1-ENC-TEACH",
+        "C1-ENC-PRACTICE",
+        "C1-ENC-CHECK"
+      ],
+      "review_item_ids": [
+        "C1-R1",
+        "C1-P1",
+        "C1-R2",
+        "C1-P2",
+        "C1-TR",
+        "C1-TP",
+        "C1-RR",
+        "C1-RP",
+        "C1-ENC-DELAY"
+      ],
+      "pronunciation_task_ids": [
+        "C1-S1-PRON",
+        "C1-S2-PRON",
+        "C1-S3-PRON"
+      ],
+      "branches": "Clue presentation order only; equal required items; no historical alternate endings.",
+      "resolution": {
+        "award": "page_cartes",
+        "trigger": "C1-S3-END",
+        "en": "The first page has an arrow pointing to two messages.",
+        "zh": "第一页上有一支箭头，指向两条信息。",
+        "award_depends_on_mastery": false
+      },
+      "history_delivery": "One short EN/ZH Real History card after the scene; unscored for French. Allow saved expansion if session time is nearly up; show all chapter cards by chapter end.",
+      "language_progression": "Recognize → assemble → complete a frame → different independent bounded sentence. Long reasons are modelled enrichment, not required free writing.",
+      "encoding_focus": {
+        "skill_id": "W_ENCODING",
+        "feature": "circumflex on î",
+        "word_fr": "boîte"
+      },
+      "support_variants": {
+        "more": {
+          "gloss_default": true,
+          "readable_french_after_audio": true,
+          "rate": 0.8
+        },
+        "less": {
+          "gloss_default": false,
+          "gloss_on_request": true,
+          "rate": 0.8
+        }
+      }
+    },
+    {
+      "chapter_id": "C2",
+      "title": "Deux messages",
+      "title_en": "Two Accounts",
+      "title_zh": "两条信息",
+      "story_summary": "Compare accounts and justify one conclusion",
+      "content_kind": "fiction",
+      "historical_scope": [
+        "HC2"
+      ],
+      "real_history_card_ids": [
+        "HC2"
+      ],
+      "curriculum_outcomes": [
+        "ABFSL-GEN-COM",
+        "ABFSL-GEN-LANG",
+        "ABFSL-GEN-CULT",
+        "ABFSL-GEN-STRAT"
+      ],
+      "prerequisite_skills": [
+        "C1.LOCATE"
+      ],
+      "target_skills": [
+        "C2.COMPARE",
+        "C2.EVIDENCE_SENTENCE",
+        "W_ENCODING"
+      ],
+      "new_words_or_chunks": [
+        {
+          "fr": "un message",
+          "en": "a message",
+          "zh": "一条信息"
+        },
+        {
+          "fr": "un indice",
+          "en": "a clue",
+          "zh": "一个线索"
+        },
+        {
+          "fr": "les deux",
+          "en": "both",
+          "zh": "两者都"
+        },
+        {
+          "fr": "mais",
+          "en": "but",
+          "zh": "但是"
+        },
+        {
+          "fr": "parce que",
+          "en": "because",
+          "zh": "因为"
+        },
+        {
+          "fr": "je pense que",
+          "en": "I think that",
+          "zh": "我认为"
+        }
+      ],
+      "sentence_pattern": "Je pense que les deux messages parlent de la boîte.",
+      "scenes": [
+        {
+          "id": "C2-S1-SCENE",
+          "label": {
+            "en": "Story Fiction",
+            "zh": "故事虚构"
+          },
+          "lines_fr": [
+            "Mina : Voici deux messages.",
+            "Léo : Le premier parle de la boîte.",
+            "Mina : Le deuxième parle aussi de la boîte.",
+            "Léo : Les deux disent la même chose ?",
+            "Mina : Pas tout à fait.",
+            "Léo : Lisons les deux."
+          ],
+          "lines_en": [
+            "Mina: Here are two messages.",
+            "Léo: The first talks about the box.",
+            "Mina: The second also talks about the box.",
+            "Léo: Do both say the same thing?",
+            "Mina: Not quite.",
+            "Léo: Let’s read both."
+          ],
+          "lines_zh": [
+            "米娜：这里有两条信息。",
+            "雷奥：第一条讲盒子。",
+            "米娜：第二条也讲盒子。",
+            "雷奥：两条说的是同一件事吗？",
+            "米娜：不完全是。",
+            "雷奥：我们把两条都读一读。"
+          ],
+          "audio_script": "Voici deux messages. Le premier parle de la boîte. Le deuxième parle aussi de la boîte. Les deux disent la même chose ? Pas tout à fait. Lisons les deux.",
+          "audio_locale": "fr-CA",
+          "audio_source": "device_tts",
+          "audio_before_text": true,
+          "render_translation": "default in more-supported teaching (level 3); on request in less-supported teaching",
+          "illustration_asset": "assets/C2.svg",
+          "source_status": "wholly fictional contemporary museum dialogue; not a historical quotation",
+          "characters": [
+            "Mina — present-day museum curator",
+            "Léo — fictional companion"
+          ],
+          "speaker_voice_policy": "One checked fr-CA voice is sufficient; no invented accents for Indigenous or Haitian people",
+          "audio_rate": 0.8,
+          "translation_default": "shown in more-supported teaching; collapsed in less-supported teaching"
+        },
+        {
+          "id": "C2-S2-SCENE",
+          "label": {
+            "en": "Story Fiction",
+            "zh": "故事虚构"
+          },
+          "lines_fr": [
+            "Mina : Message A : « La boîte est dans la salle rouge. »",
+            "Léo : Message B : « La boîte est sous la table. »",
+            "Mina : Les deux parlent de la boîte.",
+            "Léo : Mais ils donnent des indices différents.",
+            "Mina : Je pense qu’il faut chercher dans la salle rouge.",
+            "Léo : Ensuite, sous la table !"
+          ],
+          "lines_en": [
+            "Mina: Message A: The box is in the red room.",
+            "Léo: Message B: The box is under the table.",
+            "Mina: Both talk about the box.",
+            "Léo: But they give different clues.",
+            "Mina: I think we need to look in the red room.",
+            "Léo: Then under the table!"
+          ],
+          "lines_zh": [
+            "米娜：信息A：盒子在红色房间里。",
+            "雷奥：信息B：盒子在桌子下面。",
+            "米娜：两条都讲盒子。",
+            "雷奥：但是它们给出不同的线索。",
+            "米娜：我认为需要在红色房间里找。",
+            "雷奥：然后在桌子下面！"
+          ],
+          "audio_script": "Message A : « La boîte est dans la salle rouge. » Message B : « La boîte est sous la table. » Les deux parlent de la boîte. Mais ils donnent des indices différents. Je pense qu’il faut chercher dans la salle rouge. Ensuite, sous la table !",
+          "audio_locale": "fr-CA",
+          "audio_source": "device_tts",
+          "audio_before_text": true,
+          "render_translation": "default in more-supported teaching (level 3); on request in less-supported teaching",
+          "illustration_asset": "assets/C2.svg",
+          "source_status": "wholly fictional contemporary museum dialogue; not a historical quotation",
+          "characters": [
+            "Mina — present-day museum curator",
+            "Léo — fictional companion"
+          ],
+          "speaker_voice_policy": "One checked fr-CA voice is sufficient; no invented accents for Indigenous or Haitian people",
+          "audio_rate": 0.8,
+          "translation_default": "shown in more-supported teaching; collapsed in less-supported teaching"
+        },
+        {
+          "id": "C2-S3-SCENE",
+          "label": {
+            "en": "Story Fiction",
+            "zh": "故事虚构"
+          },
+          "lines_fr": [
+            "Léo : La deuxième page est ici.",
+            "Mina : Deux messages nous ont aidés.",
+            "Léo : Une seule voix suffit toujours ?",
+            "Mina : Non. Une voix peut oublier un détail.",
+            "Léo : Je pense qu’il faut comparer les indices.",
+            "Mina : La page suivante porte un sceau."
+          ],
+          "lines_en": [
+            "Léo: The second page is here.",
+            "Mina: Two messages helped us.",
+            "Léo: Is one voice always enough?",
+            "Mina: No. One voice can leave out a detail.",
+            "Léo: I think we need to compare the clues.",
+            "Mina: The next page carries a seal."
+          ],
+          "lines_zh": [
+            "雷奥：第二页在这里。",
+            "米娜：两条信息帮助了我们。",
+            "雷奥：一种声音总是足够的吗？",
+            "米娜：不是。一种声音可能漏掉一个细节。",
+            "雷奥：我认为需要比较线索。",
+            "米娜：下一页上有一个封印。"
+          ],
+          "audio_script": "La deuxième page est ici. Deux messages nous ont aidés. Une seule voix suffit toujours ? Non. Une voix peut oublier un détail. Je pense qu’il faut comparer les indices. La page suivante porte un sceau.",
+          "audio_locale": "fr-CA",
+          "audio_source": "device_tts",
+          "audio_before_text": true,
+          "render_translation": "default in more-supported teaching (level 3); on request in less-supported teaching",
+          "illustration_asset": "assets/C2.svg",
+          "source_status": "wholly fictional contemporary museum dialogue; not a historical quotation",
+          "characters": [
+            "Mina — present-day museum curator",
+            "Léo — fictional companion"
+          ],
+          "speaker_voice_policy": "One checked fr-CA voice is sufficient; no invented accents for Indigenous or Haitian people",
+          "audio_rate": 0.8,
+          "translation_default": "shown in more-supported teaching; collapsed in less-supported teaching"
+        }
+      ],
+      "sessions": [
+        {
+          "id": "C2-S1",
+          "index": 1,
+          "target_minutes": 20,
+          "recap": {
+            "fr": "La première page était dans la boîte verte. Maintenant, comparons deux messages.",
+            "en": "The first page was in the green box. Now compare two messages.",
+            "zh": "第一页在绿盒子里。现在比较两条信息。",
+            "label": "Story Fiction"
+          },
+          "steps": [
+            {
+              "kind": "due_review_and_recap",
+              "minutes": 3,
+              "candidate_item_ids": [
+                "C1-R1",
+                "C1-R2",
+                "C1-P1",
+                "C1-P2",
+                "C1-TR",
+                "C1-TP"
+              ],
+              "first_session": "If no prior learning exists, orient to the mystery; no fabricated retention score."
+            },
+            {
+              "kind": "scene",
+              "minutes": 4,
+              "scene_id": "C2-S1-SCENE",
+              "sequence": [
+                "audio_first",
+                "show_french_text",
+                "optional_translation_support"
+              ]
+            },
+            {
+              "kind": "teach_and_guide",
+              "minutes": 4,
+              "item_ids": [
+                "C2-S1-TEACH",
+                "C2-S1-GUIDED",
+                "C2-S1-RECOGNIZE",
+                "C2-S1-ASSEMBLE",
+                "C2-S1-GUIDED-P",
+                "C2-ENC-TEACH",
+                "C2-ENC-PRACTICE"
+              ],
+              "routing": {
+                "more": "recognition → assembly → completion; one target only",
+                "less": "recognition brief check, then assembly or completion; do not add all drills if already secure",
+                "maximum_minutes": 4,
+                "overflow": "bookmark within teaching and continue next session; retain the 20-minute stop",
+                "encoding": "One short feature within the four-minute allocation; bookmark if the guided language work fills the time."
+              }
+            },
+            {
+              "kind": "story_action",
+              "minutes": 5,
+              "item_ids": [
+                "C2-S1-STORY"
+              ],
+              "optional_open_item_id": "C2-S1-OPEN"
+            },
+            {
+              "kind": "pronunciation",
+              "minutes": 3,
+              "task_id": "C2-S1-PRON"
+            },
+            {
+              "kind": "exit_and_bookmark",
+              "minutes": 1,
+              "item_ids": [
+                "C2-S1-CHECK-R",
+                "C2-S1-CHECK-P"
+              ],
+              "checkpoint_id": "C2-S1-END",
+              "overflow": "If typing takes longer, save between exit items and finish next time. No speed score."
+            }
+          ],
+          "branch": {
+            "choice": "inspect written clue first or replay clue first",
+            "paths": {
+              "written_first": {
+                "en": "Let’s inspect the written clue.",
+                "zh": "先查看文字线索。"
+              },
+              "audio_first": {
+                "en": "Let’s listen to the clue.",
+                "zh": "先听线索。"
+              }
+            },
+            "converge_before": "C2-S1-STORY",
+            "required_items_equal": true,
+            "extra_replay_marks_support": true
+          },
+          "required_item_ids": [
+            "C2-S1-TEACH",
+            "C2-S1-GUIDED",
+            "C2-S1-STORY",
+            "C2-S1-CHECK-R",
+            "C2-S1-CHECK-P",
+            "C2-S1-RECOGNIZE",
+            "C2-S1-ASSEMBLE",
+            "C2-S1-GUIDED-P",
+            "C2-ENC-TEACH",
+            "C2-ENC-PRACTICE"
+          ],
+          "checkpoint": {
+            "id": "C2-S1-END",
+            "save_fields": [
+              "learner_id",
+              "content_version",
+              "session_id",
+              "step_index",
+              "submitted_item_ids",
+              "responses",
+              "support_flags",
+              "due_review_queue",
+              "story_collectibles"
+            ],
+            "award": "C2-CLUE-1",
+            "advance_on": "attempted plus feedback opportunity; not score threshold",
+            "next_session": "C2-S2"
+          },
+          "required_items_policy": "Required IDs are available core steps; assembly and completion may be satisfied by an explicit supported-route skip after demonstrated guided success. Store skipped_with_reason; never create mastery evidence for skipped work."
+        },
+        {
+          "id": "C2-S2",
+          "index": 2,
+          "target_minutes": 20,
+          "recap": {
+            "fr": "La première page était dans la boîte verte. Maintenant, comparons deux messages.",
+            "en": "The first page was in the green box. Now compare two messages.",
+            "zh": "第一页在绿盒子里。现在比较两条信息。",
+            "label": "Story Fiction"
+          },
+          "steps": [
+            {
+              "kind": "due_review_and_recap",
+              "minutes": 3,
+              "candidate_item_ids": [
+                "C1-R1",
+                "C1-R2",
+                "C1-P1",
+                "C1-P2",
+                "C1-TR",
+                "C1-TP",
+                "C2-R1",
+                "C2-R2",
+                "C2-P1",
+                "C2-P2"
+              ],
+              "first_session": "If no prior learning exists, orient to the mystery; no fabricated retention score."
+            },
+            {
+              "kind": "scene",
+              "minutes": 4,
+              "scene_id": "C2-S2-SCENE",
+              "sequence": [
+                "audio_first",
+                "show_french_text",
+                "optional_translation_support"
+              ]
+            },
+            {
+              "kind": "teach_and_guide",
+              "minutes": 4,
+              "item_ids": [
+                "C2-S2-TEACH",
+                "C2-S2-GUIDED",
+                "C2-S2-RECOGNIZE",
+                "C2-S2-ASSEMBLE",
+                "C2-S2-GUIDED-P"
+              ],
+              "routing": {
+                "more": "recognition → assembly → completion; one target only",
+                "less": "recognition brief check, then assembly or completion; do not add all drills if already secure",
+                "maximum_minutes": 4,
+                "overflow": "bookmark within teaching and continue next session; retain the 20-minute stop"
+              }
+            },
+            {
+              "kind": "story_action",
+              "minutes": 5,
+              "item_ids": [
+                "C2-S2-STORY"
+              ],
+              "optional_open_item_id": "C2-S2-OPEN"
+            },
+            {
+              "kind": "pronunciation",
+              "minutes": 3,
+              "task_id": "C2-S2-PRON"
+            },
+            {
+              "kind": "exit_and_bookmark",
+              "minutes": 1,
+              "item_ids": [
+                "C2-S2-CHECK-R",
+                "C2-S2-CHECK-P"
+              ],
+              "checkpoint_id": "C2-S2-END",
+              "overflow": "If typing takes longer, save between exit items and finish next time. No speed score."
+            }
+          ],
+          "branch": {
+            "choice": "inspect written clue first or replay clue first",
+            "paths": {
+              "written_first": {
+                "en": "Let’s inspect the written clue.",
+                "zh": "先查看文字线索。"
+              },
+              "audio_first": {
+                "en": "Let’s listen to the clue.",
+                "zh": "先听线索。"
+              }
+            },
+            "converge_before": "C2-S2-STORY",
+            "required_items_equal": true,
+            "extra_replay_marks_support": true
+          },
+          "required_item_ids": [
+            "C2-S2-TEACH",
+            "C2-S2-GUIDED",
+            "C2-S2-STORY",
+            "C2-S2-CHECK-R",
+            "C2-S2-CHECK-P",
+            "C2-S2-RECOGNIZE",
+            "C2-S2-ASSEMBLE",
+            "C2-S2-GUIDED-P"
+          ],
+          "checkpoint": {
+            "id": "C2-S2-END",
+            "save_fields": [
+              "learner_id",
+              "content_version",
+              "session_id",
+              "step_index",
+              "submitted_item_ids",
+              "responses",
+              "support_flags",
+              "due_review_queue",
+              "story_collectibles"
+            ],
+            "award": "C2-CLUE-2",
+            "advance_on": "attempted plus feedback opportunity; not score threshold",
+            "next_session": "C2-S3"
+          },
+          "required_items_policy": "Required IDs are available core steps; assembly and completion may be satisfied by an explicit supported-route skip after demonstrated guided success. Store skipped_with_reason; never create mastery evidence for skipped work."
+        },
+        {
+          "id": "C2-S3",
+          "index": 3,
+          "target_minutes": 20,
+          "recap": {
+            "fr": "La première page était dans la boîte verte. Maintenant, comparons deux messages.",
+            "en": "The first page was in the green box. Now compare two messages.",
+            "zh": "第一页在绿盒子里。现在比较两条信息。",
+            "label": "Story Fiction"
+          },
+          "steps": [
+            {
+              "kind": "due_review_and_recap",
+              "minutes": 3,
+              "candidate_item_ids": [
+                "C1-R1",
+                "C1-R2",
+                "C1-P1",
+                "C1-P2",
+                "C1-TR",
+                "C1-TP",
+                "C2-R1",
+                "C2-R2",
+                "C2-P1",
+                "C2-P2"
+              ],
+              "first_session": "If no prior learning exists, orient to the mystery; no fabricated retention score."
+            },
+            {
+              "kind": "scene",
+              "minutes": 4,
+              "scene_id": "C2-S3-SCENE",
+              "sequence": [
+                "audio_first",
+                "show_french_text",
+                "optional_translation_support"
+              ]
+            },
+            {
+              "kind": "teach_and_guide",
+              "minutes": 4,
+              "item_ids": [
+                "C2-S3-TEACH",
+                "C2-S3-GUIDED",
+                "C2-S3-RECOGNIZE",
+                "C2-S3-ASSEMBLE",
+                "C2-S3-GUIDED-P"
+              ],
+              "routing": {
+                "more": "recognition → assembly → completion; one target only",
+                "less": "recognition brief check, then assembly or completion; do not add all drills if already secure",
+                "maximum_minutes": 4,
+                "overflow": "bookmark within teaching and continue next session; retain the 20-minute stop"
+              }
+            },
+            {
+              "kind": "story_action",
+              "minutes": 5,
+              "item_ids": [
+                "C2-S3-STORY"
+              ],
+              "optional_open_item_id": "C2-S3-OPEN"
+            },
+            {
+              "kind": "pronunciation",
+              "minutes": 3,
+              "task_id": "C2-S3-PRON"
+            },
+            {
+              "kind": "exit_and_bookmark",
+              "minutes": 1,
+              "item_ids": [
+                "C2-S3-CHECK-R",
+                "C2-S3-CHECK-P",
+                "C2-ENC-CHECK"
+              ],
+              "checkpoint_id": "C2-S3-END",
+              "overflow": "One-minute target: bookmark between checks, including encoding. No time penalty."
+            }
+          ],
+          "branch": {
+            "choice": "inspect written clue first or replay clue first",
+            "paths": {
+              "written_first": {
+                "en": "Let’s inspect the written clue.",
+                "zh": "先查看文字线索。"
+              },
+              "audio_first": {
+                "en": "Let’s listen to the clue.",
+                "zh": "先听线索。"
+              }
+            },
+            "converge_before": "C2-S3-STORY",
+            "required_items_equal": true,
+            "extra_replay_marks_support": true
+          },
+          "required_item_ids": [
+            "C2-S3-TEACH",
+            "C2-S3-GUIDED",
+            "C2-S3-STORY",
+            "C2-S3-CHECK-R",
+            "C2-S3-CHECK-P",
+            "C2-S3-RECOGNIZE",
+            "C2-S3-ASSEMBLE",
+            "C2-S3-GUIDED-P",
+            "C2-ENC-CHECK"
+          ],
+          "checkpoint": {
+            "id": "C2-S3-END",
+            "save_fields": [
+              "learner_id",
+              "content_version",
+              "session_id",
+              "step_index",
+              "submitted_item_ids",
+              "responses",
+              "support_flags",
+              "due_review_queue",
+              "story_collectibles"
+            ],
+            "award": "C2-CLUE-3",
+            "advance_on": "attempted plus feedback opportunity; not score threshold",
+            "next_session": "C3-S1"
+          },
+          "required_items_policy": "Required IDs are available core steps; assembly and completion may be satisfied by an explicit supported-route skip after demonstrated guided success. Store skipped_with_reason; never create mastery evidence for skipped work."
+        }
+      ],
+      "estimated_sessions": 3,
+      "session_bookmarks": [
+        "C2-S1-END",
+        "C2-S2-END",
+        "C2-S3-END"
+      ],
+      "learning_item_ids": [
+        "C2-S1-TEACH",
+        "C2-S1-GUIDED",
+        "C2-S1-GUIDED-P",
+        "C2-S1-STORY",
+        "C2-S1-CHECK-R",
+        "C2-S1-CHECK-P",
+        "C2-S1-OPEN",
+        "C2-S1-RETRY-R",
+        "C2-S1-RETRY-P",
+        "C2-S2-TEACH",
+        "C2-S2-GUIDED",
+        "C2-S2-GUIDED-P",
+        "C2-S2-STORY",
+        "C2-S2-CHECK-R",
+        "C2-S2-CHECK-P",
+        "C2-S2-OPEN",
+        "C2-S2-RETRY-R",
+        "C2-S2-RETRY-P",
+        "C2-S3-TEACH",
+        "C2-S3-GUIDED",
+        "C2-S3-GUIDED-P",
+        "C2-S3-STORY",
+        "C2-S3-CHECK-R",
+        "C2-S3-CHECK-P",
+        "C2-S3-OPEN",
+        "C2-S3-RETRY-R",
+        "C2-S3-RETRY-P",
+        "C2-S1-RECOGNIZE",
+        "C2-S1-ASSEMBLE",
+        "C2-S2-RECOGNIZE",
+        "C2-S2-ASSEMBLE",
+        "C2-S3-RECOGNIZE",
+        "C2-S3-ASSEMBLE",
+        "C2-ENC-TEACH",
+        "C2-ENC-PRACTICE",
+        "C2-ENC-CHECK"
+      ],
+      "review_item_ids": [
+        "C2-R1",
+        "C2-P1",
+        "C2-R2",
+        "C2-P2",
+        "C2-TR",
+        "C2-TP",
+        "C2-RR",
+        "C2-RP",
+        "C2-ENC-DELAY"
+      ],
+      "pronunciation_task_ids": [
+        "C2-S1-PRON",
+        "C2-S2-PRON",
+        "C2-S3-PRON"
+      ],
+      "branches": "Clue presentation order only; equal required items; no historical alternate endings.",
+      "resolution": {
+        "award": "page_voix",
+        "trigger": "C2-S3-END",
+        "en": "A broken seal hides the order in which three objects were moved.",
+        "zh": "一个破损的封印隐藏着三个物品被移动的先后顺序。",
+        "award_depends_on_mastery": false
+      },
+      "history_delivery": "One short EN/ZH Real History card after the scene; unscored for French. Allow saved expansion if session time is nearly up; show all chapter cards by chapter end.",
+      "language_progression": "Recognize → assemble → complete a frame → different independent bounded sentence. Long reasons are modelled enrichment, not required free writing.",
+      "encoding_focus": {
+        "skill_id": "W_ENCODING",
+        "feature": "apostrophe in l’indice",
+        "word_fr": "l’indice"
+      },
+      "support_variants": {
+        "more": {
+          "gloss_default": true,
+          "readable_french_after_audio": true,
+          "rate": 0.8
+        },
+        "less": {
+          "gloss_default": false,
+          "gloss_on_request": true,
+          "rate": 0.8
+        }
+      }
+    },
+    {
+      "chapter_id": "C3",
+      "title": "Le sceau brisé",
+      "title_en": "The Broken Seal",
+      "title_zh": "破损的封印",
+      "story_summary": "Sequence a short account and state one past event",
+      "content_kind": "fiction",
+      "historical_scope": [
+        "HC3",
+        "HC3B"
+      ],
+      "real_history_card_ids": [
+        "HC3",
+        "HC3B"
+      ],
+      "curriculum_outcomes": [
+        "ABFSL-GEN-COM",
+        "ABFSL-GEN-LANG",
+        "ABFSL-GEN-CULT",
+        "ABFSL-GEN-STRAT"
+      ],
+      "prerequisite_skills": [
+        "C2.COMPARE"
+      ],
+      "target_skills": [
+        "C3.SEQUENCE",
+        "C3.PAST_SENTENCE",
+        "W_ENCODING"
+      ],
+      "new_words_or_chunks": [
+        {
+          "fr": "d’abord",
+          "en": "first",
+          "zh": "首先"
+        },
+        {
+          "fr": "ensuite",
+          "en": "next",
+          "zh": "接着"
+        },
+        {
+          "fr": "enfin",
+          "en": "finally",
+          "zh": "最后"
+        },
+        {
+          "fr": "avant",
+          "en": "before",
+          "zh": "在……之前"
+        },
+        {
+          "fr": "après",
+          "en": "after",
+          "zh": "在……之后"
+        },
+        {
+          "fr": "a trouvé",
+          "en": "found",
+          "zh": "找到了"
+        }
+      ],
+      "sentence_pattern": "D’abord, Mina a trouvé une lettre.",
+      "scenes": [
+        {
+          "id": "C3-S1-SCENE",
+          "label": {
+            "en": "Story Fiction",
+            "zh": "故事虚构"
+          },
+          "lines_fr": [
+            "Léo : Le sceau est brisé.",
+            "Mina : Voici trois images.",
+            "Léo : Une lettre, une clé, une boîte.",
+            "Mina : D’abord, j’ai trouvé la lettre.",
+            "Léo : Ensuite, tu as trouvé la clé.",
+            "Mina : Enfin, j’ai ouvert la boîte."
+          ],
+          "lines_en": [
+            "Léo: The seal is broken.",
+            "Mina: Here are three pictures.",
+            "Léo: A letter, a key, a box.",
+            "Mina: First, I found the letter.",
+            "Léo: Next, you found the key.",
+            "Mina: Finally, I opened the box."
+          ],
+          "lines_zh": [
+            "雷奥：封印破了。",
+            "米娜：这里有三张图。",
+            "雷奥：一封信、一把钥匙、一个盒子。",
+            "米娜：首先，我找到了信。",
+            "雷奥：接着，你找到了钥匙。",
+            "米娜：最后，我打开了盒子。"
+          ],
+          "audio_script": "Le sceau est brisé. Voici trois images. Une lettre, une clé, une boîte. D’abord, j’ai trouvé la lettre. Ensuite, tu as trouvé la clé. Enfin, j’ai ouvert la boîte.",
+          "audio_locale": "fr-CA",
+          "audio_source": "device_tts",
+          "audio_before_text": true,
+          "render_translation": "default in more-supported teaching (level 3); on request in less-supported teaching",
+          "illustration_asset": "assets/C3.svg",
+          "source_status": "wholly fictional contemporary museum dialogue; not a historical quotation",
+          "characters": [
+            "Mina — present-day museum curator",
+            "Léo — fictional companion"
+          ],
+          "speaker_voice_policy": "One checked fr-CA voice is sufficient; no invented accents for Indigenous or Haitian people",
+          "audio_rate": 0.8,
+          "translation_default": "shown in more-supported teaching; collapsed in less-supported teaching"
+        },
+        {
+          "id": "C3-S2-SCENE",
+          "label": {
+            "en": "Story Fiction",
+            "zh": "故事虚构"
+          },
+          "lines_fr": [
+            "Léo : La boîte était ouverte avant la lettre ?",
+            "Mina : Non. Regarde l’ordre.",
+            "Léo : D’abord, la lettre.",
+            "Mina : Ensuite, la clé.",
+            "Léo : Enfin, la boîte.",
+            "Mina : La troisième page est sous le couvercle."
+          ],
+          "lines_en": [
+            "Léo: Was the box opened before the letter?",
+            "Mina: No. Look at the order.",
+            "Léo: First, the letter.",
+            "Mina: Next, the key.",
+            "Léo: Finally, the box.",
+            "Mina: The third page is under the lid."
+          ],
+          "lines_zh": [
+            "雷奥：盒子在信之前就被打开了吗？",
+            "米娜：不是。看顺序。",
+            "雷奥：首先是信。",
+            "米娜：接着是钥匙。",
+            "雷奥：最后是盒子。",
+            "米娜：第三页在盖子下面。"
+          ],
+          "audio_script": "La boîte était ouverte avant la lettre ? Non. Regarde l’ordre. D’abord, la lettre. Ensuite, la clé. Enfin, la boîte. La troisième page est sous le couvercle.",
+          "audio_locale": "fr-CA",
+          "audio_source": "device_tts",
+          "audio_before_text": true,
+          "render_translation": "default in more-supported teaching (level 3); on request in less-supported teaching",
+          "illustration_asset": "assets/C3.svg",
+          "source_status": "wholly fictional contemporary museum dialogue; not a historical quotation",
+          "characters": [
+            "Mina — present-day museum curator",
+            "Léo — fictional companion"
+          ],
+          "speaker_voice_policy": "One checked fr-CA voice is sufficient; no invented accents for Indigenous or Haitian people",
+          "audio_rate": 0.8,
+          "translation_default": "shown in more-supported teaching; collapsed in less-supported teaching"
+        },
+        {
+          "id": "C3-S3-SCENE",
+          "label": {
+            "en": "Story Fiction",
+            "zh": "故事虚构"
+          },
+          "lines_fr": [
+            "Mina : Qui a trouvé la clé ?",
+            "Léo : Mina a trouvé la clé.",
+            "Mina : Et la page ?",
+            "Léo : Léo a trouvé la page.",
+            "Mina : La page parle d’un changement de contrôle.",
+            "Léo : Un changement efface-t-il toutes les voix ?"
+          ],
+          "lines_en": [
+            "Mina: Who found the key?",
+            "Léo: Mina found the key.",
+            "Mina: And the page?",
+            "Léo: Léo found the page.",
+            "Mina: The page is about a change in control.",
+            "Léo: Does a change erase all the voices?"
+          ],
+          "lines_zh": [
+            "米娜：谁找到了钥匙？",
+            "雷奥：米娜找到了钥匙。",
+            "米娜：那缺页呢？",
+            "雷奥：雷奥找到了缺页。",
+            "米娜：这一页讲控制权的变化。",
+            "雷奥：变化会抹去所有声音吗？"
+          ],
+          "audio_script": "Qui a trouvé la clé ? Mina a trouvé la clé. Et la page ? Léo a trouvé la page. La page parle d’un changement de contrôle. Un changement efface-t-il toutes les voix ?",
+          "audio_locale": "fr-CA",
+          "audio_source": "device_tts",
+          "audio_before_text": true,
+          "render_translation": "default in more-supported teaching (level 3); on request in less-supported teaching",
+          "illustration_asset": "assets/C3.svg",
+          "source_status": "wholly fictional contemporary museum dialogue; not a historical quotation",
+          "characters": [
+            "Mina — present-day museum curator",
+            "Léo — fictional companion"
+          ],
+          "speaker_voice_policy": "One checked fr-CA voice is sufficient; no invented accents for Indigenous or Haitian people",
+          "audio_rate": 0.8,
+          "translation_default": "shown in more-supported teaching; collapsed in less-supported teaching"
+        }
+      ],
+      "sessions": [
+        {
+          "id": "C3-S1",
+          "index": 1,
+          "target_minutes": 20,
+          "recap": {
+            "fr": "Deux messages ont montré le chemin. Maintenant, trouvons l’ordre des événements.",
+            "en": "Two messages showed the way. Now find the order of events.",
+            "zh": "两条信息指明了方向。现在找出事件的顺序。",
+            "label": "Story Fiction"
+          },
+          "steps": [
+            {
+              "kind": "due_review_and_recap",
+              "minutes": 3,
+              "candidate_item_ids": [
+                "C2-R1",
+                "C2-R2",
+                "C2-P1",
+                "C2-P2",
+                "C2-TR",
+                "C2-TP"
+              ],
+              "first_session": "If no prior learning exists, orient to the mystery; no fabricated retention score."
+            },
+            {
+              "kind": "scene",
+              "minutes": 4,
+              "scene_id": "C3-S1-SCENE",
+              "sequence": [
+                "audio_first",
+                "show_french_text",
+                "optional_translation_support"
+              ]
+            },
+            {
+              "kind": "teach_and_guide",
+              "minutes": 4,
+              "item_ids": [
+                "C3-S1-TEACH",
+                "C3-S1-GUIDED",
+                "C3-S1-RECOGNIZE",
+                "C3-S1-ASSEMBLE",
+                "C3-S1-GUIDED-P",
+                "C3-ENC-TEACH",
+                "C3-ENC-PRACTICE"
+              ],
+              "routing": {
+                "more": "recognition → assembly → completion; one target only",
+                "less": "recognition brief check, then assembly or completion; do not add all drills if already secure",
+                "maximum_minutes": 4,
+                "overflow": "bookmark within teaching and continue next session; retain the 20-minute stop",
+                "encoding": "One short feature within the four-minute allocation; bookmark if the guided language work fills the time."
+              }
+            },
+            {
+              "kind": "story_action",
+              "minutes": 5,
+              "item_ids": [
+                "C3-S1-STORY"
+              ],
+              "optional_open_item_id": "C3-S1-OPEN"
+            },
+            {
+              "kind": "pronunciation",
+              "minutes": 3,
+              "task_id": "C3-S1-PRON"
+            },
+            {
+              "kind": "exit_and_bookmark",
+              "minutes": 1,
+              "item_ids": [
+                "C3-S1-CHECK-R",
+                "C3-S1-CHECK-P"
+              ],
+              "checkpoint_id": "C3-S1-END",
+              "overflow": "If typing takes longer, save between exit items and finish next time. No speed score."
+            }
+          ],
+          "branch": {
+            "choice": "inspect written clue first or replay clue first",
+            "paths": {
+              "written_first": {
+                "en": "Let’s inspect the written clue.",
+                "zh": "先查看文字线索。"
+              },
+              "audio_first": {
+                "en": "Let’s listen to the clue.",
+                "zh": "先听线索。"
+              }
+            },
+            "converge_before": "C3-S1-STORY",
+            "required_items_equal": true,
+            "extra_replay_marks_support": true
+          },
+          "required_item_ids": [
+            "C3-S1-TEACH",
+            "C3-S1-GUIDED",
+            "C3-S1-STORY",
+            "C3-S1-CHECK-R",
+            "C3-S1-CHECK-P",
+            "C3-S1-RECOGNIZE",
+            "C3-S1-ASSEMBLE",
+            "C3-S1-GUIDED-P",
+            "C3-ENC-TEACH",
+            "C3-ENC-PRACTICE"
+          ],
+          "checkpoint": {
+            "id": "C3-S1-END",
+            "save_fields": [
+              "learner_id",
+              "content_version",
+              "session_id",
+              "step_index",
+              "submitted_item_ids",
+              "responses",
+              "support_flags",
+              "due_review_queue",
+              "story_collectibles"
+            ],
+            "award": "C3-CLUE-1",
+            "advance_on": "attempted plus feedback opportunity; not score threshold",
+            "next_session": "C3-S2"
+          },
+          "required_items_policy": "Required IDs are available core steps; assembly and completion may be satisfied by an explicit supported-route skip after demonstrated guided success. Store skipped_with_reason; never create mastery evidence for skipped work."
+        },
+        {
+          "id": "C3-S2",
+          "index": 2,
+          "target_minutes": 20,
+          "recap": {
+            "fr": "Deux messages ont montré le chemin. Maintenant, trouvons l’ordre des événements.",
+            "en": "Two messages showed the way. Now find the order of events.",
+            "zh": "两条信息指明了方向。现在找出事件的顺序。",
+            "label": "Story Fiction"
+          },
+          "steps": [
+            {
+              "kind": "due_review_and_recap",
+              "minutes": 3,
+              "candidate_item_ids": [
+                "C2-R1",
+                "C2-R2",
+                "C2-P1",
+                "C2-P2",
+                "C2-TR",
+                "C2-TP",
+                "C3-R1",
+                "C3-R2",
+                "C3-P1",
+                "C3-P2"
+              ],
+              "first_session": "If no prior learning exists, orient to the mystery; no fabricated retention score."
+            },
+            {
+              "kind": "scene",
+              "minutes": 4,
+              "scene_id": "C3-S2-SCENE",
+              "sequence": [
+                "audio_first",
+                "show_french_text",
+                "optional_translation_support"
+              ]
+            },
+            {
+              "kind": "teach_and_guide",
+              "minutes": 4,
+              "item_ids": [
+                "C3-S2-TEACH",
+                "C3-S2-GUIDED",
+                "C3-S2-RECOGNIZE",
+                "C3-S2-ASSEMBLE",
+                "C3-S2-GUIDED-P"
+              ],
+              "routing": {
+                "more": "recognition → assembly → completion; one target only",
+                "less": "recognition brief check, then assembly or completion; do not add all drills if already secure",
+                "maximum_minutes": 4,
+                "overflow": "bookmark within teaching and continue next session; retain the 20-minute stop"
+              }
+            },
+            {
+              "kind": "story_action",
+              "minutes": 5,
+              "item_ids": [
+                "C3-S2-STORY"
+              ],
+              "optional_open_item_id": "C3-S2-OPEN"
+            },
+            {
+              "kind": "pronunciation",
+              "minutes": 3,
+              "task_id": "C3-S2-PRON"
+            },
+            {
+              "kind": "exit_and_bookmark",
+              "minutes": 1,
+              "item_ids": [
+                "C3-S2-CHECK-R",
+                "C3-S2-CHECK-P"
+              ],
+              "checkpoint_id": "C3-S2-END",
+              "overflow": "If typing takes longer, save between exit items and finish next time. No speed score."
+            }
+          ],
+          "branch": {
+            "choice": "inspect written clue first or replay clue first",
+            "paths": {
+              "written_first": {
+                "en": "Let’s inspect the written clue.",
+                "zh": "先查看文字线索。"
+              },
+              "audio_first": {
+                "en": "Let’s listen to the clue.",
+                "zh": "先听线索。"
+              }
+            },
+            "converge_before": "C3-S2-STORY",
+            "required_items_equal": true,
+            "extra_replay_marks_support": true
+          },
+          "required_item_ids": [
+            "C3-S2-TEACH",
+            "C3-S2-GUIDED",
+            "C3-S2-STORY",
+            "C3-S2-CHECK-R",
+            "C3-S2-CHECK-P",
+            "C3-S2-RECOGNIZE",
+            "C3-S2-ASSEMBLE",
+            "C3-S2-GUIDED-P"
+          ],
+          "checkpoint": {
+            "id": "C3-S2-END",
+            "save_fields": [
+              "learner_id",
+              "content_version",
+              "session_id",
+              "step_index",
+              "submitted_item_ids",
+              "responses",
+              "support_flags",
+              "due_review_queue",
+              "story_collectibles"
+            ],
+            "award": "C3-CLUE-2",
+            "advance_on": "attempted plus feedback opportunity; not score threshold",
+            "next_session": "C3-S3"
+          },
+          "required_items_policy": "Required IDs are available core steps; assembly and completion may be satisfied by an explicit supported-route skip after demonstrated guided success. Store skipped_with_reason; never create mastery evidence for skipped work."
+        },
+        {
+          "id": "C3-S3",
+          "index": 3,
+          "target_minutes": 20,
+          "recap": {
+            "fr": "Deux messages ont montré le chemin. Maintenant, trouvons l’ordre des événements.",
+            "en": "Two messages showed the way. Now find the order of events.",
+            "zh": "两条信息指明了方向。现在找出事件的顺序。",
+            "label": "Story Fiction"
+          },
+          "steps": [
+            {
+              "kind": "due_review_and_recap",
+              "minutes": 3,
+              "candidate_item_ids": [
+                "C2-R1",
+                "C2-R2",
+                "C2-P1",
+                "C2-P2",
+                "C2-TR",
+                "C2-TP",
+                "C3-R1",
+                "C3-R2",
+                "C3-P1",
+                "C3-P2"
+              ],
+              "first_session": "If no prior learning exists, orient to the mystery; no fabricated retention score."
+            },
+            {
+              "kind": "scene",
+              "minutes": 4,
+              "scene_id": "C3-S3-SCENE",
+              "sequence": [
+                "audio_first",
+                "show_french_text",
+                "optional_translation_support"
+              ]
+            },
+            {
+              "kind": "teach_and_guide",
+              "minutes": 4,
+              "item_ids": [
+                "C3-S3-TEACH",
+                "C3-S3-GUIDED",
+                "C3-S3-RECOGNIZE",
+                "C3-S3-ASSEMBLE",
+                "C3-S3-GUIDED-P"
+              ],
+              "routing": {
+                "more": "recognition → assembly → completion; one target only",
+                "less": "recognition brief check, then assembly or completion; do not add all drills if already secure",
+                "maximum_minutes": 4,
+                "overflow": "bookmark within teaching and continue next session; retain the 20-minute stop"
+              }
+            },
+            {
+              "kind": "story_action",
+              "minutes": 5,
+              "item_ids": [
+                "C3-S3-STORY"
+              ],
+              "optional_open_item_id": "C3-S3-OPEN"
+            },
+            {
+              "kind": "pronunciation",
+              "minutes": 3,
+              "task_id": "C3-S3-PRON"
+            },
+            {
+              "kind": "exit_and_bookmark",
+              "minutes": 1,
+              "item_ids": [
+                "C3-S3-CHECK-R",
+                "C3-S3-CHECK-P",
+                "C3-ENC-CHECK"
+              ],
+              "checkpoint_id": "C3-S3-END",
+              "overflow": "One-minute target: bookmark between checks, including encoding. No time penalty."
+            }
+          ],
+          "branch": {
+            "choice": "inspect written clue first or replay clue first",
+            "paths": {
+              "written_first": {
+                "en": "Let’s inspect the written clue.",
+                "zh": "先查看文字线索。"
+              },
+              "audio_first": {
+                "en": "Let’s listen to the clue.",
+                "zh": "先听线索。"
+              }
+            },
+            "converge_before": "C3-S3-STORY",
+            "required_items_equal": true,
+            "extra_replay_marks_support": true
+          },
+          "required_item_ids": [
+            "C3-S3-TEACH",
+            "C3-S3-GUIDED",
+            "C3-S3-STORY",
+            "C3-S3-CHECK-R",
+            "C3-S3-CHECK-P",
+            "C3-S3-RECOGNIZE",
+            "C3-S3-ASSEMBLE",
+            "C3-S3-GUIDED-P",
+            "C3-ENC-CHECK"
+          ],
+          "checkpoint": {
+            "id": "C3-S3-END",
+            "save_fields": [
+              "learner_id",
+              "content_version",
+              "session_id",
+              "step_index",
+              "submitted_item_ids",
+              "responses",
+              "support_flags",
+              "due_review_queue",
+              "story_collectibles"
+            ],
+            "award": "C3-CLUE-3",
+            "advance_on": "attempted plus feedback opportunity; not score threshold",
+            "next_session": "C4-S1"
+          },
+          "required_items_policy": "Required IDs are available core steps; assembly and completion may be satisfied by an explicit supported-route skip after demonstrated guided success. Store skipped_with_reason; never create mastery evidence for skipped work."
+        }
+      ],
+      "estimated_sessions": 3,
+      "session_bookmarks": [
+        "C3-S1-END",
+        "C3-S2-END",
+        "C3-S3-END"
+      ],
+      "learning_item_ids": [
+        "C3-S1-TEACH",
+        "C3-S1-GUIDED",
+        "C3-S1-GUIDED-P",
+        "C3-S1-STORY",
+        "C3-S1-CHECK-R",
+        "C3-S1-CHECK-P",
+        "C3-S1-OPEN",
+        "C3-S1-RETRY-R",
+        "C3-S1-RETRY-P",
+        "C3-S2-TEACH",
+        "C3-S2-GUIDED",
+        "C3-S2-GUIDED-P",
+        "C3-S2-STORY",
+        "C3-S2-CHECK-R",
+        "C3-S2-CHECK-P",
+        "C3-S2-OPEN",
+        "C3-S2-RETRY-R",
+        "C3-S2-RETRY-P",
+        "C3-S3-TEACH",
+        "C3-S3-GUIDED",
+        "C3-S3-GUIDED-P",
+        "C3-S3-STORY",
+        "C3-S3-CHECK-R",
+        "C3-S3-CHECK-P",
+        "C3-S3-OPEN",
+        "C3-S3-RETRY-R",
+        "C3-S3-RETRY-P",
+        "C3-S1-RECOGNIZE",
+        "C3-S1-ASSEMBLE",
+        "C3-S2-RECOGNIZE",
+        "C3-S2-ASSEMBLE",
+        "C3-S3-RECOGNIZE",
+        "C3-S3-ASSEMBLE",
+        "C3-ENC-TEACH",
+        "C3-ENC-PRACTICE",
+        "C3-ENC-CHECK"
+      ],
+      "review_item_ids": [
+        "C3-R1",
+        "C3-P1",
+        "C3-R2",
+        "C3-P2",
+        "C3-TR",
+        "C3-TP",
+        "C3-RR",
+        "C3-RP",
+        "C3-ENC-DELAY"
+      ],
+      "pronunciation_task_ids": [
+        "C3-S1-PRON",
+        "C3-S2-PRON",
+        "C3-S3-PRON"
+      ],
+      "branches": "Clue presentation order only; equal required items; no historical alternate endings.",
+      "resolution": {
+        "award": "page_changement",
+        "trigger": "C3-S3-END",
+        "en": "The last page is not a victory list. Its label says: Voices today.",
+        "zh": "最后一页不是胜利清单。它的标签写着：今天的声音。",
+        "award_depends_on_mastery": false
+      },
+      "history_delivery": "One short EN/ZH Real History card after the scene; unscored for French. Allow saved expansion if session time is nearly up; show all chapter cards by chapter end.",
+      "language_progression": "Recognize → assemble → complete a frame → different independent bounded sentence. Long reasons are modelled enrichment, not required free writing.",
+      "encoding_focus": {
+        "skill_id": "W_ENCODING",
+        "feature": "acute accent on é",
+        "word_fr": "trouvé"
+      },
+      "support_variants": {
+        "more": {
+          "gloss_default": true,
+          "readable_french_after_audio": true,
+          "rate": 0.8
+        },
+        "less": {
+          "gloss_default": false,
+          "gloss_on_request": true,
+          "rate": 0.8
+        }
+      }
+    },
+    {
+      "chapter_id": "C4",
+      "title": "La langue qui reste",
+      "title_en": "The Language That Remained",
+      "title_zh": "留下来的语言",
+      "story_summary": "Connect present-day voices with a simple reason",
+      "content_kind": "fiction",
+      "historical_scope": [
+        "HC4",
+        "HC4B"
+      ],
+      "real_history_card_ids": [
+        "HC4",
+        "HC4B"
+      ],
+      "curriculum_outcomes": [
+        "ABFSL-GEN-COM",
+        "ABFSL-GEN-LANG",
+        "ABFSL-GEN-CULT",
+        "ABFSL-GEN-STRAT"
+      ],
+      "prerequisite_skills": [
+        "C3.SEQUENCE"
+      ],
+      "target_skills": [
+        "C4.CONNECT",
+        "C4.EXPLAIN_SENTENCE",
+        "W_ENCODING"
+      ],
+      "new_words_or_chunks": [
+        {
+          "fr": "aujourd’hui",
+          "en": "today",
+          "zh": "今天"
+        },
+        {
+          "fr": "encore",
+          "en": "still / again, depending on context",
+          "zh": "仍然／又，取决于语境"
+        },
+        {
+          "fr": "une langue",
+          "en": "a language",
+          "zh": "一种语言"
+        },
+        {
+          "fr": "une école",
+          "en": "a school",
+          "zh": "一所学校"
+        },
+        {
+          "fr": "une famille",
+          "en": "a family",
+          "zh": "一个家庭"
+        },
+        {
+          "fr": "ensemble",
+          "en": "together",
+          "zh": "一起"
+        }
+      ],
+      "sentence_pattern": "On parle français à l’école.",
+      "scenes": [
+        {
+          "id": "C4-S1-SCENE",
+          "label": {
+            "en": "Story Fiction",
+            "zh": "故事虚构"
+          },
+          "lines_fr": [
+            "Léo : Voici une photo d’une école.",
+            "Mina : On parle français à l’école.",
+            "Léo : Et à la maison ?",
+            "Mina : Certaines familles parlent français à la maison.",
+            "Léo : Une personne peut parler deux langues ?",
+            "Mina : Oui, et parfois plus !"
+          ],
+          "lines_en": [
+            "Léo: Here is a photo of a school.",
+            "Mina: People speak French at school.",
+            "Léo: And at home?",
+            "Mina: Some families speak French at home.",
+            "Léo: Can a person speak two languages?",
+            "Mina: Yes, and sometimes more!"
+          ],
+          "lines_zh": [
+            "雷奥：这里有一张学校照片。",
+            "米娜：人们在学校说法语。",
+            "雷奥：家里呢？",
+            "米娜：一些家庭在家里说法语。",
+            "雷奥：一个人能说两种语言吗？",
+            "米娜：能，有时还会更多！"
+          ],
+          "audio_script": "Voici une photo d’une école. On parle français à l’école. Et à la maison ? Certaines familles parlent français à la maison. Une personne peut parler deux langues ? Oui, et parfois plus !",
+          "audio_locale": "fr-CA",
+          "audio_source": "device_tts",
+          "audio_before_text": true,
+          "render_translation": "default in more-supported teaching (level 3); on request in less-supported teaching",
+          "illustration_asset": "assets/C4.svg",
+          "source_status": "wholly fictional contemporary museum dialogue; not a historical quotation",
+          "characters": [
+            "Mina — present-day museum curator",
+            "Léo — fictional companion"
+          ],
+          "speaker_voice_policy": "One checked fr-CA voice is sufficient; no invented accents for Indigenous or Haitian people",
+          "audio_rate": 0.8,
+          "translation_default": "shown in more-supported teaching; collapsed in less-supported teaching"
+        },
+        {
+          "id": "C4-S2-SCENE",
+          "label": {
+            "en": "Story Fiction",
+            "zh": "故事虚构"
+          },
+          "lines_fr": [
+            "Mina : Voici une carte de l’Alberta.",
+            "Léo : On parle français ici aussi ?",
+            "Mina : Oui. Écoute ce message du musée.",
+            "Léo : « Aujourd’hui, nous apprenons ensemble. »",
+            "Mina : Le français appartient à plusieurs communautés.",
+            "Léo : La dernière page est près des messages."
+          ],
+          "lines_en": [
+            "Mina: Here is a map of Alberta.",
+            "Léo: Is French spoken here too?",
+            "Mina: Yes. Listen to this museum message.",
+            "Léo: Today, we learn together.",
+            "Mina: French belongs to several communities.",
+            "Léo: The last page is near the messages."
+          ],
+          "lines_zh": [
+            "米娜：这里有一张阿尔伯塔地图。",
+            "雷奥：这里也说法语吗？",
+            "米娜：是的。听这条博物馆信息。",
+            "雷奥：今天，我们一起学习。",
+            "米娜：法语属于多个社群。",
+            "雷奥：最后一页在信息旁边。"
+          ],
+          "audio_script": "Voici une carte de l’Alberta. On parle français ici aussi ? Oui. Écoute ce message du musée. « Aujourd’hui, nous apprenons ensemble. » Le français appartient à plusieurs communautés. La dernière page est près des messages.",
+          "audio_locale": "fr-CA",
+          "audio_source": "device_tts",
+          "audio_before_text": true,
+          "render_translation": "default in more-supported teaching (level 3); on request in less-supported teaching",
+          "illustration_asset": "assets/C4.svg",
+          "source_status": "wholly fictional contemporary museum dialogue; not a historical quotation",
+          "characters": [
+            "Mina — present-day museum curator",
+            "Léo — fictional companion"
+          ],
+          "speaker_voice_policy": "One checked fr-CA voice is sufficient; no invented accents for Indigenous or Haitian people",
+          "audio_rate": 0.8,
+          "translation_default": "shown in more-supported teaching; collapsed in less-supported teaching"
+        },
+        {
+          "id": "C4-S3-SCENE",
+          "label": {
+            "en": "Story Fiction",
+            "zh": "故事虚构"
+          },
+          "lines_fr": [
+            "Mina : Tu as retrouvé les quatre pages !",
+            "Léo : Mais qui les avait déplacées ?",
+            "Mina : Moi, pour préparer une nouvelle exposition.",
+            "Léo : Pas un voleur ?",
+            "Mina : Non. Je voulais réunir les cartes et les voix.",
+            "Léo : Notre atlas doit montrer les deux.",
+            "Mina : Écrivons une légende pour les visiteurs.",
+            "Léo : Et gardons une place pour d’autres voix."
+          ],
+          "lines_en": [
+            "Mina: You found all four pages!",
+            "Léo: But who had moved them?",
+            "Mina: I did, to prepare a new exhibit.",
+            "Léo: Not a thief?",
+            "Mina: No. I wanted to bring the maps and voices together.",
+            "Léo: Our atlas needs to show both.",
+            "Mina: Let’s write a caption for visitors.",
+            "Léo: And leave room for other voices."
+          ],
+          "lines_zh": [
+            "米娜：你找回了四页！",
+            "雷奥：但是谁移动了它们？",
+            "米娜：是我，为了准备一个新展览。",
+            "雷奥：不是小偷？",
+            "米娜：不是。我想把地图与声音放在一起。",
+            "雷奥：我们的地图册需要展现两者。",
+            "米娜：我们给参观者写一条说明。",
+            "雷奥：还要为其他声音留出位置。"
+          ],
+          "audio_script": "Tu as retrouvé les quatre pages ! Mais qui les avait déplacées ? Moi, pour préparer une nouvelle exposition. Pas un voleur ? Non. Je voulais réunir les cartes et les voix. Notre atlas doit montrer les deux. Écrivons une légende pour les visiteurs. Et gardons une place pour d’autres voix.",
+          "audio_locale": "fr-CA",
+          "audio_source": "device_tts",
+          "audio_before_text": true,
+          "render_translation": "default in more-supported teaching (level 3); on request in less-supported teaching",
+          "illustration_asset": "assets/C4.svg",
+          "source_status": "wholly fictional contemporary museum dialogue; not a historical quotation",
+          "characters": [
+            "Mina — present-day museum curator",
+            "Léo — fictional companion"
+          ],
+          "speaker_voice_policy": "One checked fr-CA voice is sufficient; no invented accents for Indigenous or Haitian people",
+          "audio_rate": 0.8,
+          "translation_default": "shown in more-supported teaching; collapsed in less-supported teaching"
+        }
+      ],
+      "sessions": [
+        {
+          "id": "C4-S1",
+          "index": 1,
+          "target_minutes": 20,
+          "recap": {
+            "fr": "Trois pages sont retrouvées. La dernière parle des voix d’aujourd’hui.",
+            "en": "Three pages have been found. The last is about voices today.",
+            "zh": "已找回三页。最后一页讲今天的声音。",
+            "label": "Story Fiction"
+          },
+          "steps": [
+            {
+              "kind": "due_review_and_recap",
+              "minutes": 3,
+              "candidate_item_ids": [
+                "C3-R1",
+                "C3-R2",
+                "C3-P1",
+                "C3-P2",
+                "C3-TR",
+                "C3-TP"
+              ],
+              "first_session": "If no prior learning exists, orient to the mystery; no fabricated retention score."
+            },
+            {
+              "kind": "scene",
+              "minutes": 4,
+              "scene_id": "C4-S1-SCENE",
+              "sequence": [
+                "audio_first",
+                "show_french_text",
+                "optional_translation_support"
+              ]
+            },
+            {
+              "kind": "teach_and_guide",
+              "minutes": 4,
+              "item_ids": [
+                "C4-S1-TEACH",
+                "C4-S1-GUIDED",
+                "C4-S1-RECOGNIZE",
+                "C4-S1-ASSEMBLE",
+                "C4-S1-GUIDED-P",
+                "C4-ENC-TEACH",
+                "C4-ENC-PRACTICE"
+              ],
+              "routing": {
+                "more": "recognition → assembly → completion; one target only",
+                "less": "recognition brief check, then assembly or completion; do not add all drills if already secure",
+                "maximum_minutes": 4,
+                "overflow": "bookmark within teaching and continue next session; retain the 20-minute stop",
+                "encoding": "One short feature within the four-minute allocation; bookmark if the guided language work fills the time."
+              }
+            },
+            {
+              "kind": "story_action",
+              "minutes": 5,
+              "item_ids": [
+                "C4-S1-STORY"
+              ],
+              "optional_open_item_id": "C4-S1-OPEN"
+            },
+            {
+              "kind": "pronunciation",
+              "minutes": 3,
+              "task_id": "C4-S1-PRON"
+            },
+            {
+              "kind": "exit_and_bookmark",
+              "minutes": 1,
+              "item_ids": [
+                "C4-S1-CHECK-R",
+                "C4-S1-CHECK-P"
+              ],
+              "checkpoint_id": "C4-S1-END",
+              "overflow": "If typing takes longer, save between exit items and finish next time. No speed score."
+            }
+          ],
+          "branch": {
+            "choice": "inspect written clue first or replay clue first",
+            "paths": {
+              "written_first": {
+                "en": "Let’s inspect the written clue.",
+                "zh": "先查看文字线索。"
+              },
+              "audio_first": {
+                "en": "Let’s listen to the clue.",
+                "zh": "先听线索。"
+              }
+            },
+            "converge_before": "C4-S1-STORY",
+            "required_items_equal": true,
+            "extra_replay_marks_support": true
+          },
+          "required_item_ids": [
+            "C4-S1-TEACH",
+            "C4-S1-GUIDED",
+            "C4-S1-STORY",
+            "C4-S1-CHECK-R",
+            "C4-S1-CHECK-P",
+            "C4-S1-RECOGNIZE",
+            "C4-S1-ASSEMBLE",
+            "C4-S1-GUIDED-P",
+            "C4-ENC-TEACH",
+            "C4-ENC-PRACTICE"
+          ],
+          "checkpoint": {
+            "id": "C4-S1-END",
+            "save_fields": [
+              "learner_id",
+              "content_version",
+              "session_id",
+              "step_index",
+              "submitted_item_ids",
+              "responses",
+              "support_flags",
+              "due_review_queue",
+              "story_collectibles"
+            ],
+            "award": "C4-CLUE-1",
+            "advance_on": "attempted plus feedback opportunity; not score threshold",
+            "next_session": "C4-S2"
+          },
+          "required_items_policy": "Required IDs are available core steps; assembly and completion may be satisfied by an explicit supported-route skip after demonstrated guided success. Store skipped_with_reason; never create mastery evidence for skipped work."
+        },
+        {
+          "id": "C4-S2",
+          "index": 2,
+          "target_minutes": 20,
+          "recap": {
+            "fr": "Trois pages sont retrouvées. La dernière parle des voix d’aujourd’hui.",
+            "en": "Three pages have been found. The last is about voices today.",
+            "zh": "已找回三页。最后一页讲今天的声音。",
+            "label": "Story Fiction"
+          },
+          "steps": [
+            {
+              "kind": "due_review_and_recap",
+              "minutes": 3,
+              "candidate_item_ids": [
+                "C3-R1",
+                "C3-R2",
+                "C3-P1",
+                "C3-P2",
+                "C3-TR",
+                "C3-TP",
+                "C4-R1",
+                "C4-R2",
+                "C4-P1",
+                "C4-P2"
+              ],
+              "first_session": "If no prior learning exists, orient to the mystery; no fabricated retention score."
+            },
+            {
+              "kind": "scene",
+              "minutes": 4,
+              "scene_id": "C4-S2-SCENE",
+              "sequence": [
+                "audio_first",
+                "show_french_text",
+                "optional_translation_support"
+              ]
+            },
+            {
+              "kind": "teach_and_guide",
+              "minutes": 4,
+              "item_ids": [
+                "C4-S2-TEACH",
+                "C4-S2-GUIDED",
+                "C4-S2-RECOGNIZE",
+                "C4-S2-ASSEMBLE",
+                "C4-S2-GUIDED-P"
+              ],
+              "routing": {
+                "more": "recognition → assembly → completion; one target only",
+                "less": "recognition brief check, then assembly or completion; do not add all drills if already secure",
+                "maximum_minutes": 4,
+                "overflow": "bookmark within teaching and continue next session; retain the 20-minute stop"
+              }
+            },
+            {
+              "kind": "story_action",
+              "minutes": 5,
+              "item_ids": [
+                "C4-S2-STORY"
+              ],
+              "optional_open_item_id": "C4-S2-OPEN"
+            },
+            {
+              "kind": "pronunciation",
+              "minutes": 3,
+              "task_id": "C4-S2-PRON"
+            },
+            {
+              "kind": "exit_and_bookmark",
+              "minutes": 1,
+              "item_ids": [
+                "C4-S2-CHECK-R",
+                "C4-S2-CHECK-P"
+              ],
+              "checkpoint_id": "C4-S2-END",
+              "overflow": "If typing takes longer, save between exit items and finish next time. No speed score."
+            }
+          ],
+          "branch": {
+            "choice": "inspect written clue first or replay clue first",
+            "paths": {
+              "written_first": {
+                "en": "Let’s inspect the written clue.",
+                "zh": "先查看文字线索。"
+              },
+              "audio_first": {
+                "en": "Let’s listen to the clue.",
+                "zh": "先听线索。"
+              }
+            },
+            "converge_before": "C4-S2-STORY",
+            "required_items_equal": true,
+            "extra_replay_marks_support": true
+          },
+          "required_item_ids": [
+            "C4-S2-TEACH",
+            "C4-S2-GUIDED",
+            "C4-S2-STORY",
+            "C4-S2-CHECK-R",
+            "C4-S2-CHECK-P",
+            "C4-S2-RECOGNIZE",
+            "C4-S2-ASSEMBLE",
+            "C4-S2-GUIDED-P"
+          ],
+          "checkpoint": {
+            "id": "C4-S2-END",
+            "save_fields": [
+              "learner_id",
+              "content_version",
+              "session_id",
+              "step_index",
+              "submitted_item_ids",
+              "responses",
+              "support_flags",
+              "due_review_queue",
+              "story_collectibles"
+            ],
+            "award": "C4-CLUE-2",
+            "advance_on": "attempted plus feedback opportunity; not score threshold",
+            "next_session": "C4-S3"
+          },
+          "required_items_policy": "Required IDs are available core steps; assembly and completion may be satisfied by an explicit supported-route skip after demonstrated guided success. Store skipped_with_reason; never create mastery evidence for skipped work."
+        },
+        {
+          "id": "C4-S3",
+          "index": 3,
+          "target_minutes": 20,
+          "recap": {
+            "fr": "Trois pages sont retrouvées. La dernière parle des voix d’aujourd’hui.",
+            "en": "Three pages have been found. The last is about voices today.",
+            "zh": "已找回三页。最后一页讲今天的声音。",
+            "label": "Story Fiction"
+          },
+          "steps": [
+            {
+              "kind": "due_review_and_recap",
+              "minutes": 3,
+              "candidate_item_ids": [
+                "C3-R1",
+                "C3-R2",
+                "C3-P1",
+                "C3-P2",
+                "C3-TR",
+                "C3-TP",
+                "C4-R1",
+                "C4-R2",
+                "C4-P1",
+                "C4-P2"
+              ],
+              "first_session": "If no prior learning exists, orient to the mystery; no fabricated retention score."
+            },
+            {
+              "kind": "scene",
+              "minutes": 4,
+              "scene_id": "C4-S3-SCENE",
+              "sequence": [
+                "audio_first",
+                "show_french_text",
+                "optional_translation_support"
+              ]
+            },
+            {
+              "kind": "teach_and_guide",
+              "minutes": 4,
+              "item_ids": [
+                "C4-S3-TEACH",
+                "C4-S3-GUIDED",
+                "C4-S3-RECOGNIZE",
+                "C4-S3-ASSEMBLE",
+                "C4-S3-GUIDED-P"
+              ],
+              "routing": {
+                "more": "recognition → assembly → completion; one target only",
+                "less": "recognition brief check, then assembly or completion; do not add all drills if already secure",
+                "maximum_minutes": 4,
+                "overflow": "bookmark within teaching and continue next session; retain the 20-minute stop"
+              }
+            },
+            {
+              "kind": "story_action",
+              "minutes": 5,
+              "item_ids": [
+                "C4-S3-STORY"
+              ],
+              "optional_open_item_id": "C4-S3-OPEN"
+            },
+            {
+              "kind": "pronunciation",
+              "minutes": 3,
+              "task_id": "C4-S3-PRON"
+            },
+            {
+              "kind": "exit_and_bookmark",
+              "minutes": 1,
+              "item_ids": [
+                "C4-S3-CHECK-R",
+                "C4-S3-CHECK-P",
+                "C4-ENC-CHECK"
+              ],
+              "checkpoint_id": "C4-S3-END",
+              "overflow": "One-minute target: bookmark between checks, including encoding. No time penalty."
+            }
+          ],
+          "branch": {
+            "choice": "inspect written clue first or replay clue first",
+            "paths": {
+              "written_first": {
+                "en": "Let’s inspect the written clue.",
+                "zh": "先查看文字线索。"
+              },
+              "audio_first": {
+                "en": "Let’s listen to the clue.",
+                "zh": "先听线索。"
+              }
+            },
+            "converge_before": "C4-S3-STORY",
+            "required_items_equal": true,
+            "extra_replay_marks_support": true
+          },
+          "required_item_ids": [
+            "C4-S3-TEACH",
+            "C4-S3-GUIDED",
+            "C4-S3-STORY",
+            "C4-S3-CHECK-R",
+            "C4-S3-CHECK-P",
+            "C4-S3-RECOGNIZE",
+            "C4-S3-ASSEMBLE",
+            "C4-S3-GUIDED-P",
+            "C4-ENC-CHECK"
+          ],
+          "checkpoint": {
+            "id": "C4-S3-END",
+            "save_fields": [
+              "learner_id",
+              "content_version",
+              "session_id",
+              "step_index",
+              "submitted_item_ids",
+              "responses",
+              "support_flags",
+              "due_review_queue",
+              "story_collectibles"
+            ],
+            "award": "C4-CLUE-3",
+            "advance_on": "attempted plus feedback opportunity; not score threshold",
+            "next_session": "FOLLOWUP-1"
+          },
+          "required_items_policy": "Required IDs are available core steps; assembly and completion may be satisfied by an explicit supported-route skip after demonstrated guided success. Store skipped_with_reason; never create mastery evidence for skipped work."
+        }
+      ],
+      "estimated_sessions": 3,
+      "session_bookmarks": [
+        "C4-S1-END",
+        "C4-S2-END",
+        "C4-S3-END"
+      ],
+      "learning_item_ids": [
+        "C4-S1-TEACH",
+        "C4-S1-GUIDED",
+        "C4-S1-GUIDED-P",
+        "C4-S1-STORY",
+        "C4-S1-CHECK-R",
+        "C4-S1-CHECK-P",
+        "C4-S1-OPEN",
+        "C4-S1-RETRY-R",
+        "C4-S1-RETRY-P",
+        "C4-S2-TEACH",
+        "C4-S2-GUIDED",
+        "C4-S2-GUIDED-P",
+        "C4-S2-STORY",
+        "C4-S2-CHECK-R",
+        "C4-S2-CHECK-P",
+        "C4-S2-OPEN",
+        "C4-S2-RETRY-R",
+        "C4-S2-RETRY-P",
+        "C4-S3-TEACH",
+        "C4-S3-GUIDED",
+        "C4-S3-GUIDED-P",
+        "C4-S3-STORY",
+        "C4-S3-CHECK-R",
+        "C4-S3-CHECK-P",
+        "C4-S3-OPEN",
+        "C4-S3-RETRY-R",
+        "C4-S3-RETRY-P",
+        "C4-S1-RECOGNIZE",
+        "C4-S1-ASSEMBLE",
+        "C4-S2-RECOGNIZE",
+        "C4-S2-ASSEMBLE",
+        "C4-S3-RECOGNIZE",
+        "C4-S3-ASSEMBLE",
+        "C4-ENC-TEACH",
+        "C4-ENC-PRACTICE",
+        "C4-ENC-CHECK"
+      ],
+      "review_item_ids": [
+        "C4-R1",
+        "C4-P1",
+        "C4-R2",
+        "C4-P2",
+        "C4-TR",
+        "C4-TP",
+        "C4-RR",
+        "C4-RP",
+        "C4-ENC-DELAY",
+        "ENC-TRANSFER"
+      ],
+      "pronunciation_task_ids": [
+        "C4-S1-PRON",
+        "C4-S2-PRON",
+        "C4-S3-PRON"
+      ],
+      "branches": "Clue presentation order only; equal required items; no historical alternate endings.",
+      "resolution": {
+        "award": "page_heritage",
+        "trigger": "C4-S3-END",
+        "en": "The atlas is restored. Next visit, use the language in a new museum puzzle.",
+        "zh": "地图册已修复。下次来时，在新的博物馆谜题中运用这些语言。",
+        "award_depends_on_mastery": false
+      },
+      "history_delivery": "One short EN/ZH Real History card after the scene; unscored for French. Allow saved expansion if session time is nearly up; show all chapter cards by chapter end.",
+      "language_progression": "Recognize → assemble → complete a frame → different independent bounded sentence. Long reasons are modelled enrichment, not required free writing.",
+      "encoding_focus": {
+        "skill_id": "W_ENCODING",
+        "feature": "grave accent in à l’école",
+        "word_fr": "à"
+      },
+      "support_variants": {
+        "more": {
+          "gloss_default": true,
+          "readable_french_after_audio": true,
+          "rate": 0.8
+        },
+        "less": {
+          "gloss_default": false,
+          "gloss_on_request": true,
+          "rate": 0.8
+        }
+      }
+    }
+  ],
+  "history_cards": [
+    {
+      "id": "HC1",
+      "chapter": "C1",
+      "title_en": "A map is not an empty land",
+      "claimIds": [
+        "H-ALLIANCE"
+      ],
+      "fr": "Des peuples autochtones vivent ici depuis très longtemps. Une carte française ne prouve pas que la terre était vide.",
+      "en": "Indigenous peoples lived in these lands long before French colonists arrived. French maps expressed European knowledge and claims; a map did not make the land empty or erase Indigenous rights. French expansion involved trade, settlement and relationships with other peoples.",
+      "zh": "法国殖民者到来以前，原住民族已在这些土地上生活很久。法国地图表达欧洲人的认识和主张；画上地图不代表土地无人居住，也不能抹去原住民族的权利。法国的扩张涉及贸易、定居和与其他民族的关系。",
+      "question_en": "Does drawing a place on a map mean nobody lived there?",
+      "question_zh": "把一个地方画在地图上，是否代表那里原来没有人居住？",
+      "response_en": "No. Maps can leave people and perspectives out.",
+      "response_zh": "不代表。地图可能遗漏一些人及其观点。",
+      "record_as": "cultural_understanding_only"
+    },
+    {
+      "id": "HC2",
+      "chapter": "C2",
+      "title_en": "Alliances involved choices",
+      "claimIds": [
+        "H-ALLIANCE"
+      ],
+      "fr": "Les Mi’kmaq et les Français ont une alliance au XVIIIe siècle. Les deux partenaires ont leurs propres objectifs.",
+      "en": "In the eighteenth century, Mi’kmaq and French leaders maintained an alliance involving trade and war. The partners had their own goals and renewed their relationships through diplomacy. Indigenous peoples were decision-makers, not simply helpers in a French story. One alliance does not represent every Indigenous nation.",
+      "zh": "十八世纪，米克马克人与法国人维持涉及贸易和战争的联盟。双方各有目标，并通过外交维持关系。原住民族是作出决定的主体，不只是法国故事里的帮手。一个联盟不能代表所有原住民族。",
+      "question_en": "Can two partners cooperate while having different goals?",
+      "question_zh": "两个伙伴可以在目标不同的情况下合作吗？",
+      "response_en": "Yes. Compare what each partner wants; do not assume one speaks for the other.",
+      "response_zh": "可以。比较双方各自的目标，不要认为一方能代表另一方。",
+      "record_as": "cultural_understanding_only"
+    },
+    {
+      "id": "HC3",
+      "chapter": "C3",
+      "title_en": "Control changed; people remained",
+      "claimIds": [
+        "H-WAR"
+      ],
+      "fr": "En 1763, le traité de Paris change le contrôle colonial du Canada. Les peuples et les langues ne disparaissent pas.",
+      "en": "At the end of the Seven Years’ War, the 1763 Treaty of Paris transferred France’s colonial control of Canada to Great Britain. This did not erase the people living there or their languages. It did not mean France lost every overseas territory at once, or that Indigenous peoples agreed to European claims.",
+      "zh": "七年战争结束时，1763年的《巴黎条约》把法国对加拿大的殖民控制权转交给英国。这并没有使当地居民或他们的语言消失，也不代表法国同时失去所有海外领地，或原住民族同意欧洲的领土主张。",
+      "question_en": "Did a treaty make all the people and languages disappear?",
+      "question_zh": "签订条约会让所有居民和语言消失吗？",
+      "response_en": "No. Political control and people’s lives are different things.",
+      "response_zh": "不会。政治控制权与人们的生活是不同的事情。",
+      "record_as": "cultural_understanding_only"
+    },
+    {
+      "id": "HC3B",
+      "chapter": "C3",
+      "title_en": "An empire also caused harm",
+      "claimIds": [
+        "H-SLAVERY"
+      ],
+      "fr": "L’esclavage existe en Nouvelle-France. Des personnes sont privées de liberté et forcées à travailler.",
+      "en": "Enslavement existed in New France. Enslaved people were denied freedom and forced to work. This was harm, not a fair exchange. Learning about trade and exploration must also include people who were harmed and people who resisted.",
+      "zh": "新法兰西也存在奴役制度。被奴役者被剥夺自由、被迫劳动。这是伤害，不是公平交换。学习贸易与探索时，也必须了解受害者与反抗者。",
+      "question_en": "Why is a story of trade and victories alone incomplete?",
+      "question_zh": "为什么只讲贸易和胜利是不完整的？",
+      "response_en": "It leaves out harm, the people affected, and resistance.",
+      "response_zh": "它遗漏了伤害、受到影响的人及反抗。",
+      "record_as": "cultural_understanding_only",
+      "skip_detail_allowed": true,
+      "core_short_summary_required": true
+    },
+    {
+      "id": "HC4",
+      "chapter": "C4",
+      "title_en": "People resisted colonial rule",
+      "claimIds": [
+        "H-HAITI"
+      ],
+      "fr": "Haïti proclame son indépendance en 1804. Des personnes réduites en esclavage ont lutté pour leur liberté.",
+      "en": "In the Caribbean, people in the French colony of Saint-Domingue fought against enslavement and colonial rule. Haiti proclaimed independence in 1804. This is a different place and event from Canada in 1763. The people who fought for freedom belong at the centre of that story.",
+      "zh": "在加勒比海的法国殖民地圣多明各，人们反抗奴役和殖民统治。海地于1804年宣布独立。这与1763年加拿大的事件发生在不同地点。争取自由的人应处于故事中心。",
+      "question_en": "Is Haiti’s independence the same event as the 1763 treaty affecting Canada?",
+      "question_zh": "海地独立与影响加拿大的1763年条约是同一事件吗？",
+      "response_en": "No. Different places, dates and struggles need separate explanations.",
+      "response_zh": "不是。不同地点、日期与斗争需要分别解释。",
+      "record_as": "cultural_understanding_only"
+    },
+    {
+      "id": "HC4B",
+      "chapter": "C4",
+      "title_en": "A language is more than an empire",
+      "claimIds": [
+        "H-ALBERTA",
+        "H-WORLD"
+      ],
+      "fr": "Aujourd’hui, on parle français dans plusieurs régions du monde, y compris en Alberta. On peut parler plusieurs langues.",
+      "en": "French is used by communities in many parts of the world, including Alberta. Colonial history is one part of that story; families, education, migration and community choices also matter. French is not the only language in those places. Speaking French does not mean supporting an empire or having only one identity.",
+      "zh": "今天，世界许多地方的社群使用法语，包括阿尔伯塔。殖民历史是其中一部分；家庭、教育、迁移与社群的选择也很重要。这些地方不只有法语。说法语不代表支持帝国，也不代表只有一种身份。",
+      "question_en": "Can a person speak French and another language?",
+      "question_zh": "一个人可以同时说法语和另一种语言吗？",
+      "response_en": "Yes. Communities and people can have several languages and identities.",
+      "response_zh": "可以。社群与个人可以拥有多种语言和身份。",
+      "record_as": "cultural_understanding_only"
+    }
+  ],
+  "incidental_glossary": [
+    {
+      "fr": "un musée",
+      "en": "a museum",
+      "zh": "一个博物馆",
+      "role": "incidental support, not an automatic mastery target",
+      "support_when_used": 3
+    },
+    {
+      "fr": "une page",
+      "en": "a page",
+      "zh": "一页",
+      "role": "incidental support, not an automatic mastery target",
+      "support_when_used": 3
+    },
+    {
+      "fr": "une table",
+      "en": "a table",
+      "zh": "一张桌子",
+      "role": "incidental support, not an automatic mastery target",
+      "support_when_used": 3
+    },
+    {
+      "fr": "un crayon",
+      "en": "a pencil",
+      "zh": "一支铅笔",
+      "role": "incidental support, not an automatic mastery target",
+      "support_when_used": 3
+    },
+    {
+      "fr": "rouge",
+      "en": "red",
+      "zh": "红色",
+      "role": "incidental support, not an automatic mastery target",
+      "support_when_used": 3
+    },
+    {
+      "fr": "bleu / bleue",
+      "en": "blue",
+      "zh": "蓝色",
+      "role": "incidental support, not an automatic mastery target",
+      "support_when_used": 3
+    },
+    {
+      "fr": "vert / verte",
+      "en": "green",
+      "zh": "绿色",
+      "role": "incidental support, not an automatic mastery target",
+      "support_when_used": 3
+    },
+    {
+      "fr": "une salle",
+      "en": "a room",
+      "zh": "一个房间",
+      "role": "incidental support, not an automatic mastery target",
+      "support_when_used": 3
+    },
+    {
+      "fr": "une clé",
+      "en": "a key",
+      "zh": "一把钥匙",
+      "role": "incidental support, not an automatic mastery target",
+      "support_when_used": 3
+    },
+    {
+      "fr": "un sceau",
+      "en": "a seal",
+      "zh": "一个封印",
+      "role": "incidental support, not an automatic mastery target",
+      "support_when_used": 3
+    },
+    {
+      "fr": "un couvercle",
+      "en": "a lid",
+      "zh": "一个盖子",
+      "role": "incidental support, not an automatic mastery target",
+      "support_when_used": 3
+    },
+    {
+      "fr": "une photo",
+      "en": "a photograph",
+      "zh": "一张照片",
+      "role": "incidental support, not an automatic mastery target",
+      "support_when_used": 3
+    },
+    {
+      "fr": "une voix",
+      "en": "a voice",
+      "zh": "一个声音",
+      "role": "incidental support, not an automatic mastery target",
+      "support_when_used": 3
+    },
+    {
+      "fr": "une exposition",
+      "en": "an exhibit",
+      "zh": "一个展览",
+      "role": "incidental support, not an automatic mastery target",
+      "support_when_used": 3
+    },
+    {
+      "fr": "un atlas",
+      "en": "an atlas",
+      "zh": "一本地图册",
+      "role": "incidental support, not an automatic mastery target",
+      "support_when_used": 3
+    },
+    {
+      "fr": "à la maison",
+      "en": "at home",
+      "zh": "在家里",
+      "role": "incidental support, not an automatic mastery target",
+      "support_when_used": 3
+    },
+    {
+      "fr": "a ouvert",
+      "en": "opened",
+      "zh": "打开了",
+      "role": "incidental support, not an automatic mastery target",
+      "support_when_used": 3
+    },
+    {
+      "fr": "a lu",
+      "en": "read (past)",
+      "zh": "读了",
+      "role": "incidental support, not an automatic mastery target",
+      "support_when_used": 3
+    },
+    {
+      "fr": "apprendre",
+      "en": "to learn",
+      "zh": "学习",
+      "role": "incidental support, not an automatic mastery target",
+      "support_when_used": 3
+    },
+    {
+      "fr": "vouloir",
+      "en": "to want",
+      "zh": "想要",
+      "role": "incidental support, not an automatic mastery target",
+      "support_when_used": 3
+    },
+    {
+      "fr": "parler",
+      "en": "to speak",
+      "zh": "说",
+      "role": "incidental support, not an automatic mastery target",
+      "support_when_used": 3
+    },
+    {
+      "fr": "ensemble",
+      "en": "together",
+      "zh": "一起",
+      "role": "incidental support, not an automatic mastery target",
+      "support_when_used": 3
+    }
+  ],
+  "followup_sessions": [
+    {
+      "id": "FOLLOWUP-1",
+      "minimum_hours_after_C4": 48,
+      "minutes": 20,
+      "recap_en": "The pages are restored. Can you solve a new museum clue without the old model?",
+      "recap_zh": "缺页已找回。不看旧例句，你能解决新的博物馆线索吗？",
+      "review_candidates": [
+        "C1-R1",
+        "C1-P1",
+        "C1-R2",
+        "C1-P2",
+        "C2-R1",
+        "C2-P1",
+        "C2-R2",
+        "C2-P2",
+        "C3-R1",
+        "C3-P1",
+        "C3-R2",
+        "C3-P2",
+        "C4-R1",
+        "C4-P1",
+        "C4-R2",
+        "C4-P2"
+      ],
+      "priority": "C4 first, then due weakest skills; do not repeat already exposed checks as fresh evidence",
+      "story": "A new visitor requests labels for the restored exhibit.",
+      "pronunciation_task_id": "C4-S3-PRON"
+    },
+    {
+      "id": "FOLLOWUP-2",
+      "minimum_hours_after_followup_1": 48,
+      "minutes": 20,
+      "recap_en": "Explain one new clue to a visitor, then choose what needs more practice.",
+      "recap_zh": "给参观者解释一个新线索，再选择需要练习的地方。",
+      "review_candidates": [
+        "C1-TR",
+        "C1-TP",
+        "C2-TR",
+        "C2-TP",
+        "C3-TR",
+        "C3-TP",
+        "C4-TR",
+        "C4-TP"
+      ],
+      "priority": "Only administer transfer after that skill’s delayed success; carry remaining checks forward",
+      "story": "The visitor can use your French label to inspect the correct exhibit.",
+      "pronunciation_task_id": "C4-S3-PRON"
+    }
+  ]
+}
