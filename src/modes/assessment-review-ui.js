@@ -168,10 +168,11 @@ function checkbox(entry, action, label, checked, note) {
  * Mount the panel for one learner's most recent run.
  *
  * `deps` supplies what this module will not reach for itself: the store it
- * commits through, the clip store, and a way to play a blob.
+ * commits through, the clip store, and a way to play a blob (playClip, which
+ * must be called inside the tap and resolves { ok, reason }).
  */
 export function mountAssessmentReview(container, {
-  store, audioStore, playBlob, players = ['jenn', 'jess'], deviceId = () => null,
+  store, audioStore, playClip, players = ['jenn', 'jess'], deviceId = () => null,
   now = () => Date.now(), download = null,
 } = {}) {
   if (!container) return () => {};
@@ -258,7 +259,29 @@ export function mountAssessmentReview(container, {
       container.append(div('assess-review-domain', DOMAIN_TEXT[domain]));
       for (const e of group) container.append(entryBlock(e));
     }
+    readClips(run, entries);
   };
+
+  // Recordings, read out of the clip store as soon as their cards are drawn.
+  // On an iPad, play() is refused unless it runs in the same task as the tap,
+  // and reading IndexedDB after the tap puts it outside — so the read happens
+  // first and the tap only has to play what is already here.
+  const clips = new Map();       // `${run_id}|${key}` -> { blob } | { missing: true }
+  const clipId = (run, key) => `${run.run_id}|${key}`;
+  async function readClip(run, entry) {
+    const id = clipId(run, entry.key);
+    const clip = await audioStore.get(run.run_id, entry.item_id, entry.attempt_index);
+    const known = clip?.blob ? { blob: clip.blob } : { missing: true };
+    clips.set(id, known);
+    return known;
+  }
+  function readClips(run, entries) {
+    if (!audioStore) return;
+    for (const e of entries) {
+      if (!e.audio_ref || clips.has(clipId(run, e.key))) continue;
+      readClip(run, e).catch(() => { /* read again on the tap */ });
+    }
+  }
 
   /**
    * Every recording this device holds for the run, as data: URIs.
@@ -320,13 +343,23 @@ export function mountAssessmentReview(container, {
     }
   }
 
-  async function play(key) {
+  // Called from the tap with nothing awaited before it, so a clip already read
+  // reaches play() inside the gesture. A refusal says so and asks for another
+  // tap, which then finds the clip ready.
+  function play(key) {
     const entry = entryFor(key);
     const run = runFor(player);
-    if (!entry || !run || !audioStore) return;
-    const clip = await audioStore.get(run.run_id, entry.item_id, entry.attempt_index);
-    if (!clip?.blob) return say(key, 'That recording is not on this iPad.');
-    try { await playBlob(clip.blob); } catch { say(key, 'This device would not play it back.'); }
+    if (!entry || !run || !audioStore || !playClip) return undefined;
+    const report = known => {
+      if (!known.blob) return say(key, 'That recording is not on this iPad.');
+      return playClip(known.blob).then((r) => {
+        if (r?.ok) say(key, '', true);
+        else say(key, 'That did not play. Tap ▶ again.');
+      });
+    };
+    const known = clips.get(clipId(run, key));
+    if (known) return report(known);
+    return readClip(run, entry).then(report);
   }
 
   const onClick = async (event) => {

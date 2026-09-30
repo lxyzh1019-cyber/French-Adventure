@@ -1,4 +1,4 @@
-# FEATURES — French Adventure — manifest v3 — 2026-09-29
+# FEATURES — French Adventure — manifest v4 — 2026-09-29
 
 Locked features of the current version. Every edit is checked against this list and ends with a regression table. Update this file in the same change that alters a feature. Over-list rather than under-list.
 
@@ -52,10 +52,11 @@ This section lists only what the code does today. Where a feature has a known de
 - Day keys use America/Edmonton (`src/util/dates.js`). Two exceptions use the device clock (implementation-status "Still device-clock dependent"): the weekly played-days strip and the "next reset" line.
 
 ### Speech
-- All French playback goes through `speakFrench` (`src/app.js` ~1515). The voice comes from `pickFrenchVoice`: fr-CA preferred, fr-FR as fallback. `lang` is set even with no voice. Rate is `SPEECH_RATE = 0.80`.
-- `speakFrench` calls `cancel()` only when something is speaking or pending (`d8edc24`). **The iPad first-tap silence is still an open defect** (implementation-status "M2 Step 6", open items).
+- All sound — spoken French and recorded clips — goes through one owner, `src/speech/audio-out.js` (`createAudioOut`). `speakFrench` in `src/app.js` is a thin wrapper over it. The voice comes from `pickFrenchVoice`: fr-CA preferred, fr-FR as fallback. `lang` is set even with no voice. Rate is `SPEECH_RATE = 0.80`. Structural rule: `synth.speak`, `new Audio` and `.play(` appear nowhere else in `src/`.
+- `cancel()` only when something is speaking or pending (`d8edc24`), and never to clear the silent unlock line. The first trusted tap anywhere speaks one empty, silent line to unlock WebKit speech. A paused engine is resumed before speaking, on returning to the page (`visibilitychange`) and on `pageshow`. Each line keeps a strong reference until it ends.
+- A line that has not started within 1.5 s (`START_WATCHDOG_MS`) is reported, not retried: its 🔊 button pulses (`.needs-tap`) until a line starts. **The iPad first-tap silence is fixed in code, awaiting iPad confirmation** (implementation-status open items; `ipad-test-checklist.md` §4.5).
 - 🔊 buttons carry their text in `data-speak`, with no inline-JS interpolation, so apostrophe words speak. Touch targets are ≥44 px (52 px on touch).
-- Listen & Speak speaks each word automatically about 400 ms after the question renders (`src/app.js:2479`).
+- Listen & Speak speaks each word automatically in the same task as the tap that rendered the question (the 400 ms delay is gone); the input is still focused at 600 ms. Quiz and Scramble also speak their word on render.
 - `currentVoiceInfo()` is on `window`, for diagnostics.
 - Mic toggle (`src/speech/recorder.js`): tap to start, tap again to stop. It resets on result, error, silence or the 10 s timeout. States 🎤 / ⏹ Stop.
 - The quiz mic reports what the device heard and never claims the pronunciation was good. Listen & Speak puts the transcript in the box and submits nothing until Check ✓.
@@ -67,7 +68,7 @@ This section lists only what the code does today. Where a feature has a known de
 - Five sections in the release's order: listening, reading, vocabulary/grammar, writing, speaking. A new section needs 6 minutes. A section already begun runs to its end.
 - Objective routing: the entry block is answered first, then the routed tiers are appended in bank order. The decision is frozen with a timestamp.
 - Item types rendered: `audio_choice`, `text_choice`, `typed_short`, `open_written` and spoken prompts.
-- Listening: at most two plays. "I heard nothing" uses no play and stores `audio_failed` as invalid. The script and any written French are never shown.
+- Listening: at most two plays. A play is counted only when the speech actually starts; one that never starts uses nothing and says "No sound started. Tap ▶︎ Play again." The Play button is held while a play is starting. "I heard nothing" uses no play and stores `audio_failed` as invalid. The script and any written French are never shown.
 - The assessment screen has no feedback, hints, translations, lives, stars, timer, confetti or leaderboard. A chosen option is outlined in blue only.
 - Typed fields turn off autocorrect, autocapitalize, spellcheck and autocomplete. A keyboard note (turn off Auto-Correction and Predictive Text) appears before the words and writing sections.
 - Autosave on every response. Resume goes to the first unanswered planned item, on either device. A submitted item is never shown again, and a second submission is refused.
@@ -84,7 +85,7 @@ This section lists only what the code does today. Where a feature has a known de
   - One 0–3 radio choice per rubric dimension.
   - A "helped" (support) flag.
   - "Set aside" and restore, but never for an invalidity the app recorded itself.
-  - Play the recording on the recording iPad.
+  - Play the recording on the recording iPad. Clips are read from IndexedDB when the cards are drawn, so the tap reaches `play()` directly; a refused play says "That did not play. Tap ▶ again."
   - No model answers anywhere.
 - Exports: "⬇ Save everything, with the recordings" (`exportHtml`, one self-contained HTML with the audio embedded) and "⬇ Text only" (`exportText`). A worked example that is a model answer in the same export is withheld (`partitionExamples`).
 - Assessment runs travel inside the recovery JSON export and are merged, not replaced, on import.
@@ -102,6 +103,7 @@ This section lists only what the code does today. Where a feature has a known de
 - The Levels panel states that every level is open. It has no controls.
 - 🔧 Device & feature check (`src/modes/device-check.js`, `device-check-ui.js`):
   - Seven parent-started checks: voice, audio plays, microphone permission, record and replay, storage round-trip, delete, and the four pictures shown at learner size.
+  - "Play it back" plays the in-memory recording inside the tap. A refused play leaves the check at "needs you" with the reason and asks for another tap; only the person's "I heard nothing" fails it.
   - A test-mode notice at the top.
   - ⬇ Save these results: downloads `device-check-YYYY-MM-DD.txt` — each check's status, detail and the parent's answer, plus date, browser and Home Screen icon vs Safari tab. No learner data; writes nothing on the device. **Known defect:** any non-Home-Screen page is labelled "Safari tab", including Chrome for iOS (seen 2026-09-29; implementation-status "M2 Step 6", open items).
   - Writes no learner record. Diagnostic clips use the `devicecheck_` prefix and are deleted on the way in and on the way out.

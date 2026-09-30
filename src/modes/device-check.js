@@ -110,10 +110,11 @@ export function formatDeviceCheckReport(results, { now = Date.now(), userAgent =
  * @param voiceInfo     the app's own voice resolver: { resolvedLocale, name }
  * @param makeCapture   the app's own audio capture factory
  * @param audioStore    the app's own IndexedDB clip store
- * @param playBlob      plays a recorded blob; resolves when playback starts
+ * @param playClip      the app's own clip player: call inside the tap; resolves
+ *                      { ok: true } once playback starts, { ok: false, reason } if refused
  */
 export function createDeviceCheck({
-  speak, voiceInfo, makeCapture, audioStore, playBlob,
+  speak, voiceInfo, makeCapture, audioStore, playClip,
   requestedLocale = 'fr-CA', now = () => Date.now(), onChange = () => {},
 } = {}) {
   let results = blank();
@@ -244,12 +245,16 @@ export function createDeviceCheck({
 
     hasRecording: () => !!recorded,
 
+    // The clip is already in memory, so play() is reached inside the tap. A
+    // refusal is not yet a verdict — on an iPad a first play can be refused and
+    // a second tap works — so it asks for another tap, and the person's own
+    // "I heard nothing" is still what fails the check.
     async playRecording() {
       if (!recorded) return set('record_replay', 'fail', 'There is nothing recorded to play.');
-      try {
-        await playBlob(recorded.blob);
-      } catch (e) {
-        return set('record_replay', 'fail', `The device would not play it back: ${e?.message || e}`);
+      const played = await playClip(recorded.blob);
+      if (!played?.ok) {
+        return set('record_replay', 'needs_you',
+          `Playback did not start (${played?.reason || 'refused'}). Tap Play it back again.`);
       }
       return results.record_replay;
     },

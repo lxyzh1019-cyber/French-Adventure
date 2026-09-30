@@ -8,6 +8,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { chromium } from 'playwright';
+import { installFakeWebKitAudio } from '../helpers/fake-webkit-audio.js';
 
 // APP_FILE lets a run be pointed at a deliberately broken copy of the built
 // page, which is how a guard here is shown to be capable of failing. Without
@@ -135,46 +136,49 @@ test('the first tap does not cancel an idle synthesiser, but a second tap cuts t
   // WebKit loses the first utterance after a page load when cancel() is called
   // on an already-idle synthesiser: the child taps 🔊, hears nothing, taps
   // again and it works. The cancel is still wanted when a word IS playing —
-  // moving on should cut the previous one off rather than queue behind it — so
-  // the fix is a guard, not a deletion, and this pins both halves.
-  const { page, errors } = await open();
+  // moving on should cut the previous one off rather than queue behind it.
+  //
+  // Driven with trusted taps against the WebKit double, so the first tap also
+  // meets the silent unlock utterance the audio module queues on first touch:
+  // that one must not be cancelled either, or the real word would be lost with
+  // it. What is asserted is what was heard, not only what was called.
+  const context = await browser.newContext();
+  openContexts.push(context);
+  await context.route('**://*/**', route =>
+    route.request().url().startsWith('file://') ? route.continue() : route.abort());
+  await context.addInitScript(installFakeWebKitAudio, { durationMs: 3000 });
+  const page = await context.newPage();
+  const errors = [];
+  page.on('pageerror', e => errors.push(String(e.message)));
+  await page.goto(APP, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(1200);
 
-  const log = await page.evaluate(async () => {
-    const calls = [];
-    const synth = window.speechSynthesis;
-    const realSpeak = synth.speak.bind(synth);
-    const realCancel = synth.cancel.bind(synth);
+  const put = w => page.evaluate((word) => {
+    document.getElementById('__t-speak')?.remove();
+    const b = document.createElement('button');
+    b.id = '__t-speak'; b.setAttribute('data-speak', word); b.textContent = 'S';
+    b.style.cssText = 'position:fixed;top:8px;left:8px;z-index:99999;width:60px;height:60px;';
+    document.body.append(b);
+    window.__audioFake.calls.length = 0;
+  }, w);
+  const calls = () => page.evaluate(() => window.__audioFake.calls.slice());
 
-    // A synthesiser whose busy state the test controls, so "is something
-    // playing?" is a fact rather than a race with the platform.
-    let busy = false;
-    Object.defineProperty(synth, 'speaking', { get: () => busy, configurable: true });
-    Object.defineProperty(synth, 'pending', { get: () => false, configurable: true });
-    synth.cancel = () => { calls.push('cancel'); };
-    synth.speak = () => { calls.push('speak'); };
+  await put('bonjour');
+  await page.click('#__t-speak');            // first tap: nothing was playing
+  await page.waitForTimeout(100);
+  const first = await calls();
 
-    const host = document.createElement('div');
-    host.innerHTML = '<button data-speak="bonjour">S</button>';
-    document.body.append(host);
-    const tap = () => host.querySelector('button').click();
+  await put('merci');
+  await page.click('#__t-speak');            // 'bonjour' is still mid-sentence
+  await page.waitForTimeout(100);
+  const second = await calls();
+  const heard = await page.evaluate(() => window.__audioFake.heard.slice());
 
-    tap();                                   // first tap: nothing was playing
-    const first = calls.splice(0);
-
-    busy = true;                             // now a word is mid-sentence
-    tap();                                   // tapping the next one must cut it off
-    const second = calls.splice(0);
-
-    host.remove();
-    delete synth.speaking; delete synth.pending;
-    synth.speak = realSpeak; synth.cancel = realCancel;
-    return { first, second };
-  });
-
-  assert.deepEqual(log.first, ['speak'],
+  assert.equal(first.includes('cancel'), false,
     'the first tap cancelled an idle synthesiser, which is how WebKit swallows it');
-  assert.deepEqual(log.second, ['cancel', 'speak'],
+  assert.deepEqual(second, ['cancel', 'speak'],
     'a word already playing was not cut off when the next one was tapped');
+  assert.deepEqual(heard, ['bonjour', 'merci']);
   assert.deepEqual(errors, []);
 });
 

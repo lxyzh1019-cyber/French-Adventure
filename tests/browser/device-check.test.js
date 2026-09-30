@@ -13,6 +13,7 @@ import { readFile } from 'node:fs/promises';
 import { chromium } from 'playwright';
 import { administer, storeFor } from '../helpers/administer.js';
 import * as C from '../../src/assessment/content.js';
+import { installFakeWebKitAudio } from '../helpers/fake-webkit-audio.js';
 
 const APP = 'file://' + path.resolve(process.env.APP_FILE || 'index.html');
 const CHROME = process.env.CHROMIUM_PATH || undefined;
@@ -34,7 +35,7 @@ test.afterEach(async () => {
 });
 test.after(async () => { await browser?.close(); });
 
-async function open({ micAllowed = true, run = null, viewport = null } = {}) {
+async function open({ micAllowed = true, run = null, viewport = null, webkit = false } = {}) {
   const context = await browser.newContext(viewport ? { viewport } : {});
   openContexts.push(context);
   await context.route('**://*/**', route =>
@@ -54,7 +55,8 @@ async function open({ micAllowed = true, run = null, viewport = null } = {}) {
 
     window.__spoken = [];
     if (window.speechSynthesis) {
-      window.speechSynthesis.speak = u => { window.__spoken.push(u.text); };
+      // The empty line is the audio module's silent unlock on first tap.
+      window.speechSynthesis.speak = u => { if (u.text) window.__spoken.push(u.text); };
       window.speechSynthesis.cancel = () => {};
       window.speechSynthesis.getVoices = () => [{ name: 'Amelie', lang: 'fr-FR', localService: true }];
     }
@@ -90,6 +92,9 @@ async function open({ micAllowed = true, run = null, viewport = null } = {}) {
     window.__playedClips = 0;
     window.Audio = class { constructor() {} play() { window.__playedClips += 1; return Promise.resolve(); } };
   }, { allowed: micAllowed, assess: run ? storeFor(run) : null, profile: PROFILE });
+  // Registered after the stubs above, so it replaces their speech and <audio>
+  // doubles with the one that refuses play() outside a tap, as WebKit does.
+  if (webkit) await context.addInitScript(installFakeWebKitAudio, {});
 
   const page = await context.newPage();
   const errors = [];
@@ -196,6 +201,21 @@ test('the check is behind the parent password, and says it is test mode', async 
   assert.match(text, /Test mode/);
   assert.match(text, /nothing here affects the learner's record/i);
   assert.match(text, /does not replace listening to it yourself/i);
+});
+
+test('the recording plays back on the first tap, under WebKit play() rules', async () => {
+  // play() is refused outside a tap. The clip is in memory by the time the
+  // button is shown, so the tap reaches play() without waiting on anything.
+  const { page, errors } = await open({ webkit: true });
+  await openCheck(page);
+  await press(page, 'dc-rec-start');
+  await press(page, 'dc-rec-stop');
+  await page.click('#assess-device-check-panel [data-action="dc-rec-play"]');
+  await page.waitForTimeout(250);
+  const f = await page.evaluate(() => ({
+    clips: window.__audioFake.clips.length, refused: window.__audioFake.refusedClips.length }));
+  assert.deepEqual(f, { clips: 1, refused: 0 }, 'the first tap did not play the recording');
+  assert.deepEqual(errors, []);
 });
 
 test('every check runs, and reports what this device can do', async () => {

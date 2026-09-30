@@ -32,12 +32,18 @@ session.
       **🔧 Device & feature check** shows under *Check the voice* (§5.0b-1)
       instead — it says which voice this iPad will use.
 - [ ] **§4.5 Audio after silence — and the first tap.** On 2026-09-28 you
-      reported that the first 🔊 tap still sometimes plays nothing. **That is
-      not fixed yet.** While doing §4.5, also note:
+      reported that the first 🔊 tap still sometimes plays nothing. **A fix is
+      in the build from branch `claude/audio-first-tap` (2026-09-29) but is not
+      confirmed on the iPad yet** — only you can confirm it. While doing §4.5,
+      also note:
       (a) right after opening the app from the Home Screen icon, did the very
       first 🔊 tap speak, or only the second?
       (b) in Listen & Speak, did the first word play by itself when the
-      question appeared, or only after you tapped 🔊?
+      question appeared, or only after you tapped 🔊? If a 🔊 button starts
+      pulsing with a gold ring, the iPad refused the sound: note that too.
+      (c) after sleep: lock the iPad for a minute in the middle of a round,
+      unlock it, come back to the app and tap 🔊. Did it speak on the first
+      tap?
       "First tap silent, second worked" is a useful answer. So is "always
       worked".
 - [ ] **§5.5c Refusing the microphone.** This one can only be walked inside a
@@ -274,6 +280,12 @@ No heart is lost, and no answer is submitted, until you tap **Check ✓**.
       should get **"So close — check the accents"**, not a flat wrong.
 - [ ] **4.5 Audio after silence** — leave the app idle 30s, then tap 🔊. It still
       speaks (iOS sometimes suspends audio).
+      (a) First tap: right after opening the app, the very first 🔊 tap speaks.
+      (b) Listen & Speak: the first word plays by itself when the question
+      appears. If it does not, the 🔊 button pulses with a gold ring instead of
+      staying silent — tap it and the word plays.
+      (c) After sleep: lock the iPad mid-round for a minute, unlock, return to
+      the app, tap 🔊. It speaks on the first tap.
 - [ ] **4.6 Screen lock** — lock mid-round, unlock, return. The round resumes
       where it was.
 - [ ] **4.7 App switch** — swipe to another app for a minute, come back. Same.
@@ -505,7 +517,8 @@ Opened from:  ☐ Home Screen icon  ☐ Safari tab
 - M1 Parts 1–4 (§1.1–§4.7): ☐ all passed  ☐ problems — which: ______________________________
 - §4.5 audio after silence: ☐ spoke  ☐ silent
     - First 🔊 tap after opening the app: ☐ spoke  ☐ silent, second tap worked  ☐ other: ________
-    - Listen & Speak first word played by itself: ☐ yes  ☐ no  ☐ only after tapping 🔊
+    - Listen & Speak first word played by itself: ☐ yes  ☐ no  ☐ only after tapping 🔊  ☐ 🔊 pulsed
+    - After sleep, first 🔊 tap: ☐ spoke  ☐ silent, second tap worked  ☐ other: ________
 - §5.5c refused microphone: ☐ not walked (prompt not spent)  ☐ said *not a wrong answer* and moved on  ☐ problem: ________
 - Jess's recordings saved with **⬇ Save everything, with the recordings** on: ______________  kept at: ______________________________
 

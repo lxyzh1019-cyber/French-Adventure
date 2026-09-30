@@ -238,6 +238,9 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .question-speak-inline,.speak-inline{background:rgba(79,70,229,.15);border:2px solid rgba(79,70,229,.4);border-radius:12px;padding:8px 14px;font-size:1.1rem;line-height:1;cursor:pointer;color:var(--text);font-weight:700;min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:6px;vertical-align:middle;}
 .question-speak-inline:active,.speak-inline:active{background:rgba(79,70,229,.3);}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+/* A sound that never started: the 🔊 asks for a tap instead of staying silent.
+   Cleared as soon as a line does start. */
+.needs-tap{animation:pulse 1s infinite;box-shadow:0 0 0 3px var(--gold);}
 
 /* HINT */
 .hint-panel{background:rgba(79,70,229,.1);border:1px solid rgba(79,70,229,.3);border-radius:14px;padding:12px 18px;width:100%;max-width:480px;text-align:center;display:none;}

@@ -7,7 +7,7 @@
      styles ......... src/styles.css
      game logic ..... src/**/*.js
 
-   Built from 1a80c35
+   Built from 5634577
   ============================================================
 -->
 <!DOCTYPE html>
@@ -1623,6 +1623,174 @@ function describeVoice(voice, requested = PREFERRED_LOCALE) {
     isFrench: resolved.startsWith("fr")
   };
 }
+const START_WATCHDOG_MS = 1500;
+const CLIP_URL_TTL_MS = 3e4;
+function createAudioOut({
+  synth = globalThis.speechSynthesis,
+  makeUtterance = (text) => new globalThis.SpeechSynthesisUtterance(text),
+  makeAudio = (url) => new globalThis.Audio(url),
+  urls = globalThis.URL,
+  pickVoice = () => null,
+  fallbackLang = "",
+  rate = 1,
+  watchdogMs = START_WATCHDOG_MS,
+  setTimeout: setT = globalThis.setTimeout.bind(globalThis),
+  clearTimeout: clearT = globalThis.clearTimeout.bind(globalThis)
+} = {}) {
+  let unlocked = false;
+  let unlockUtt = null;
+  let current = null;
+  let removeGestureListeners = () => {
+  };
+  function markUnlocked() {
+    if (unlocked) return;
+    unlocked = true;
+    removeGestureListeners();
+  }
+  function resumeIfPaused() {
+    try {
+      if (synth?.paused) synth.resume();
+    } catch {
+    }
+  }
+  function speak(text, { onStart, onRefused } = {}) {
+    if (!synth || !text) return false;
+    resumeIfPaused();
+    if (current) {
+      current.superseded = true;
+      clearT(current.timer);
+    }
+    const onlyUnlockQueued = !current && unlockUtt;
+    if ((synth.speaking || synth.pending) && !onlyUnlockQueued) synth.cancel();
+    const utt = makeUtterance(text);
+    const voice = pickVoice();
+    if (voice) utt.voice = voice;
+    utt.lang = voice ? voice.lang : fallbackLang;
+    utt.rate = rate;
+    const line = { utt, superseded: false, started: false, refused: false, timer: null };
+    current = line;
+    const refuse2 = (why) => {
+      if (line.started || line.refused || line.superseded) return;
+      line.refused = true;
+      try {
+        onRefused?.(why);
+      } catch {
+      }
+    };
+    const settle = () => {
+      clearT(line.timer);
+      if (current === line) current = null;
+    };
+    utt.onstart = () => {
+      if (line.superseded || line.started) return;
+      line.started = true;
+      clearT(line.timer);
+      markUnlocked();
+      try {
+        onStart?.();
+      } catch {
+      }
+    };
+    utt.onend = settle;
+    utt.onerror = (e) => {
+      settle();
+      refuse2(e?.error || "error");
+    };
+    line.timer = setT(() => {
+      if (current === line && !line.started) current = null;
+      refuse2("not_started");
+    }, watchdogMs);
+    try {
+      synth.speak(utt);
+    } catch (e) {
+      settle();
+      refuse2(e?.name || "error");
+      return false;
+    }
+    return true;
+  }
+  function unlock() {
+    if (unlocked || unlockUtt || !synth) return;
+    try {
+      pickVoice();
+    } catch {
+    }
+    try {
+      const u = makeUtterance("");
+      u.volume = 0;
+      const clear = () => {
+        if (unlockUtt === u) unlockUtt = null;
+      };
+      u.onstart = markUnlocked;
+      u.onend = () => {
+        markUnlocked();
+        clear();
+      };
+      u.onerror = clear;
+      unlockUtt = u;
+      synth.speak(u);
+      setT(clear, watchdogMs);
+    } catch {
+      unlockUtt = null;
+    }
+  }
+  function install({ win, doc }) {
+    const events = ["touchend", "pointerup", "click", "keydown"];
+    const onGesture = (e) => {
+      if (e && e.isTrusted === false) return;
+      unlock();
+    };
+    for (const t of events) win.addEventListener(t, onGesture, true);
+    removeGestureListeners = () => {
+      for (const t of events) win.removeEventListener(t, onGesture, true);
+      removeGestureListeners = () => {
+      };
+    };
+    if (unlocked) removeGestureListeners();
+    doc.addEventListener("visibilitychange", () => {
+      if (doc.visibilityState !== "hidden") resumeIfPaused();
+    });
+    win.addEventListener("pageshow", resumeIfPaused);
+  }
+  function playClip(blob) {
+    let url = null;
+    let started;
+    try {
+      url = urls.createObjectURL(blob);
+      const audio = makeAudio(url);
+      audio.preload = "auto";
+      started = audio.play();
+    } catch (e) {
+      if (url) {
+        try {
+          urls.revokeObjectURL(url);
+        } catch {
+        }
+      }
+      return Promise.resolve({ ok: false, reason: e?.name || "error" });
+    }
+    setT(() => {
+      try {
+        urls.revokeObjectURL(url);
+      } catch {
+      }
+    }, CLIP_URL_TTL_MS);
+    return Promise.resolve(started).then(
+      () => ({ ok: true }),
+      (e) => ({ ok: false, reason: e?.name || "error" })
+    );
+  }
+  return {
+    speak,
+    unlock,
+    install,
+    playClip,
+    resumeIfPaused,
+    get isUnlocked() {
+      return unlocked;
+    }
+  };
+}
 function escapeAttr(text) {
   return String(text).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/'/g, "&#39;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
@@ -2962,7 +3130,9 @@ let deps = {
   },
   speak: () => {
   },
-  // plays a French string aloud
+  // (text, { onStart, onRefused }) plays a French string aloud
+  playClip: async () => ({ ok: false, reason: "unavailable" }),
+  // plays a recorded blob
   voiceInfo: () => ({}),
   // { resolvedLocale, name } for the record
   makeCapture: null,
@@ -3109,15 +3279,7 @@ function render() {
 let capture = null;
 let captureState = "idle";
 let captureError = null;
-let clipUrl = null;
 function resetCapture() {
-  if (clipUrl) {
-    try {
-      URL.revokeObjectURL(clipUrl);
-    } catch {
-    }
-    clipUrl = null;
-  }
   capture = null;
   captureState = "idle";
   captureError = null;
@@ -3237,13 +3399,6 @@ async function stopRecording() {
     draft.audio_duration_ms = result.durationMs ?? null;
     draft.audio_mime = result.mimeType ?? null;
     draft.technical_invalid_reason = null;
-    if (clipUrl) {
-      try {
-        URL.revokeObjectURL(clipUrl);
-      } catch {
-      }
-    }
-    clipUrl = null;
   } else {
     captureError = "That did not record. You can try again.";
   }
@@ -3251,14 +3406,11 @@ async function stopRecording() {
 }
 function playOwnRecording() {
   if (!draft?.audio_blob) return;
-  try {
-    if (!clipUrl) clipUrl = URL.createObjectURL(draft.audio_blob);
-    const audio = new Audio(clipUrl);
-    void audio.play();
-  } catch {
-    captureError = "That clip cannot be played back here.";
+  void deps.playClip(draft.audio_blob).then((r) => {
+    if (r?.ok) return;
+    captureError = "That did not play. Tap ▶ again.";
     render();
-  }
+  });
 }
 function abandonRecording() {
   if (!capture || captureState !== "recording" || !draft) return null;
@@ -3316,17 +3468,26 @@ function audioControls(item, d) {
   box.className = "assess-audio";
   const used = playsUsed(d);
   const max = item.audio?.max_plays ?? MAX_LISTENING_PLAYS;
+  const mine = playState.draft === d ? playState : null;
   const play = document.createElement("button");
   play.type = "button";
   play.className = "btn-primary";
   play.setAttribute("data-action", "assess-play");
   play.textContent = used === 0 ? "▶︎ Play" : "▶︎ Play again";
-  play.disabled = !canPlay(item, d);
+  play.disabled = !canPlay(item, d) || !!mine?.pending;
+  if (mine?.notice) play.classList.add("needs-tap");
   box.append(play);
   const left = document.createElement("div");
   left.className = "assess-note";
-  left.textContent = play.disabled ? "That was the last play for this one." : `${max - used} play${max - used === 1 ? "" : "s"} left`;
+  left.textContent = !canPlay(item, d) ? "That was the last play for this one." : `${max - used} play${max - used === 1 ? "" : "s"} left`;
   box.append(left);
+  if (mine?.notice) {
+    const note = document.createElement("div");
+    note.className = "assess-note";
+    note.setAttribute("role", "status");
+    note.textContent = mine.notice;
+    box.append(note);
+  }
   const nosound = document.createElement("button");
   nosound.type = "button";
   nosound.className = "btn-secondary";
@@ -3374,16 +3535,35 @@ function chooseOption(choiceId) {
   draft.selected_choice_ids = draft.selected_choice_ids.includes(choiceId) ? [] : [choiceId];
   render();
 }
+let playState = { draft: null, pending: false, notice: null };
 async function playCurrentAudio() {
   const run = currentRun();
   if (!run || !draft) return;
   const item = getItem(draft.item_id);
   if (!item?.audio || !canPlay(item, draft)) return;
+  const d = draft;
+  if (playState.draft === d && playState.pending) return;
   const info = deps.voiceInfo() || {};
-  recordPlayback(draft, { consumed: true, resolvedLocale: info.resolvedLocale ?? null });
-  draft.voice_requested_locale = item.audio.locale ?? null;
-  draft.voice_name = info.name ?? null;
-  deps.speak(item.audio.script_fr_ca);
+  d.voice_requested_locale = item.audio.locale ?? null;
+  d.voice_name = info.name ?? null;
+  playState = { draft: d, pending: true, notice: null };
+  const onScreen = () => draft === d;
+  const asked = deps.speak(item.audio.script_fr_ca, {
+    onStart: () => {
+      if (playState.draft === d) playState = { draft: d, pending: false, notice: null };
+      if (!onScreen() || !canPlay(item, d)) return;
+      recordPlayback(d, { consumed: true, resolvedLocale: info.resolvedLocale ?? null });
+      render();
+    },
+    onRefused: () => {
+      if (playState.draft !== d) return;
+      playState = { draft: d, pending: false, notice: "No sound started. Tap ▶︎ Play again." };
+      if (onScreen()) render();
+    }
+  });
+  if (asked === false && playState.draft === d) {
+    playState = { draft: d, pending: false, notice: "No sound started. Tap ▶︎ Play again." };
+  }
   render();
 }
 function reportNoSound() {
@@ -4544,7 +4724,7 @@ function checkbox(entry, action, label, checked, note) {
 function mountAssessmentReview(container, {
   store,
   audioStore,
-  playBlob,
+  playClip,
   players = ["jenn", "jess"],
   deviceId: deviceId2 = () => null,
   now: now2 = () => Date.now(),
@@ -4619,7 +4799,25 @@ function mountAssessmentReview(container, {
       container.append(div$1("assess-review-domain", DOMAIN_TEXT[domain]));
       for (const e of group) container.append(entryBlock(e));
     }
+    readClips(run, entries);
   };
+  const clips = /* @__PURE__ */ new Map();
+  const clipId = (run, key) => `${run.run_id}|${key}`;
+  async function readClip(run, entry) {
+    const id = clipId(run, entry.key);
+    const clip = await audioStore.get(run.run_id, entry.item_id, entry.attempt_index);
+    const known = clip?.blob ? { blob: clip.blob } : { missing: true };
+    clips.set(id, known);
+    return known;
+  }
+  function readClips(run, entries) {
+    if (!audioStore) return;
+    for (const e of entries) {
+      if (!e.audio_ref || clips.has(clipId(run, e.key))) continue;
+      readClip(run, e).catch(() => {
+      });
+    }
+  }
   async function collectClips(run) {
     if (!audioStore) return {};
     const out = {};
@@ -4672,17 +4870,20 @@ function mountAssessmentReview(container, {
       say(key, e.message);
     }
   }
-  async function play(key) {
+  function play(key) {
     const entry = entryFor(key);
     const run = runFor(player);
-    if (!entry || !run || !audioStore) return;
-    const clip = await audioStore.get(run.run_id, entry.item_id, entry.attempt_index);
-    if (!clip?.blob) return say(key, "That recording is not on this iPad.");
-    try {
-      await playBlob(clip.blob);
-    } catch {
-      say(key, "This device would not play it back.");
-    }
+    if (!entry || !run || !audioStore || !playClip) return void 0;
+    const report = (known2) => {
+      if (!known2.blob) return say(key, "That recording is not on this iPad.");
+      return playClip(known2.blob).then((r) => {
+        if (r?.ok) say(key, "", true);
+        else say(key, "That did not play. Tap ▶ again.");
+      });
+    };
+    const known = clips.get(clipId(run, key));
+    if (known) return report(known);
+    return readClip(run, entry).then(report);
   }
   const onClick = async (event) => {
     const el2 = event.target.closest?.("[data-action]");
@@ -4813,7 +5014,7 @@ function createDeviceCheck({
   voiceInfo,
   makeCapture,
   audioStore,
-  playBlob,
+  playClip,
   requestedLocale = "fr-CA",
   now: now2 = () => Date.now(),
   onChange = () => {
@@ -4938,12 +5139,19 @@ function createDeviceCheck({
       );
     },
     hasRecording: () => !!recorded,
+    // The clip is already in memory, so play() is reached inside the tap. A
+    // refusal is not yet a verdict — on an iPad a first play can be refused and
+    // a second tap works — so it asks for another tap, and the person's own
+    // "I heard nothing" is still what fails the check.
     async playRecording() {
       if (!recorded) return set("record_replay", "fail", "There is nothing recorded to play.");
-      try {
-        await playBlob(recorded.blob);
-      } catch (e) {
-        return set("record_replay", "fail", `The device would not play it back: ${e?.message || e}`);
+      const played = await playClip(recorded.blob);
+      if (!played?.ok) {
+        return set(
+          "record_replay",
+          "needs_you",
+          `Playback did not start (${played?.reason || "refused"}). Tap Play it back again.`
+        );
       }
       return results.record_replay;
     },
@@ -6571,15 +6779,28 @@ function currentVoiceInfo() {
   if (!frenchVoiceInfo) resolveFrenchVoice();
   return frenchVoiceInfo;
 }
-function speakFrench(text) {
-  if (!speechSynth) return;
-  if (speechSynth.speaking || speechSynth.pending) speechSynth.cancel();
-  const utt = new SpeechSynthesisUtterance(text);
-  const voice = frenchVoice || resolveFrenchVoice();
-  if (voice) utt.voice = voice;
-  utt.lang = voice ? voice.lang : PREFERRED_LOCALE;
-  utt.rate = SPEECH_RATE;
-  speechSynth.speak(utt);
+const audioOut = createAudioOut({
+  synth: speechSynth,
+  pickVoice: () => frenchVoice || resolveFrenchVoice(),
+  fallbackLang: PREFERRED_LOCALE,
+  rate: SPEECH_RATE
+});
+audioOut.install({ win: window, doc: document });
+function speakFrench(text, opts) {
+  return audioOut.speak(text, opts);
+}
+function speakWithSignal(text, findBtn) {
+  const btn = () => {
+    try {
+      return findBtn ? findBtn() : null;
+    } catch (_) {
+      return null;
+    }
+  };
+  return speakFrench(text, {
+    onStart: () => btn()?.classList.remove("needs-tap"),
+    onRefused: () => btn()?.classList.add("needs-tap")
+  });
 }
 function speakButtonHTML(text, cls, style) {
   return '<button type="button" class="' + escapeAttr(cls || "") + '"' + (style ? ' style="' + escapeAttr(style) + '"' : "") + ' data-speak="' + escapeAttr(text) + '">🔊</button>';
@@ -6630,7 +6851,7 @@ window.__faDebug = {
 };
 document.addEventListener("click", function(e) {
   const t = e.target && e.target.closest ? e.target.closest("[data-speak]") : null;
-  if (t) speakFrench(t.getAttribute("data-speak"));
+  if (t) speakWithSignal(t.getAttribute("data-speak"), () => t);
 });
 document.addEventListener("click", function(e) {
   const el2 = e.target && e.target.closest ? e.target.closest("[data-action]") : null;
@@ -6716,7 +6937,7 @@ document.addEventListener("click", function(e) {
 function speakCurrent() {
   if (!currentQ) return;
   const text = currentQ.word?.fr || currentQ.parts?.join(" ") || "";
-  if (text) speakFrench(text);
+  if (text) speakWithSignal(text, () => document.getElementById("btn-tts"));
 }
 let quizMic = null;
 function micButtonState(btn, idleLabel) {
@@ -6898,7 +7119,7 @@ function renderQuiz(q, area, actions) {
   });
   actions.innerHTML = '<button class="btn-secondary" onclick="showHint()">💡 Hint</button>';
   document.getElementById("hint-text").textContent = "Parents: 中文提示 = " + q.hint;
-  speakFrench(q.word.fr);
+  speakWithSignal(q.word.fr, () => area.querySelector("[data-speak]"));
 }
 function handleQuizAnswer(choice, q, btn) {
   if (!commitAnswerOnce()) return;
@@ -7073,7 +7294,7 @@ function renderScramble(q, area, actions) {
   area.innerHTML = '<div class="question-label">' + escapeAttr(SCRAMBLE_PROMPTS[scrambleType]) + '</div><div class="question-hint-big">🇬🇧 ' + q.word.en + " &nbsp;·&nbsp; " + kidTopicCue(q.word) + '</div><div class="answer-slots" id="answer-slots"></div><div class="scramble-letters" id="scramble-letters"></div>';
   renderScrambleState();
   actions.innerHTML = '<button class="btn-secondary" onclick="clearScramble()">Clear</button><button class="btn-primary" data-action="check-scramble">Check ✓</button>' + speakButtonHTML(q.word.fr, "question-speak-inline");
-  speakFrench(q.word.fr);
+  speakWithSignal(q.word.fr, () => actions.querySelector("[data-speak]"));
 }
 function renderScrambleState(q) {
   const slots = document.getElementById("answer-slots"), pool = document.getElementById("scramble-letters");
@@ -7529,11 +7750,11 @@ function buildListenQuestions() {
 function renderListenQuestion(q, area, actions) {
   area.innerHTML = '<div class="listen-card"><div class="listen-prompt">Listen and type the French word you hear</div><button class="listen-play-btn" id="listen-play-btn" onclick="speakAndReveal()" title="Play">🔊</button><div style="font-size:.85rem;color:var(--text-muted);margin-bottom:12px;">💡 ' + kidTopicCue(q.word) + " · EN: " + q.hint + ' · 中文见家长页</div><input class="train-input" id="listen-input" placeholder="Type what you hear..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" style="width:100%;max-width:320px;"></div>';
   actions.innerHTML = '<button class="btn-secondary" onclick="speakAndReveal()">🔊 Play Again</button>' + (recognition ? '<button class="btn-speak" id="btn-stt-listen" onclick="startListenSpeech()">🎤 Speak</button>' : "") + '<button class="btn-primary" onclick="checkListenAnswer()">Check ✓</button>';
-  setTimeout(() => speakFrench(q.word.fr), 400);
+  speakWithSignal(q.word.fr, () => document.getElementById("listen-play-btn"));
   setTimeout(() => document.getElementById("listen-input")?.focus(), 600);
 }
 function speakAndReveal() {
-  if (currentQ?.word?.fr) speakFrench(currentQ.word.fr);
+  if (currentQ?.word?.fr) speakWithSignal(currentQ.word.fr, () => document.getElementById("listen-play-btn"));
 }
 function checkListenAnswer() {
   if (!commitAnswerOnce()) return;
@@ -8156,6 +8377,7 @@ configureAssessmentUI({
   todayKey,
   deviceId,
   speak: speakFrench,
+  playClip: (blob) => audioOut.playClip(blob),
   // Recorded on every listening response, so a whole section that fell back to
   // a France voice is visible afterwards rather than guessed at.
   voiceInfo: assessmentVoiceInfo,
@@ -8199,14 +8421,7 @@ function openAssessmentReview() {
     store: assessment,
     audioStore: assessmentAudioStore,
     deviceId,
-    playBlob: async (blob) => {
-      const url = URL.createObjectURL(blob);
-      try {
-        await new Audio(url).play();
-      } finally {
-        setTimeout(() => URL.revokeObjectURL(url), 3e4);
-      }
-    },
+    playClip: (blob) => audioOut.playClip(blob),
     download: (text, player, run, ext = "txt") => {
       const day = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
       saveTextFile(
@@ -8231,14 +8446,7 @@ function openDeviceCheck() {
     makeCapture: makeAssessmentCapture,
     audioStore: assessmentAudioStore,
     requestedLocale: PREFERRED_LOCALE,
-    playBlob: async (blob) => {
-      const url = URL.createObjectURL(blob);
-      try {
-        await new Audio(url).play();
-      } finally {
-        setTimeout(() => URL.revokeObjectURL(url), 3e4);
-      }
-    }
+    playClip: (blob) => audioOut.playClip(blob)
   });
   deviceCheckUnmount = mountDeviceCheck(panel, controller, {
     onDone: () => {
@@ -8541,6 +8749,9 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .question-speak-inline,.speak-inline{background:rgba(79,70,229,.15);border:2px solid rgba(79,70,229,.4);border-radius:12px;padding:8px 14px;font-size:1.1rem;line-height:1;cursor:pointer;color:var(--text);font-weight:700;min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:6px;vertical-align:middle;}
 .question-speak-inline:active,.speak-inline:active{background:rgba(79,70,229,.3);}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+/* A sound that never started: the 🔊 asks for a tap instead of staying silent.
+   Cleared as soon as a line does start. */
+.needs-tap{animation:pulse 1s infinite;box-shadow:0 0 0 3px var(--gold);}
 
 /* HINT */
 .hint-panel{background:rgba(79,70,229,.1);border:1px solid rgba(79,70,229,.3);border-radius:14px;padding:12px 18px;width:100%;max-width:480px;text-align:center;display:none;}
