@@ -36,13 +36,14 @@ Single working record for this repository. Updated by the main session at the en
 | 23 | 2026-09-29 | "yes, commit and open the PR and the first tap is confirmed in last chat" | done | Checklist §4.5 first-tap item corrected to done (a–c confirmed 2026-09-29; idle 30 s check not separately reported) and Result page sub-lines filled; import of row 22 committed and PR opened (`4905512`, PR #31) |
 | 24 | 2026-09-29 | "yes, fix both on the same PR" | done | FEATURES.md audio feature line and the M2 Step 6 device-results row now say first tap confirmed on the iPad; record correction only, no hotspot change (no new fix or recurrence) |
 | 25 | 2026-09-30 | Design handoff zip: "read PROMPT.md, reply with understanding of the 3 PRs, risks, tests; after OK do PR 1 only" → Plan v3 approved (French Time spelling, all 12 Jenn-colour error places, ✗/✓ by CSS, screenshots via chat) | in progress | Branch `claude/design-pr1-tokens`; plan copy `plans/2026-09-30-plan-v3-design-pr1-tokens.md`; PR 2 and PR 3 get their own plans after each merge |
+| 26 | 2026-09-30 | "merged, start PR 2" → Plan v4 (approved: lock only "Show full French times"; mockup clear-button labels; one phone screenshot) | in progress | Branch `claude/design-pr2-parent-tabs`; plan copy `plans/2026-09-30-plan-v4-design-pr2-parent-tabs.md` |
 
 ## Hotspot counter
 | Area / feature | Fix rounds | Recurrences | Regressions caused | Workarounds/exceptions | Last symptom | Rewrite-vs-repair reviewed? |
 |---|---|---|---|---|---|---|
 | Rules bundle install | 0 | 0 | 0 | 0 | — | no |
 | Audio playback (first tap silent) | 2 (`d8edc24`; one audio owner, `claude/audio-first-tap`) | 1 (parent, 2026-09-28) | 0 | 0 | "You have to press play again" | yes — Plan v1 2026-09-29: one audio owner (`src/speech/audio-out.js`) instead of per-site patches. A further recurrence after this means the WebKit model in `tests/helpers/fake-webkit-audio.js` is wrong, not that another call site needs a patch |
-| Design update (tokens, colours, readability) | 1 (PR 1, `claude/design-pr1-tokens`) | 0 | 0 | 0 | Wrong answers in Jenn red; indigo text 2.3–2.8:1; white on green 2.5:1 | no — first round, no history |
+| Design update (tokens, colours, readability, Parent Summary tabs) | 2 (PR 1 merged #33; PR 2 `claude/design-pr2-parent-tabs`) | 0 | 0 | 0 | Wrong answers in Jenn red; indigo text 2.3–2.8:1; white on green 2.5:1 | no — first round, no history |
 Rule: 3 fix rounds, or 2 recurrences, or a fix causing a nearby regression → no further patch until the comparison is presented.
 
 ## Deliverable ledger
@@ -74,9 +75,12 @@ Rule: 3 fix rounds, or 2 recurrences, or a fix causing a nearby regression → n
 | Design PR 1 — stage 2 implementation (opus-worker) | COMPLETE | opus-worker, model `claude-opus-5-5` (effort configured medium). LF copy `npm run verify`: 418/418, handlers 37, drift ✓, release A ✓ (90 items); Windows `test:browser` 103/103 (no test changed); Windows `npm test` 417/418 (the known CRLF manifest hash). Contrast indigo text 2.33→9.81, text on green 2.54→7.04, wrong on surface 3.77→7.71. Chinese lines 226→226, `中文见家长页` 3→3, `(中文 → parents` 2→2. 40 screenshots (10 screens × 2 orientations × before/after) in the session scratch folder |
 | Design PR 1 — stage 3 evidence check, records, commit, PR, screenshots | COMPLETE | Main session re-checked the diff (no `--jenn` left in the 12 places, 3 raw radii left as planned, label in both places, tests untouched) and after-screenshots by eye; committed and pushed on `claude/design-pr1-tokens`, PR #33 open ready for review; screenshots zip sent in the session |
 | Design PR 1 — stage 4 review and merge | WAITING ON YOU — review and merge PR #33 | |
-| Design PR 2 — stage 5 Plan for PR 2 | WAITING ON YOU — merge PR #33 first (the package: PR 2 starts only after PR 1 is merged) | |
-| Design PR 2 — stage 6 approve plan, review and merge | WAITING ON YOU — after Plan for PR 2 | |
-| Design PR 3 — stage 7 Plan for PR 3 | WAITING ON YOU — merge PR 2 first (the package: PR 3 starts only after PR 2 is merged) | |
+| Design PR 2 — stage 5 Plan for PR 2 | COMPLETE | Plan v4 approved 2026-09-30 |
+| Design PR 2 — stage 6a branch from main | COMPLETE | `claude/design-pr2-parent-tabs` from `09c5c23` |
+| Design PR 2 — stage 6b implementation (opus-worker) | COMPLETE | opus-worker, model `claude-opus-5-5`. LF copy `npm run verify` 418/418, handlers 37, drift ✓, release A ✓; Windows `test:browser` 103/103 (one test file changed: m1-repair scans all three tabs — stronger); Windows `npm test` 417/418 (known CRLF hash). Chinese lines 226→226, every Chinese line identical. 18 screenshots (3 tabs × 2 orientations × before/after, phone Progress, unlocked Settings, report on Check-in) in the session scratch folder |
+| Design PR 2 — stage 6c evidence check, records, commit, PR, screenshots | COMPLETE | Main session checked: all 16 ids kept, 9 onclick strings kept, data-actions kept + 3 `parent-tab`; three after-shots read by eye; committed `bde9f27`, PR #34 open ready for review; screenshots zip sent in the session |
+| Design PR 2 — stage 6d review and merge | WAITING ON YOU — review and merge PR #34 | |
+| Design PR 3 — stage 7 Plan for PR 3 | WAITING ON YOU — merge PR #34 first (the package: PR 3 starts only after PR 2 is merged) | |
 | Design PR 3 — stage 8 approve plan, review and merge | WAITING ON YOU — after Plan for PR 3 | |
 
 ## Checks and evidence
@@ -102,6 +106,22 @@ Rule: 3 fix rounds, or 2 recurrences, or a fix causing a nearby regression → n
 | Data and sync | kept | untouched |
 | Design tokens and rules section | added | `docs/DESIGN.md`, tokens, wrong ≠ Jenn, ✓/✗ marks, indigo text, radii, back-button size, "French Time" |
 | Hub label "French_game" | intentionally removed | now "French Time" (parent's spelling) |
+
+- 2026-09-30 design PR 2 (opus-worker, model `claude-opus-5-5`): LF copy `npm run verify` 418/418, handlers 37, drift ✓, release A ✓; Windows `test:browser` 103/103; Windows `npm test` 417/418 (known CRLF hash). Extras the worker added and the main session accepted as within "no Jenn/Jess colours on buttons": blocked weekday chip → `--wrong` crossed out; clear buttons plain `surface2`; `syncRevealTimeButton()` after a clear empties the password box; subtitle "Weekly & daily performance" dropped (mockup has none). Regression table:
+
+| Feature | v5 → v6 | Note |
+|---|---|---|
+| Learner screens, games, speech, data and sync | kept | untouched |
+| Parent Summary weekly/daily modes, nav, ten stat rows, practice rows with Chinese | kept | moved into the Progress tab; cap note on its own line |
+| Parent password gate for clear, recovery, check-in, device check, reveal | kept | one box in Settings; messages in a strip under the tabs |
+| Clear Today / Old Days / Reset All | kept | relabelled Clear today / Clear old days / Reset everything; handlers unchanged |
+| Recovery tools, daily cloud backups, freeze | kept | Backup & recovery section |
+| Screen-time days grid | kept | 52px chips; blocked day now `--wrong` crossed out (was Jenn red) |
+| Levels panel text | kept | "To fix later" tag added |
+| Check-in entry, report, scoring, device check | kept | per-girl status cards; opening a panel switches to the Check-in tab |
+| "Show full French times" locked until 4 digits typed | added | check still runs on press |
+| Overlay subtitle "Weekly & daily performance" | intentionally removed | mockup has title → tabs only |
+| Shared `#assess-parent-panel` status block | intentionally removed | replaced by the two per-girl status elements |
 
 ## Open questions / blockers
 - PR #23 must merge into `main` before any of this governs a session. Verify in a **new** session: first reply should report "rules v2.1 (2026-09-21)".

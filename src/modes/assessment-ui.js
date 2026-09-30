@@ -726,22 +726,20 @@ function button(label, action) {
   return b;
 }
 
-/** The parent-facing panel: what exists, and what is still waiting on a human. */
+/** The parent-facing status, one card per girl: what exists, and what is still
+ *  waiting on a human. Each run is one line, as before. */
 export function renderAssessmentParentPanel() {
-  const panel = el('assess-parent-panel');
-  if (!panel || !deps.store) return;
-  const rows = [];
+  if (!deps.store) return;
   for (const player of ['jenn', 'jess']) {
+    const panel = el(`assess-parent-status-${player}`);
+    if (!panel) continue;
+    const rows = [];
     for (const run of Object.values(deps.store.get(player)?.runs || {})) {
       const { answered, planned } = progressOf(run);
       const state = run.status === RUN_STATUS.PARENT_INVALIDATED ? 'voided'
         : run.status === RUN_STATUS.COMPLETE ? 'complete' : 'in progress';
       rows.push(`${player} · form ${escapeAttr(run.form)} · ${state} · ${answered}/${planned} answered`);
     }
+    panel.textContent = rows.length ? rows.join('\n') : 'Not started yet.';
   }
-  panel.textContent = rows.length ? rows.join('\n') : 'No check-in has been started yet.';
-  panel.style.whiteSpace = 'pre-line';
-  panel.style.fontSize = '.72rem';
-  panel.style.color = 'var(--text-muted)';
-  panel.style.textAlign = 'center';
 }

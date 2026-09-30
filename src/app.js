@@ -1599,13 +1599,17 @@ document.addEventListener('click', function(e){
                                closeOverlay('parent-overlay');
                                void openAssessment(el.getAttribute('data-player'));
                              } else setRecoveryMsg('❌ Enter parent password first'); break;
+    case 'parent-tab':       showParentTab(el.getAttribute('data-tab')); break;
+    // The three panels live on the Check-in tab; opening one shows that tab so
+    // the panel is on screen however it was opened.
     case 'assess-report':    if(ensureParentPassword()){
+                               showParentTab('checkin');
                                renderAssessmentReports(document.getElementById('assess-report-panel'),
                                                        assessment);
                              } else setRecoveryMsg('❌ Enter parent password first'); break;
-    case 'assess-review':    if(ensureParentPassword()){ openAssessmentReview(); }
+    case 'assess-review':    if(ensureParentPassword()){ showParentTab('checkin'); openAssessmentReview(); }
                              else setRecoveryMsg('❌ Enter parent password first'); break;
-    case 'assess-device-check': if(ensureParentPassword()){ openDeviceCheck(); }
+    case 'assess-device-check': if(ensureParentPassword()){ showParentTab('checkin'); openDeviceCheck(); }
                              else setRecoveryMsg('❌ Enter parent password first'); break;
     case 'assess-pause':     void pauseAssessment(); break;
     case 'assess-begin-section': void beginNextSection(); break;
@@ -2565,8 +2569,31 @@ function showParentSummary(){
   renderWeekdayGrid();
   renderParentGradeReopenControls();
   renderParentSummary();
+  showParentTab('progress');
+  syncRevealTimeButton();
   document.getElementById('parent-overlay').classList.add('show');
 }
+
+// Parent Summary tabs: Progress, Check-in, Settings. One tab and its panel are
+// shown at a time; the tab and panel share a name (data-tab / data-panel).
+function showParentTab(name){
+  document.querySelectorAll('#parent-overlay .parent-tab[data-tab]').forEach(t => {
+    const on = t.getAttribute('data-tab') === name;
+    t.classList.toggle('on', on);
+    t.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
+  document.querySelectorAll('#parent-overlay .parent-panel[data-panel]').forEach(p =>
+    p.classList.toggle('on', p.getAttribute('data-panel') === name));
+}
+
+// "Show full French times" stays locked until four digits are typed. The
+// password itself is still checked by revealFullPlayTime().
+function syncRevealTimeButton(){
+  const input = document.getElementById('parent-pwd');
+  const btn = document.getElementById('btn-reveal-time');
+  if(btn) btn.disabled = ((input && input.value) || '').length !== 4;
+}
+document.getElementById('parent-pwd')?.addEventListener('input', syncRevealTimeButton);
 
 function navSummaryWeek(delta){
   summaryWeekOffset += delta;
@@ -2626,10 +2653,10 @@ function renderParentSummary(){
     const dKey = dateKeyAddDays(dailySummaryOffset);
     const dLabel = dailySummaryOffset === 0 ? 'Today' : dailySummaryOffset === -1 ? 'Yesterday' : dKey;
     if(nav){
-      nav.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">'
-        + '<button class="btn-secondary" onclick="navDailySummary(-1)" style="padding:6px 12px;font-size:.8rem;"' + (dailySummaryOffset <= -13 ? ' disabled' : '') + '>← Prev day</button>'
+      nav.innerHTML = '<div class="summary-nav-row">'
+        + '<button type="button" class="btn-secondary summary-nav-btn" onclick="navDailySummary(-1)"' + (dailySummaryOffset <= -13 ? ' disabled' : '') + '>← Prev day</button>'
         + '<div style="font-family:\'Fredoka One\',cursive;font-size:1rem;color:var(--gold);">Daily · ' + dLabel + '</div>'
-        + '<button class="btn-secondary" onclick="navDailySummary(1)" style="padding:6px 12px;font-size:.8rem;"' + (dailySummaryOffset >= 0 ? ' disabled' : '') + '>Next day →</button>'
+        + '<button type="button" class="btn-secondary summary-nav-btn" onclick="navDailySummary(1)"' + (dailySummaryOffset >= 0 ? ' disabled' : '') + '>Next day →</button>'
         + '</div>';
     }
     ['jenn', 'jess'].forEach(p => {
@@ -2641,7 +2668,7 @@ function renderParentSummary(){
       const rounds = ts.rounds || 0;
       const drillDone = ts.drillDone;
       const rawMs = (s.dailyTimeMs && s.dailyTimeMs[dKey]) || 0;
-      const timeStr = formatPlayTime(rawMs, true) + (sessionFullTimeReveal ? '' : ' (capped 30m)');
+      const timeStr = formatPlayTime(rawMs, true) + (sessionFullTimeReveal ? '' : ' <small class="parent-stat-sub">(capped 30m)</small>');
       const total = correct + wrong;
       const acc = total > 0 ? Math.round(correct / total * 100) : null;
       const queue = Object.values(s.failedWords || {}).length;
@@ -2679,10 +2706,10 @@ function renderParentSummary(){
   const weekLabel = isThisWeek ? 'This Week' : formatWeekRange(selectedWeekStart);
 
   if(nav){
-    nav.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">'
-      + '<button class="btn-secondary" onclick="navSummaryWeek(-1)" style="padding:6px 12px;font-size:.8rem;"' + (summaryWeekOffset <= -3 ? ' disabled' : '') + '>← Prev</button>'
+    nav.innerHTML = '<div class="summary-nav-row">'
+      + '<button type="button" class="btn-secondary summary-nav-btn" onclick="navSummaryWeek(-1)"' + (summaryWeekOffset <= -3 ? ' disabled' : '') + '>← Prev</button>'
       + '<div style="font-family:\'Fredoka One\',cursive;font-size:1rem;color:var(--gold);">' + weekLabel + '</div>'
-      + '<button class="btn-secondary" onclick="navSummaryWeek(1)" style="padding:6px 12px;font-size:.8rem;"' + (isThisWeek ? ' disabled' : '') + '>Next →</button>'
+      + '<button type="button" class="btn-secondary summary-nav-btn" onclick="navSummaryWeek(1)"' + (isThisWeek ? ' disabled' : '') + '>Next →</button>'
       + '</div>';
   }
 
@@ -2716,7 +2743,7 @@ function renderParentSummary(){
       weekDrills = roll.drillRounds;
     }
 
-    const weekTime = formatPlayTime(weekTimeMs, true) + (sessionFullTimeReveal ? '' : ' (cap 30m/day)');
+    const weekTime = formatPlayTime(weekTimeMs, true) + (sessionFullTimeReveal ? '' : ' <small class="parent-stat-sub">(cap 30m/day)</small>');
 
     const total = correct + wrong;
     const acc = total > 0 ? Math.round(correct / total * 100) : null;
@@ -3188,6 +3215,7 @@ async function clearProgress(mode){
   await saveState('jess', {suppressEcho: true});
 
   if(input) input.value = '';
+  syncRevealTimeButton();
   setTimeout(()=>{ msg.textContent=''; }, 3000);
 
   // Refresh all UI — after saves resolve so echo suppression is armed
@@ -3337,7 +3365,7 @@ startWallClock();
 Object.assign(window, {
   selectPlayer, goBack, exitGame, setGrade,
   showMyWords, showMyWordsTab, showStudy, showStudySet,
-  showParentSummary, navSummaryWeek, navDailySummary, setSummaryMode,
+  showParentSummary, showParentTab, navSummaryWeek, navDailySummary, setSummaryMode,
   toggleHubDailySummary, toggleSloganTranslation,
   toggleWeekday, revealFullPlayTime, unlockWeekdaySession, cancelWeekdayLock,
   refreshGradeTabs,

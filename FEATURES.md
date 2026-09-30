@@ -1,4 +1,4 @@
-# FEATURES — French Adventure — manifest v5 — 2026-09-30
+# FEATURES — French Adventure — manifest v6 — 2026-09-30
 
 Locked features of the current version. Every edit is checked against this list and ends with a regression table. Update this file in the same change that alters a feature. Over-list rather than under-list.
 
@@ -26,7 +26,7 @@ This section lists only what the code does today. Where a feature has a known de
 ### Design tokens and rules (added 2026-09-30, design PR 1)
 - `docs/DESIGN.md` is the single source of design rules; `docs/mockups/` holds the target layouts for the Parent Summary (PR 2) and the kids' hub (PR 3).
 - `src/styles.css` `:root` defines the tokens: the 13 original colours plus `--correct`, `--wrong` (#fca5a5), `--french-text` (#c7d2fe), `--on-green`, `--space-1..5`, `--page-max`, `--page-max-wide`, `--tap-min` (52px), `--bp-phone`, `--bp-ipad`, `--radius-sm/md/lg/full`.
-- Wrong answers, errors and offline use `--wrong`, never Jenn's colour: `.choice-btn.wrong`, `.wrong-part-highlight`, `.parent-fails`, `.lock-error`, the offline dot, `.assess-review-msg`, the Reset All button, the Word Match wrong pair, the Drill wrong toast, the parent password error messages and "Backup not available offline". Jenn's own rows, name, cards and backup rows keep `--jenn`; so do the mic listening state, the blocked weekday chip, the time-warning countdown and the overlay close hover (not wrong/error/offline).
+- Wrong answers, errors and offline use `--wrong`, never Jenn's colour: `.choice-btn.wrong`, `.wrong-part-highlight`, `.parent-fails`, `.lock-error`, the offline dot, `.assess-review-msg`, the Reset All button, the Word Match wrong pair, the Drill wrong toast, the parent password error messages and "Backup not available offline". Jenn's own rows, name, cards and backup rows keep `--jenn`; so do the mic listening state, the time-warning countdown and the overlay close hover (not wrong/error/offline). The blocked weekday chip uses `--wrong` with a line-through since PR 2 (no Jenn/Jess colours on buttons).
 - Right and wrong choice buttons carry a ✓ / ✗ mark from CSS (`::after`); button text is unchanged. The check-in choices (`.assess-choice`) show no mark.
 - Indigo text uses `--french-text`; `--french` is kept for fills, borders and gradients. `.btn-green` text is `--on-green`; `.btn-secondary` text is `--text`; the Drill's English prompt word uses `--text`.
 - Every `border-radius` in `src/styles.css` and `src/index.html` uses a radius token, except three 2–3px underline/bar corners.
@@ -101,9 +101,13 @@ This section lists only what the code does today. Where a feature has a known de
 - Assessment runs travel inside the recovery JSON export and are merged, not replaced, on import.
 
 ### Parent area
-- 📋 Parent Summary overlay, from the select screen: weekly and daily modes with navigation, side-by-side stats per child, and practice-word rows (fr / en / zh / fail count).
+- 📋 Parent Summary overlay, from the select screen, in three tabs (PR 2, 2026-09-30): 📊 Progress (opens first, also after close/reopen) · 📋 Check-in · ⚙️ Settings. Tab buttons are `data-action="parent-tab"`; `showParentTab()` is on `window`. The card is `--page-max-wide` from 768px up in both orientations; every button in the overlay is at least 52px on touch.
+  - Progress: Weekly/Daily switch and ‹ Prev / Next › on one row; Jenn and Jess side by side (stacked at ≤420px); the same ten stat rows per child as before, values never wrap and the cap note "(cap 30m/day)" / "(capped 30m)" sits on its own line in the value cell; practice-word rows (fr / en / zh / fail count) unchanged.
+  - Check-in: intro text; one card per girl with her run status lines (or "Not started yet.") and "Start / resume" (`data-action="assess-open"`); the hint "Needs the parent password from the Settings tab."; then "After a check-in": report, scoring and device-check buttons with their panels underneath. Opening any of these three panels switches to the Check-in tab.
+  - Settings, in order: Screen-time days (52×52 chips; blocked = `--wrong`, crossed out) · Parent password box, then "⏱ Show full French times" (disabled until 4 digits are typed; the check still runs on press) · Clear today / Clear old days, each with its explanation under it · "Reset everything" alone in a dashed `--wrong` box · Backup & recovery (export, import, daily cloud backups, freeze) · Levels text with a "To fix later" tag.
+  - Password and recovery messages (`#pwd-msg`, `#recovery-msg`) show in one strip under the tab bar, visible from every tab.
 - A 4-digit parent password, hard-coded as `PARENT_PASSWORD` in `src/app.js`, gates clear, recovery, assessment, device-check and unlock actions.
-- Clear actions for both children, password-checked: 🗑 Today, 🗂 Old Days and 🔄 Reset All. Today leaves total stars, moons and earlier days alone.
+- Clear actions for both children, password-checked: 🗑 Clear today, 🗂 Clear old days and 🔄 Reset everything (handlers unchanged: clearProgress today / prev / all). Today leaves total stars, moons and earlier days alone.
 - Recovery tools:
   - 🛡 Freeze cloud writes (a toggle).
   - 💾 Export backup JSON: both children's profiles plus the assessment stores.
