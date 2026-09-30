@@ -90,8 +90,8 @@ Rule: 3 fix rounds, or 2 recurrences, or a fix causing a nearby regression → n
 | Design PR 4 (Patch 1) — stage 1 merge PR 3 | COMPLETE | PR #35 merged (parent, 2026-09-30) |
 | Design PR 4 (Patch 1) — stage 2 branch from main | NOT STARTED | after the merge |
 | Design PR 4 (Patch 1) — stage 3 implementation (opus-worker) | COMPLETE | opus-worker, model `claude-opus-5-5`. LF copy `npm run verify` 422/422, handlers 37, drift ✓, release A ✓; Windows `test:browser` 103/103; Windows `npm test` 421/422 (known CRLF hash); no test changed. Greps in `src/`: fonts.googleapis 0, cursive 0, font-size below 0.75rem 0 (was 62). Built page 528,810 → 654,079 B with 3 embedded woff2 data URIs; offline `document.fonts.check` true for "sœur élève". Start-screen card bottoms 423px at 1194×834 (was 854). Confetti pieces 55 → 0 under reduced motion. Chinese lines 9/1/216 unchanged, 484 runs unchanged. 14 screenshots in the session scratch folder |
-| Design PR 4 (Patch 1) — stage 4 evidence check, records, commit, PR, screenshots | PARTIAL | Main session re-ran the greps (0/0/0), confirmed 3 font data URIs in the built page, `docs/DESIGN.md` identical to the patch file, tests untouched; start-screen shot read by eye; commit and PR this turn |
-| Design PR 4 (Patch 1) — stage 5 review and merge | WAITING ON YOU — after PR 4 opens | |
+| Design PR 4 (Patch 1) — stage 4 evidence check, records, commit, PR, screenshots | COMPLETE | Main session re-ran the greps (0/0/0), confirmed 3 font data URIs in the built page, `docs/DESIGN.md` identical to the patch file, tests untouched; start-screen shot read by eye; committed on `claude/design-pr4-patch-1`, PR #36 open ready for review; screenshots zip sent in the session |
+| Design PR 4 (Patch 1) — stage 5 review and merge | WAITING ON YOU — review and merge PR #36 | |
 
 ## Checks and evidence
 - 2026-09-21 `bash tests/replay-hooks.sh` → passed=14 failed=0 (validation-line 3/3, record-guard 3/3, plan-gate 3/3, skill-router 2/2, routing-guard 3/3)
