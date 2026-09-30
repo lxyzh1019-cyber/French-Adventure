@@ -38,13 +38,14 @@ Single working record for this repository. Updated by the main session at the en
 | 25 | 2026-09-30 | Design handoff zip: "read PROMPT.md, reply with understanding of the 3 PRs, risks, tests; after OK do PR 1 only" → Plan v3 approved (French Time spelling, all 12 Jenn-colour error places, ✗/✓ by CSS, screenshots via chat) | in progress | Branch `claude/design-pr1-tokens`; plan copy `plans/2026-09-30-plan-v3-design-pr1-tokens.md`; PR 2 and PR 3 get their own plans after each merge |
 | 26 | 2026-09-30 | "merged, start PR 2" → Plan v4 (approved: lock only "Show full French times"; mockup clear-button labels; one phone screenshot) | in progress | Branch `claude/design-pr2-parent-tabs`; plan copy `plans/2026-09-30-plan-v4-design-pr2-parent-tabs.md` |
 | 27 | 2026-09-30 | "merged, start PR 3" → Plan v5 (approved: level rows stay in More; whole tile row removed at round end; topic details use each girl's suggested level; save icon quiet only when synced; "← Back" on both bars) | in progress | Branch `claude/design-pr3-kids-screens`; plan copy `plans/2026-09-30-plan-v5-design-pr3-kids-screens.md` |
+| 28 | 2026-09-30 | Patch 1 zip (N1–N9): additional scope → Plan v6 approved (PR 4 from main after PR 3 merges; fonts as latin + latin-ext woff2 embedded by the build; all 58 small-text sites raised) | in progress | Plan copy plans/2026-09-30-plan-v6-design-pr4-patch-1.md; the patch's PR 1b placement superseded by decision 1 |
 
 ## Hotspot counter
 | Area / feature | Fix rounds | Recurrences | Regressions caused | Workarounds/exceptions | Last symptom | Rewrite-vs-repair reviewed? |
 |---|---|---|---|---|---|---|
 | Rules bundle install | 0 | 0 | 0 | 0 | — | no |
 | Audio playback (first tap silent) | 2 (`d8edc24`; one audio owner, `claude/audio-first-tap`) | 1 (parent, 2026-09-28) | 0 | 0 | "You have to press play again" | yes — Plan v1 2026-09-29: one audio owner (`src/speech/audio-out.js`) instead of per-site patches. A further recurrence after this means the WebKit model in `tests/helpers/fake-webkit-audio.js` is wrong, not that another call site needs a patch |
-| Design update (tokens, colours, Parent Summary tabs, kids' screens) | 3 (PR 1 merged #33; PR 2 merged #34; PR 3 `claude/design-pr3-kids-screens`) | 0 | 0 | 0 | Wrong answers in Jenn red; indigo text 2.3–2.8:1; white on green 2.5:1 | yes 2026-09-30 — Plan v5: three planned parts of one package, no shared cause; incremental kept, consolidations: one screen switcher, one save-state writer, one punctuation helper |
+| Design update (tokens, colours, Parent Summary tabs, kids' screens) | 4 (PR 1 merged #33; PR 2 merged #34; PR 3 open #35; PR 4 Patch 1 planned) | 0 | 0 | 0 | Wrong answers in Jenn red; indigo text 2.3–2.8:1; white on green 2.5:1 | yes 2026-09-30 — Plan v5: three planned parts of one package, no shared cause; incremental kept, consolidations: one screen switcher, one save-state writer, one punctuation helper |
 Rule: 3 fix rounds, or 2 recurrences, or a fix causing a nearby regression → no further patch until the comparison is presented.
 
 ## Deliverable ledger
@@ -86,6 +87,11 @@ Rule: 3 fix rounds, or 2 recurrences, or a fix causing a nearby regression → n
 | Design PR 3 — stage 8b implementation (opus-worker) | COMPLETE | opus-worker, model `claude-opus-5-5`. LF copy `npm run verify` 422/422 (4 new `joinFrenchParts` cases), handlers 37, drift ✓, release A ✓; Windows `test:browser` 103/103 (changed: data-loss taps the save icon first; fr-text unit cases added); Windows `npm test` 421/422 (known CRLF hash). Chinese: 484 distinct runs before and after, none with fewer occurrences; lines app.js 9→9, index.html 1→1, curriculum-map.js 216→216. 8th tile bottom 647px at 1194×834. 96 screenshots in the session scratch folder |
 | Design PR 3 — stage 8c evidence check, records, commit, PR, screenshots | COMPLETE | Main session checked: ids kept, both status bars / rule strip / session clock gone, rules text exact, both Chinese strings present, test diff limited to the two files; three after-shots read by eye; committed `f8edd7a`, PR #35 open ready for review; after-screenshots zip sent in the session |
 | Design PR 3 — stage 8d review and merge | WAITING ON YOU — review and merge PR #35 | |
+| Design PR 4 (Patch 1) — stage 1 merge PR 3 | WAITING ON YOU — merge PR #35, then say merged | |
+| Design PR 4 (Patch 1) — stage 2 branch from main | NOT STARTED | after the merge |
+| Design PR 4 (Patch 1) — stage 3 implementation (opus-worker) | NOT STARTED | |
+| Design PR 4 (Patch 1) — stage 4 evidence check, records, commit, PR, screenshots | NOT STARTED | |
+| Design PR 4 (Patch 1) — stage 5 review and merge | WAITING ON YOU — after PR 4 opens | |
 
 ## Checks and evidence
 - 2026-09-21 `bash tests/replay-hooks.sh` → passed=14 failed=0 (validation-line 3/3, record-guard 3/3, plan-gate 3/3, skill-router 2/2, routing-guard 3/3)
