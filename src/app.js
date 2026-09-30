@@ -747,6 +747,7 @@ function showToast(msg,color=null){
   t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);
 }
 function confetti(){
+  if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   const colors=['#e8445a','#3b82f6','#f59e0b','#10b981','#a78bfa','#f472b6'];
   for(let i=0;i<55;i++){
     const el=document.createElement('div');el.className='confetti-piece';
@@ -1390,12 +1391,12 @@ function renderHubDailySummaryInner(s, tk){
          + '</span><span>'+parts.join(' · ')+'</span></div>';
   }).filter(Boolean).join('');
 
-  el.innerHTML='<p class="hds-rules" style="font-size:.72rem;color:var(--text-muted);margin:0 0 10px;line-height:1.45;">'
+  el.innerHTML='<p class="hds-rules" style="font-size:var(--text-min);color:var(--text-muted);margin:0 0 10px;line-height:1.45;">'
     + '<strong>Every level is open</strong> — play whichever you like, whenever you like.<br>'
     + '<strong>Mini-games:</strong> up to <strong>2 rounds per game type</strong> each day.<br>'
     + '<strong>🌙 Moon:</strong> earned when every topic in a level reaches 3⭐.</p>'
     + '<div class="hds-row"><span>⭐ Suggested next</span><span>'+levelLabel(rec.gradeKey)+'</span></div>'
-    + '<div class="hds-row"><span></span><span style="font-size:.7rem;color:var(--text-muted);">'
+    + '<div class="hds-row"><span></span><span style="font-size:var(--text-min);color:var(--text-muted);">'
     + recommendationText(rec)+'</span></div>'
     + (rows || '<div class="hds-row"><span>No practice recorded yet</span><span>—</span></div>');
 }
@@ -2317,7 +2318,7 @@ async function endRound(outcome = ROUND_OUTCOME.COMPLETED){
   </div>`;
   document.getElementById('progress-bar').style.width='100%';
 
-  actions.innerHTML=`${roundsLeft>0?`<button class="btn-primary" data-action="start-game" data-game-type="${escapeAttr(currentGameType)}">Play Again (${roundsLeft})</button>`:`<button class="btn-primary" style="opacity:.5;cursor:not-allowed;" disabled>Done today! 🌙</button>`}<button class="btn-secondary" onclick="exitGame()">Hub</button>`;
+  actions.innerHTML=`${roundsLeft>0?`<button class="btn-primary" data-action="start-game" data-game-type="${escapeAttr(currentGameType)}">Play again · ${roundsLeft} left today</button>`:`<button class="btn-primary" style="opacity:.5;cursor:not-allowed;" disabled>Done today! 🌙</button>`}<button class="btn-secondary" onclick="exitGame()">Hub</button>`;
 
   await saveState(currentPlayer, {suppressEcho: true});
   triggerDailyBackup(currentPlayer);
@@ -2405,15 +2406,15 @@ function renderDrillCard(){
   if(matchSent){
     const blanked = joinFrenchParts(matchSent.parts.map(p=>p===w.fr?'______':p));
     drillHTML = '<div style="font-size:.85rem;color:var(--text-muted);margin-bottom:8px;">🇬🇧 '+matchSent.target+'</div>'
-      +'<div style="font-family:\'Fredoka One\',cursive;font-size:1.1rem;margin-bottom:12px;">'+blanked+'</div>';
+      +'<div style="font-family:\'Fredoka One\',system-ui,sans-serif;font-size:1.1rem;margin-bottom:12px;">'+blanked+'</div>';
   } else {
     drillHTML = '<div style="font-size:.85rem;color:var(--text-muted);margin-bottom:8px;">Translate:</div>'
-      +'<div style="font-family:\'Fredoka One\',cursive;font-size:1.4rem;color:var(--text);margin-bottom:12px;">'+w.en+'</div>';
+      +'<div style="font-family:\'Fredoka One\',system-ui,sans-serif;font-size:1.4rem;color:var(--text);margin-bottom:12px;">'+w.en+'</div>';
   }
   el.innerHTML = '<div class="train-card">'
     +drillHTML
     +'<input class="train-input" id="train-input" placeholder="Type in French..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">'
-    +'<div style="font-size:.7rem;color:var(--text-muted);margin-top:8px;">'+(trainIndex+1)+' / '+trainWords.length+'</div>'
+    +'<div style="font-size:var(--text-min);color:var(--text-muted);margin-top:8px;">'+(trainIndex+1)+' / '+trainWords.length+'</div>'
     +'</div>'
     +'<div class="action-row" style="margin-top:12px;">'
     +'<button class="btn-secondary" onclick="revealDrill()">Reveal</button>'
@@ -2673,7 +2674,7 @@ function renderParentGradeReopenControls(){
   if(!wrap) return;
   // Levels are no longer closed, so there is nothing to reopen. The panel now
   // says so rather than offering buttons with nothing to act on.
-  wrap.innerHTML = '<div style="font-size:.68rem;color:var(--text-muted);line-height:1.5;">'
+  wrap.innerHTML = '<div style="font-size:var(--text-min);color:var(--text-muted);line-height:1.5;">'
     + 'Every level is open to both girls, all the time. The app suggests where to '
     + 'work next from how they are actually doing, not from how many days in a row '
     + 'they have played.</div>';
@@ -2704,7 +2705,7 @@ function renderParentSummary(){
     if(nav){
       nav.innerHTML = '<div class="summary-nav-row">'
         + '<button type="button" class="btn-secondary summary-nav-btn" onclick="navDailySummary(-1)"' + (dailySummaryOffset <= -13 ? ' disabled' : '') + '>← Prev day</button>'
-        + '<div style="font-family:\'Fredoka One\',cursive;font-size:1rem;color:var(--gold);">Daily · ' + dLabel + '</div>'
+        + '<div style="font-family:\'Fredoka One\',system-ui,sans-serif;font-size:1rem;color:var(--gold);">Daily · ' + dLabel + '</div>'
         + '<button type="button" class="btn-secondary summary-nav-btn" onclick="navDailySummary(1)"' + (dailySummaryOffset >= 0 ? ' disabled' : '') + '>Next day →</button>'
         + '</div>';
     }
@@ -2758,7 +2759,7 @@ function renderParentSummary(){
   if(nav){
     nav.innerHTML = '<div class="summary-nav-row">'
       + '<button type="button" class="btn-secondary summary-nav-btn" onclick="navSummaryWeek(-1)"' + (summaryWeekOffset <= -3 ? ' disabled' : '') + '>← Prev</button>'
-      + '<div style="font-family:\'Fredoka One\',cursive;font-size:1rem;color:var(--gold);">' + weekLabel + '</div>'
+      + '<div style="font-family:\'Fredoka One\',system-ui,sans-serif;font-size:1rem;color:var(--gold);">' + weekLabel + '</div>'
       + '<button type="button" class="btn-secondary summary-nav-btn" onclick="navSummaryWeek(1)"' + (isThisWeek ? ' disabled' : '') + '>Next →</button>'
       + '</div>';
   }
@@ -2814,7 +2815,7 @@ function renderParentSummary(){
     } else {
       practiceBlock = '<div class="parent-practice-sub">'
         + '<div class="parent-practice-head" style="color:' + color + ';">🎯 Practice targets</div>'
-        + '<div class="empty-state" style="padding:8px;font-size:.72rem;">Switch to <strong>Daily</strong> view to see words for a specific day.</div>'
+        + '<div class="empty-state" style="padding:8px;font-size:var(--text-min);">Switch to <strong>Daily</strong> view to see words for a specific day.</div>'
         + '</div>';
     }
 
@@ -2926,9 +2927,9 @@ async function renderBackupRestoreUI(){
   const el = document.getElementById('backup-restore-panel');
   if(!el) return;
   el.style.display = 'block';
-  el.innerHTML = '<div style="font-size:.72rem;color:var(--text-muted);text-align:center;">Loading backups…</div>';
+  el.innerHTML = '<div style="font-size:var(--text-min);color:var(--text-muted);text-align:center;">Loading backups…</div>';
   if(!window.fbBackupList){
-    el.innerHTML = '<div style="font-size:.72rem;color:var(--wrong);">Backup not available offline.</div>';
+    el.innerHTML = '<div style="font-size:var(--text-min);color:var(--wrong);">Backup not available offline.</div>';
     return;
   }
   const [jennBackups, jessBackups] = await Promise.all([
@@ -2936,19 +2937,19 @@ async function renderBackupRestoreUI(){
     window.fbBackupList('jess')
   ]);
   function makeRows(player, backups, color){
-    if(!backups.length) return `<div style="font-size:.72rem;color:var(--text-muted);margin-bottom:8px;">${player}: no backups yet</div>`;
+    if(!backups.length) return `<div style="font-size:var(--text-min);color:var(--text-muted);margin-bottom:8px;">${player}: no backups yet</div>`;
     return backups.map(b =>
       `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
-        <span style="font-size:.72rem;color:${color};font-weight:800;width:72px;">${b.backedUpAt}</span>
-        <span style="font-size:.68rem;color:var(--text-muted);flex:1;">⭐${b.totalStars||0} · 🔥${b.streak||0} · played ${Object.keys(b.playedDays||{}).length}d</span>
-        <button data-action="restore-backup" data-player="${escapeAttr(player)}" data-backup-id="${escapeAttr(b.id)}" style="background:rgba(16,185,129,.15);border:2px solid var(--green);border-radius:8px;padding:3px 9px;font-size:.65rem;font-weight:800;color:var(--green);cursor:pointer;touch-action:manipulation;">Restore</button>
+        <span style="font-size:var(--text-min);color:${color};font-weight:800;width:72px;">${b.backedUpAt}</span>
+        <span style="font-size:var(--text-min);color:var(--text-muted);flex:1;">⭐${b.totalStars||0} · 🔥${b.streak||0} · played ${Object.keys(b.playedDays||{}).length}d</span>
+        <button data-action="restore-backup" data-player="${escapeAttr(player)}" data-backup-id="${escapeAttr(b.id)}" style="background:rgba(16,185,129,.15);border:2px solid var(--green);border-radius:8px;padding:3px 9px;font-size:var(--text-min);font-weight:800;color:var(--green);cursor:pointer;touch-action:manipulation;">Restore</button>
       </div>`
     ).join('');
   }
   el.innerHTML =
-    `<div style="font-size:.72rem;font-weight:800;color:var(--jenn);margin-bottom:4px;">🐥 Jenn</div>`
+    `<div style="font-size:var(--text-min);font-weight:800;color:var(--jenn);margin-bottom:4px;">🐥 Jenn</div>`
     + makeRows('jenn', jennBackups, 'var(--jenn)')
-    + `<div style="font-size:.72rem;font-weight:800;color:var(--jess);margin:8px 0 4px;">🦊 Jess</div>`
+    + `<div style="font-size:var(--text-min);font-weight:800;color:var(--jess);margin:8px 0 4px;">🦊 Jess</div>`
     + makeRows('jess', jessBackups, 'var(--jess)');
 }
 
