@@ -1,4 +1,4 @@
-# FEATURES — French Adventure — manifest v6 — 2026-09-30
+# FEATURES — French Adventure — manifest v7 — 2026-09-30
 
 Locked features of the current version. Every edit is checked against this list and ends with a regression table. Update this file in the same change that alters a feature. Over-list rather than under-list.
 
@@ -34,16 +34,17 @@ This section lists only what the code does today. Where a feature has a known de
 - The play-time label on the hub clock and in the Today summary reads "French Time" (was the code name "French_game").
 
 ### Learner screens and modes
-- Player select screen: Jenn (🐥) and Jess (🦊) cards, each with star points, day streak and today's mini summary (`src/index.html` `#screen-select`).
+- Player select screen: Jenn (🐥) and Jess (🦊) cards, each with star points, day streak and today's mini summary (`src/index.html` `#screen-select`). The big title and the wall clock show only here; the "📋 Parent Summary" button sits below the player cards, small (PR 3).
 - Weekly Champion Board on the select screen: star points, streak, week points, and a weekly played-day dot strip per child.
-- Wall clock (time and date) at the top of the app (`startWallClock`).
+- Wall clock (time and date) on the start screen (`startWallClock`). `showScreen` is the single owner of where the big title, the wall clock and the slim top bar show: title and clock on select; slim bar on hub and game; none on the check-in (PR 3).
+- Slim top bar `#topbar` on the hub and in games (PR 3): ← Back (`topBarBack()`: hub from a game, start screen from the hub) · "French Adventure" · French Time (`#hub-playtime-val`) · Left ⏳ (`#countdown-display`) · save icon `#save-icon` (☁️ quiet when the save text is "Synced to cloud" or "Ready"; ⚠️ in `--wrong` otherwise; `data-action="save-status"` tap shows the message in the toast and in `#save-msg`). The old session-clock row and both INTERNET/SAVE status bars are gone; the status text logic in `updateConnectionStatusUI` is unchanged.
 - Selecting a player opens the hub at the recommended level (`recommendLevel`, `src/learning/levels.js`).
-- Hub: daily slogan with a "Translate to English" toggle; a collapsible daily summary; the ⭐ Topic Stars map; a connection/sync status line.
+- Hub order (PR 3): slim bar → player header (avatar, name, stars, streak, week points, slogan + "Translate to English") → "Pick a level · ⭐ = suggested next" row (52px tabs) → 8 tiles (6 games + My Words + Study; 4 per row ≥768px, 2 per row below; all above the fold at 1194×834) → ⭐ Topic Stars (icon, name, stars only) → "More: today & how stars work" (`#hub-daily-summary-btn`, collapsed): today's 4 numbers as tiles, the three star rules in kid words, the note "Exact percentages and per-topic counts are in the Parent Summary.", then the per-level accuracy rows and the suggested-next line. The one-line rule strip is gone.
 - Hub level tabs L1–L7, stored internally as grade keys 4–10. Every level is always reachable; no lock or day counter. The suggested level carries a ⭐ (`isLevelReachable`, `recommendLevel`, `recommendationText`).
 - All learner-facing level text goes through `levelLabel()`/`levelNumber()` ("Level N", "LN"). No "G4" or "Grade N" text anywhere (`tests/browser/m1-repair.test.js`).
 - Six game modes from the hub: Quick Quiz, Word Match, Scramble, Sentence Builder, Listen & Speak, and Boss Round (mixed, all topics) (`ALL_GAME_TYPES`).
 - At most 2 rounds per game mode per child per day (`DAILY_ROUND_LIMIT`), shown as "N left today". Only a completed round uses one.
-- Game screen: 3 lives (❤️/🖤), score, progress bar, 🔊 speak and 🎤 mic buttons, a hint panel, a feedback overlay, and Next. The chosen right/wrong button shows ✓ / ✗ (CSS).
+- Game screen (PR 3): slim bar, then the game bar (name, 3 lives ❤️/🖤, star points) right under it; no status row. The game-bar 🔊 shows only in Word Match (every other game has a speaker on the card); 🎤 mic kept; progress bar (100% at round end); a hint panel, a feedback overlay, and Next. The chosen right/wrong button shows ✓ / ✗ (CSS). The wrong-answer popup shows the answer once, in the green box, with "en (中文 → parents · 中文见家长页)"; the upper line carries only the accent note when it applies; right answers unchanged.
 - Points: 15 / 10 / 5 base per correct answer (3 / 2 / 1 lives left). Speed bonus up to 10 within 8 s, not in Word Match (`showFeedback`, `SPEED_BONUS_*`).
 - Each question scores at most once, even if its buttons are re-enabled (`commitAnswerOnce`, `src/state/attempts.js`).
 - A wrong answer costs a life. Running out of lives ends the round as `challengeFailed`: points kept, no daily round used.
@@ -52,10 +53,10 @@ This section lists only what the code does today. Where a feature has a known de
 - Scramble keeps œ, hyphens and apostrophes as tiles. Every scramble-eligible curriculum word is solvable (`src/util/fr-text.js`).
 - Answer checking: recognition ignores accents. Dictation spelling (Listen & Speak) requires them, and an accent-only miss says "So close — check the accents and marks!" (`compareFrench`).
 - Missed words are logged in `failedWords` and requeued into later rounds (`logFailure`, `injectRequeue`).
-- Round-complete screen: points, confetti, moon banners and trophies, then "Play Again (N)" or "Done today! 🌙", and Hub.
+- Round-complete screen (PR 3): praise first (tier title, "🎉 Well done!" or "Good effort!"), then "N of M right!" or "Out of hearts — this one doesn't count, try again!", then "+N star pts" only (no formula line, no Base/Speed/Lives/Rounds tiles); when no topic star was earned, a kid-words next step built from the topic's progress numbers replaces "Keep practicing topics!" and the empty-stars row; confetti, moon banners and trophies, then "Play Again (N)" or "Done today! 🌙", and Hub. What is recorded is unchanged.
 - Moons (per level, plus super) are earned achievements and never gate anything. Topic stars come from daily topic accuracy.
 - Study overlay: Set 1 Vocab, Set 2 Sentences, Set 3 My Words, and "I'm Ready!".
-- My Words overlay: Word List and Drill tabs. The drill's Check works on apostrophe words.
+- My Words overlay: Word List / Drill as a 52px segmented switch. The drill's Check works on apostrophe words. Sentences are displayed and spoken through `joinFrenchParts` (`src/util/fr-text.js`): no space before punctuation; the Sentence Builder check compares parts and is unchanged (PR 3).
 - 20-minute session lock with a parent-password unlock (`SESSION_LIMIT_MS`, `#lock-overlay`). The round draft is flushed before locking.
 - Play time shown to the child is capped at 30 minutes a day (`DAILY_PLAY_CAP_MS`). "Show full French times" reveals the real time for the browser session.
 - Weekday lock: on a day the parent has blocked, "Not a practice day" appears, with a parent-password unlock or ← Back (`#weekday-lock-overlay`, `isWeekdayPlayAllowed`).
@@ -79,7 +80,7 @@ This section lists only what the code does today. Where a feature has a known de
 - Objective routing: the entry block is answered first, then the routed tiers are appended in bank order. The decision is frozen with a timestamp.
 - Item types rendered: `audio_choice`, `text_choice`, `typed_short`, `open_written` and spoken prompts.
 - Listening: at most two plays. A play is counted only when the speech actually starts; one that never starts uses nothing and says "No sound started. Tap ▶︎ Play again." The Play button is held while a play is starting. "I heard nothing" uses no play and stores `audio_failed` as invalid. The script and any written French are never shown.
-- The assessment screen has no feedback, hints, translations, lives, stars, timer, confetti or leaderboard. A chosen option is outlined in blue only.
+- The assessment screen has no feedback, hints, translations, lives, stars, timer, confetti or leaderboard. Choices are filled `surface2` with a visible border; a chosen option gets an indigo border and tint only (class-based, identical for right and wrong). Slim bar with the section name and Pause; no big title or clock. The sub line shows "Form X" only until the part has started, then "N of M answered so far". The "N plays left" note sits on its own line under Play (PR 3).
 - Typed fields turn off autocorrect, autocapitalize, spellcheck and autocomplete. A keyboard note (turn off Auto-Correction and Predictive Text) appears before the words and writing sections.
 - Autosave on every response. Resume goes to the first unanswered planned item, on either device. A submitted item is never shown again, and a second submission is refused.
 - Items with unbuilt assets are skipped. The four artwork items (`SA-F02`, `SB-F02`, `SA-D02`, `SB-D02`) show inline SVG with no text labels (maps: French place names, no route) (`src/assessment/assets.js`).
@@ -102,7 +103,7 @@ This section lists only what the code does today. Where a feature has a known de
 
 ### Parent area
 - 📋 Parent Summary overlay, from the select screen, in three tabs (PR 2, 2026-09-30): 📊 Progress (opens first, also after close/reopen) · 📋 Check-in · ⚙️ Settings. Tab buttons are `data-action="parent-tab"`; `showParentTab()` is on `window`. The card is `--page-max-wide` from 768px up in both orientations; every button in the overlay is at least 52px on touch.
-  - Progress: Weekly/Daily switch and ‹ Prev / Next › on one row; Jenn and Jess side by side (stacked at ≤420px); the same ten stat rows per child as before, values never wrap and the cap note "(cap 30m/day)" / "(capped 30m)" sits on its own line in the value cell; practice-word rows (fr / en / zh / fail count) unchanged.
+  - Progress: Weekly/Daily switch and ‹ Prev / Next › on one row; Jenn and Jess side by side (stacked at ≤420px); the same ten stat rows per child as before, values never wrap and the cap note "(cap 30m/day)" / "(capped 30m)" sits on its own line in the value cell; practice-word rows (fr / en / zh / fail count) unchanged. Under each girl a collapsed "Topic details (current level) · Level N" (her suggested level) with the Games / Tries / Accuracy / Next lines from `topicStarProgressHTML` (PR 3; moved off the kids' hub).
   - Check-in: intro text; one card per girl with her run status lines (or "Not started yet.") and "Start / resume" (`data-action="assess-open"`); the hint "Needs the parent password from the Settings tab."; then "After a check-in": report, scoring and device-check buttons with their panels underneath. Opening any of these three panels switches to the Check-in tab.
   - Settings, in order: Screen-time days (52×52 chips; blocked = `--wrong`, crossed out) · Parent password box, then "⏱ Show full French times" (disabled until 4 digits are typed; the check still runs on press) · Clear today / Clear old days, each with its explanation under it · "Reset everything" alone in a dashed `--wrong` box · Backup & recovery (export, import, daily cloud backups, freeze) · Levels text with a "To fix later" tag.
   - Password and recovery messages (`#pwd-msg`, `#recovery-msg`) show in one strip under the tab bar, visible from every tab.

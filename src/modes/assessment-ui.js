@@ -158,9 +158,11 @@ export function render() {
   const { answered, planned } = progressOf(run);
 
   el('assess-title').textContent = at.done ? 'All done' : (DOMAIN_LABEL[at.domain] ?? at.domain);
+  // "0 of 0 answered so far" means nothing before the part has begun.
+  const partStarted = !at.done && run.sections[at.domain]?.status !== SECTION_STATUS.NOT_STARTED;
   el('assess-sub').textContent = at.done
     ? 'Nothing left to do today.'
-    : `Form ${run.form} · ${answered} of ${planned} answered so far`;
+    : partStarted ? `Form ${run.form} · ${answered} of ${planned} answered so far` : `Form ${run.form}`;
   el('assess-progress-fill').style.width = planned ? `${Math.round((answered / planned) * 100)}%` : '0%';
 
   const leave = document.querySelector('#screen-assessment [data-action="assess-pause"]');

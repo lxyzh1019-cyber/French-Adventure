@@ -129,12 +129,20 @@ export function buildScrambleTiles(target, type = scrambleTypeFor(target)) {
   return graphemes(t);
 }
 
+/**
+ * Join sentence parts for showing or speaking: punctuation attaches to the
+ * preceding word ("Le crayon est rouge."), other tokens are space-separated.
+ * Display and speech only — answer checks keep their own comparison.
+ */
+export function joinFrenchParts(parts) {
+  return parts.reduce((acc, tok) =>
+    !acc ? tok : (/^[.!?…,;:»—–]$/.test(tok) ? acc + tok : acc + ' ' + tok), '');
+}
+
 /** Join assembled tiles back into a candidate answer for the given item type. */
 export function joinScrambleTiles(tiles, type) {
   if (type !== SCRAMBLE_TYPES.PHRASE) return tiles.join('');
-  // Punctuation attaches to the preceding word; other tokens are space-separated.
-  return tiles.reduce((acc, tok) =>
-    !acc ? tok : (/^[.!?…,;:»—–]$/.test(tok) ? acc + tok : acc + ' ' + tok), '');
+  return joinFrenchParts(tiles);
 }
 
 /**
