@@ -412,13 +412,15 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   .mini-game-btn{padding:20px 12px;}
   .back-btn{min-height:var(--tap-min);}
   .grade-tab{min-height:44px;}
+  .hub-slogan-btn{min-height:var(--tap-min);padding:5px 14px;}
   .train-input{font-size:1.1rem;min-height:54px;}
   .question-main{font-size:clamp(2rem,5.5vw,3rem);}
   .question-hint-big{font-size:1.05rem;}
 }
 /* PARENT SUMMARY — tabs, sections, password, clear, weekday (PR 2) */
 #parent-overlay .overlay-title{text-align:left;padding-right:calc(var(--tap-min) + var(--space-2));margin-bottom:var(--space-3);}
-#parent-overlay .overlay-close{width:var(--tap-min);height:var(--tap-min);}
+/* Every overlay ✕ is a full thumb target (was 36px outside the Parent Summary). */
+.overlay .overlay-close{width:var(--tap-min);height:var(--tap-min);}
 .parent-tabs{display:flex;flex-wrap:wrap;gap:var(--space-2);border-bottom:2px solid var(--surface2);margin-bottom:var(--space-3);}
 .parent-tab{min-height:var(--tap-min);padding:0 var(--space-4);background:none;border:none;border-bottom:3px solid transparent;margin-bottom:-2px;font-family:'Fredoka One',system-ui,sans-serif;font-size:1rem;color:var(--text-muted);cursor:pointer;}
 .parent-tab.on{color:var(--text);border-bottom-color:var(--gold);}
@@ -462,7 +464,6 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .dangerzone{margin-top:var(--space-5);padding:var(--space-4);border:2px dashed var(--wrong);border-radius:var(--radius-md);max-width:720px;}
 .dangerzone .parent-hint{margin-bottom:0;}
 .btn-clear-all{background:rgba(252,165,165,.12);border-color:var(--wrong);color:var(--wrong);}
-.todo-tag{display:inline-block;margin-left:var(--space-2);font-family:'Nunito',system-ui,sans-serif;font-size:var(--text-min);font-weight:800;color:var(--gold);border:1px solid var(--gold);border-radius:var(--radius-full);padding:1px var(--space-2);vertical-align:middle;}
 .pwd-msg{font-size:.78rem;font-weight:700;text-align:left;min-height:0;}
 .recovery-msg{font-size:.78rem;font-weight:700;color:var(--text-muted);text-align:left;}
 .summary-mode-row{display:flex;gap:var(--space-1);flex-wrap:wrap;background:var(--bg);border-radius:var(--radius-md);padding:var(--space-1);}

@@ -377,3 +377,16 @@ test('two different unfinished attempts both survive', () => {
   assert.equal(m.roundLog['att-a'].outcome, 'abandoned');
   assert.equal(m.roundLog['att-b'].outcome, 'timedOut');
 });
+
+test('an opened level tier is kept from either device, like a moon', () => {
+  const a = profile({ levelTiersOpen: 3 });
+  const b = profile({ levelTiersOpen: 1 });
+  assert.equal(mergeProfiles(a, b).levelTiersOpen, 3);
+  assert.equal(mergeProfiles(b, a).levelTiersOpen, 3);
+});
+
+test('a profile from before level tiers starts with the first tier open', () => {
+  const old = { ...DEFAULT_STATE() };
+  delete old.levelTiersOpen;
+  assert.equal(migrateProfile(old).levelTiersOpen, 1);
+});

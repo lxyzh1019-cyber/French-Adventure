@@ -78,7 +78,7 @@ export function localDay(ms) {
  *
  * Only what the check found about this device: no learner, no run, no score.
  * `standalone` says whether the app was opened from the Home Screen icon,
- * because audio and storage behave differently there than in a Safari tab.
+ * because audio and storage behave differently there than in a browser tab.
  */
 export function formatDeviceCheckReport(results, { now = Date.now(), userAgent = '', standalone = false } = {}) {
   const d = new Date(now);
@@ -90,7 +90,7 @@ export function formatDeviceCheckReport(results, { now = Date.now(), userAgent =
     '',
     `Date: ${localDay(now)} ${twoDigits(d.getHours())}:${twoDigits(d.getMinutes())} (${zone})`,
     `Browser: ${userAgent || 'unknown'}`,
-    `Opened from: ${standalone ? 'Home Screen icon' : 'Safari tab'}`,
+    `Opened from: ${standalone ? 'Home Screen icon' : 'browser tab'}`,
   ];
   CHECKS.forEach((check, i) => {
     const r = results?.[check.id] || {};

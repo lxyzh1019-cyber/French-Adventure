@@ -52,7 +52,8 @@ There is no authentication. See [`known-risks.md`](known-risks.md).
 ### Levels
 | Field | Type | Meaning |
 |---|---|---|
-| `gradeUnlocked` | `{4..10: boolean}` | Was a gate; now a record of levels visited. Nothing is locked. |
+| `gradeUnlocked` | `{4..10: boolean}` | Was a gate; now a record of levels visited. The gate is `levelTiersOpen`. |
+| `levelTiersOpen` | `1..4` | Level tiers open (2026-10-10): 1 = L1+L2, 2 = +L3+L4, 3 = +L5+L6, 4 = +L7. Raised when the records show the next tier earned; never lowered except by Reset everything. Merged as the higher count. |
 | `gradeParentOpen` | `{4..10: boolean}` | Legacy tier window. Retained, no longer consulted. |
 | `tier1..3Conquered`, `tier1..3ParentOpen` | boolean | Legacy tier flags. Retained, no longer consulted. |
 

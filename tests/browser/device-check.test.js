@@ -272,7 +272,7 @@ test('running every check changes no record at all', async () => {
   assert.match(saved.suggestedFilename(), /^device-check-\d{4}-\d{2}-\d{2}\.txt$/);
   const savedText = await readFile(await saved.path(), 'utf8');
   assert.match(savedText, /Test mode — nothing here affects the learner's record\./);
-  assert.match(savedText, /Opened from: Safari tab/);
+  assert.match(savedText, /Opened from: browser tab/);
   assert.match(savedText, /Asked for fr-CA, this device will use fr-FR/);
   assert.equal(/jenn|jess/i.test(savedText), false, 'a learner name is in the saved results');
   const afterSave = await deviceState(page);

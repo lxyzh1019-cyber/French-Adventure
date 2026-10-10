@@ -15,7 +15,9 @@ import path from 'node:path';
 const dir = process.argv[2] || 'content/releases/assessment-v1';
 const gaps = [];
 const gap = m => gaps.push(m);
-const read = f => readFileSync(path.join(dir, f));
+// Hashes are taken over LF text, so a Windows clone (core.autocrlf=true) that
+// checks the release out with CRLF still matches the manifest.
+const read = f => Buffer.from(readFileSync(path.join(dir, f), 'utf8').replace(/\r\n/g, '\n'), 'utf8');
 const json = f => JSON.parse(read(f).toString('utf8'));
 
 const REQUIRED = ['manifest.json', 'assessment_items.json', 'assessment_rules.json',

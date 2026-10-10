@@ -71,7 +71,8 @@ scripts/            CI guards (drift, inline handlers)
   resumed), a rapid wrong match cannot disturb a newer selection, the mic
   toggles and never sticks, every speak/mic control is a real touch target,
   no screen shows a school-grade label, French apostrophes reach the speech
-  API, every level is reachable, and a stored profile survives a load with
+  API, locked levels show 🔒 X/2 and open in pairs, the 20-minute timer
+  survives Back and a reload, and a stored profile survives a load with
   nothing lost. Set `CHROMIUM_PATH` to use a preinstalled browser.
 
 All of these run in CI on every push and pull request. `npm run verify:all`
