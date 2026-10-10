@@ -12,7 +12,10 @@ try {
 
   // The banner carries a git sha, so it is the one non-deterministic part of the
   // output and must be stripped before comparing. Keep it that way.
-  const stripBanner = s => s.replace(/^<!--[\s\S]*?-->\n/, '');
+  // Line endings are normalised first: a Windows clone (core.autocrlf=true)
+  // checks text out with CRLF, and Vite then writes some CRs on their own.
+  // Carriage returns are never a difference in the page, so all are dropped.
+  const stripBanner = s => s.replace(/\r/g, '').replace(/^<!--[\s\S]*?-->\n/, '');
 
   const built     = stripBanner(readFileSync(`${OUT}/index.html`, 'utf8'));
   const committed = stripBanner(readFileSync('index.html', 'utf8'));

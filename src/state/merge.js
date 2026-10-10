@@ -319,6 +319,9 @@ export function mergeProfiles(a, b) {
     merged.gradeUnlocked[g] = !!(a.gradeUnlocked?.[g] || b.gradeUnlocked?.[g]);
   }
 
+  // An opened level tier is an achievement, like a moon: the higher count wins.
+  merged.levelTiersOpen = Math.max(1, num(a.levelTiersOpen), num(b.levelTiersOpen));
+
   merged.weeklyHistory = mergeWeeklyHistory(a.weeklyHistory, b.weeklyHistory);
   merged.failedWords = mergeFailedWords(a.failedWords, b.failedWords);
   merged.seedProfilePatches = { ...(a.seedProfilePatches || {}), ...(b.seedProfilePatches || {}) };

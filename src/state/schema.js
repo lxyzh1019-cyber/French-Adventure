@@ -49,6 +49,7 @@ export const DEFAULT_STATE = () => ({
   dailyTimeMs: {}, lastDrillComplete: null,
   parentSettings: defaultParentSettings(),
   gradeUnlocked: defaultGradeUnlocked(), gradeStats: {}, gradeGameRounds: {}, dailyTopicStats: {},
+  levelTiersOpen: 1,
   gradeParentOpen: defaultGradeParentOpen(),
   tier1Conquered: false, tier2Conquered: false, tier3Conquered: false,
   tier1ParentOpen: false, tier2ParentOpen: false, tier3ParentOpen: false,

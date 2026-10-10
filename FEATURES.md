@@ -1,4 +1,4 @@
-# FEATURES — French Adventure — manifest v8 — 2026-09-30
+# FEATURES — French Adventure — manifest v9 — 2026-10-10
 
 Locked features of the current version. Every edit is checked against this list and ends with a regression table. Update this file in the same change that alters a feature. Over-list rather than under-list.
 
@@ -18,6 +18,7 @@ Locked features of the current version. Every edit is checked against this list 
 - `index.html` at the repo root is generated. Edits belong in `src/`; both are committed together.
 - GitHub Pages serves the committed root `index.html`.
 - `npm run build` regenerates `index.html` from `src/`; `npm run verify` runs tests plus the "index.html matches src/" drift check.
+- The drift check and the Release A hash checks compare LF text, so a Windows clone with `core.autocrlf=true` passes `npm run verify` (2026-10-10).
 
 ## App features (read from `src/`, `src/index.html` and `docs/data-schema-v0.md` at `4a16357`, 2026-09-29; design tokens added 2026-09-30, PR 1 of the design update)
 
@@ -35,7 +36,7 @@ This section lists only what the code does today. Where a feature has a known de
 - Right and wrong choice buttons carry a ✓ / ✗ mark from CSS (`::after`); button text is unchanged. The check-in choices (`.assess-choice`) show no mark.
 - Indigo text uses `--french-text`; `--french` is kept for fills, borders and gradients. `.btn-green` text is `--on-green`; `.btn-secondary` text is `--text`; the Drill's English prompt word uses `--text`.
 - Every `border-radius` in `src/styles.css` and `src/index.html` uses a radius token, except three 2–3px underline/bar corners.
-- On touch screens `.back-btn` is at least `--tap-min` (52px); `.grade-tab` stays 44px until PR 3.
+- On touch screens `.back-btn` is at least `--tap-min` (52px); `.grade-tab` stays 44px until PR 3. Every overlay ✕ (Study, My Words, Parent Summary) is `--tap-min` square, and on touch screens the hub's "Translate to English" is at least `--tap-min` tall (2026-10-10; were 36px and 30px).
 - The play-time label on the hub clock and in the Today summary reads "French Time" (was the code name "French_game").
 
 ### Learner screens and modes
@@ -43,9 +44,9 @@ This section lists only what the code does today. Where a feature has a known de
 - Weekly Champion Board on the select screen: star points, streak, week points, and a weekly played-day dot strip per child.
 - Wall clock (time and date) on the start screen (`startWallClock`). `showScreen` is the single owner of where the big title, the wall clock and the slim top bar show: title and clock on select; slim bar on hub and game; none on the check-in (PR 3).
 - Slim top bar `#topbar` on the hub and in games (PR 3): ← Back (`topBarBack()`: hub from a game, start screen from the hub) · "French Adventure" · French Time (`#hub-playtime-val`) · Left ⏳ (`#countdown-display`) · save icon `#save-icon` (☁️ quiet when the save text is "Synced to cloud" or "Ready"; ⚠️ in `--wrong` otherwise; `data-action="save-status"` tap shows the message in the toast and in `#save-msg`). The old session-clock row and both INTERNET/SAVE status bars are gone; the status text logic in `updateConnectionStatusUI` is unchanged.
-- Selecting a player opens the hub at the recommended level (`recommendLevel`, `src/learning/levels.js`).
+- Selecting a player opens the hub at the recommended level inside her open tiers (`recommendFor` → `recommendLevel(s, { maxGradeKey })`, `src/learning/levels.js`).
 - Hub order (PR 3): slim bar → player header (avatar, name, stars, streak, week points, slogan + "Translate to English") → "Pick a level · ⭐ = suggested next" row (52px tabs) → 8 tiles (6 games + My Words + Study; 4 per row ≥768px, 2 per row below; all above the fold at 1194×834) → ⭐ Topic Stars (icon, name, stars only) → "More: today & how stars work" (`#hub-daily-summary-btn`, collapsed): today's 4 numbers as tiles, the three star rules in kid words, the note "Exact percentages and per-topic counts are in the Parent Summary.", then the per-level accuracy rows and the suggested-next line. The one-line rule strip is gone.
-- Hub level tabs L1–L7, stored internally as grade keys 4–10. Every level is always reachable; no lock or day counter. The suggested level carries a ⭐ (`isLevelReachable`, `recommendLevel`, `recommendationText`).
+- Hub level tabs L1–L7, stored internally as grade keys 4–10. Levels open in tiers (2026-10-10, parent decision): L1+L2 → L3+L4 → L5+L6 → L7. A new profile has L1+L2. The next tier opens when every level of the tier before it has qualified on 2 practice days — any 2 days, never back-to-back days. A day qualifies a level when every topic of the level reached 3⭐ that day and the level's accuracy that day was at least 95% (`isQualifyingDay`, `openTierCount`, `LEVEL_TIERS`). Locked tabs read "🔒 LN X/2" (X = days done, the fewest among the levels before; tiers beyond the next show 0/2); tapping one shows a toast and changes nothing. An opened tier stays open: `levelTiersOpen` is stored, merged as the higher count, and never lowered by Clear today / Clear old days (Reset everything starts again at L1+L2). Opening a tier shows a "🌟 L1+L2 conquered! / L3+L4 unlocked!" banner with confetti at round end. The suggested level carries a ⭐ and is always an open level; when every open level is comfortable the suggestion stays on the top open level with "Earn a 🌙 here on 2 days to open new levels!".
 - All learner-facing level text goes through `levelLabel()`/`levelNumber()` ("Level N", "LN"). No "G4" or "Grade N" text anywhere (`tests/browser/m1-repair.test.js`).
 - Six game modes from the hub: Quick Quiz, Word Match, Scramble, Sentence Builder, Listen & Speak, and Boss Round (mixed, all topics) (`ALL_GAME_TYPES`).
 - At most 2 rounds per game mode per child per day (`DAILY_ROUND_LIMIT`), shown as "N left today". Only a completed round uses one.
@@ -59,11 +60,11 @@ This section lists only what the code does today. Where a feature has a known de
 - Answer checking: recognition ignores accents. Dictation spelling (Listen & Speak) requires them, and an accent-only miss says "So close — check the accents and marks!" (`compareFrench`).
 - Missed words are logged in `failedWords` and requeued into later rounds (`logFailure`, `injectRequeue`).
 - Round-complete screen (PR 3): praise first (tier title, "🎉 Well done!" or "Good effort!"), then "N of M right!" or "Out of hearts — this one doesn't count, try again!", then "+N star pts" only (no formula line, no Base/Speed/Lives/Rounds tiles); when no topic star was earned, a kid-words next step built from the topic's progress numbers replaces "Keep practicing topics!" and the empty-stars row; confetti, moon banners and trophies, then "Play again · N left today" (PR 4, Patch 1 N8) or "Done today! 🌙", and Hub. The Listen & Speak "🔊 Play Again" (replay the sound) is unchanged. What is recorded is unchanged.
-- Moons (per level, plus super) are earned achievements and never gate anything. Topic stars come from daily topic accuracy.
+- Moons (per level, plus super) are earned achievements. A moon itself never gates; the level tiers use the same "every topic at 3⭐" rule, but per day (see the level tabs line). Topic stars come from daily topic accuracy.
 - Study overlay: Set 1 Vocab, Set 2 Sentences, Set 3 My Words, and "I'm Ready!".
 - My Words overlay: Word List / Drill as a 52px segmented switch. The drill's Check works on apostrophe words. Sentences are displayed and spoken through `joinFrenchParts` (`src/util/fr-text.js`): no space before punctuation; the Sentence Builder check compares parts and is unchanged (PR 3).
-- 20-minute session lock with a parent-password unlock (`SESSION_LIMIT_MS`, `#lock-overlay`). The round draft is flushed before locking.
-- Play time shown to the child is capped at 30 minutes a day (`DAILY_PLAY_CAP_MS`). "Show full French times" reveals the real time for the browser session.
+- 20-minute session lock with a parent-password unlock (`SESSION_LIMIT_MS`, `#lock-overlay`). The round draft is flushed before locking. One timer per girl per day on each device (2026-10-10): its end time is kept in `localStorage` (`french_session_end_<player>_<day>`), so ← Back, tapping the card again and a reload carry on the same timer; only the parent's Unlock starts a new 20 minutes.
+- Play time shown to the child is capped at 30 minutes a day (`DAILY_PLAY_CAP_MS`). "Show full French times" reveals the real time for the browser session. Time on the start screen and the first card tap after opening the page add no play time (2026-10-10; was +60 s per page load).
 - Weekday lock: on a day the parent has blocked, "Not a practice day" appears, with a parent-password unlock or ← Back (`#weekday-lock-overlay`, `isWeekdayPlayAllowed`).
 - Day keys use America/Edmonton (`src/util/dates.js`). Two exceptions use the device clock (implementation-status "Still device-clock dependent"): the weekly played-days strip and the "next reset" line.
 
@@ -109,9 +110,9 @@ This section lists only what the code does today. Where a feature has a known de
 ### Parent area
 - 📋 Parent Summary overlay, from the select screen, in three tabs (PR 2, 2026-09-30): 📊 Progress (opens first, also after close/reopen) · 📋 Check-in · ⚙️ Settings. Tab buttons are `data-action="parent-tab"`; `showParentTab()` is on `window`. The card is `--page-max-wide` from 768px up in both orientations; every button in the overlay is at least 52px on touch.
   - Progress: Weekly/Daily switch and ‹ Prev / Next › on one row; Jenn and Jess side by side (stacked at ≤420px); the same ten stat rows per child as before, values never wrap and the cap note "(cap 30m/day)" / "(capped 30m)" sits on its own line in the value cell; practice-word rows (fr / en / zh / fail count) unchanged. Under each girl a collapsed "Topic details (current level) · Level N" (her suggested level) with the Games / Tries / Accuracy / Next lines from `topicStarProgressHTML` (PR 3; moved off the kids' hub).
-  - Check-in: intro text; one card per girl with her run status lines (or "Not started yet.") and "Start / resume" (`data-action="assess-open"`); the hint "Needs the parent password from the Settings tab."; then "After a check-in": report, scoring and device-check buttons with their panels underneath. Opening any of these three panels switches to the Check-in tab.
-  - Settings, in order: Screen-time days (52×52 chips; blocked = `--wrong`, crossed out) · Parent password box, then "⏱ Show full French times" (disabled until 4 digits are typed; the check still runs on press) · Clear today / Clear old days, each with its explanation under it · "Reset everything" alone in a dashed `--wrong` box · Backup & recovery (export, import, daily cloud backups, freeze) · Levels text with a "To fix later" tag.
-  - Password and recovery messages (`#pwd-msg`, `#recovery-msg`) show in one strip under the tab bar, visible from every tab.
+  - Check-in: intro text; one card per girl with her run status lines (or "Not started yet.") and "Start / resume" (`data-action="assess-open"`); the hint "Needs the parent password in the box at the top."; then "After a check-in": report, scoring and device-check buttons with their panels underneath. Opening any of these three panels switches to the Check-in tab.
+  - Settings, in order: Screen-time days (52×52 chips; blocked = `--wrong`, crossed out) · "⏱ Full French times": the "⏱ Show full French times" button (disabled until 4 digits are typed; the check still runs on press) · Clear today / Clear old days, each with its explanation under it · "Reset everything" alone in a dashed `--wrong` box · Backup & recovery (export, import, daily cloud backups, freeze) · Levels: each girl's open tiers and next-tier days, plus the tier rule in plain words (the "To fix later" tag was removed 2026-10-10).
+  - The parent password box (`#parent-pwd`, labelled) and the password and recovery messages (`#pwd-msg`, `#recovery-msg`) sit in one strip under the tab bar, visible from every tab (2026-10-10; the box was in Settings).
 - A 4-digit parent password, hard-coded as `PARENT_PASSWORD` in `src/app.js`, gates clear, recovery, assessment, device-check and unlock actions.
 - Clear actions for both children, password-checked: 🗑 Clear today, 🗂 Clear old days and 🔄 Reset everything (handlers unchanged: clearProgress today / prev / all). Today leaves total stars, moons and earlier days alone.
 - Recovery tools:
@@ -120,12 +121,12 @@ This section lists only what the code does today. Where a feature has a known de
   - ♻️ Import recovery JSON: migrate, then merge.
 - 📅 Show daily cloud backups, and restore one: migrate, then merge — nothing earned is lost.
 - Screen-time "allowed days" weekday grid.
-- The Levels panel states that every level is open. It has no controls.
+- The Levels panel shows, per girl, the tiers open and the days done toward the next, and explains the tier rule. It has no controls.
 - 🔧 Device & feature check (`src/modes/device-check.js`, `device-check-ui.js`):
   - Seven parent-started checks: voice, audio plays, microphone permission, record and replay, storage round-trip, delete, and the four pictures shown at learner size.
   - "Play it back" plays the in-memory recording inside the tap. A refused play leaves the check at "needs you" with the reason and asks for another tap; only the person's "I heard nothing" fails it.
   - A test-mode notice at the top.
-  - ⬇ Save these results: downloads `device-check-YYYY-MM-DD.txt` — each check's status, detail and the parent's answer, plus date, browser and Home Screen icon vs Safari tab. No learner data; writes nothing on the device. **Known defect:** any non-Home-Screen page is labelled "Safari tab", including Chrome for iOS (seen 2026-09-29; implementation-status "M2 Step 6", open items).
+  - ⬇ Save these results: downloads `device-check-YYYY-MM-DD.txt` — each check's status, detail and the parent's answer, plus date, browser and Home Screen icon vs browser tab (any browser; was "Safari tab" for every browser). No learner data; writes nothing on the device. **Known defect:** any non-Home-Screen page is labelled "Safari tab", including Chrome for iOS (seen 2026-09-29; implementation-status "M2 Step 6", open items).
   - Writes no learner record. Diagnostic clips use the `devicecheck_` prefix and are deleted on the way in and on the way out.
 
 ### Data and sync

@@ -282,9 +282,13 @@
       <button type="button" class="parent-tab" role="tab" data-action="parent-tab" data-tab="checkin">📋 Check-in</button>
       <button type="button" class="parent-tab" role="tab" data-action="parent-tab" data-tab="settings">⚙️ Settings</button>
     </div>
-    <!-- One message strip for every tab: the password box lives in Settings,
-         but Check-in and Backup refusals must be seen wherever the parent is. -->
+    <!-- One strip for every tab: the parent password box and its messages sit
+         here, so Check-in, Settings and Backup all use it without a tab hop. -->
     <div class="parent-msg-strip">
+        <div class="parent-pwd-row">
+          <input class="parent-pwd-input" id="parent-pwd" type="password" maxlength="4" placeholder="••••" autocomplete="off" aria-label="Parent password">
+          <span class="parent-pwd-state">🔐 Parent password — needed to clear progress, use backups, start a check-in and show full French times.</span>
+        </div>
       <div class="pwd-msg" id="pwd-msg"></div>
       <div id="recovery-msg" class="recovery-msg"></div>
     </div>
@@ -324,7 +328,7 @@
             <button type="button" class="parent-btn" data-action="assess-open" data-player="jess">Start / resume</button>
           </div>
         </div>
-        <p class="parent-hint">Needs the parent password from the Settings tab.</p>
+        <p class="parent-hint">Needs the parent password in the box at the top.</p>
       </div>
       <div class="parent-section">
         <div class="parent-section-title">After a check-in</div>
@@ -347,11 +351,7 @@
         <div class="weekday-grid" id="weekday-grid"></div>
       </div>
       <div class="parent-section">
-        <div class="parent-section-title">🔐 Parent password</div>
-        <div class="parent-pwd-row">
-          <input class="parent-pwd-input" id="parent-pwd" type="password" maxlength="4" placeholder="••••" autocomplete="off">
-          <span class="parent-pwd-state">Needed to clear progress, use backups, start a check-in and show full French times.</span>
-        </div>
+        <div class="parent-section-title">⏱ Full French times</div>
         <button type="button" class="parent-btn" id="btn-reveal-time" onclick="revealFullPlayTime()" disabled>⏱ Show full French times</button>
         <p class="parent-hint">Default view caps at 30 minutes on the child hub. This button reveals the real tracked time in stats and on the hub for this browser session.</p>
       </div>
@@ -384,7 +384,7 @@
         <input id="recovery-import-file" type="file" accept="application/json" style="display:none;" onchange="handleRecoveryImport(event)">
       </div>
       <div class="parent-section">
-        <div class="parent-section-title">🔓 Levels <span class="todo-tag">To fix later</span></div>
+        <div class="parent-section-title">🔓 Levels</div>
         <div id="parent-grade-reopen-controls"></div>
       </div>
     </section>

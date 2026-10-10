@@ -182,22 +182,29 @@ test('the first tap does not cancel an idle synthesiser, but a second tap cuts t
   assert.deepEqual(errors, []);
 });
 
-test('every level is reachable and playable', async () => {
-  // Regression: unlocking the next level needed a full moon plus two consecutive
-  // days at >=95% across all six game types, which is unreachable at one or two
-  // sessions a week. A Grade 5 child was confined to the first level.
+test('locked levels show 🔒 X/2 and cannot be chosen; open levels are playable', async () => {
+  // Parent decision 2026-10-10: levels open in pairs. A new profile has L1+L2.
   const { page, errors } = await open();
   await page.evaluate(() => selectPlayer('jenn'));
   await page.waitForTimeout(500);
 
-  const locked = await page.$$eval('[id^=tab-g]', els =>
-    els.filter(e => e.classList.contains('grade-locked') || /🔒/.test(e.textContent))
-       .map(e => e.textContent.trim()));
-  assert.deepEqual(locked, [], 'levels are still locked');
+  const tabs = await page.$$eval('[id^=tab-g]', els => els.map(e => ({
+    id: e.id, text: e.textContent.trim(), locked: e.classList.contains('grade-locked') })));
+  for (const t of tabs) {
+    const g = Number(t.id.slice(5));
+    if (g <= 5) assert.equal(t.locked, false, `${t.text} should be open`);
+    else {
+      assert.equal(t.locked, true, `${t.text} should be locked`);
+      assert.match(t.text, /^🔒 L\d [012]\/2$/, `${t.id} shows no lock and day count`);
+    }
+  }
+
+  const refused = await page.evaluate(() => { setGrade(6); return document.getElementById('tab-g6').classList.contains('active'); });
+  assert.equal(refused, false, 'a locked level could be chosen');
 
   const reached = await page.evaluate(async () => {
     const out = [];
-    for (const g of [4, 5, 6, 7, 8, 9, 10]) {
+    for (const g of [4, 5]) {
       setGrade(g);
       await new Promise(r => setTimeout(r, 50));
       startGame('quiz');
@@ -215,6 +222,120 @@ test('every level is reachable and playable', async () => {
     assert.ok(r.question, `level ${r.level} produced no question`);
   }
   assert.deepEqual(errors, []);
+});
+
+test('with every tier open, every level is reachable and playable', async () => {
+  const { page, errors } = await open({ seed: { levelTiersOpen: 4, lastUpdatedAt: Date.now() } });
+  await page.evaluate(() => selectPlayer('jenn'));
+  await page.waitForTimeout(500);
+  const locked = await page.$$eval('[id^=tab-g]', els =>
+    els.filter(e => e.classList.contains('grade-locked') || /🔒/.test(e.textContent)).map(e => e.textContent.trim()));
+  assert.deepEqual(locked, [], 'levels are still locked');
+  const reached = await page.evaluate(async () => {
+    const out = [];
+    for (const g of [4, 5, 6, 7, 8, 9, 10]) {
+      setGrade(g);
+      await new Promise(r => setTimeout(r, 50));
+      startGame('quiz');
+      await new Promise(r => setTimeout(r, 200));
+      out.push({ level: g - 3, active: !!document.getElementById('tab-g' + g)?.classList.contains('active'),
+                 question: document.querySelector('.question-main')?.textContent ?? null });
+      exitGame();
+      await new Promise(r => setTimeout(r, 100));
+    }
+    return out;
+  });
+  for (const r of reached) {
+    assert.ok(r.active, `level ${r.level} could not be selected`);
+    assert.ok(r.question, `level ${r.level} produced no question`);
+  }
+  assert.deepEqual(errors, []);
+});
+
+test('two qualifying days on L1 and L2 open L3+L4', async () => {
+  // A qualifying day: every topic of the level at 3 stars that day (3 game
+  // types, 6+ tries, 95%+) and the level's own accuracy that day at 95%+.
+  const seed = await (async () => {
+    const days = ['2026-09-03', '2026-09-17'];   // a fortnight apart, not back-to-back
+    const { CURRICULUM } = await import('../../src/content/curriculum-map.js');
+    const topics = [4, 5].map(g => [g, Object.keys(CURRICULUM[g])]);
+    const dailyTopicStats = {}, gradeStats = {};
+    for (const d of days) {
+      dailyTopicStats[d] = {}; gradeStats[d] = {};
+      for (const [g, ks] of topics) {
+        gradeStats[d][g] = { correct: 60, wrong: 0 };
+        for (const k of ks) dailyTopicStats[d][`${g}_${k}`] = { quiz: { c: 3, w: 0 }, match: { c: 3, w: 0 }, scramble: { c: 3, w: 0 } };
+      }
+    }
+    return { dailyTopicStats, gradeStats, lastUpdatedAt: Date.now() };
+  })();
+  const { page, errors } = await open({ seed });
+  await page.evaluate(() => selectPlayer('jenn'));
+  await page.waitForTimeout(500);
+  const t = await page.evaluate(() => ({
+    g6: document.getElementById('tab-g6').classList.contains('grade-locked'),
+    g7: document.getElementById('tab-g7').classList.contains('grade-locked'),
+    g8: document.getElementById('tab-g8').textContent.trim() }));
+  assert.equal(t.g6, false, 'L3 did not open');
+  assert.equal(t.g7, false, 'L4 did not open');
+  assert.equal(t.g8, '🔒 L5 0/2');
+  assert.deepEqual(errors, []);
+});
+
+test('the 20-minute timer carries on through Back, the card and a reload; only Unlock restarts it', async () => {
+  const context = await browser.newContext();
+  openContexts.push(context);
+  await context.route('**://*/**', route =>
+    route.request().url().startsWith('file://') ? route.continue() : route.abort());
+  const page = await context.newPage();
+  await page.clock.install({ time: new Date('2026-10-10T15:00:00-06:00') });
+  await page.goto(APP, { waitUntil: 'domcontentloaded' });
+  await page.clock.runFor(1500);
+  const cd = () => page.evaluate(() => document.getElementById('countdown-display').textContent);
+  const locked = () => page.evaluate(() => document.getElementById('lock-overlay').classList.contains('show'));
+
+  await page.evaluate(() => selectPlayer('jenn'));
+  await page.clock.runFor(10 * 60 * 1000);
+  await page.evaluate(() => topBarBack());
+  await page.evaluate(() => selectPlayer('jenn'));
+  await page.clock.runFor(1000);
+  assert.match(await cd(), /⏳ 9:5\d/, 'Back + card restarted the timer');
+
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.clock.runFor(1500);
+  await page.evaluate(() => selectPlayer('jenn'));
+  await page.clock.runFor(1000);
+  assert.match(await cd(), /⏳ 9:5\d/, 'a reload restarted the timer');
+
+  await page.clock.runFor(10 * 60 * 1000);
+  assert.equal(await locked(), true, 'no lock after 20 minutes');
+
+  await page.evaluate(() => { document.getElementById('lock-pwd').value = '1234'; unlockApp(); });
+  await page.clock.runFor(1000);
+  assert.match(await cd(), /⏳ 19:5\d/, 'Unlock did not give a new 20 minutes');
+
+  // The other girl has her own timer.
+  await page.evaluate(() => { topBarBack(); selectPlayer('jess'); });
+  await page.clock.runFor(1000);
+  assert.match(await cd(), /⏳ 19:5\d/);
+});
+
+test('opening the app and tapping a card adds no play time', async () => {
+  const context = await browser.newContext();
+  openContexts.push(context);
+  await context.route('**://*/**', route =>
+    route.request().url().startsWith('file://') ? route.continue() : route.abort());
+  const page = await context.newPage();
+  await page.clock.install({ time: new Date('2026-10-10T15:00:00-06:00') });
+  await page.goto(APP, { waitUntil: 'domcontentloaded' });
+  await page.clock.runFor(120 * 1000);      // two minutes on the start screen
+  await page.evaluate(() => selectPlayer('jenn'));
+  await page.clock.runFor(1000);
+  const shown = await page.evaluate(() => document.getElementById('hub-playtime-val').textContent);
+  assert.equal(shown, '0:00', `phantom play time: ${shown}`);
+  await page.clock.runFor(30 * 1000);
+  const after = await page.evaluate(() => document.getElementById('hub-playtime-val').textContent);
+  assert.match(after, /^0:(2|3)\d$/, `real play time not counted: ${after}`);
 });
 
 test('opening the app preserves everything a learner has earned', async () => {

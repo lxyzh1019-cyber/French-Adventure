@@ -13,7 +13,8 @@ import { createHash } from 'node:crypto';
 import * as C from '../src/assessment/content.js';
 
 const DIR = 'content/releases/assessment-v1/';
-const raw = f => readFileSync(DIR + f);
+// LF text, so a Windows clone with CRLF checkouts still matches the manifest.
+const raw = f => Buffer.from(readFileSync(DIR + f, 'utf8').replace(/\r\n/g, '\n'), 'utf8');
 const json = f => JSON.parse(raw(f).toString('utf8'));
 
 test('every file the manifest lists still hashes to what it claims', () => {

@@ -40,6 +40,8 @@ function toV1(profile) {
     out.gradeUnlocked = defaultGradeUnlocked();
   }
   clampGradeUnlocks(out.gradeUnlocked);
+  // Level tiers opened so far (2026-10-10). Old profiles start with the first tier.
+  if (!Number.isInteger(out.levelTiersOpen) || out.levelTiersOpen < 1) out.levelTiersOpen = 1;
 
   if (!out.gradeParentOpen || typeof out.gradeParentOpen !== 'object') {
     out.gradeParentOpen = defaultGradeParentOpen();

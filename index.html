@@ -7,7 +7,7 @@
      styles ......... src/styles.css
      game logic ..... src/**/*.js
 
-   Built from 9dc669a
+   Built from 67fa870
   ============================================================
 -->
 <!DOCTYPE html>
@@ -1042,6 +1042,7 @@ const DEFAULT_STATE = () => ({
   gradeStats: {},
   gradeGameRounds: {},
   dailyTopicStats: {},
+  levelTiersOpen: 1,
   gradeParentOpen: defaultGradeParentOpen(),
   tier1Conquered: false,
   tier2Conquered: false,
@@ -1145,6 +1146,7 @@ function toV1(profile) {
     out.gradeUnlocked = defaultGradeUnlocked();
   }
   clampGradeUnlocks(out.gradeUnlocked);
+  if (!Number.isInteger(out.levelTiersOpen) || out.levelTiersOpen < 1) out.levelTiersOpen = 1;
   if (!out.gradeParentOpen || typeof out.gradeParentOpen !== "object") {
     out.gradeParentOpen = defaultGradeParentOpen();
   }
@@ -1447,6 +1449,7 @@ function mergeProfiles(a, b) {
   for (const g of GRADE_KEYS$1) {
     merged.gradeUnlocked[g] = !!(a.gradeUnlocked?.[g] || b.gradeUnlocked?.[g]);
   }
+  merged.levelTiersOpen = Math.max(1, num$5(a.levelTiersOpen), num$5(b.levelTiersOpen));
   merged.weeklyHistory = mergeWeeklyHistory(a.weeklyHistory, b.weeklyHistory);
   merged.failedWords = mergeFailedWords(a.failedWords, b.failedWords);
   merged.seedProfilePatches = { ...a.seedProfilePatches || {}, ...b.seedProfilePatches || {} };
@@ -1540,6 +1543,47 @@ function levelNumber(gradeKey) {
 function levelLabel(gradeKey) {
   return "Level " + levelNumber(gradeKey);
 }
+const LEVEL_TIERS = [[4, 5], [6, 7], [8, 9], [10]];
+const TIER_QUALIFY_DAYS = 2;
+const TIER_QUALIFY_ACCURACY = 0.95;
+function tierIndexOf(gradeKey) {
+  return LEVEL_TIERS.findIndex((t) => t.includes(Number(gradeKey)));
+}
+function tierLabel(tierIdx) {
+  return (LEVEL_TIERS[tierIdx] || []).map((g) => "L" + levelNumber(g)).join("+");
+}
+function qualifyingDayCount(state2, gradeKey, qualifiesOn) {
+  const days = /* @__PURE__ */ new Set([
+    ...Object.keys(state2?.dailyTopicStats || {}),
+    ...Object.keys(state2?.gradeStats || {})
+  ]);
+  let n = 0;
+  for (const day of days) if (qualifiesOn(state2, day, gradeKey)) n++;
+  return n;
+}
+function openTierCount(state2, qualifiesOn) {
+  let open = Math.max(1, Math.min(LEVEL_TIERS.length, Number(state2?.levelTiersOpen) || 1));
+  while (open < LEVEL_TIERS.length && LEVEL_TIERS[open - 1].every((g) => qualifyingDayCount(state2, g, qualifiesOn) >= TIER_QUALIFY_DAYS)) {
+    open++;
+  }
+  return open;
+}
+function isLevelReachable(gradeKey, openTiers = 1) {
+  const i = tierIndexOf(gradeKey);
+  return i >= 0 && i < openTiers;
+}
+function highestReachableGrade(openTiers = 1) {
+  const t = LEVEL_TIERS[Math.max(0, Math.min(LEVEL_TIERS.length, openTiers) - 1)];
+  return t[t.length - 1];
+}
+function tierProgressDays(state2, tierIdx, qualifiesOn, openTiers) {
+  if (tierIdx < openTiers) return TIER_QUALIFY_DAYS;
+  if (tierIdx !== openTiers) return 0;
+  return Math.min(
+    TIER_QUALIFY_DAYS,
+    ...LEVEL_TIERS[tierIdx - 1].map((g) => qualifyingDayCount(state2, g, qualifiesOn))
+  );
+}
 const MIN_ATTEMPTS_FOR_SIGNAL = 12;
 const COMFORTABLE_ACCURACY = 0.8;
 const STRUGGLING_ACCURACY = 0.5;
@@ -1559,9 +1603,9 @@ function levelAccuracy(state2, gradeKey) {
 function hasMoon(state2, gradeKey) {
   return !!state2?.moons?.["grade" + gradeKey];
 }
-function recommendLevel(state2) {
+function recommendLevel(state2, { maxGradeKey = LAST_GRADE_KEY } = {}) {
   let lastComfortable = null;
-  for (const key of GRADE_KEYS) {
+  for (const key of GRADE_KEYS.filter((k) => k <= maxGradeKey)) {
     const stats = levelAccuracy(state2, key);
     if (!stats || stats.attempts < MIN_ATTEMPTS_FOR_SIGNAL) {
       return {
@@ -1578,6 +1622,14 @@ function recommendLevel(state2) {
       return { gradeKey: key, reason: "still-practising", confidence: "high", stats };
     }
     lastComfortable = key;
+  }
+  if (maxGradeKey < LAST_GRADE_KEY) {
+    return {
+      gradeKey: maxGradeKey,
+      reason: "earn-next-tier",
+      confidence: "high",
+      stats: levelAccuracy(state2, maxGradeKey)
+    };
   }
   return {
     gradeKey: LAST_GRADE_KEY,
@@ -1598,6 +1650,8 @@ function recommendationText(rec) {
       return "Almost there — a little more practice!";
     case "all-levels-comfortable":
       return "You're doing brilliantly at every level!";
+    case "earn-next-tier":
+      return "Earn a 🌙 here on 2 days to open new levels!";
     default:
       return "Try this one next.";
   }
@@ -4992,7 +5046,7 @@ function formatDeviceCheckReport(results, { now: now2 = Date.now(), userAgent = 
     "",
     `Date: ${localDay(now2)} ${twoDigits(d.getHours())}:${twoDigits(d.getMinutes())} (${zone})`,
     `Browser: ${userAgent || "unknown"}`,
-    `Opened from: ${standalone ? "Home Screen icon" : "Safari tab"}`
+    `Opened from: ${standalone ? "Home Screen icon" : "browser tab"}`
   ];
   CHECKS.forEach((check, i) => {
     const r = results?.[check.id] || {};
@@ -5937,6 +5991,35 @@ function gradeDayAccuracy(s, dateKey, grade) {
   if (t < 5) return null;
   return (gs.correct || 0) / t;
 }
+function isQualifyingDay(s, dateKey, grade) {
+  const topics = getTopics(grade);
+  if (!topics.length) return false;
+  if (!topics.every(([k]) => computeTopicStarFromDaily(s, dateKey, `${grade}_${k}`) >= 3)) return false;
+  const acc = gradeDayAccuracy(s, dateKey, grade);
+  return acc !== null && acc >= TIER_QUALIFY_ACCURACY;
+}
+function openTiersFor(s) {
+  return openTierCount(s, isQualifyingDay);
+}
+function recommendFor(s) {
+  return recommendLevel(s, { maxGradeKey: highestReachableGrade(openTiersFor(s)) });
+}
+function updateLevelTiers(s) {
+  const before = Math.max(1, Number(s.levelTiersOpen) || 1);
+  const after = openTiersFor(s);
+  s.levelTiersOpen = Math.max(before, after);
+  const banners = [];
+  for (let t = before; t < after; t++) {
+    banners.push({ emoji: "🌟", label: tierLabel(t - 1) + " conquered!", msg: tierLabel(t) + " unlocked!" });
+  }
+  return banners;
+}
+function lockedLevelMessage(s, g) {
+  const open = openTiersFor(s);
+  const t = tierIndexOf(g);
+  if (t !== open) return "🔒 " + levelLabel(g) + " opens after " + tierLabel(t - 1) + ".";
+  return "🔒 Get a 🌙 on " + tierLabel(t - 1).replace("+", " and ") + " on " + TIER_QUALIFY_DAYS + " days to open " + tierLabel(t) + "!";
+}
 function markGradeRoundComplete(s, dateKey, grade, gameType) {
   if (!s.gradeGameRounds) s.gradeGameRounds = {};
   if (!s.gradeGameRounds[dateKey]) s.gradeGameRounds[dateKey] = {};
@@ -6156,8 +6239,38 @@ function closeOverlay(id) {
 const SESSION_LIMIT_MS = 20 * 60 * 1e3;
 let countdownInterval = null;
 let countdownEnd = 0;
-function startSessionClock() {
-  countdownEnd = Date.now() + SESSION_LIMIT_MS;
+const SESSION_END_PREFIX = "french_session_end_";
+function sessionEndKey(player) {
+  return SESSION_END_PREFIX + player + "_" + todayKey();
+}
+function readSessionEnd(player) {
+  try {
+    const v = Number(localStorage.getItem(sessionEndKey(player)));
+    return Number.isFinite(v) && v > 0 ? v : 0;
+  } catch (_) {
+    return 0;
+  }
+}
+function writeSessionEnd(player, end) {
+  try {
+    const keep = sessionEndKey(player), stale = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(SESSION_END_PREFIX + player + "_") && k !== keep) stale.push(k);
+    }
+    stale.forEach((k) => localStorage.removeItem(k));
+    localStorage.setItem(keep, String(end));
+  } catch (_) {
+  }
+}
+function startSessionClock({ fresh = false } = {}) {
+  const p = currentPlayer;
+  let end = !fresh && p ? readSessionEnd(p) : 0;
+  if (!end) {
+    end = Date.now() + SESSION_LIMIT_MS;
+    if (p) writeSessionEnd(p, end);
+  }
+  countdownEnd = end;
   if (countdownInterval) clearInterval(countdownInterval);
   function tickCountdown() {
     const remaining = countdownEnd - Date.now();
@@ -6217,7 +6330,7 @@ function unlockApp() {
   input.value = "";
   err.textContent = "";
   document.getElementById("lock-overlay").classList.remove("show");
-  startSessionClock();
+  startSessionClock({ fresh: true });
 }
 function isWeekdayPlayAllowed() {
   if (sessionWeekdayBypass) return true;
@@ -6235,6 +6348,7 @@ function stopPlayTimeTracker() {
     playTimeInterval = null;
   }
   flushPlayTimeTick();
+  lastPlayTimeMark = 0;
 }
 function flushPlayTimeTick(doSave) {
   if (!currentPlayer) return;
@@ -6245,6 +6359,10 @@ function flushPlayTimeTick(doSave) {
   }
   if (document.hidden) return;
   const now2 = Date.now();
+  if (!lastPlayTimeMark) {
+    lastPlayTimeMark = now2;
+    return;
+  }
   let delta = now2 - lastPlayTimeMark;
   lastPlayTimeMark = now2;
   if (delta < 400) return;
@@ -6536,7 +6654,7 @@ function selectPlayer(p) {
   pendingPlayer = null;
   currentPlayer = p;
   try {
-    currentGrade = recommendLevel(state[p]).gradeKey || 4;
+    currentGrade = recommendFor(state[p]).gradeKey || 4;
   } catch (_) {
     currentGrade = 4;
   }
@@ -6589,6 +6707,10 @@ function topBarBack() {
 function setGrade(g) {
   if (g < 4 || g > MAX_PLAYABLE_GRADE) return;
   const s = state[currentPlayer];
+  if (!isLevelReachable(g, openTiersFor(s))) {
+    showToast(lockedLevelMessage(s, g), "var(--gold)");
+    return;
+  }
   currentGrade = g;
   markGradeVisited(s, g);
   GRADE_KEYS.forEach((n) => {
@@ -6600,13 +6722,22 @@ function setGrade(g) {
 function refreshGradeTabs() {
   const s = state[currentPlayer];
   if (!s) return;
-  const rec = recommendLevel(s);
+  const open = openTiersFor(s);
+  const rec = recommendFor(s);
   GRADE_KEYS.forEach((n) => {
     const el2 = document.getElementById("tab-g" + n);
     if (!el2) return;
-    el2.classList.remove("grade-locked", "grade-tab-future");
+    const locked = !isLevelReachable(n, open);
+    el2.classList.remove("grade-tab-future");
+    el2.classList.toggle("grade-locked", locked);
+    el2.setAttribute("aria-disabled", locked ? "true" : "false");
     el2.classList.toggle("active", n === currentGrade);
-    el2.classList.toggle("grade-tab-recommended", n === rec.gradeKey);
+    el2.classList.toggle("grade-tab-recommended", !locked && n === rec.gradeKey);
+    if (locked) {
+      el2.textContent = "🔒 L" + levelNumber(n) + " " + tierProgressDays(s, tierIndexOf(n), isQualifyingDay, open) + "/" + TIER_QUALIFY_DAYS;
+      el2.title = lockedLevelMessage(s, n);
+      return;
+    }
     el2.textContent = (hasMoon(s, n) ? "🌙 " : "") + "L" + levelNumber(n) + (n === rec.gradeKey ? " ⭐" : "");
     el2.title = levelLabel(n) + (n === rec.gradeKey ? " — " + recommendationText(rec) : "");
   });
@@ -6659,7 +6790,7 @@ function toggleSloganTranslation() {
 function renderHubDailySummaryInner(s, tk) {
   const el2 = document.getElementById("hub-daily-summary-inner");
   if (!el2) return;
-  const rec = recommendLevel(s);
+  const rec = recommendFor(s);
   const rows = GRADE_KEYS.map((g) => {
     const overall = levelAccuracy(s, g);
     const today = gradeDayAccuracy(s, tk, g);
@@ -6689,7 +6820,7 @@ function parentPracticeRowsHtml(words) {
   }).join("");
 }
 function parentTopicDetailsHtml(s) {
-  const g = recommendLevel(s).gradeKey || 4;
+  const g = recommendFor(s).gradeKey || 4;
   const tk = todayKey();
   const topicStars = s.topicStars || {};
   const rows = getTopics(g).map(function([key, topic]) {
@@ -7586,7 +7717,7 @@ async function endRound(outcome = ROUND_OUTCOME.COMPLETED) {
       at: Date.now()
     });
   }
-  const newMoons = checkMoons(s);
+  const newMoons = [...checkMoons(s), ...updateLevelTiers(s)];
   let moonHTML = "";
   if (newMoons.length > 0) {
     moonHTML = newMoons.map((m) => `<div class="moon-banner"><div class="moon-emoji">${m.emoji}</div><div class="moon-label">${m.label}</div><div class="moon-msg">${m.msg}</div></div>`).join("");
@@ -7901,7 +8032,15 @@ function renderWeekdayGrid() {
 function renderParentGradeReopenControls() {
   const wrap2 = document.getElementById("parent-grade-reopen-controls");
   if (!wrap2) return;
-  wrap2.innerHTML = '<div style="font-size:var(--text-min);color:var(--text-muted);line-height:1.5;">Every level is open to both girls, all the time. The app suggests where to work next from how they are actually doing, not from how many days in a row they have played.</div>';
+  const line = (p) => {
+    const s = state[p];
+    if (!s) return "";
+    const open = openTiersFor(s);
+    const name = p === "jenn" ? "Jenn" : "Jess";
+    const next = open < LEVEL_TIERS.length ? " · next " + tierLabel(open) + ": " + tierProgressDays(s, open, isQualifyingDay, open) + "/" + TIER_QUALIFY_DAYS + " days" : " · every level open";
+    return "<div><b>" + name + ":</b> open to " + tierLabel(open - 1) + next + "</div>";
+  };
+  wrap2.innerHTML = '<div style="font-size:var(--text-min);color:var(--text-muted);line-height:1.5;">' + line("jenn") + line("jess") + '<div style="margin-top:6px;">Levels open in pairs: L1+L2, L3+L4, L5+L6, then L7. A pair opens when every level of the pair before it has a day with all topics at 3⭐ and 95% right, on any 2 days. Opened levels stay open.</div></div>';
 }
 async function toggleWeekday(i) {
   const ps = Object.assign({}, getParentSettings());
@@ -8979,13 +9118,15 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   .mini-game-btn{padding:20px 12px;}
   .back-btn{min-height:var(--tap-min);}
   .grade-tab{min-height:44px;}
+  .hub-slogan-btn{min-height:var(--tap-min);padding:5px 14px;}
   .train-input{font-size:1.1rem;min-height:54px;}
   .question-main{font-size:clamp(2rem,5.5vw,3rem);}
   .question-hint-big{font-size:1.05rem;}
 }
 /* PARENT SUMMARY — tabs, sections, password, clear, weekday (PR 2) */
 #parent-overlay .overlay-title{text-align:left;padding-right:calc(var(--tap-min) + var(--space-2));margin-bottom:var(--space-3);}
-#parent-overlay .overlay-close{width:var(--tap-min);height:var(--tap-min);}
+/* Every overlay ✕ is a full thumb target (was 36px outside the Parent Summary). */
+.overlay .overlay-close{width:var(--tap-min);height:var(--tap-min);}
 .parent-tabs{display:flex;flex-wrap:wrap;gap:var(--space-2);border-bottom:2px solid var(--surface2);margin-bottom:var(--space-3);}
 .parent-tab{min-height:var(--tap-min);padding:0 var(--space-4);background:none;border:none;border-bottom:3px solid transparent;margin-bottom:-2px;font-family:'Fredoka One',system-ui,sans-serif;font-size:1rem;color:var(--text-muted);cursor:pointer;}
 .parent-tab.on{color:var(--text);border-bottom-color:var(--gold);}
@@ -9029,7 +9170,6 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .dangerzone{margin-top:var(--space-5);padding:var(--space-4);border:2px dashed var(--wrong);border-radius:var(--radius-md);max-width:720px;}
 .dangerzone .parent-hint{margin-bottom:0;}
 .btn-clear-all{background:rgba(252,165,165,.12);border-color:var(--wrong);color:var(--wrong);}
-.todo-tag{display:inline-block;margin-left:var(--space-2);font-family:'Nunito',system-ui,sans-serif;font-size:var(--text-min);font-weight:800;color:var(--gold);border:1px solid var(--gold);border-radius:var(--radius-full);padding:1px var(--space-2);vertical-align:middle;}
 .pwd-msg{font-size:.78rem;font-weight:700;text-align:left;min-height:0;}
 .recovery-msg{font-size:.78rem;font-weight:700;color:var(--text-muted);text-align:left;}
 .summary-mode-row{display:flex;gap:var(--space-1);flex-wrap:wrap;background:var(--bg);border-radius:var(--radius-md);padding:var(--space-1);}
@@ -9578,9 +9718,13 @@ button,input,[role="button"],.choice-btn,.letter-tile,.answer-slot,.word-chip,.g
       <button type="button" class="parent-tab" role="tab" data-action="parent-tab" data-tab="checkin">📋 Check-in</button>
       <button type="button" class="parent-tab" role="tab" data-action="parent-tab" data-tab="settings">⚙️ Settings</button>
     </div>
-    <!-- One message strip for every tab: the password box lives in Settings,
-         but Check-in and Backup refusals must be seen wherever the parent is. -->
+    <!-- One strip for every tab: the parent password box and its messages sit
+         here, so Check-in, Settings and Backup all use it without a tab hop. -->
     <div class="parent-msg-strip">
+        <div class="parent-pwd-row">
+          <input class="parent-pwd-input" id="parent-pwd" type="password" maxlength="4" placeholder="••••" autocomplete="off" aria-label="Parent password">
+          <span class="parent-pwd-state">🔐 Parent password — needed to clear progress, use backups, start a check-in and show full French times.</span>
+        </div>
       <div class="pwd-msg" id="pwd-msg"></div>
       <div id="recovery-msg" class="recovery-msg"></div>
     </div>
@@ -9620,7 +9764,7 @@ button,input,[role="button"],.choice-btn,.letter-tile,.answer-slot,.word-chip,.g
             <button type="button" class="parent-btn" data-action="assess-open" data-player="jess">Start / resume</button>
           </div>
         </div>
-        <p class="parent-hint">Needs the parent password from the Settings tab.</p>
+        <p class="parent-hint">Needs the parent password in the box at the top.</p>
       </div>
       <div class="parent-section">
         <div class="parent-section-title">After a check-in</div>
@@ -9643,11 +9787,7 @@ button,input,[role="button"],.choice-btn,.letter-tile,.answer-slot,.word-chip,.g
         <div class="weekday-grid" id="weekday-grid"></div>
       </div>
       <div class="parent-section">
-        <div class="parent-section-title">🔐 Parent password</div>
-        <div class="parent-pwd-row">
-          <input class="parent-pwd-input" id="parent-pwd" type="password" maxlength="4" placeholder="••••" autocomplete="off">
-          <span class="parent-pwd-state">Needed to clear progress, use backups, start a check-in and show full French times.</span>
-        </div>
+        <div class="parent-section-title">⏱ Full French times</div>
         <button type="button" class="parent-btn" id="btn-reveal-time" onclick="revealFullPlayTime()" disabled>⏱ Show full French times</button>
         <p class="parent-hint">Default view caps at 30 minutes on the child hub. This button reveals the real tracked time in stats and on the hub for this browser session.</p>
       </div>
@@ -9680,7 +9820,7 @@ button,input,[role="button"],.choice-btn,.letter-tile,.answer-slot,.word-chip,.g
         <input id="recovery-import-file" type="file" accept="application/json" style="display:none;" onchange="handleRecoveryImport(event)">
       </div>
       <div class="parent-section">
-        <div class="parent-section-title">🔓 Levels <span class="todo-tag">To fix later</span></div>
+        <div class="parent-section-title">🔓 Levels</div>
         <div id="parent-grade-reopen-controls"></div>
       </div>
     </section>

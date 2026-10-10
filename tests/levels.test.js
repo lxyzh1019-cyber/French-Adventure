@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   GRADE_KEYS, levelNumber, gradeKeyForLevel, levelLabel, isLevelReachable,
+  LEVEL_TIERS, openTierCount, highestReachableGrade, tierProgressDays, tierLabel,
   levelAccuracy, hasMoon, recommendLevel, recommendationText,
   MIN_ATTEMPTS_FOR_SIGNAL, COMFORTABLE_ACCURACY,
 } from '../src/learning/levels.js';
@@ -12,10 +13,57 @@ const withStats = (perGrade) => ({
     [`2026-01-${String(i + 1).padStart(2, '0')}`, { [g]: { correct: c, wrong: w } }])),
 });
 
-test('every level is reachable — there is no gate', () => {
-  // The defect this replaces made the next level mathematically unreachable at
-  // one or two sessions a week. Nothing may reintroduce a lock.
-  for (const g of GRADE_KEYS) assert.equal(isLevelReachable(g), true);
+test('levels open in tiers: L1+L2, then L3+L4, then L5+L6, then L7', () => {
+  // Parent decision 2026-10-10: the level lock is back, in pairs.
+  assert.deepEqual(LEVEL_TIERS, [[4, 5], [6, 7], [8, 9], [10]]);
+  for (const g of [4, 5]) assert.equal(isLevelReachable(g, 1), true);
+  for (const g of [6, 7, 8, 9, 10]) assert.equal(isLevelReachable(g, 1), false);
+  for (const g of GRADE_KEYS) assert.equal(isLevelReachable(g, 4), true);
+  assert.equal(highestReachableGrade(1), 5);
+  assert.equal(highestReachableGrade(4), 10);
+  assert.equal(tierLabel(0), 'L1+L2');
+  assert.equal(tierLabel(3), 'L7');
+});
+
+// A day rule for the tests: a level qualifies on the days listed for it.
+const daysRule = map => (state, day, g) => (map[g] || []).includes(day);
+const withDays = days => ({ gradeStats: Object.fromEntries(days.map(d => [d, {}])) });
+
+test('a tier opens when every level of the tier before it has qualified on 2 days — any 2 days', () => {
+  // Any two days, never back-to-back days: the girls play once or twice a week.
+  const s = withDays(['2026-10-01', '2026-10-08', '2026-10-15']);
+  assert.equal(openTierCount(s, daysRule({ 4: ['2026-10-01', '2026-10-15'] })), 1, 'L2 has not qualified');
+  assert.equal(openTierCount(s, daysRule({ 4: ['2026-10-01', '2026-10-15'], 5: ['2026-10-08'] })), 1, 'L2 has 1 of 2 days');
+  assert.equal(openTierCount(s, daysRule({ 4: ['2026-10-01', '2026-10-15'], 5: ['2026-10-01', '2026-10-15'] })), 2);
+});
+
+test('tiers open one after another, never skipping', () => {
+  const s = withDays(['a', 'b']);
+  const all = daysRule({ 4: ['a', 'b'], 5: ['a', 'b'], 8: ['a', 'b'], 9: ['a', 'b'] });
+  assert.equal(openTierCount(s, all), 2, 'L5+L6 records alone cannot open L7 while L3+L4 is unearned');
+});
+
+test('an opened tier stays open even when the records that earned it are cleared', () => {
+  const none = () => false;
+  assert.equal(openTierCount({ levelTiersOpen: 3 }, none), 3);
+  assert.equal(openTierCount({}, none), 1, 'a new profile starts at L1+L2');
+  assert.equal(openTierCount({ levelTiersOpen: 99 }, none), 4, 'never more tiers than exist');
+});
+
+test('the X/2 count on a locked tab is the fewest days among the levels before it', () => {
+  const s = withDays(['a', 'b']);
+  const rule = daysRule({ 4: ['a', 'b'], 5: ['a'] });
+  assert.equal(tierProgressDays(s, 1, rule, 1), 1);
+  assert.equal(tierProgressDays(s, 2, rule, 1), 0, 'tiers beyond the next show 0');
+  assert.equal(tierProgressDays(s, 0, rule, 1), 2, 'an open tier is complete');
+});
+
+test('the suggestion never points at a locked level', () => {
+  const comfortable = withStats({ 4: [20, 0], 5: [20, 0] });
+  const rec = recommendLevel(comfortable, { maxGradeKey: 5 });
+  assert.equal(rec.gradeKey, 5);
+  assert.equal(rec.reason, 'earn-next-tier');
+  assert.match(recommendationText(rec), /open new levels/);
 });
 
 test('levels are labelled as levels, never as school grades', () => {

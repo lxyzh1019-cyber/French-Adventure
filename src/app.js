@@ -8,7 +8,9 @@ import { SCHEMA_VERSION, hasAnyProgress, DEFAULT_STATE,
          defaultParentSettings, defaultGradeUnlocked,
          defaultGradeParentOpen } from './state/schema.js';
 import { GRADE_KEYS, levelLabel, levelNumber, recommendLevel,
-         recommendationText, levelAccuracy, hasMoon } from './learning/levels.js';
+         recommendationText, levelAccuracy, hasMoon,
+         LEVEL_TIERS, TIER_QUALIFY_DAYS, TIER_QUALIFY_ACCURACY, tierIndexOf, tierLabel,
+         openTierCount, isLevelReachable, highestReachableGrade, tierProgressDays } from './learning/levels.js';
 import { pickFrenchVoice, describeVoice, PREFERRED_LOCALE } from './speech/playback.js';
 import { createAudioOut } from './speech/audio-out.js';
 import { escapeAttr } from './util/html.js';
@@ -505,23 +507,9 @@ function accuracyToTopicStars(acc){
   if(acc >= 0.60) return 1;
   return 0;
 }
-function gradeTier(grade){
-  if(grade <= 5) return 1;
-  if(grade <= 7) return 2;
-  if(grade <= 9) return 3;
-  return 4;
-}
 function clampGradeUnlocks(o){
   if(!o) return;
   for(let g = MAX_PLAYABLE_GRADE + 1; g <= 10; g++) o[g] = false;
-}
-function highestUnlockedGrade(s){
-  if(!s || !s.gradeUnlocked) return 4;
-  let top = 4;
-  for(let g = 4; g <= MAX_PLAYABLE_GRADE; g++){
-    if(s.gradeUnlocked[g]) top = g;
-  }
-  return top;
 }
 function ensureGradeParentOpenState(s){
   if(!s.gradeParentOpen) s.gradeParentOpen = defaultGradeParentOpen();
@@ -529,17 +517,44 @@ function ensureGradeParentOpenState(s){
     if(s.gradeParentOpen[g] === undefined) s.gradeParentOpen[g] = false;
   }
 }
-function hasFullMoonForGrade(s, grade){
-  const topics = getTopics(grade);
-  if(!topics.length) return false;
-  return topics.every(([k]) => (s.topicStars[`${grade}_${k}`] || 0) >= 3);
-}
 function gradeDayAccuracy(s, dateKey, grade){
   const gs = s.gradeStats && s.gradeStats[dateKey] && s.gradeStats[dateKey][grade];
   if(!gs) return null;
   const t = (gs.correct || 0) + (gs.wrong || 0);
   if(t < 5) return null;
   return (gs.correct || 0) / t;
+}
+// ── Level tiers (2026-10-10) ──────────────────────────────────────
+// A day qualifies a level when every topic of the level reached 3 stars that
+// day and the level's accuracy that day was at least 95%. The tier rules
+// themselves live in src/learning/levels.js.
+function isQualifyingDay(s, dateKey, grade){
+  const topics = getTopics(grade);
+  if(!topics.length) return false;
+  if(!topics.every(([k]) => computeTopicStarFromDaily(s, dateKey, `${grade}_${k}`) >= 3)) return false;
+  const acc = gradeDayAccuracy(s, dateKey, grade);
+  return acc !== null && acc >= TIER_QUALIFY_ACCURACY;
+}
+function openTiersFor(s){ return openTierCount(s, isQualifyingDay); }
+function recommendFor(s){
+  return recommendLevel(s, { maxGradeKey: highestReachableGrade(openTiersFor(s)) });
+}
+/** Raise the stored tier count; return a banner for each tier that just opened. */
+function updateLevelTiers(s){
+  const before = Math.max(1, Number(s.levelTiersOpen) || 1);
+  const after = openTiersFor(s);
+  s.levelTiersOpen = Math.max(before, after);
+  const banners = [];
+  for(let t = before; t < after; t++){
+    banners.push({ emoji:'🌟', label: tierLabel(t - 1) + ' conquered!', msg: tierLabel(t) + ' unlocked!' });
+  }
+  return banners;
+}
+function lockedLevelMessage(s, g){
+  const open = openTiersFor(s);
+  const t = tierIndexOf(g);
+  if(t !== open) return '🔒 ' + levelLabel(g) + ' opens after ' + tierLabel(t - 1) + '.';
+  return '🔒 Get a 🌙 on ' + tierLabel(t - 1).replace('+', ' and ') + ' on ' + TIER_QUALIFY_DAYS + ' days to open ' + tierLabel(t) + '!';
 }
 function markGradeRoundComplete(s, dateKey, grade, gameType){
   if(!s.gradeGameRounds) s.gradeGameRounds = {};
@@ -652,19 +667,6 @@ function applySeedProfilePatchesIfNeeded(p, phase){
   }
   return changed;
 }
-function latestGateGrade(s){
-  if(!s || !s.gradeUnlocked) return 4;
-  for(let g = 4; g < 10; g++){
-    if(!s.gradeUnlocked[g + 1]) return g;
-  }
-  return 10;
-}
-function isGradePlayable(s, grade){
-  // Every level is reachable. The old gate required a full moon plus two
-  // consecutive days at >=95% across all six game types, which at one or two
-  // sessions a week put the next level permanently out of reach.
-  return grade >= 4 && grade <= MAX_PLAYABLE_GRADE;
-}
 function tryUnlockGradesAndTiers(s){
   // Levels are no longer unlocked by anything — gradeUnlocked is now simply a
   // record of which levels the learner has visited, kept so existing profiles
@@ -703,7 +705,6 @@ function recordGradeAttempt(grade, ok){
   if(!currentPlayer) return;
   bumpGradeStats(state[currentPlayer], grade, ok ? 1 : 0, ok ? 0 : 1);
 }
-function shuffle(arr){return [...arr].sort(()=>Math.random()-.5);}
 function rand(arr){return arr[Math.floor(Math.random()*arr.length)];}
 function getTopics(grade){return Object.entries(CURRICULUM[grade]||{});}
 function getAllVocab(grade){return getTopics(grade).flatMap(([k,v])=>v.vocab.map(w=>({...w,topic:k,grade})));}
@@ -765,8 +766,32 @@ const SESSION_LIMIT_MS = 20 * 60 * 1000; // 20 minutes
 let countdownInterval = null;
 let countdownEnd = 0;
 
-function startSessionClock(){
-  countdownEnd = Date.now() + SESSION_LIMIT_MS;
+// One 20-minute timer per girl per day (parent decision, 2026-10-10). Its end
+// time is kept on this device, so going Back to the start screen, tapping the
+// card again or reloading the page carries on the same timer instead of
+// starting a fresh 20 minutes. Only the parent's Unlock starts a new one.
+const SESSION_END_PREFIX = 'french_session_end_';
+function sessionEndKey(player){ return SESSION_END_PREFIX + player + '_' + todayKey(); }
+function readSessionEnd(player){
+  try{ const v = Number(localStorage.getItem(sessionEndKey(player))); return Number.isFinite(v) && v > 0 ? v : 0; }
+  catch(_){ return 0; }
+}
+function writeSessionEnd(player, end){
+  try{
+    const keep = sessionEndKey(player), stale = [];
+    for(let i = 0; i < localStorage.length; i++){
+      const k = localStorage.key(i);
+      if(k && k.startsWith(SESSION_END_PREFIX + player + '_') && k !== keep) stale.push(k);
+    }
+    stale.forEach(k => localStorage.removeItem(k));
+    localStorage.setItem(keep, String(end));
+  }catch(_){}
+}
+function startSessionClock({ fresh = false } = {}){
+  const p = currentPlayer;
+  let end = (!fresh && p) ? readSessionEnd(p) : 0;
+  if(!end){ end = Date.now() + SESSION_LIMIT_MS; if(p) writeSessionEnd(p, end); }
+  countdownEnd = end;
   if(countdownInterval) clearInterval(countdownInterval);
 
   function tickCountdown(){
@@ -829,8 +854,8 @@ function unlockApp(){
   input.value = '';
   err.textContent = '';
   document.getElementById('lock-overlay').classList.remove('show');
-  // Reset countdown for another 20 minutes
-  startSessionClock();
+  // The parent's unlock starts another 20 minutes.
+  startSessionClock({ fresh: true });
 }
 
 function isWeekdayPlayAllowed(){
@@ -846,6 +871,9 @@ function startPlayTimeTracker(){
 function stopPlayTimeTracker(){
   if(playTimeInterval){clearInterval(playTimeInterval);playTimeInterval=null;}
   flushPlayTimeTick(true);
+  // No running mark until the next start: time on the start screen and the
+  // first tap after opening the page are not play time.
+  lastPlayTimeMark=0;
 }
 function flushPlayTimeTick(doSave){
   if(!currentPlayer)return;
@@ -856,6 +884,7 @@ function flushPlayTimeTick(doSave){
   }
   if(document.hidden)return;
   const now=Date.now();
+  if(!lastPlayTimeMark){ lastPlayTimeMark=now; return; }
   let delta=now-lastPlayTimeMark;
   lastPlayTimeMark=now;
   if(delta<400)return;
@@ -1142,22 +1171,6 @@ function injectRequeue(pool,grade){
 // ════════════════════════════════════════════════
 // MOON CHECK
 // ════════════════════════════════════════════════
-function syncMoonsToTopicStars(s){
-  // A moon is an achievement, not a status. Once a learner has fully starred a
-  // level it stays earned even if later evidence moves a topic back down — the
-  // learning state can change without deleting something she accomplished.
-  if(!s.moons) s.moons={grade4:false,grade5:false,grade6:false,grade7:false,grade8:false,grade9:false,grade10:false,super:false};
-  GRADE_KEYS.forEach(g=>{
-    const key='grade'+g;
-    const topics=getTopics(g);
-    if(!topics.length) return;
-    if(topics.every(([k])=>(s.topicStars[`${g}_${k}`]||0)>=3)) s.moons[key]=true;
-  });
-  if(!s.moons.super){
-    const withMoons=GRADE_KEYS.filter(g=>s.moons['grade'+g]);
-    if(withMoons.length>=2) s.moons.super=true;
-  }
-}
 
 function checkMoons(s){
   const newMoons=[];
@@ -1262,7 +1275,7 @@ function selectPlayer(p){
   currentPlayer=p;
   // Open the level the app suggests next rather than always L1; the ⭐ on the
   // tabs used to point at one level while the content shown was another.
-  try{ currentGrade=recommendLevel(state[p]).gradeKey||4; }catch(_){ currentGrade=4; }
+  try{ currentGrade=recommendFor(state[p]).gradeKey||4; }catch(_){ currentGrade=4; }
   hubDailySummaryOpen=false;
   const hdsb=document.getElementById('hub-daily-summary-block');
   const hdch=document.getElementById('hub-daily-chev');
@@ -1301,6 +1314,7 @@ function topBarBack(){
 function setGrade(g){
   if(g < 4 || g > MAX_PLAYABLE_GRADE) return;
   const s=state[currentPlayer];
+  if(!isLevelReachable(g, openTiersFor(s))){ showToast(lockedLevelMessage(s, g), 'var(--gold)'); return; }
   currentGrade=g;
   markGradeVisited(s, g);
   GRADE_KEYS.forEach(n=>{
@@ -1312,15 +1326,25 @@ function setGrade(g){
 function refreshGradeTabs(){
   const s=state[currentPlayer];
   if(!s)return;
-  const rec = recommendLevel(s);
+  const open = openTiersFor(s);
+  const rec = recommendFor(s);
   GRADE_KEYS.forEach(n=>{
     const el=document.getElementById('tab-g'+n);
     if(!el)return;
-    // Nothing is locked any more. Tabs show the level, a moon once every topic
-    // is fully starred, and a pointer at whichever level is suggested next.
-    el.classList.remove('grade-locked','grade-tab-future');
+    // Tabs in a locked tier show 🔒 and the days done toward opening it (X/2).
+    // Open tabs show the level, a moon once every topic is fully starred, and a
+    // pointer at whichever level is suggested next.
+    const locked = !isLevelReachable(n, open);
+    el.classList.remove('grade-tab-future');
+    el.classList.toggle('grade-locked', locked);
+    el.setAttribute('aria-disabled', locked ? 'true' : 'false');
     el.classList.toggle('active', n===currentGrade);
-    el.classList.toggle('grade-tab-recommended', n===rec.gradeKey);
+    el.classList.toggle('grade-tab-recommended', !locked && n===rec.gradeKey);
+    if(locked){
+      el.textContent = '🔒 L' + levelNumber(n) + ' ' + tierProgressDays(s, tierIndexOf(n), isQualifyingDay, open) + '/' + TIER_QUALIFY_DAYS;
+      el.title = lockedLevelMessage(s, n);
+      return;
+    }
     el.textContent = (hasMoon(s,n) ? '🌙 ' : '') + 'L' + levelNumber(n)
                    + (n===rec.gradeKey ? ' ⭐' : '');
     el.title = levelLabel(n) + (n===rec.gradeKey ? ' — ' + recommendationText(rec) : '');
@@ -1379,7 +1403,7 @@ function renderHubDailySummaryInner(s, tk){
   if(!el) return;
   // This panel used to explain how to unlock the next grade. There is no lock
   // any more, so it explains where to work next and why instead.
-  const rec = recommendLevel(s);
+  const rec = recommendFor(s);
   const rows = GRADE_KEYS.map(g=>{
     const overall = levelAccuracy(s, g);
     const today = gradeDayAccuracy(s, tk, g);
@@ -1423,7 +1447,7 @@ function parentPracticeRowsHtml(words){
 // The Games / Tries / Accuracy / Next lines that used to sit on the kids' topic
 // cards, for each topic of this girl's suggested level — same function, same data.
 function parentTopicDetailsHtml(s){
-  const g = recommendLevel(s).gradeKey || 4;
+  const g = recommendFor(s).gradeKey || 4;
   const tk = todayKey();
   const topicStars = s.topicStars || {};
   const rows = getTopics(g).map(function([key, topic]){
@@ -2273,7 +2297,7 @@ async function endRound(outcome = ROUND_OUTCOME.COMPLETED){
     });
   }
 
-  const newMoons=checkMoons(s);
+  const newMoons=[...checkMoons(s), ...updateLevelTiers(s)];
   let moonHTML='';
   if(newMoons.length>0){
     moonHTML=newMoons.map(m=>`<div class="moon-banner"><div class="moon-emoji">${m.emoji}</div><div class="moon-label">${m.label}</div><div class="moon-msg">${m.msg}</div></div>`).join('');
@@ -2672,12 +2696,23 @@ function renderWeekdayGrid(){
 function renderParentGradeReopenControls(){
   const wrap = document.getElementById('parent-grade-reopen-controls');
   if(!wrap) return;
-  // Levels are no longer closed, so there is nothing to reopen. The panel now
-  // says so rather than offering buttons with nothing to act on.
+  // Level tiers (2026-10-10): show where each girl stands. A tier opens by
+  // itself when every level of the tier before it has qualified on 2 days.
+  const line = p => {
+    const s = state[p];
+    if(!s) return '';
+    const open = openTiersFor(s);
+    const name = p === 'jenn' ? 'Jenn' : 'Jess';
+    const next = open < LEVEL_TIERS.length
+      ? ' · next ' + tierLabel(open) + ': ' + tierProgressDays(s, open, isQualifyingDay, open) + '/' + TIER_QUALIFY_DAYS + ' days'
+      : ' · every level open';
+    return '<div><b>' + name + ':</b> open to ' + tierLabel(open - 1) + next + '</div>';
+  };
   wrap.innerHTML = '<div style="font-size:var(--text-min);color:var(--text-muted);line-height:1.5;">'
-    + 'Every level is open to both girls, all the time. The app suggests where to '
-    + 'work next from how they are actually doing, not from how many days in a row '
-    + 'they have played.</div>';
+    + line('jenn') + line('jess')
+    + '<div style="margin-top:6px;">Levels open in pairs: L1+L2, L3+L4, L5+L6, then L7. '
+    + 'A pair opens when every level of the pair before it has a day with all topics at 3⭐ '
+    + 'and 95% right, on any 2 days. Opened levels stay open.</div></div>';
 }
 
 async function toggleWeekday(i){

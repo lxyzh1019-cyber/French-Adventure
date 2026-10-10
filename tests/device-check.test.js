@@ -338,9 +338,9 @@ test('the saved results name every check, its status and what it found', async (
   assert.equal(/jenn|jess/i.test(text), false, 'a learner name is in the saved results');
 });
 
-test('the saved results say when the app was opened in a Safari tab', () => {
+test('the saved results say when the app was opened in a browser tab (Safari, Chrome or any other)', () => {
   const text = DC.formatDeviceCheckReport(make().controller.results(), { now: 0, standalone: false });
-  assert.match(text, /Opened from: Safari tab/);
+  assert.match(text, /Opened from: browser tab/);
   assert.match(text, /Status: Not run/);
 });
 
